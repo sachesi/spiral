@@ -71,7 +71,8 @@ The grid can show up to three lines under each name: size or item count, date,
 permissions, type, MIME type, owner, group; "Captions…" in the view menu picks them. In
 the list, "Visible Columns…" chooses among size, type, modified, accessed, created,
 owner, group, permissions and a star column that toggles favourites; the name column
-always stays, and only name, size, type and modified sort.
+always stays, and only name, size, type and modified sort. Every column but the name and
+the star can be resized by dragging its header edge.
 
 ## Selecting, opening, moving things
 
@@ -81,9 +82,11 @@ default. Rubber-band selection works in both views. The pill in the corner shows
 selected and how big it is.
 
 Dragging inside Spiral moves, Ctrl makes it a copy, drags from other applications copy.
-Drop targets are folders in the view, breadcrumbs and sidebar entries except Trash and
-Favorites. Cut, copy and paste use the same clipboard format as GNOME Files, so the two
-interoperate. "Paste Into Folder" pastes into a selected folder without entering it.
+A drag starts anywhere on a row or a grid tile, and a folder accepts a drop anywhere on
+its row. Drop targets are folders in the view, breadcrumbs and sidebar entries except
+Trash and Favorites. Cut, copy and paste use the same clipboard format as GNOME Files, so
+the two interoperate; files waiting on the clipboard as a cut are shown faded until they
+are pasted. "Paste Into Folder" pastes into a selected folder without entering it.
 
 "Copy to…" and "Move to…" ask for a folder instead of using the clipboard. "Paste as
 Link" and, when turned on in Preferences, "Create Link" make symbolic links; a link
