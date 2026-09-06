@@ -52,6 +52,10 @@
       <default>false</default>
       <summary>Show “Create Link” in context menus</summary>
     </key>
+    <key name="use-tree-view" type="b">
+      <default>false</default>
+      <summary>Expandable folders in list view</summary>
+    </key>
     <key name="remember-view" type="b">
       <default>true</default>
       <summary>Remember the view mode of each folder</summary>

@@ -51,6 +51,10 @@ pub fn folders_first() -> bool {
     SETTINGS.with(|s| s.boolean("folders-first"))
 }
 
+pub fn tree_view() -> bool {
+    SETTINGS.with(|s| s.boolean("use-tree-view"))
+}
+
 pub fn remember_view() -> bool {
     SETTINGS.with(|s| s.boolean("remember-view"))
 }

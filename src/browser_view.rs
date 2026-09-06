@@ -337,6 +337,9 @@ mod imp {
     impl BrowserView {
         fn set_view_mode(&self, mode: ViewMode) {
             self.view_mode.set(mode);
+            if mode == ViewMode::Grid {
+                self.model.collapse_all();
+            }
             self.obj().update_stack();
         }
     }
@@ -396,7 +399,7 @@ fn mostly_media(model: &FolderModel) -> bool {
     let mut files = 0u32;
     let mut media = 0u32;
     for i in 0..sel.n_items().min(2000) {
-        let Some(info) = sel.item(i).and_downcast::<gio::FileInfo>() else {
+        let Some(info) = model.info_at(i) else {
             continue;
         };
         if file_utils::is_dir(&info) {
@@ -746,13 +749,7 @@ impl BrowserView {
 
     /// Open the item at `pos`: descend into folders, launch files.
     fn activate_position(&self, pos: u32) {
-        let Some(info) = self
-            .imp()
-            .model
-            .selection()
-            .item(pos)
-            .and_downcast::<gio::FileInfo>()
-        else {
+        let Some(info) = self.imp().model.info_at(pos) else {
             return;
         };
         let file = file_utils::file_of(&info);
@@ -1065,11 +1062,7 @@ impl BrowserView {
     /// The folder a cell currently shows, if it is one.
     fn cell_folder(&self, cell: &gtk::Box) -> Option<gio::File> {
         let pos = cell_position(cell)?;
-        let info = self
-            .model()
-            .selection()
-            .item(pos)
-            .and_downcast::<gio::FileInfo>()?;
+        let info = self.model().info_at(pos)?;
         file_utils::is_dir(&info).then(|| file_utils::file_of(&info))
     }
 
@@ -1172,7 +1165,7 @@ impl BrowserView {
         let view = self.clone();
         factory.connect_bind(move |_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let Some(info) = item.item().and_downcast::<gio::FileInfo>() else {
+            let Some(info) = item.item().and_then(|o| crate::folder_model::info_of(&o)) else {
                 return;
             };
             let bx = item.child().unwrap();
@@ -1235,17 +1228,22 @@ impl BrowserView {
                     .build(),
             );
             bx.append(&emblem_image());
-            item.set_child(Some(&bx));
+            // Folders unfold in place when the tree preference is on.
+            let expander = gtk::TreeExpander::builder().child(&bx).build();
+            item.set_child(Some(&expander));
             remember_list_item(&bx, item);
             view.setup_cell_dnd(&bx);
         });
         let view = self.clone();
         name_factory.connect_bind(move |_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let Some(info) = item.item().and_downcast::<gio::FileInfo>() else {
+            let Some(info) = item.item().and_then(|o| crate::folder_model::info_of(&o)) else {
                 return;
             };
-            let bx = item.child().unwrap();
+            let expander = item.child().and_downcast::<gtk::TreeExpander>().unwrap();
+            expander.set_list_row(item.item().and_downcast::<gtk::TreeListRow>().as_ref());
+            expander.set_hide_expander(!crate::prefs::tree_view());
+            let bx = expander.child().unwrap();
             let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
             let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
@@ -1254,7 +1252,11 @@ impl BrowserView {
         });
         name_factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            if let Some(image) = item
+            let Some(expander) = item.child().and_downcast::<gtk::TreeExpander>() else {
+                return;
+            };
+            expander.set_list_row(None);
+            if let Some(image) = expander
                 .child()
                 .and_then(|b| b.first_child())
                 .and_downcast::<gtk::Image>()
@@ -1282,7 +1284,7 @@ impl BrowserView {
             });
             factory.connect_bind(move |_, item| {
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-                let Some(info) = item.item().and_downcast::<gio::FileInfo>() else {
+                let Some(info) = item.item().and_then(|o| crate::folder_model::info_of(&o)) else {
                     return;
                 };
                 item.child()
@@ -1402,7 +1404,8 @@ impl BrowserView {
                 #[weak]
                 item,
                 move |button| {
-                    let Some(info) = item.item().and_downcast::<gio::FileInfo>() else {
+                    let Some(info) = item.item().and_then(|o| crate::folder_model::info_of(&o))
+                    else {
                         return;
                     };
                     let file = file_utils::file_of(&info);
@@ -1419,7 +1422,7 @@ impl BrowserView {
         });
         factory.connect_bind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let Some(info) = item.item().and_downcast::<gio::FileInfo>() else {
+            let Some(info) = item.item().and_then(|o| crate::folder_model::info_of(&o)) else {
                 return;
             };
             let button = item.child().and_downcast::<gtk::Button>().unwrap();

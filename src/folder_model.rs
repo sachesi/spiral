@@ -48,6 +48,10 @@ mod imp {
         selection: gtk::MultiSelection,
 
         pub dir_list: gtk::DirectoryList,
+        /// Sorted flat list, root of the tree the selection sits on.
+        sorted: gtk::SortListModel,
+        /// Whether folders unfold in place; read by the tree's child-model function.
+        tree: Rc<Cell<bool>>,
         /// `DirectoryList` only tracks additions, removals and attribute changes; this one
         /// catches files rewritten in place so sizes, dates and thumbnails follow.
         monitor: RefCell<Option<gio::FileMonitor>>,
@@ -104,7 +108,9 @@ mod imp {
             let filtered =
                 gtk::FilterListModel::new(Some(dir_list.clone()), Some(every_filter.clone()));
             let sorted = gtk::SortListModel::new(Some(filtered.clone()), Some(sorter.clone()));
-            let selection = gtk::MultiSelection::new(Some(sorted));
+            let tree = Rc::new(Cell::new(crate::prefs::tree_view()));
+            let selection =
+                gtk::MultiSelection::new(Some(tree_model(&sorted, &every_filter, &sorter, &tree)));
 
             Self {
                 location: Default::default(),
@@ -121,6 +127,8 @@ mod imp {
                 error_message: Default::default(),
                 selection,
                 dir_list,
+                sorted,
+                tree,
                 monitor: Default::default(),
                 filtered,
                 starred_store: gio::ListStore::new::<gio::FileInfo>(),
@@ -169,6 +177,24 @@ mod imp {
                 }
             ));
             self.starred_handler.replace(Some(id));
+            crate::prefs::settings().connect_changed(
+                Some("use-tree-view"),
+                glib::clone!(
+                    #[weak]
+                    obj,
+                    move |s, key| {
+                        let imp = obj.imp();
+                        imp.tree.set(s.boolean(key));
+                        // The tree caches per-row answers, so start a fresh one.
+                        imp.selection.set_model(Some(&tree_model(
+                            &imp.sorted,
+                            &imp.every_filter,
+                            &imp.sorter,
+                            &imp.tree,
+                        )));
+                    }
+                ),
+            );
             self.dir_list.connect_error_notify(glib::clone!(
                 #[weak]
                 obj,
@@ -318,6 +344,40 @@ mod imp {
     }
 }
 
+/// Tree over `sorted` whose folders unfold into their own filtered, sorted listing while
+/// `tree` is on. Never passthrough, so every item the views see is a `TreeListRow`.
+fn tree_model(
+    sorted: &gtk::SortListModel,
+    filter: &gtk::EveryFilter,
+    sorter: &gtk::CustomSorter,
+    tree: &Rc<Cell<bool>>,
+) -> gtk::TreeListModel {
+    let (filter, sorter, tree) = (filter.clone(), sorter.clone(), tree.clone());
+    gtk::TreeListModel::new(sorted.clone(), false, false, move |obj| {
+        let info = obj.downcast_ref::<gio::FileInfo>()?;
+        if !tree.get() || !file_utils::is_dir(info) {
+            return None;
+        }
+        // GTK asks once to learn whether the row can expand and drops the answer, which
+        // cancels the listing; the second, kept model is the one that loads.
+        let dir = gtk::DirectoryList::new(
+            Some(file_utils::ATTRIBUTES),
+            Some(&file_utils::file_of(info)),
+        );
+        dir.set_monitored(true);
+        let filtered = gtk::FilterListModel::new(Some(dir), Some(filter.clone()));
+        Some(gtk::SortListModel::new(Some(filtered), Some(sorter.clone())).upcast())
+    })
+}
+
+/// The file info behind a view item, which is a `TreeListRow` around it.
+pub fn info_of(obj: &glib::Object) -> Option<gio::FileInfo> {
+    match obj.downcast_ref::<gtk::TreeListRow>() {
+        Some(row) => row.item().and_downcast(),
+        None => obj.downcast_ref::<gio::FileInfo>().cloned(),
+    }
+}
+
 glib::wrapper! {
     pub struct FolderModel(ObjectSubclass<imp::FolderModel>);
 }
@@ -337,13 +397,9 @@ impl FolderModel {
 
     /// Files currently selected, in view order.
     pub fn selected_files(&self) -> Vec<gio::File> {
-        let sel = self.selection();
-        let set = sel.selection();
-        let n = set.size();
-        (0..n)
-            .filter_map(|i| sel.item(set.nth(i as u32)))
-            .filter_map(|o| o.downcast::<gio::FileInfo>().ok())
-            .map(|info| file_utils::file_of(&info))
+        self.selected_infos()
+            .iter()
+            .map(file_utils::file_of)
             .collect()
     }
 
@@ -351,9 +407,26 @@ impl FolderModel {
         let sel = self.selection();
         let set = sel.selection();
         (0..set.size())
-            .filter_map(|i| sel.item(set.nth(i as u32)))
-            .filter_map(|o| o.downcast::<gio::FileInfo>().ok())
+            .filter_map(|i| self.info_at(set.nth(i as u32)))
             .collect()
+    }
+
+    /// The file info shown at view position `pos`.
+    pub fn info_at(&self, pos: u32) -> Option<gio::FileInfo> {
+        self.selection().item(pos).and_then(|o| info_of(&o))
+    }
+
+    pub fn row_at(&self, pos: u32) -> Option<gtk::TreeListRow> {
+        self.selection().item(pos).and_downcast()
+    }
+
+    /// Fold every unfolded folder, for views that cannot show children.
+    pub fn collapse_all(&self) {
+        let mut i = 0;
+        while let Some(row) = self.row_at(i) {
+            row.set_expanded(false);
+            i += 1;
+        }
     }
 
     pub fn n_items(&self) -> u32 {
@@ -362,10 +435,8 @@ impl FolderModel {
 
     /// Position of `file` in the current view order, if visible.
     pub fn position_of(&self, file: &gio::File) -> Option<u32> {
-        let sel = self.selection();
-        (0..sel.n_items()).find(|&i| {
-            sel.item(i)
-                .and_downcast::<gio::FileInfo>()
+        (0..self.n_items()).find(|&i| {
+            self.info_at(i)
                 .is_some_and(|info| file_utils::file_of(&info).equal(file))
         })
     }
