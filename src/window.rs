@@ -239,6 +239,11 @@ mod imp {
             klass.add_binding_action(Key::minus, M::CONTROL_MASK, "win.zoom-out");
             klass.add_binding_action(Key::_1, M::CONTROL_MASK, "win.toggle-view-mode");
             klass.add_binding_action(Key::_2, M::CONTROL_MASK, "win.toggle-view-mode");
+            // Also at window level so the clipboard keys work with the focus anywhere
+            // outside a text entry: the sidebar, the path bar, the tab bar.
+            klass.add_binding_action(Key::c, M::CONTROL_MASK, "view.copy");
+            klass.add_binding_action(Key::x, M::CONTROL_MASK, "view.cut");
+            klass.add_binding_action(Key::v, M::CONTROL_MASK, "view.paste");
         }
 
         fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
