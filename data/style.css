@@ -187,3 +187,8 @@ rubberband {
 .view .spiral-cut {
   opacity: 0.35;
 }
+
+/* Split view: the pane the header and the shortcuts act on */
+.spiral-pane-active {
+  box-shadow: inset 0 0 0 1px alpha(@accent_bg_color, 0.5);
+}

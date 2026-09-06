@@ -59,6 +59,10 @@ mod imp {
         pub view_split_button_bottom: TemplateChild<adw::SplitButton>,
         pub settings: gio::Settings,
         pub sort_action: gio::SimpleAction,
+        /// The pane the header and the shortcuts act on, when a tab has two.
+        pub active_view: RefCell<Option<glib::WeakRef<BrowserView>>>,
+        /// Set while the window is too narrow for a second pane.
+        pub narrow: std::cell::Cell<bool>,
         /// Locations of tabs closed in this window, most recent last.
         pub closed_tabs: RefCell<Vec<gio::File>>,
         /// The tab whose context menu is open, if any.
@@ -92,6 +96,8 @@ mod imp {
                     Some(glib::VariantTy::STRING),
                     &"name-asc".to_variant(),
                 ),
+                active_view: Default::default(),
+                narrow: Default::default(),
                 closed_tabs: Default::default(),
                 menu_page: Default::default(),
                 syncing_search: Default::default(),
@@ -214,6 +220,7 @@ mod imp {
             klass.install_action("win.captions", None, |win, _, _| {
                 crate::dialogs::captions_dialog().present(Some(win));
             });
+            klass.install_action("win.switch-pane", None, |win, _, _| win.switch_pane());
             klass.install_action("win.zoom-in", None, |win, _, _| win.zoom(1));
             klass.install_action("win.zoom-out", None, |win, _, _| win.zoom(-1));
 
@@ -233,6 +240,8 @@ mod imp {
             klass.add_binding_action(Key::o, M::CONTROL_MASK | M::SHIFT_MASK, "win.tab-overview");
             klass.add_binding_action(Key::h, M::CONTROL_MASK, "win.show-hidden");
             klass.add_binding_action(Key::F9, M::empty(), "win.sidebar-visible");
+            klass.add_binding_action(Key::F3, M::empty(), "win.split-view");
+            klass.add_binding_action(Key::F6, M::empty(), "win.switch-pane");
             klass.add_binding_action(Key::d, M::CONTROL_MASK, "win.bookmark");
             klass.add_binding_action(Key::plus, M::CONTROL_MASK, "win.zoom-in");
             klass.add_binding_action(Key::equal, M::CONTROL_MASK, "win.zoom-in");
@@ -256,9 +265,31 @@ mod imp {
             self.parent_constructed();
             let obj = self.obj();
 
-            for key in ["show-hidden", "sidebar-visible"] {
+            for key in ["show-hidden", "sidebar-visible", "split-view"] {
                 obj.add_action(&self.settings.create_action(key));
             }
+            self.settings.connect_changed(
+                Some("split-view"),
+                glib::clone!(
+                    #[weak(rename_to = win)]
+                    obj,
+                    move |_, _| win.apply_split()
+                ),
+            );
+            // Which pane is in charge follows the focus, and stays put while the focus is
+            // off in the sidebar or the path bar.
+            obj.connect_focus_widget_notify(|win| {
+                let Some(focus) = gtk::prelude::GtkWindowExt::focus(win) else {
+                    return;
+                };
+                let view = focus
+                    .downcast_ref::<BrowserView>()
+                    .cloned()
+                    .or_else(|| focus.ancestor(BrowserView::static_type()).and_downcast());
+                if let Some(view) = view {
+                    win.set_active_view(&view);
+                }
+            });
             self.settings
                 .bind("sidebar-visible", &*self.split_view, "show-sidebar")
                 .build();
@@ -432,14 +463,20 @@ mod imp {
 
         #[template_callback]
         fn on_selected_page_changed(&self, _pspec: glib::ParamSpec, _tv: &adw::TabView) {
-            let obj = self.obj();
-            if let Some(v) = obj.current_view() {
-                obj.insert_action_group("view", Some(&v.imp().actions));
-            }
-            obj.sync_header();
-            obj.sync_sort_state();
-            obj.sync_view_button();
-            obj.zoom(0);
+            self.obj().refresh_active();
+        }
+
+        /// Too narrow for two panes: fold the second one away, keeping the setting.
+        #[template_callback]
+        fn on_narrow(&self, _breakpoint: &adw::Breakpoint) {
+            self.narrow.set(true);
+            self.obj().apply_split();
+        }
+
+        #[template_callback]
+        fn on_wide(&self, _breakpoint: &adw::Breakpoint) {
+            self.narrow.set(false);
+            self.obj().apply_split();
         }
 
         /// The tab menu is opening for `page`, or closing when it is `None`.
@@ -472,9 +509,8 @@ mod imp {
 
         #[template_callback]
         fn on_close_page(&self, page: &adw::TabPage, tab_view: &adw::TabView) -> bool {
-            if let Some(loc) = page
-                .child()
-                .downcast_ref::<BrowserView>()
+            if let Some(loc) = super::SpiralWindow::views_of(page)
+                .first()
                 .and_then(|v| v.location())
             {
                 let mut closed = self.closed_tabs.borrow_mut();
@@ -580,11 +616,142 @@ impl SpiralWindow {
             .or_else(|| imp.tab_view.selected_page())
     }
 
+    /// The panes of a tab, left to right.
+    fn views_of(page: &adw::TabPage) -> Vec<BrowserView> {
+        let Ok(paned) = page.child().downcast::<gtk::Paned>() else {
+            return Vec::new();
+        };
+        [paned.start_child(), paned.end_child()]
+            .into_iter()
+            .flatten()
+            .filter_map(|c| c.downcast().ok())
+            .collect()
+    }
+
+    /// The pane everything outside the view acts on: the active one when it belongs to the
+    /// tab on screen, else that tab's left pane.
     pub fn current_view(&self) -> Option<BrowserView> {
-        self.imp()
-            .tab_view
-            .selected_page()
-            .and_then(|p| p.child().downcast().ok())
+        let page = self.imp().tab_view.selected_page()?;
+        let paned = page.child().downcast::<gtk::Paned>().ok()?;
+        let active = self
+            .imp()
+            .active_view
+            .borrow()
+            .as_ref()
+            .and_then(|w| w.upgrade());
+        match active {
+            Some(v) if v.is_ancestor(&paned) => Some(v),
+            _ => paned.start_child().and_downcast(),
+        }
+    }
+
+    fn set_active_view(&self, view: &BrowserView) {
+        let same = self
+            .imp()
+            .active_view
+            .borrow()
+            .as_ref()
+            .and_then(|w| w.upgrade())
+            .is_some_and(|v| &v == view);
+        if same {
+            return;
+        }
+        self.imp().active_view.replace(Some(view.downgrade()));
+        self.refresh_active();
+        // The focus has to follow, not just the outline: `view.copy` and friends resolve
+        // from the focused widget, and a focused pane's own actions shadow the window's.
+        view.grab_view_focus();
+    }
+
+    /// Point the header, the sort state and the `view` actions at the pane in charge.
+    fn refresh_active(&self) {
+        let imp = self.imp();
+        let stale = imp
+            .active_view
+            .borrow()
+            .as_ref()
+            .and_then(|w| w.upgrade())
+            .is_none_or(|v| v.root().is_none());
+        if stale {
+            imp.active_view.replace(None);
+        }
+        let Some(view) = self.current_view() else {
+            return;
+        };
+        imp.active_view.replace(Some(view.downgrade()));
+        self.insert_action_group("view", Some(&view.imp().actions));
+        if let Some(page) = imp.tab_view.selected_page()
+            && let Some(loc) = view.location()
+        {
+            page.set_title(&file_utils::location_name(&loc));
+        }
+        self.mark_panes();
+        self.sync_header();
+        self.sync_sort_state();
+        self.sync_view_button();
+        self.zoom(0);
+    }
+
+    /// Outline the pane in charge, so it is clear what the header acts on.
+    fn mark_panes(&self) {
+        let Some(page) = self.imp().tab_view.selected_page() else {
+            return;
+        };
+        let views = Self::views_of(&page);
+        let split = views.len() > 1;
+        let current = self.current_view();
+        for view in &views {
+            if split && current.as_ref() == Some(view) {
+                view.add_css_class("spiral-pane-active");
+            } else {
+                view.remove_css_class("spiral-pane-active");
+            }
+        }
+    }
+
+    /// Give every tab a second pane, or take it away, following the setting.
+    fn apply_split(&self) {
+        let imp = self.imp();
+        let want = imp.settings.boolean("split-view") && !imp.narrow.get();
+        for i in 0..imp.tab_view.n_pages() {
+            let page = imp.tab_view.nth_page(i);
+            let Ok(paned) = page.child().downcast::<gtk::Paned>() else {
+                continue;
+            };
+            match (want, paned.end_child()) {
+                (true, None) => {
+                    let loc = paned
+                        .start_child()
+                        .and_downcast::<BrowserView>()
+                        .and_then(|v| v.location())
+                        .unwrap_or_else(|| gio::File::for_path(glib::home_dir()));
+                    let view = BrowserView::new(&loc);
+                    self.attach_view(&page, &view);
+                    paned.set_end_child(Some(&view));
+                }
+                (false, Some(_)) => paned.set_end_child(gtk::Widget::NONE),
+                _ => {}
+            }
+        }
+        self.refresh_active();
+    }
+
+    /// F6: hand the focus to the other pane.
+    fn switch_pane(&self) {
+        let Some(page) = self.imp().tab_view.selected_page() else {
+            return;
+        };
+        let views = Self::views_of(&page);
+        if views.len() < 2 {
+            return;
+        }
+        let current = self.current_view();
+        let next = if current.as_ref() == Some(&views[0]) {
+            &views[1]
+        } else {
+            &views[0]
+        };
+        next.grab_view_focus();
     }
 
     /// Open `file` in the current tab, or a new tab if there is none.
@@ -601,23 +768,68 @@ impl SpiralWindow {
 
     pub fn add_tab(&self, file: &gio::File, select: bool) -> adw::TabPage {
         let imp = self.imp();
+        let paned = gtk::Paned::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .resize_start_child(true)
+            .resize_end_child(true)
+            .shrink_start_child(false)
+            .shrink_end_child(false)
+            .build();
+        // Half and half once the tab has a width of its own; dragging the handle sticks.
+        paned.add_tick_callback(|p, _| {
+            if p.width() == 0 {
+                return glib::ControlFlow::Continue;
+            }
+            if !p.is_position_set() {
+                p.set_position(p.width() / 2);
+            }
+            glib::ControlFlow::Break
+        });
         let view = BrowserView::new(file);
-        let page = imp.tab_view.append(&view);
+        let page = imp.tab_view.append(&paned);
         page.set_title(&file_utils::location_name(file));
+        self.attach_view(&page, &view);
+        paned.set_start_child(Some(&view));
+        if select {
+            imp.tab_view.set_selected_page(&page);
+            view.grab_view_focus();
+        }
+        self.apply_split();
+        page
+    }
+
+    /// Keep the header in step with one pane. Every handler asks whether the pane is the
+    /// one in charge, since a tab can hold two.
+    fn attach_view(&self, page: &adw::TabPage, view: &BrowserView) {
+        // Clicking a pane puts it in charge even where there is nothing to focus: the empty
+        // space below the files. Capture so the view's own gestures still see the press.
+        let click = gtk::GestureClick::new();
+        click.set_propagation_phase(gtk::PropagationPhase::Capture);
+        click.set_button(0);
+        click.connect_pressed(glib::clone!(
+            #[weak]
+            view,
+            move |_, _, _, _| {
+                if let Some(win) = Self::of(&view) {
+                    win.set_active_view(&view);
+                }
+            }
+        ));
+        view.add_controller(click);
         view.connect_notify_local(
             Some("location"),
             glib::clone!(
                 #[weak]
                 page,
                 move |v, _| {
+                    let Some(win) = Self::of(v) else { return };
+                    if win.current_view().as_ref() != Some(v) {
+                        return;
+                    }
                     if let Some(loc) = v.location() {
                         page.set_title(&file_utils::location_name(&loc));
                     }
-                    if let Some(win) = Self::of(v)
-                        && win.imp().tab_view.selected_page().as_ref() == Some(&page)
-                    {
-                        win.sync_header();
-                    }
+                    win.sync_header();
                 }
             ),
         );
@@ -626,10 +838,10 @@ impl SpiralWindow {
                 Some(prop),
                 glib::clone!(
                     #[weak]
-                    page,
+                    view,
                     move |_, _| {
-                        if let Some(win) = Self::of(&page.child())
-                            && win.imp().tab_view.selected_page().as_ref() == Some(&page)
+                        if let Some(win) = Self::of(&view)
+                            && win.current_view().as_ref() == Some(&view)
                         {
                             win.sync_sort_state();
                         }
@@ -643,29 +855,22 @@ impl SpiralWindow {
             }
         });
         let sync = |v: &BrowserView| {
-            if let Some(win) = Self::of(v) {
+            if let Some(win) = Self::of(v)
+                && win.current_view().as_ref() == Some(v)
+            {
                 win.sync_header();
             }
         };
         view.connect_can_go_back_notify(sync);
         view.connect_can_go_forward_notify(sync);
-        view.connect_view_mode_notify(glib::clone!(
-            #[weak]
-            page,
-            move |v| {
-                if let Some(win) = Self::of(v)
-                    && win.imp().tab_view.selected_page().as_ref() == Some(&page)
-                {
-                    win.sync_view_button();
-                    win.zoom(0);
-                }
+        view.connect_view_mode_notify(|v| {
+            if let Some(win) = Self::of(v)
+                && win.current_view().as_ref() == Some(v)
+            {
+                win.sync_view_button();
+                win.zoom(0);
             }
-        ));
-        if select {
-            imp.tab_view.set_selected_page(&page);
-            view.grab_view_focus();
-        }
-        page
+        });
     }
 
     fn show_location_entry(&self) {

@@ -138,5 +138,9 @@
       <default>true</default>
       <summary>Show places sidebar</summary>
     </key>
+    <key name="split-view" type="b">
+      <default>true</default>
+      <summary>Show two folder panes side by side</summary>
+    </key>
   </schema>
 </schemalist>
