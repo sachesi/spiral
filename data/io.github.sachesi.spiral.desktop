@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Spiral
+GenericName=File Manager
+Comment=Browse and manage your files
+Exec=spiral %U
+Icon=io.github.sachesi.spiral
+Terminal=false
+Type=Application
+Categories=GTK;System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupNotify=true
+Keywords=folder;manager;explore;disk;filesystem;

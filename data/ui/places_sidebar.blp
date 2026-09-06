@@ -1,0 +1,48 @@
+using Gtk 4.0;
+
+menu row_menu {
+  section {
+    item {
+      label: _("_Open");
+      action: "sidebar.open";
+    }
+    item {
+      label: _("Open in New _Tab");
+      action: "sidebar.open-new-tab";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
+      label: _("Rena_me…");
+      action: "sidebar.rename";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("_Remove");
+      action: "sidebar.remove";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
+      label: _("_Eject");
+      action: "sidebar.eject";
+      hidden-when: "action-disabled";
+    }
+  }
+}
+
+template $SpiralPlacesSidebar : Box {
+  orientation: vertical;
+
+  ScrolledWindow {
+    hscrollbar-policy: never;
+    vexpand: true;
+    child: ListBox list {
+      selection-mode: single;
+      row-activated => $on_row_activated() swapped;
+      styles ["navigation-sidebar"]
+    };
+  }
+}

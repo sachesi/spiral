@@ -1,0 +1,47 @@
+# Settings
+
+Everything is in the GSettings schema `io.github.sachesi.spiral`. Preferences (Ctrl+,)
+exposes the ones you are likely to change; the rest are written by the interface and can
+be poked with `gsettings`:
+
+    gsettings set io.github.sachesi.spiral captions "['size', 'date_modified', 'none']"
+
+Changes apply immediately to open windows.
+
+| Key | Values | Default | In Preferences as |
+|---|---|---|---|
+| `size-units` | `decimal`, `binary` | `decimal` | Size Units |
+| `click-policy` | `double`, `single` | `double` | Open Items With |
+| `folders-first` | bool | true | Sort Folders Before Files |
+| `date-format` | `relative`, `full` | `relative` | Date Format |
+| `terminal` | executable name or empty | empty | Terminal (see [terminal.md](terminal.md)) |
+| `remember-view` | bool | true | Remember View per Folder |
+| `guess-view` | bool | true | Grid View for Media Folders |
+| `thumbnails` | `local`, `always`, `never` | `local` | Show Thumbnails |
+| `item-counts` | `local`, `always`, `never` | `local` | Count Items in Folders |
+| `view-mode` | `grid`, `list` | `grid` | |
+| `chooser-view-mode` | `grid`, `list` | `list` | |
+| `sort-key` | `name`, `size`, `type`, `modified` | `name` | |
+| `sort-reversed` | bool | false | |
+| `show-hidden` | bool | false | |
+| `captions` | three of `size`, `date_modified`, `permissions`, `type`, `mime_type`, `owner`, `group`, `none` | all `none` | |
+| `grid-zoom` | 48 to 256 | 96 | |
+| `list-zoom` | 16 to 64 | 32 | |
+| `window-size`, `window-maximized` | | 1000x680, false | |
+| `sidebar-visible` | bool | true | |
+
+Notes on a few of them:
+
+`remember-view` on means the grid/list switch only affects the folder you are in; the
+choice is kept in the folder's `metadata::spiral-view` attribute. Off, the switch changes
+`view-mode` for everything. `chooser-view-mode` is the same thing for portal file dialogs,
+which never remember per folder.
+
+`local` for thumbnails and item counts means files on the local disk only; network
+mounts are skipped because reading every file on a share can take a while.
+
+`captions` are the lines under grid icons, top to bottom. `size` becomes an item count on
+folders when `item-counts` allows it.
+
+Outside GSettings, Spiral keeps bookmarks in `~/.config/gtk-3.0/bookmarks`, favorites in
+`~/.local/share/spiral/starred`, and per-folder view and custom icon in GIO file metadata.

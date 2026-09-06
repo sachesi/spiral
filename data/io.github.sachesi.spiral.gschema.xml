@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="spiral">
+  <enum id="io.github.sachesi.spiral.ViewMode">
+    <value nick="grid" value="0"/>
+    <value nick="list" value="1"/>
+  </enum>
+  <enum id="io.github.sachesi.spiral.SortKey">
+    <value nick="name" value="0"/>
+    <value nick="size" value="1"/>
+    <value nick="type" value="2"/>
+    <value nick="modified" value="3"/>
+  </enum>
+  <enum id="io.github.sachesi.spiral.SizeUnits">
+    <value nick="decimal" value="0"/>
+    <value nick="binary" value="1"/>
+  </enum>
+  <enum id="io.github.sachesi.spiral.ClickPolicy">
+    <value nick="double" value="0"/>
+    <value nick="single" value="1"/>
+  </enum>
+  <enum id="io.github.sachesi.spiral.DateFormat">
+    <value nick="relative" value="0"/>
+    <value nick="full" value="1"/>
+  </enum>
+  <enum id="io.github.sachesi.spiral.Scope">
+    <value nick="local" value="0"/>
+    <value nick="always" value="1"/>
+    <value nick="never" value="2"/>
+  </enum>
+  <schema id="io.github.sachesi.spiral" path="/io/github/sachesi/spiral/">
+    <key name="size-units" enum="io.github.sachesi.spiral.SizeUnits">
+      <default>'decimal'</default>
+      <summary>Unit system for file sizes</summary>
+    </key>
+    <key name="click-policy" enum="io.github.sachesi.spiral.ClickPolicy">
+      <default>'double'</default>
+      <summary>Clicks needed to open an item</summary>
+    </key>
+    <key name="folders-first" type="b">
+      <default>true</default>
+      <summary>Sort folders before files</summary>
+    </key>
+    <key name="date-format" enum="io.github.sachesi.spiral.DateFormat">
+      <default>'relative'</default>
+      <summary>How dates are shown</summary>
+    </key>
+    <key name="remember-view" type="b">
+      <default>true</default>
+      <summary>Remember the view mode of each folder</summary>
+    </key>
+    <key name="guess-view" type="b">
+      <default>true</default>
+      <summary>Open folders that are mostly images and videos in grid view</summary>
+    </key>
+    <key name="terminal" type="s">
+      <default>''</default>
+      <summary>Terminal emulator for “Open in Terminal”</summary>
+      <description>Executable name; empty picks the first installed one.</description>
+    </key>
+    <key name="thumbnails" enum="io.github.sachesi.spiral.Scope">
+      <default>'local'</default>
+      <summary>Which files get thumbnails</summary>
+    </key>
+    <key name="item-counts" enum="io.github.sachesi.spiral.Scope">
+      <default>'local'</default>
+      <summary>Which folders get their items counted</summary>
+    </key>
+    <key name="view-mode" enum="io.github.sachesi.spiral.ViewMode">
+      <default>'grid'</default>
+      <summary>Default view mode</summary>
+    </key>
+    <key name="chooser-view-mode" enum="io.github.sachesi.spiral.ViewMode">
+      <default>'list'</default>
+      <summary>View mode of file chooser dialogs</summary>
+    </key>
+    <key name="sort-key" enum="io.github.sachesi.spiral.SortKey">
+      <default>'name'</default>
+      <summary>Sort key</summary>
+    </key>
+    <key name="sort-reversed" type="b">
+      <default>false</default>
+      <summary>Reverse sort order</summary>
+    </key>
+    <key name="show-hidden" type="b">
+      <default>false</default>
+      <summary>Show hidden files</summary>
+    </key>
+    <key name="captions" type="as">
+      <default>['none', 'none', 'none']</default>
+      <summary>Captions under icons in grid view</summary>
+      <description>Up to three of: size, date_modified, permissions, type, mime_type, owner, group, none.</description>
+    </key>
+    <key name="grid-zoom" type="i">
+      <range min="48" max="256"/>
+      <default>96</default>
+      <summary>Icon size in grid view</summary>
+    </key>
+    <key name="list-zoom" type="i">
+      <range min="16" max="64"/>
+      <default>32</default>
+      <summary>Icon size in list view</summary>
+    </key>
+    <key name="window-size" type="(ii)">
+      <default>(1000, 680)</default>
+      <summary>Window size</summary>
+    </key>
+    <key name="window-maximized" type="b">
+      <default>false</default>
+      <summary>Window maximized</summary>
+    </key>
+    <key name="sidebar-visible" type="b">
+      <default>true</default>
+      <summary>Show places sidebar</summary>
+    </key>
+  </schema>
+</schemalist>

@@ -1,0 +1,233 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $SpiralBrowserView : Box {
+  orientation: vertical;
+  hexpand: true;
+  vexpand: true;
+
+  Overlay {
+    hexpand: true;
+    vexpand: true;
+
+    child: Stack stack {
+      hexpand: true;
+      vexpand: true;
+      transition-type: none;
+
+      StackPage {
+        name: "grid";
+        child: ScrolledWindow {
+          hscrollbar-policy: never;
+          styles ["spiral-grid-view"]
+          child: GridView grid_view {
+            enable-rubberband: true;
+            max-columns: 20;
+            min-columns: 1;
+          };
+        };
+      }
+
+      StackPage {
+        name: "list";
+        child: ScrolledWindow {
+          styles ["spiral-list-view"]
+          child: ColumnView column_view {
+            enable-rubberband: true;
+            reorderable: false;
+          };
+        };
+      }
+
+      StackPage {
+        name: "empty";
+        child: Adw.StatusPage {
+          icon-name: "folder-symbolic";
+          title: _("Folder is Empty");
+        };
+      }
+
+      StackPage {
+        name: "error";
+        child: Adw.StatusPage error_page {
+          icon-name: "dialog-error-symbolic";
+          title: _("Could Not Open Folder");
+        };
+      }
+    };
+
+    [overlay]
+    Box floating_bar {
+      halign: end;
+      valign: end;
+      margin-top: 4;
+      margin-bottom: 4;
+      margin-start: 4;
+      margin-end: 4;
+      visible: false;
+      styles ["floating-bar"]
+
+      Adw.Spinner floating_spinner {
+        visible: false;
+        margin-start: 8;
+        width-request: 16;
+        height-request: 16;
+      }
+
+      Box {
+        spacing: 6;
+        hexpand: true;
+        margin-top: 2;
+        margin-bottom: 2;
+        margin-start: 8;
+        margin-end: 8;
+
+        Label floating_primary {
+          ellipsize: middle;
+          single-line-mode: true;
+        }
+
+        Label floating_details {
+          single-line-mode: true;
+          styles ["dim-label"]
+        }
+      }
+    }
+  }
+}
+
+menu item_menu {
+  section {
+    item {
+      label: _("_Open");
+      action: "view.open";
+    }
+    item {
+      label: _("Open in New _Tab");
+      action: "view.open-new-tab";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("Open _With…");
+      action: "view.open-with";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("Open in _Terminal");
+      action: "view.open-terminal";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
+      label: _("Cu_t");
+      action: "view.cut";
+    }
+    item {
+      label: _("_Copy");
+      action: "view.copy";
+    }
+    item {
+      label: _("_Paste Into Folder");
+      action: "view.paste-into";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
+      label: _("_Extract Here");
+      action: "view.extract";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("E_xtract To…");
+      action: "view.extract-to";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("C_ompress…");
+      action: "view.compress";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
+      label: _("Add to _Favorites");
+      action: "view.star";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("Remove from _Favorites");
+      action: "view.unstar";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
+      label: _("Rena_me…");
+      action: "view.rename";
+    }
+    item {
+      label: _("Move to _Trash");
+      action: "view.trash";
+    }
+    item {
+      label: _("_Delete Permanently");
+      action: "view.delete";
+    }
+  }
+  section {
+    item {
+      label: _("P_roperties");
+      action: "view.properties";
+    }
+  }
+}
+
+menu background_menu {
+  section {
+    item {
+      label: _("New _Folder…");
+      action: "view.new-folder";
+    }
+    item {
+      label: _("New _Document");
+      action: "view.new-file";
+    }
+  }
+  section {
+    item {
+      label: _("_Paste");
+      action: "view.paste";
+    }
+    item {
+      label: _("Select _All");
+      action: "view.select-all";
+    }
+  }
+  section {
+    item {
+      label: _("Open in _Terminal");
+      action: "view.open-terminal";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
+      label: _("Add to _Bookmarks");
+      action: "view.bookmark";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
+      label: _("_Empty Trash");
+      action: "view.empty-trash";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("P_roperties");
+      action: "view.properties";
+    }
+  }
+}

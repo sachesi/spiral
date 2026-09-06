@@ -1,0 +1,352 @@
+using Gtk 4.0;
+using Adw 1;
+
+menu primary_menu {
+  section {
+    item {
+      label: _("New _Window");
+      action: "app.new-window";
+    }
+    item {
+      label: _("New _Tab");
+      action: "win.new-tab";
+    }
+    item {
+      label: _("Show All Ta_bs");
+      action: "win.tab-overview";
+    }
+  }
+  section {
+    item {
+      label: _("_Undo");
+      action: "app.undo";
+    }
+    item {
+      label: _("_Redo");
+      action: "app.redo";
+    }
+  }
+  section {
+    item {
+      label: _("_Preferences");
+      action: "app.preferences";
+    }
+    item {
+      label: _("_Keyboard Shortcuts");
+      action: "app.shortcuts";
+    }
+    item {
+      label: _("_About Spiral");
+      action: "app.about";
+    }
+  }
+}
+
+menu view_menu {
+  section {
+    label: _("Icon Size");
+    display-hint: "inline-buttons";
+    item {
+      custom: "zoom-out";
+    }
+    item {
+      custom: "zoom-in";
+    }
+  }
+  section {
+    label: _("Sort");
+    item {
+      label: _("_A-Z");
+      action: "win.sort";
+      target: "name-asc";
+    }
+    item {
+      label: _("_Z-A");
+      action: "win.sort";
+      target: "name-desc";
+    }
+    item {
+      label: _("Last _Modified");
+      action: "win.sort";
+      target: "modified-desc";
+    }
+    item {
+      label: _("_First Modified");
+      action: "win.sort";
+      target: "modified-asc";
+    }
+    item {
+      label: _("_Size");
+      action: "win.sort";
+      target: "size-desc";
+    }
+    item {
+      label: _("_Type");
+      action: "win.sort";
+      target: "type-asc";
+    }
+  }
+  section {
+    item {
+      label: _("Show _Hidden Files");
+      action: "win.show-hidden";
+    }
+    item {
+      label: _("Show _Sidebar");
+      action: "win.sidebar-visible";
+    }
+  }
+}
+
+template $SpiralWindow : Adw.ApplicationWindow {
+  title: _("Spiral");
+  width-request: 360;
+  height-request: 294;
+
+  styles ["view"]
+
+  Adw.Breakpoint {
+    condition ("max-width: 682sp")
+    setters {
+      split_view.collapsed: true;
+      split_view.sidebar-width-unit: px;
+      show_sidebar_button.visible: true;
+      history_box.visible: false;
+      view_split_button.visible: false;
+      action_bar.revealed: true;
+    }
+  }
+
+  content: Adw.TabOverview tab_overview {
+    view: tab_view;
+    enable-new-tab: true;
+    create-tab => $on_create_tab() swapped;
+
+    child: Adw.OverlaySplitView split_view {
+        sidebar-width-fraction: 0.2;
+        enable-show-gesture: false;
+        enable-hide-gesture: false;
+
+        sidebar: Adw.ToolbarView {
+          reveal-bottom-bars: bind progress_indicator.has-jobs;
+
+          [top]
+          Adw.HeaderBar {
+            title-widget: Adw.WindowTitle {
+              title: _("Spiral");
+            };
+
+            [end]
+            MenuButton {
+              icon-name: "open-menu-symbolic";
+              menu-model: primary_menu;
+              primary: true;
+              tooltip-text: _("Main Menu");
+            }
+          }
+
+          [bottom]
+          Box {
+            styles ["toolbar"]
+            $SpiralProgressIndicator progress_indicator {}
+          }
+
+          content: $SpiralPlacesSidebar sidebar {
+            vexpand: true;
+            open-location => $on_sidebar_open_location() swapped;
+          };
+        };
+
+        content: Adw.ToastOverlay toast_overlay {
+          child: Adw.ToolbarView {
+          [top]
+          Adw.HeaderBar {
+            [start]
+            ToggleButton show_sidebar_button {
+              visible: false;
+              active: bind split_view.show-sidebar bidirectional;
+              icon-name: "sidebar-show-symbolic";
+              tooltip-text: _("Show Sidebar");
+            }
+
+            [start]
+            Box history_box {
+              spacing: 6;
+
+              Button back_button {
+                icon-name: "go-previous-symbolic";
+                action-name: "win.back";
+                tooltip-text: _("Back");
+                valign: center;
+              }
+
+              Button forward_button {
+                icon-name: "go-next-symbolic";
+                action-name: "win.forward";
+                tooltip-text: _("Forward");
+                valign: center;
+              }
+            }
+
+            title-widget: Box {
+              spacing: 6;
+              hexpand: true;
+
+              Stack toolbar_switcher {
+                valign: center;
+                hexpand: true;
+                hhomogeneous: false;
+                transition-type: crossfade;
+
+                StackPage {
+                  name: "pathbar";
+                  child: $SpiralPathBar path_bar {
+                    valign: center;
+                    navigate => $on_path_bar_navigate() swapped;
+                    edit-location => $on_edit_location() swapped;
+                  };
+                }
+
+                StackPage {
+                  name: "location";
+                  child: Box {
+                    styles ["linked"]
+
+                    Entry location_entry {
+                      hexpand: true;
+                      primary-icon-name: "folder-symbolic";
+                      activate => $on_location_entry_activate() swapped;
+                    }
+
+                    Button {
+                      icon-name: "window-close-symbolic";
+                      tooltip-text: _("Cancel");
+                      clicked => $on_location_entry_cancel() swapped;
+                    }
+                  };
+                }
+
+                StackPage {
+                  name: "search";
+                  child: SearchEntry search_entry {
+                    hexpand: true;
+                    placeholder-text: _("Search current folder");
+                    search-changed => $on_search_changed() swapped;
+                    stop-search => $on_stop_search() swapped;
+                  };
+                }
+              }
+
+              ToggleButton search_button {
+                icon-name: "system-search-symbolic";
+                tooltip-text: _("Search Current Folder");
+                valign: center;
+                toggled => $on_search_toggled() swapped;
+              }
+            };
+
+            [end]
+            Adw.SplitButton view_split_button {
+              icon-name: "view-list-symbolic";
+              tooltip-text: _("List View");
+              dropdown-tooltip: _("View Options");
+              action-name: "win.toggle-view-mode";
+              valign: center;
+
+              popover: PopoverMenu {
+                menu-model: view_menu;
+
+                [zoom-out]
+                Button {
+                  icon-name: "zoom-out-symbolic";
+                  action-name: "win.zoom-out";
+                  tooltip-text: _("Zoom Out");
+                  styles ["flat"]
+                }
+
+                [zoom-in]
+                Button {
+                  icon-name: "zoom-in-symbolic";
+                  action-name: "win.zoom-in";
+                  tooltip-text: _("Zoom In");
+                  styles ["flat"]
+                }
+              };
+            }
+
+          }
+
+          [top]
+          Adw.TabBar {
+            view: tab_view;
+            autohide: true;
+          }
+
+          content: Adw.TabView tab_view {
+            notify::selected-page => $on_selected_page_changed() swapped;
+            close-page => $on_close_page() swapped;
+          };
+
+          [bottom]
+          ActionBar action_bar {
+            revealed: false;
+
+            [start]
+            Box {
+              spacing: 6;
+
+              Button {
+                icon-name: "go-previous-symbolic";
+                action-name: "win.back";
+                tooltip-text: _("Back");
+                valign: center;
+              }
+
+              Button {
+                icon-name: "go-next-symbolic";
+                action-name: "win.forward";
+                tooltip-text: _("Forward");
+                valign: center;
+              }
+            }
+
+            [end]
+            Adw.SplitButton view_split_button_bottom {
+              icon-name: "view-list-symbolic";
+              tooltip-text: _("List View");
+              dropdown-tooltip: _("View Options");
+              action-name: "win.toggle-view-mode";
+              valign: center;
+
+              popover: PopoverMenu {
+                menu-model: view_menu;
+
+                [zoom-out]
+                Button {
+                  icon-name: "zoom-out-symbolic";
+                  action-name: "win.zoom-out";
+                  tooltip-text: _("Zoom Out");
+                  styles ["flat"]
+                }
+
+                [zoom-in]
+                Button {
+                  icon-name: "zoom-in-symbolic";
+                  action-name: "win.zoom-in";
+                  tooltip-text: _("Zoom In");
+                  styles ["flat"]
+                }
+              };
+            }
+
+            [end]
+            Adw.TabButton {
+              view: tab_view;
+              action-name: "win.tab-overview";
+            }
+          }
+        };
+      };
+    };
+  };
+}
