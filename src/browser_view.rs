@@ -69,6 +69,8 @@ mod imp {
         pub popover: RefCell<Option<gtk::PopoverMenu>>,
         /// Set while the column header is being updated from the model, not the user.
         pub syncing_header: Cell<bool>,
+        /// Optional list columns by key, for the visibility setting.
+        pub columns: RefCell<Vec<(&'static str, gtk::ColumnViewColumn)>>,
 
         pub history: RefCell<Vec<gio::File>>,
         pub history_pos: Cell<usize>,
@@ -118,6 +120,7 @@ mod imp {
                 actions: gio::SimpleActionGroup::new(),
                 popover: Default::default(),
                 syncing_header: Default::default(),
+                columns: Default::default(),
                 model: FolderModel::default(),
                 view_mode: Default::default(),
                 can_go_back: Default::default(),
@@ -1280,12 +1283,42 @@ impl BrowserView {
             });
             gtk::ColumnViewColumn::new(Some(&title), Some(factory))
         };
-        let size_col = text_col(gettext("Size"), 1.0, file_utils::size_string);
-        let type_col = text_col(gettext("Type"), 0.0, file_utils::type_string);
-        let mod_col = text_col(gettext("Modified"), 0.0, file_utils::modified_string);
-        cv.append_column(&size_col);
-        cv.append_column(&type_col);
-        cv.append_column(&mod_col);
+        let text = |key: &str| -> fn(&gio::FileInfo) -> String {
+            match key {
+                "size" => file_utils::size_string,
+                "type" => file_utils::type_string,
+                "modified" => file_utils::modified_string,
+                "accessed" => file_utils::accessed_string,
+                "created" => file_utils::created_string,
+                "owner" => |i| file_utils::caption(i, "owner").unwrap_or_default(),
+                "group" => |i| file_utils::caption(i, "group").unwrap_or_default(),
+                _ => |i| file_utils::permissions_string(i).unwrap_or_default(),
+            }
+        };
+        let mut columns: Vec<(&'static str, gtk::ColumnViewColumn)> = Vec::new();
+        for (key, title) in file_utils::optional_columns() {
+            let col = text_col(title, if key == "size" { 1.0 } else { 0.0 }, text(key));
+            cv.append_column(&col);
+            columns.push((key, col));
+        }
+        let star_col = self.star_column();
+        cv.append_column(&star_col);
+        columns.push(("star", star_col));
+        let (size_col, type_col, mod_col) = (
+            columns[0].1.clone(),
+            columns[1].1.clone(),
+            columns[2].1.clone(),
+        );
+        self.imp().columns.replace(columns);
+        self.apply_visible_columns();
+        self.imp().settings.connect_changed(
+            Some("visible-columns"),
+            glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                move |_, _| view.apply_visible_columns()
+            ),
+        );
 
         // Header clicks drive FolderModel sort props instead of the column view's own sorter.
         for (col, key) in [
@@ -1326,6 +1359,59 @@ impl BrowserView {
             );
         }
         self.sync_sort_header();
+    }
+
+    /// Show the columns the `visible-columns` key names; the name column always stays.
+    fn apply_visible_columns(&self) {
+        let on = self.imp().settings.strv("visible-columns");
+        for (key, col) in self.imp().columns.borrow().iter() {
+            col.set_visible(on.iter().any(|k| k == key));
+        }
+    }
+
+    /// A star per row that toggles the favourite, like the Nautilus star column.
+    fn star_column(&self) -> gtk::ColumnViewColumn {
+        let factory = gtk::SignalListItemFactory::new();
+        factory.connect_setup(|_, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+            let button = gtk::Button::builder()
+                .icon_name("non-starred-symbolic")
+                .valign(gtk::Align::Center)
+                .css_classes(["flat", "circular", "spiral-star"])
+                .build();
+            button.connect_clicked(glib::clone!(
+                #[weak]
+                item,
+                move |button| {
+                    let Some(info) = item.item().and_downcast::<gio::FileInfo>() else {
+                        return;
+                    };
+                    let file = file_utils::file_of(&info);
+                    let starred = !crate::starred::is_starred(&file);
+                    crate::starred::set_starred(&file, starred);
+                    button.set_icon_name(if starred {
+                        "starred-symbolic"
+                    } else {
+                        "non-starred-symbolic"
+                    });
+                }
+            ));
+            item.set_child(Some(&button));
+        });
+        factory.connect_bind(|_, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+            let Some(info) = item.item().and_downcast::<gio::FileInfo>() else {
+                return;
+            };
+            let button = item.child().and_downcast::<gtk::Button>().unwrap();
+            let starred = crate::starred::is_starred(&file_utils::file_of(&info));
+            button.set_icon_name(if starred {
+                "starred-symbolic"
+            } else {
+                "non-starred-symbolic"
+            });
+        });
+        gtk::ColumnViewColumn::new(Some(&gettext("Star")), Some(factory))
     }
 
     fn sync_sort_header(&self) {

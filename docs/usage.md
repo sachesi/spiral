@@ -51,8 +51,10 @@ not allow (cut, rename, trash, delete) are greyed out. Folders you are looking a
 themselves when something else creates, deletes or rewrites a file in them.
 
 The grid can show up to three lines under each name: size or item count, date,
-permissions, type, MIME type, owner, group. There is no dialog for it yet; set the
-`captions` key, see [settings.md](settings.md).
+permissions, type, MIME type, owner, group; "Captions…" in the view menu picks them. In
+the list, "Visible Columns…" chooses among size, type, modified, accessed, created,
+owner, group, permissions and a star column that toggles favourites; the name column
+always stays, and only name, size, type and modified sort.
 
 ## Selecting, opening, moving things
 

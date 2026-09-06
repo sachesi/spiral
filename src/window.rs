@@ -152,6 +152,12 @@ mod imp {
                     v.action_group().activate_action("bookmark", None);
                 }
             });
+            klass.install_action("win.visible-columns", None, |win, _, _| {
+                crate::dialogs::columns_dialog().present(Some(win));
+            });
+            klass.install_action("win.captions", None, |win, _, _| {
+                crate::dialogs::captions_dialog().present(Some(win));
+            });
             klass.install_action("win.zoom-in", None, |win, _, _| win.zoom(1));
             klass.install_action("win.zoom-out", None, |win, _, _| win.zoom(-1));
 
@@ -596,6 +602,9 @@ impl SpiralWindow {
         } else {
             gettext("Grid View")
         }));
+        // Each view has its own dialog: captions under the grid icons, columns of the list.
+        self.action_set_enabled("win.captions", grid);
+        self.action_set_enabled("win.visible-columns", !grid);
     }
 
     /// Refresh header widgets from the selected tab.

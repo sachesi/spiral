@@ -9,7 +9,8 @@ use crate::gio::prelude::*;
 use crate::{gio, glib};
 
 /// Attributes requested from `gtk::DirectoryList` for every view.
-pub const ATTRIBUTES: &str = "standard::*,time::modified,thumbnail::path,thumbnail::is-valid,\
+pub const ATTRIBUTES: &str = "standard::*,time::modified,time::access,time::created,\
+thumbnail::path,thumbnail::is-valid,\
 thumbnail::failed,access::can-read,access::can-write,access::can-delete,access::can-trash,\
 access::can-rename,access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,\
 metadata::custom-icon,metadata::custom-icon-name";
@@ -95,6 +96,48 @@ pub fn modified_string(info: &gio::FileInfo) -> String {
         .and_then(|d| d.to_local().ok())
         .map(|d| crate::prefs::date(&d))
         .unwrap_or_default()
+}
+
+pub fn accessed_string(info: &gio::FileInfo) -> String {
+    info.access_date_time()
+        .and_then(|d| d.to_local().ok())
+        .map(|d| crate::prefs::date(&d))
+        .unwrap_or_default()
+}
+
+pub fn created_string(info: &gio::FileInfo) -> String {
+    info.creation_date_time()
+        .and_then(|d| d.to_local().ok())
+        .map(|d| crate::prefs::date(&d))
+        .unwrap_or_default()
+}
+
+/// Columns the list view can show besides the name, in display order: key and title.
+pub fn optional_columns() -> [(&'static str, String); 8] {
+    [
+        ("size", gettext("Size")),
+        ("type", gettext("Type")),
+        ("modified", gettext("Modified")),
+        ("accessed", gettext("Accessed")),
+        ("created", gettext("Created")),
+        ("owner", gettext("Owner")),
+        ("group", gettext("Group")),
+        ("permissions", gettext("Permissions")),
+    ]
+}
+
+/// Caption kinds for the grid view: key and title.
+pub fn caption_kinds() -> [(&'static str, String); 8] {
+    [
+        ("none", gettext("None")),
+        ("size", gettext("Size")),
+        ("date_modified", gettext("Date Modified")),
+        ("type", gettext("Type")),
+        ("mime_type", gettext("MIME Type")),
+        ("permissions", gettext("Permissions")),
+        ("owner", gettext("Owner")),
+        ("group", gettext("Group")),
+    ]
 }
 
 /// Nautilus-style relative date, for example "Today, 17:41", "Yesterday, 09:00", "3 days ago",

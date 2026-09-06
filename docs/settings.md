@@ -13,6 +13,7 @@ Changes apply immediately to open windows.
 | `size-units` | `decimal`, `binary` | `decimal` | Size Units |
 | `click-policy` | `double`, `single` | `double` | Open Items With |
 | `folders-first` | bool | true | Sort Folders Before Files |
+| `visible-columns` | list of `size`, `type`, `modified`, `accessed`, `created`, `owner`, `group`, `permissions`, `star` | size, type, modified, star | List view columns (Visible Columns…) |
 | `show-create-link` | bool | false | Create Link in context menus |
 | `show-delete-permanently` | bool | false | Delete Permanently in context menus |
 | `date-format` | `relative`, `full` | `relative` | Date Format |
