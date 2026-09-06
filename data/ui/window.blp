@@ -229,6 +229,13 @@ template $SpiralWindow : Adw.ApplicationWindow {
                 tooltip-text: _("Forward");
                 valign: center;
               }
+
+              Button up_button {
+                icon-name: "go-up-symbolic";
+                action-name: "win.up";
+                tooltip-text: _("Parent Folder");
+                valign: center;
+              }
             }
 
             title-widget: Box {
@@ -395,6 +402,13 @@ template $SpiralWindow : Adw.ApplicationWindow {
                 icon-name: "go-next-symbolic";
                 action-name: "win.forward";
                 tooltip-text: _("Forward");
+                valign: center;
+              }
+
+              Button {
+                icon-name: "go-up-symbolic";
+                action-name: "win.up";
+                tooltip-text: _("Parent Folder");
                 valign: center;
               }
             }
