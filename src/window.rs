@@ -3,6 +3,7 @@ use adw::subclass::prelude::*;
 use gettextrs::gettext;
 use std::cell::RefCell;
 
+use crate::application::SpiralApplication;
 use crate::browser_view::BrowserView;
 use crate::enums::{SortKey, ViewMode};
 use crate::file_utils;
@@ -60,6 +61,8 @@ mod imp {
         pub sort_action: gio::SimpleAction,
         /// Locations of tabs closed in this window, most recent last.
         pub closed_tabs: RefCell<Vec<gio::File>>,
+        /// The tab whose context menu is open, if any.
+        pub menu_page: RefCell<Option<adw::TabPage>>,
     }
 
     impl Default for SpiralWindow {
@@ -88,6 +91,7 @@ mod imp {
                     &"name-asc".to_variant(),
                 ),
                 closed_tabs: Default::default(),
+                menu_page: Default::default(),
             }
         }
     }
@@ -120,8 +124,30 @@ mod imp {
                 }
             });
             klass.install_action("win.close-tab", None, |win, _, _| {
-                if let Some(page) = win.imp().tab_view.selected_page() {
+                if let Some(page) = win.menu_page() {
                     win.imp().tab_view.close_page(&page);
+                }
+            });
+            klass.install_action("win.close-other-tabs", None, |win, _, _| {
+                if let Some(page) = win.menu_page() {
+                    win.imp().tab_view.close_other_pages(&page);
+                }
+            });
+            klass.install_action("win.tab-move-left", None, |win, _, _| {
+                if let Some(page) = win.menu_page() {
+                    win.imp().tab_view.reorder_backward(&page);
+                }
+            });
+            klass.install_action("win.tab-move-right", None, |win, _, _| {
+                if let Some(page) = win.menu_page() {
+                    win.imp().tab_view.reorder_forward(&page);
+                }
+            });
+            klass.install_action("win.tab-move-new-window", None, |win, _, _| {
+                if let Some(page) = win.menu_page()
+                    && let Some(other) = win.imp().on_create_window(&win.imp().tab_view)
+                {
+                    win.imp().tab_view.transfer_page(&page, &other, 0);
                 }
             });
             klass.install_action("win.restore-tab", None, |win, _, _| {
@@ -408,6 +434,34 @@ mod imp {
             obj.zoom(0);
         }
 
+        /// The tab menu is opening for `page`, or closing when it is `None`.
+        #[template_callback]
+        fn on_setup_menu(&self, page: Option<&adw::TabPage>, tab_view: &adw::TabView) {
+            self.menu_page.replace(page.cloned());
+            let obj = self.obj();
+            let pos = obj.menu_page().map_or(0, |p| tab_view.page_position(&p));
+            obj.action_set_enabled("win.tab-move-left", pos > 0);
+            obj.action_set_enabled("win.tab-move-right", pos < tab_view.n_pages() - 1);
+        }
+
+        /// A tab dragged out of the tab bar, or "Move Tab to New Window".
+        #[template_callback]
+        pub(super) fn on_create_window(&self, _tab_view: &adw::TabView) -> Option<adw::TabView> {
+            let app = self
+                .obj()
+                .application()
+                .and_downcast::<SpiralApplication>()?;
+            Some(app.new_window().imp().tab_view.clone())
+        }
+
+        /// Closed or moved to another window: the last tab leaving closes the window.
+        #[template_callback]
+        fn on_page_detached(&self, _page: &adw::TabPage, _pos: i32, tab_view: &adw::TabView) {
+            if tab_view.n_pages() == 0 {
+                self.obj().close();
+            }
+        }
+
         #[template_callback]
         fn on_close_page(&self, page: &adw::TabPage, tab_view: &adw::TabView) -> bool {
             if let Some(loc) = page
@@ -423,9 +477,6 @@ mod imp {
                 self.obj().action_set_enabled("win.restore-tab", true);
             }
             tab_view.close_page_finish(page, true);
-            if tab_view.n_pages() == 0 {
-                self.obj().close();
-            }
             true
         }
 
@@ -503,6 +554,21 @@ impl SpiralWindow {
         });
     }
 
+    /// The window a view currently sits in; tabs move between windows, so the
+    /// handlers in `add_tab` look it up instead of capturing it.
+    fn of(widget: &impl IsA<gtk::Widget>) -> Option<Self> {
+        widget.root().and_downcast()
+    }
+
+    /// The tab the context menu was opened for, else the selected one.
+    fn menu_page(&self) -> Option<adw::TabPage> {
+        let imp = self.imp();
+        imp.menu_page
+            .borrow()
+            .clone()
+            .or_else(|| imp.tab_view.selected_page())
+    }
+
     pub fn current_view(&self) -> Option<BrowserView> {
         self.imp()
             .tab_view
@@ -530,15 +596,15 @@ impl SpiralWindow {
         view.connect_notify_local(
             Some("location"),
             glib::clone!(
-                #[weak(rename_to = win)]
-                self,
                 #[weak]
                 page,
                 move |v, _| {
                     if let Some(loc) = v.location() {
                         page.set_title(&file_utils::location_name(&loc));
                     }
-                    if win.imp().tab_view.selected_page().as_ref() == Some(&page) {
+                    if let Some(win) = Self::of(v)
+                        && win.imp().tab_view.selected_page().as_ref() == Some(&page)
+                    {
                         win.sync_header();
                     }
                 }
@@ -548,39 +614,37 @@ impl SpiralWindow {
             view.model().connect_notify_local(
                 Some(prop),
                 glib::clone!(
-                    #[weak(rename_to = win)]
-                    self,
                     #[weak]
                     page,
                     move |_, _| {
-                        if win.imp().tab_view.selected_page().as_ref() == Some(&page) {
+                        if let Some(win) = Self::of(&page.child())
+                            && win.imp().tab_view.selected_page().as_ref() == Some(&page)
+                        {
                             win.sync_sort_state();
                         }
                     }
                 ),
             );
         }
-        view.connect_open_in_new_tab(glib::clone!(
-            #[weak(rename_to = win)]
-            self,
-            move |_, f| {
+        view.connect_open_in_new_tab(|v, f| {
+            if let Some(win) = Self::of(v) {
                 win.add_tab(f, false);
             }
-        ));
-        let sync = glib::clone!(
-            #[weak(rename_to = win)]
-            self,
-            move |_: &BrowserView| win.sync_header()
-        );
-        view.connect_can_go_back_notify(sync.clone());
+        });
+        let sync = |v: &BrowserView| {
+            if let Some(win) = Self::of(v) {
+                win.sync_header();
+            }
+        };
+        view.connect_can_go_back_notify(sync);
         view.connect_can_go_forward_notify(sync);
         view.connect_view_mode_notify(glib::clone!(
-            #[weak(rename_to = win)]
-            self,
             #[weak]
             page,
-            move |_| {
-                if win.imp().tab_view.selected_page().as_ref() == Some(&page) {
+            move |v| {
+                if let Some(win) = Self::of(v)
+                    && win.imp().tab_view.selected_page().as_ref() == Some(&page)
+                {
                     win.sync_view_button();
                     win.zoom(0);
                 }
