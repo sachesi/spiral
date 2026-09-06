@@ -163,6 +163,7 @@ mod imp {
             self.parent_constructed();
             let obj = self.obj();
             obj.setup_actions();
+            obj.setup_drag_source();
 
             // Dropping on empty space copies/moves into the folder being viewed.
             if !obj.chooser_mode() {
@@ -507,6 +508,28 @@ fn remember_list_item(cell: &impl IsA<gtk::Widget>, item: &gtk::ListItem) {
     unsafe { cell.set_data("list-item", item.downgrade()) };
 }
 
+/// A bound cell of the row under a point, whichever part of the row the point hits.
+fn cell_at(root: &gtk::Widget, x: f64, y: f64) -> Option<gtk::Widget> {
+    let row = row_widget(&root.pick(x, y, gtk::PickFlags::DEFAULT)?)?;
+    let mut found: Option<gtk::Widget> = None;
+    each_cell(&row, &mut |cell| {
+        found.get_or_insert_with(|| cell.clone());
+    });
+    found
+}
+
+/// The list or grid item a widget sits in: the child of the list itself.
+fn row_widget(inner: &gtk::Widget) -> Option<gtk::Widget> {
+    let mut w = inner.clone();
+    while let Some(parent) = w.parent() {
+        if parent.is::<gtk::ListView>() || parent.is::<gtk::GridView>() {
+            return Some(w);
+        }
+        w = parent;
+    }
+    None
+}
+
 /// Visit every bound cell under `root`. Cells do not nest, so a match ends that branch.
 fn each_cell(root: &gtk::Widget, f: &mut impl FnMut(&gtk::Widget)) {
     let mut child = root.first_child();
@@ -522,9 +545,11 @@ fn each_cell(root: &gtk::Widget, f: &mut impl FnMut(&gtk::Widget)) {
 
 /// The lock emblem of a grid or list name cell: its last child, or the icon row's.
 fn cell_emblem(cell: &gtk::Widget) -> Option<gtk::Image> {
-    cell.last_child()
-        .and_downcast::<gtk::Image>()
-        .or_else(|| cell.first_child()?.last_child().and_downcast::<gtk::Image>())
+    cell.last_child().and_downcast::<gtk::Image>().or_else(|| {
+        cell.first_child()?
+            .last_child()
+            .and_downcast::<gtk::Image>()
+    })
 }
 
 pub(crate) fn cell_position(cell: &impl IsA<gtk::Widget>) -> Option<u32> {
@@ -1020,8 +1045,10 @@ impl BrowserView {
         });
     }
 
-    /// Each cell is a drag source for the selection and a drop target when it shows a folder.
-    fn setup_cell_dnd(&self, cell: &gtk::Box) {
+    /// Drag the selection out of the view. The source sits above the list and captures
+    /// the press, because the list's own rubberband gesture claims it otherwise; a press
+    /// that misses every row is left alone so rubberband selection still works.
+    fn setup_drag_source(&self) {
         if self.chooser_mode() {
             return;
         }
@@ -1031,16 +1058,16 @@ impl BrowserView {
                     | gtk::gdk::DragAction::MOVE
                     | gtk::gdk::DragAction::LINK,
             )
+            .propagation_phase(gtk::PropagationPhase::Capture)
             .build();
         source.connect_prepare(glib::clone!(
             #[weak(rename_to = view)]
             self,
-            #[weak]
-            cell,
             #[upgrade_or]
             None,
-            move |_, _, _| {
-                let pos = cell_position(&cell)?;
+            move |source, x, y| {
+                let stack = view.imp().stack.clone().upcast::<gtk::Widget>();
+                let pos = cell_at(&stack, x, y).as_ref().and_then(cell_position)?;
                 let sel = view.model().selection();
                 if !sel.is_selected(pos) {
                     sel.select_item(pos, true);
@@ -1049,21 +1076,43 @@ impl BrowserView {
                 if files.is_empty() {
                     return None;
                 }
+                // Drag the whole row, not the cell the gesture started on.
+                if let Some(row) = cell_at(&stack, x, y).and_then(|c| row_widget(&c)) {
+                    let paintable = gtk::WidgetPaintable::new(Some(&row));
+                    source.set_icon(Some(&paintable), row.width() / 2, row.height() / 2);
+                }
                 Some(gtk::gdk::ContentProvider::for_value(
                     &gtk::gdk::FileList::from_array(&files).to_value(),
                 ))
             }
         ));
-        source.connect_drag_begin(glib::clone!(
-            #[weak]
-            cell,
-            move |src, _| {
-                let paintable = gtk::WidgetPaintable::new(Some(&cell));
-                src.set_icon(Some(&paintable), cell.width() / 2, cell.height() / 2);
+        self.imp().stack.add_controller(source);
+        // The list's rubberband gesture outruns any drag source, so it is switched off
+        // for presses that land on a row and back on for presses on empty space.
+        let click = gtk::GestureClick::new();
+        click.set_propagation_phase(gtk::PropagationPhase::Capture);
+        click.connect_pressed(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |_, _, x, y| {
+                let imp = view.imp();
+                let stack = imp.stack.clone().upcast::<gtk::Widget>();
+                let empty = cell_at(&stack, x, y).is_none();
+                imp.grid_view.set_enable_rubberband(empty);
+                imp.column_view.set_enable_rubberband(empty);
             }
         ));
-        cell.add_controller(source);
+        self.imp().stack.add_controller(click);
+    }
 
+    /// Each cell is a drop target when it shows a folder; every cell of a row carries
+    /// one, so the whole row accepts a drop. Dragging is handled view-wide instead,
+    /// because the list's rubberband gesture outruns any drag source on a cell.
+    fn setup_cell_dnd(&self, cell: &impl IsA<gtk::Widget>) {
+        if self.chooser_mode() {
+            return;
+        }
+        let cell = cell.clone().upcast::<gtk::Widget>();
         let target = gtk::DropTarget::new(
             gtk::gdk::FileList::static_type(),
             gtk::gdk::DragAction::COPY | gtk::gdk::DragAction::MOVE,
@@ -1110,7 +1159,7 @@ impl BrowserView {
     }
 
     /// The folder a cell currently shows, if it is one.
-    fn cell_folder(&self, cell: &gtk::Box) -> Option<gio::File> {
+    fn cell_folder(&self, cell: &gtk::Widget) -> Option<gio::File> {
         let pos = cell_position(cell)?;
         let info = self.model().info_at(pos)?;
         file_utils::is_dir(&info).then(|| file_utils::file_of(&info))
@@ -1238,7 +1287,6 @@ impl BrowserView {
             let bx = gtk::Box::builder()
                 .orientation(gtk::Orientation::Vertical)
                 .spacing(6)
-                .valign(gtk::Align::Start)
                 .css_classes(["spiral-view-cell"])
                 .build();
             bx.append(&icon_row);
@@ -1354,13 +1402,17 @@ impl BrowserView {
         name_col.set_expand(true);
         cv.append_column(&name_col);
 
-        let text_col = |title: String, xalign: f32, f: fn(&gio::FileInfo) -> String| {
+        let text_col = |title: String,
+                        xalign: f32,
+                        ellipsize: gtk::pango::EllipsizeMode,
+                        f: fn(&gio::FileInfo) -> String| {
             let factory = gtk::SignalListItemFactory::new();
+            let view = self.clone();
             factory.connect_setup(move |_, item| {
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 let label = gtk::Label::builder()
                     .xalign(xalign)
-                    .ellipsize(gtk::pango::EllipsizeMode::Middle)
+                    .ellipsize(ellipsize)
                     // Let the column width decide, not the longest value in it.
                     .max_width_chars(1)
                     .css_classes(["spiral-view-cell", "dim-label"])
@@ -1369,16 +1421,17 @@ impl BrowserView {
                     label.add_css_class("numeric");
                 }
                 item.set_child(Some(&label));
+                remember_list_item(&label, item);
+                view.setup_cell_dnd(&label);
             });
             factory.connect_bind(move |_, item| {
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 let Some(info) = item.item().and_then(|o| crate::folder_model::info_of(&o)) else {
                     return;
                 };
-                item.child()
-                    .and_downcast::<gtk::Label>()
-                    .unwrap()
-                    .set_text(&f(&info));
+                let label = item.child().and_downcast::<gtk::Label>().unwrap();
+                set_cut(&label, &info);
+                label.set_text(&f(&info));
             });
             gtk::ColumnViewColumn::new(Some(&title), Some(factory))
         };
@@ -1399,12 +1452,17 @@ impl BrowserView {
             "size" => 88,
             "owner" | "group" => 104,
             "permissions" => 112,
-            "type" => 136,
-            _ => 152,
+            "type" => 150,
+            _ => 148,
         };
         let mut columns: Vec<(&'static str, gtk::ColumnViewColumn)> = Vec::new();
         for (key, title) in file_utils::optional_columns() {
-            let col = text_col(title, if key == "size" { 1.0 } else { 0.0 }, text(key));
+            let col = text_col(
+                title,
+                if key == "size" { 1.0 } else { 0.0 },
+                gtk::pango::EllipsizeMode::End,
+                text(key),
+            );
             col.set_fixed_width(width(key));
             col.set_resizable(true);
             cv.append_column(&col);
@@ -1414,7 +1472,12 @@ impl BrowserView {
         cv.append_column(&star_col);
         columns.push(("star", star_col));
         // Search results come from anywhere below the folder; say where.
-        let location_col = text_col(gettext("Location"), 0.0, file_utils::location_of);
+        let location_col = text_col(
+            gettext("Location"),
+            0.0,
+            gtk::pango::EllipsizeMode::Middle,
+            file_utils::location_of,
+        );
         location_col.set_visible(false);
         location_col.set_expand(true);
         cv.insert_column(1, &location_col);
