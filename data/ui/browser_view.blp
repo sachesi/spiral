@@ -218,6 +218,23 @@ menu item_menu {
   }
 }
 
+menu drop_menu {
+  section {
+    item {
+      label: _("_Copy Here");
+      action: "view.drop-copy";
+    }
+    item {
+      label: _("_Move Here");
+      action: "view.drop-move";
+    }
+    item {
+      label: _("_Link Here");
+      action: "view.drop-link";
+    }
+  }
+}
+
 menu background_menu {
   section {
     item {

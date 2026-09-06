@@ -138,6 +138,10 @@
       <default>true</default>
       <summary>Show places sidebar</summary>
     </key>
+    <key name="ask-on-drop" type="b">
+      <default>true</default>
+      <summary>Ask whether to copy or move dropped files</summary>
+    </key>
     <key name="split-view" type="b">
       <default>false</default>
       <summary>Show two folder panes side by side</summary>

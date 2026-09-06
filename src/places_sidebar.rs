@@ -351,13 +351,13 @@ fn add_drop_target(row: &gtk::ListBoxRow, file: &gio::File) {
         row,
         #[upgrade_or]
         false,
-        move |t, value, _, _| {
+        move |t, value, x, y| {
             let view = row
                 .root()
                 .and_downcast::<crate::window::SpiralWindow>()
                 .and_then(|w| w.current_view());
             match view {
-                Some(v) => v.drop_files(t, value, &file),
+                Some(v) => v.drop_files(t, value, &file, x, y),
                 None => false,
             }
         }

@@ -77,6 +77,9 @@ impl BrowserView {
             v.model().selection().select_all();
         });
         add("context-menu", |v| v.popup_menu_for_selection());
+        add("drop-copy", |v| v.finish_drop(gtk::gdk::DragAction::COPY));
+        add("drop-move", |v| v.finish_drop(gtk::gdk::DragAction::MOVE));
+        add("drop-link", |v| v.finish_drop(gtk::gdk::DragAction::LINK));
         add("new-folder", |v| v.new_folder());
         add("properties", |v| v.show_properties());
         add("open-with", |v| v.open_with());
@@ -830,6 +833,18 @@ impl BrowserView {
             }
         };
         self.update_action_state();
+        let point = imp
+            .stack
+            .compute_point(self, &gtk::graphene::Point::new(x as f32, y as f32));
+        let (px, py) = point
+            .map(|p| (p.x() as f64, p.y() as f64))
+            .unwrap_or((x, y));
+        self.popup_model(model, px, py);
+    }
+
+    /// Show `model` as a popover menu at a point in the view's own coordinates.
+    pub(crate) fn popup_model(&self, model: &gio::MenuModel, x: f64, y: f64) {
+        let imp = self.imp();
         let existing = imp.popover.borrow().clone();
         let popover = match existing {
             Some(p) => p,
@@ -843,13 +858,7 @@ impl BrowserView {
             }
         };
         popover.set_menu_model(Some(model));
-        let p = imp
-            .stack
-            .compute_point(self, &gtk::graphene::Point::new(x as f32, y as f32));
-        let (px, py) = p
-            .map(|p| (p.x() as i32, p.y() as i32))
-            .unwrap_or((x as i32, y as i32));
-        popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(px, py, 1, 1)));
+        popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
         popover.popup();
     }
 

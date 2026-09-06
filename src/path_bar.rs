@@ -245,13 +245,13 @@ mod imp {
                         button,
                         #[upgrade_or]
                         false,
-                        move |t, value, _, _| {
+                        move |t, value, x, y| {
                             let view = button
                                 .root()
                                 .and_downcast::<crate::window::SpiralWindow>()
                                 .and_then(|w| w.current_view());
                             match view {
-                                Some(v) => v.drop_files(t, value, &dest),
+                                Some(v) => v.drop_files(t, value, &dest, x, y),
                                 None => false,
                             }
                         }
