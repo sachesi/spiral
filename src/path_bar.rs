@@ -22,8 +22,15 @@ mod imp {
         pub buttons_box: TemplateChild<gtk::Box>,
         #[template_child]
         pub menu_button: TemplateChild<gtk::MenuButton>,
+        #[template_child]
+        pub crumb_menu: TemplateChild<gio::MenuModel>,
         #[property(get, set = Self::set_location, nullable)]
         location: RefCell<Option<gio::File>>,
+        /// The `crumb.*` actions and the folder they act on: the right-clicked crumb, or
+        /// the current folder while the ⋮ menu is open.
+        pub actions: gio::SimpleActionGroup,
+        pub menu_file: RefCell<Option<gio::File>>,
+        pub popover: RefCell<Option<gtk::PopoverMenu>>,
         /// Root and name of the mount the location is on, looked up in the background;
         /// None for home and `/`.
         pub mount: RefCell<Option<(gio::File, String)>>,
@@ -87,6 +94,18 @@ mod imp {
                 }
             ));
             self.scrolled.add_controller(scroll);
+
+            self.obj().setup_actions();
+            // The ⋮ menu shares the crumb actions; there they act on the current folder.
+            self.menu_button.connect_active_notify(glib::clone!(
+                #[weak(rename_to = bar)]
+                self.obj(),
+                move |b| {
+                    if b.is_active() {
+                        bar.set_menu_file(bar.location());
+                    }
+                }
+            ));
         }
     }
 
@@ -173,6 +192,19 @@ mod imp {
                     .focus_on_click(false)
                     .css_classes(["spiral-path-button"])
                     .build();
+                let click = gtk::GestureClick::builder().button(3).build();
+                let target = f.clone();
+                click.connect_pressed(glib::clone!(
+                    #[weak]
+                    obj,
+                    #[weak]
+                    button,
+                    move |g, _, _, _| {
+                        g.set_state(gtk::EventSequenceState::Claimed);
+                        obj.popup_crumb_menu(&button, &target);
+                    }
+                ));
+                button.add_controller(click);
                 let container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
                 let label = gtk::Label::builder().single_line_mode(true).build();
                 if i == 0 {
@@ -323,5 +355,102 @@ impl PathBar {
             false,
             glib::closure_local!(move |bar: &Self| f(bar)),
         )
+    }
+
+    fn setup_actions(&self) {
+        let group = &self.imp().actions;
+        let add = |name: &str, f: fn(&PathBar, gio::File)| {
+            let action = gio::SimpleAction::new(name, None);
+            action.connect_activate(glib::clone!(
+                #[weak(rename_to = bar)]
+                self,
+                move |_, _| {
+                    let file = bar.imp().menu_file.borrow().clone();
+                    if let Some(file) = file {
+                        f(&bar, file);
+                    }
+                }
+            ));
+            group.add_action(&action);
+        };
+        add("open-new-tab", |bar, file| {
+            if let Some(win) = bar.root().and_downcast::<crate::window::SpiralWindow>() {
+                win.add_tab(&file, true);
+            }
+        });
+        add("open-new-window", |_, file| {
+            if let Some(app) =
+                gio::Application::default().and_downcast::<crate::application::SpiralApplication>()
+            {
+                app.open_window(&[file]);
+            }
+        });
+        add("add-bookmark", |bar, file| {
+            crate::bookmarks::add(&file);
+            bar.set_menu_file(Some(file));
+        });
+        add("copy-location", |bar, file| {
+            let text = match file.path() {
+                Some(p) => p.to_string_lossy().into_owned(),
+                None => file.uri().to_string(),
+            };
+            bar.clipboard().set_text(&text);
+        });
+        add("properties", |bar, file| {
+            crate::dialogs::PropertiesDialog::open(vec![file], bar, || {});
+        });
+        self.insert_action_group("crumb", Some(group));
+    }
+
+    /// Points the `crumb.*` actions at `file` and refreshes what they allow.
+    fn set_menu_file(&self, file: Option<gio::File>) {
+        let imp = self.imp();
+        let enable = |name: &str, on: bool| {
+            if let Some(a) = imp
+                .actions
+                .lookup_action(name)
+                .and_downcast::<gio::SimpleAction>()
+            {
+                a.set_enabled(on);
+            }
+        };
+        // The chooser embeds the bar too, with no tabs or windows to open.
+        let in_window = self
+            .root()
+            .and_downcast::<crate::window::SpiralWindow>()
+            .is_some();
+        enable("open-new-tab", in_window);
+        enable("open-new-window", in_window);
+        enable(
+            "add-bookmark",
+            file.as_ref()
+                .is_some_and(|f| !crate::bookmarks::contains(f)),
+        );
+        imp.menu_file.replace(file);
+    }
+
+    fn popup_crumb_menu(&self, button: &gtk::Button, file: &gio::File) {
+        let imp = self.imp();
+        self.set_menu_file(Some(file.clone()));
+        let existing = imp.popover.borrow().clone();
+        let popover = existing.unwrap_or_else(|| {
+            let p = gtk::PopoverMenu::from_model(Some(&*imp.crumb_menu));
+            p.set_parent(self);
+            imp.popover.replace(Some(p.clone()));
+            p
+        });
+        let rect = button
+            .compute_bounds(self)
+            .map(|b| {
+                gtk::gdk::Rectangle::new(
+                    b.x() as i32,
+                    b.y() as i32,
+                    b.width() as i32,
+                    b.height() as i32,
+                )
+            })
+            .unwrap_or_else(|| gtk::gdk::Rectangle::new(0, 0, 1, 1));
+        popover.set_pointing_to(Some(&rect));
+        popover.popup();
     }
 }
