@@ -28,6 +28,7 @@ Changes apply immediately to open windows.
 | `sort-key` | `name`, `size`, `type`, `modified` | `name` | Order for folders without a remembered one |
 | `sort-reversed` | bool | false | Direction, same scope |
 | `show-hidden` | bool | false | |
+| `compression-format` | `zip`, `tar.xz`, `tar.zst`, `7z`, `tar.gz` | `zip` | |
 | `captions` | three of `size`, `date_modified`, `permissions`, `type`, `mime_type`, `owner`, `group`, `none` | all `none` | |
 | `grid-zoom` | 48 to 256 | 96 | |
 | `list-zoom` | 16 to 64 | 32 | |
@@ -41,6 +42,9 @@ you are in; they are kept in the folder's `metadata::spiral-view` and
 `metadata::spiral-sort` attributes. Off, the switch changes `view-mode`, and sorting
 changes `sort-key` and `sort-reversed`, for everything. `chooser-view-mode` is the same thing for portal file dialogs,
 which never remember per folder.
+
+`compression-format` is whatever Create Archive was last confirmed with; the dialog starts
+there next time, provided the tools for it are still installed.
 
 `local` for thumbnails and item counts means files on the local disk only; network
 mounts are skipped because reading every file on a share can take a while.

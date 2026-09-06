@@ -93,6 +93,11 @@
       <default>false</default>
       <summary>Reverse sort order</summary>
     </key>
+    <key name="compression-format" type="s">
+      <default>'zip'</default>
+      <summary>Format the Create Archive dialog starts with</summary>
+      <description>Extension without the dot: zip, tar.xz, tar.zst, 7z or tar.gz; the last one used.</description>
+    </key>
     <key name="show-hidden" type="b">
       <default>false</default>
       <summary>Show hidden files</summary>
