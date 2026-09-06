@@ -22,6 +22,11 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.3.0" date="2026-09-06">
+      <description>
+        <p>Search walks subfolders, filters by type and date and can match file contents. Visible columns and captions dialogs, expandable folders in the list view. Restore from trash, links, Copy to and Move to, Run as a Program, path bar and tab context menus, tabs moved between windows and restored after closing. Password-protected archives. Lock emblems and greyed actions for read-only files, folders that follow outside changes, and the clipboard pastes paths into terminals.</p>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-09-06">
       <description>
         <p>Russian and Ukrainian translations. Sort order remembered per folder. A Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem calls no longer block the interface on slow mounts.</p>
