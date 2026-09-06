@@ -22,6 +22,11 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.2.0" date="2026-09-06">
+      <description>
+        <p>Russian and Ukrainian translations. Sort order remembered per folder. A Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem calls no longer block the interface on slow mounts.</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-09-06">
       <description><p>First release.</p></description>
     </release>
