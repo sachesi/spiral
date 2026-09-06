@@ -67,4 +67,4 @@ files, `ShowItemProperties` opens the Properties dialog. The startup id is ignor
         --method org.freedesktop.FileManager1.ShowItems "['file:///etc/hosts']" ""
 
 The application name on the bus is `io.github.sachesi.spiral`; a second `spiral` forwards
-its arguments to the first.
+its command line to the first, which opens the windows (or quits, for `-q`).

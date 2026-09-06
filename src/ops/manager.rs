@@ -178,6 +178,13 @@ impl JobManager {
         self.notify_can_redo();
     }
 
+    /// Stop every running job; partial files are cleaned up as on a manual stop.
+    pub fn cancel_all(&self) {
+        for job in self.imp().jobs.iter::<Job>().flatten() {
+            job.cancel();
+        }
+    }
+
     pub fn undo(&self) {
         let Some(kind) = self.imp().undo.borrow_mut().take() else {
             return;

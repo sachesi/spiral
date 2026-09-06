@@ -55,7 +55,7 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     let remember = adw::SwitchRow::builder()
         .title(gettext("Remember View per Folder"))
         .subtitle(gettext(
-            "Switching the view applies to the current folder only",
+            "Switching the view or the sort order applies to the current folder only",
         ))
         .build();
     settings.bind("remember-view", &remember, "active").build();
