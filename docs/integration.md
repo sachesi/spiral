@@ -59,8 +59,19 @@ after an update: `pkill -f xdg-desktop-portal-spiral`.
 
 Spiral owns `org.freedesktop.FileManager1` while running and is D-Bus activatable for it
 (`spiral --gapplication-service`), so browsers and chat clients can "Show in folder".
-`ShowFolders` opens each folder in a tab, `ShowItems` opens the parents and selects the
-files, `ShowItemProperties` opens the Properties dialog. The startup id is ignored.
+`ShowFolders` opens a window with a tab per folder, `ShowItems` a window per parent folder
+with the files selected, `ShowItemProperties` the Properties dialog. The startup id is
+ignored.
+
+The interface is served from a thread with a main context of its own, and the application
+registers on the bus before it starts GTK. Both matter: the caller is usually
+xdg-desktop-portal answering a browser's `OpenURI.OpenDirectory`, and it waits for our
+reply, while GTK 4.22 asks that same portal for its settings as it starts. Serving the
+interface from the main thread, or initialising GTK before registering, deadlocks the two
+until D-Bus gives up on both, some twenty-five seconds later; the browser then gives up
+too and opens the folder itself, without the file selected. So `spiral` calls
+`init_early()` and leaves the stylesheet to `startup()`, and the method handler replies
+first and opens the window from the main loop afterwards.
 
     gdbus call --session --dest org.freedesktop.FileManager1 \
         --object-path /org/freedesktop/FileManager1 \
