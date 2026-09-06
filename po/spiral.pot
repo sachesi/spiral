@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.4.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 00:02+0300\n"
+"POT-Creation-Date: 2026-09-07 00:08+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -433,18 +433,18 @@ msgstr[1] ""
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:1483
+#: src/browser_view.rs:1468
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:1563 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1548 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr ""
 
-#: src/browser_view.rs:1685 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1670 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr ""
@@ -603,7 +603,7 @@ msgstr ""
 
 #: src/dialogs/preferences.rs:52
 #, no-c-format
-msgid "Off, dragging inside Spiral moves and dragging from elsewhere copies"
+msgid "Off, Ctrl copies and dragging inside Spiral moves without asking"
 msgstr ""
 
 #: src/dialogs/preferences.rs:61

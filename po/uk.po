@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 00:02+0300\n"
+"POT-Creation-Date: 2026-09-07 00:08+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -474,18 +474,18 @@ msgstr[2] "%d інших об’єктів вибрано"
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1483
+#: src/browser_view.rs:1468
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:1563 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1548 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr "Розташування"
 
-#: src/browser_view.rs:1685 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1670 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr "Улюблене"
@@ -644,8 +644,8 @@ msgstr "Питати, що робити з перетягнутими файла
 
 #: src/dialogs/preferences.rs:52
 #, no-c-format
-msgid "Off, dragging inside Spiral moves and dragging from elsewhere copies"
-msgstr "Якщо вимкнено, перетягування всередині Spiral переміщує, а з інших програм копіює"
+msgid "Off, Ctrl copies and dragging inside Spiral moves without asking"
+msgstr "Якщо вимкнено, Ctrl копіює, а перетягування всередині Spiral переміщує без питань"
 
 #: src/dialogs/preferences.rs:61
 #, no-c-format
@@ -2271,3 +2271,9 @@ msgstr "Лише вміст"
 #: ui/window.ui:419 ui/window.ui:503
 msgid "View Options"
 msgstr "Параметри перегляду"
+
+#, no-c-format
+#~ msgid "Off, dragging inside Spiral moves and dragging from elsewhere copies"
+#~ msgstr ""
+#~ "Якщо вимкнено, перетягування всередині Spiral переміщує, а з інших "
+#~ "програм копіює"

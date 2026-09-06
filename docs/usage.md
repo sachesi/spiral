@@ -93,10 +93,11 @@ their default application; "Open With..." lists the alternatives and can change 
 default. Rubber-band selection works in both views. The pill in the corner shows what is
 selected and how big it is.
 
-Dropping files asks what to do with them: copy, move or link. Hold a modifier while
-dragging and it does not ask, since the answer is already given: Ctrl copies, Shift moves,
-Ctrl+Shift links. "Ask What to Do With Dropped Files" in Preferences turns the question
-off, and dragging inside Spiral then moves while dragging from other applications copies.
+Dropping files asks what to do with them: copy, move or link. It always asks, because
+nothing in a drop tells a held modifier apart from a plain drag: under Wayland the
+compositor settles the question before the files ever reach Spiral. "Ask What to Do With
+Dropped Files" in Preferences turns the question off, and then dragging inside Spiral
+moves, Ctrl makes it a copy, and drags from other applications copy.
 A drag starts anywhere on a row or a grid tile, and a folder accepts a drop anywhere on
 its row. Drop targets are folders in the view, breadcrumbs and sidebar entries except
 Trash and Favorites. Cut, copy and paste use the same clipboard format as GNOME Files, so

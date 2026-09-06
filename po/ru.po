@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 00:02+0300\n"
+"POT-Creation-Date: 2026-09-07 00:08+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -474,18 +474,18 @@ msgstr[2] "%d других объектов выбрано"
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1483
+#: src/browser_view.rs:1468
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:1563 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1548 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr "Расположение"
 
-#: src/browser_view.rs:1685 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1670 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr "Избранное"
@@ -644,8 +644,8 @@ msgstr "Спрашивать, что делать с перетащенными 
 
 #: src/dialogs/preferences.rs:52
 #, no-c-format
-msgid "Off, dragging inside Spiral moves and dragging from elsewhere copies"
-msgstr "Если выключено, перетаскивание внутри Spiral перемещает, а из других приложений копирует"
+msgid "Off, Ctrl copies and dragging inside Spiral moves without asking"
+msgstr "Если выключено, Ctrl копирует, а перетаскивание внутри Spiral перемещает без вопросов"
 
 #: src/dialogs/preferences.rs:61
 #, no-c-format
@@ -2271,3 +2271,9 @@ msgstr "Только содержимое"
 #: ui/window.ui:419 ui/window.ui:503
 msgid "View Options"
 msgstr "Параметры просмотра"
+
+#, no-c-format
+#~ msgid "Off, dragging inside Spiral moves and dragging from elsewhere copies"
+#~ msgstr ""
+#~ "Если выключено, перетаскивание внутри Spiral перемещает, а из других "
+#~ "приложений копирует"
