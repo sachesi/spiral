@@ -126,7 +126,7 @@ impl JobKind {
         }
     }
 
-    /// Text for the completion toast.
+    /// Text for the finished row in the operations list, and the toast after trashing.
     pub fn done_message(&self) -> String {
         match self {
             JobKind::Transfer {
