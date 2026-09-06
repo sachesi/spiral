@@ -240,11 +240,53 @@ template $SpiralWindow : Adw.ApplicationWindow {
 
                 StackPage {
                   name: "search";
-                  child: SearchEntry search_entry {
-                    hexpand: true;
-                    placeholder-text: _("Search current folder");
-                    search-changed => $on_search_changed() swapped;
-                    stop-search => $on_stop_search() swapped;
+                  child: Box {
+                    styles ["linked"]
+
+                    SearchEntry search_entry {
+                      hexpand: true;
+                      placeholder-text: _("Search");
+                      search-changed => $on_search_changed() swapped;
+                      stop-search => $on_stop_search() swapped;
+                    }
+
+                    MenuButton {
+                      icon-name: "funnel-symbolic";
+                      tooltip-text: _("Search Filters");
+                      valign: center;
+
+                      popover: Popover {
+                        child: ListBox {
+                          selection-mode: none;
+                          width-request: 320;
+                          styles ["boxed-list"]
+
+                          Adw.ComboRow search_kind_row {
+                            title: _("Type");
+                            model: StringList {
+                              strings [_("Anything"), _("Folders"), _("Documents"), _("Images"), _("Audio"), _("Videos"), _("PDF"), _("Text"), _("Spreadsheets")]
+                            };
+                            notify::selected => $on_search_filter_changed() swapped;
+                          }
+
+                          Adw.ComboRow search_date_row {
+                            title: _("Modified");
+                            model: StringList {
+                              strings [_("Any Time"), _("Today"), _("Yesterday"), _("Past Week"), _("Past Month"), _("Past Year")]
+                            };
+                            notify::selected => $on_search_filter_changed() swapped;
+                          }
+
+                          Adw.ComboRow search_match_row {
+                            title: _("Match");
+                            model: StringList {
+                              strings [_("Only Filename"), _("Content & Filename"), _("Only Contents")]
+                            };
+                            notify::selected => $on_search_filter_changed() swapped;
+                          }
+                        };
+                      };
+                    }
                   };
                 }
               }

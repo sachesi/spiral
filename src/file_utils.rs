@@ -249,6 +249,24 @@ pub fn items_string(n: u64) -> String {
     }
 }
 
+/// Folder holding `info`, shortened with "~" under home, for search results.
+pub fn location_of(info: &gio::FileInfo) -> String {
+    let Some(parent) = file_of(info).parent() else {
+        return String::new();
+    };
+    let home = gio::File::for_path(glib::home_dir());
+    if parent.equal(&home) {
+        return "~".into();
+    }
+    if let Some(rel) = home.relative_path(&parent) {
+        return format!("~/{}", rel.to_string_lossy());
+    }
+    match parent.path() {
+        Some(p) => p.to_string_lossy().into_owned(),
+        None => parent.uri().to_string(),
+    }
+}
+
 /// Human-friendly name for a location, used for tabs, crumbs and titles.
 pub fn location_name(file: &gio::File) -> String {
     if let Some(home) = glib::home_dir().to_str().map(gio::File::for_path)

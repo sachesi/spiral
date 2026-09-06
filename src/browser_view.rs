@@ -27,6 +27,8 @@ mod imp {
         #[template_child]
         pub error_page: TemplateChild<adw::StatusPage>,
         #[template_child]
+        pub empty_page: TemplateChild<adw::StatusPage>,
+        #[template_child]
         pub floating_bar: TemplateChild<gtk::Box>,
         #[template_child]
         pub floating_spinner: TemplateChild<adw::Spinner>,
@@ -110,6 +112,7 @@ mod imp {
                 grid_view: Default::default(),
                 column_view: Default::default(),
                 error_page: Default::default(),
+                empty_page: Default::default(),
                 floating_bar: Default::default(),
                 floating_spinner: Default::default(),
                 floating_primary: Default::default(),
@@ -794,6 +797,11 @@ impl BrowserView {
             }
             "error"
         } else if !imp.model.loading() && imp.model.n_items() == 0 {
+            imp.empty_page.set_title(&if imp.model.searching() {
+                gettext("No Results Found")
+            } else {
+                gettext("Folder is Empty")
+            });
             "empty"
         } else {
             match imp.view_mode.get() {
@@ -1264,6 +1272,7 @@ impl BrowserView {
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 let label = gtk::Label::builder()
                     .xalign(xalign)
+                    .ellipsize(gtk::pango::EllipsizeMode::Middle)
                     .css_classes(["spiral-view-cell", "dim-label"])
                     .build();
                 if xalign > 0.5 {
@@ -1304,6 +1313,16 @@ impl BrowserView {
         let star_col = self.star_column();
         cv.append_column(&star_col);
         columns.push(("star", star_col));
+        // Search results come from anywhere below the folder; say where.
+        let location_col = text_col(gettext("Location"), 0.0, file_utils::location_of);
+        location_col.set_visible(false);
+        location_col.set_expand(true);
+        cv.insert_column(1, &location_col);
+        self.imp().model.connect_searching_notify(glib::clone!(
+            #[weak]
+            location_col,
+            move |m| location_col.set_visible(m.searching())
+        ));
         let (size_col, type_col, mod_col) = (
             columns[0].1.clone(),
             columns[1].1.clone(),

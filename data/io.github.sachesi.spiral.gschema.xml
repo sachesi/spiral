@@ -69,6 +69,10 @@
       <default>'local'</default>
       <summary>Which files get thumbnails</summary>
     </key>
+    <key name="recursive-search" enum="io.github.sachesi.spiral.Scope">
+      <default>'local'</default>
+      <summary>Where searches look into subfolders</summary>
+    </key>
     <key name="item-counts" enum="io.github.sachesi.spiral.Scope">
       <default>'local'</default>
       <summary>Which folders get their items counted</summary>

@@ -19,13 +19,25 @@ mod imp {
         #[property(get, set = Self::set_location, nullable)]
         location: RefCell<Option<gio::File>>,
         #[property(get, set = Self::set_show_hidden)]
-        show_hidden: Cell<bool>,
+        pub show_hidden: Cell<bool>,
         #[property(get, set = Self::set_sort_key, builder(SortKey::Name))]
         sort_key: Cell<SortKey>,
         #[property(get, set = Self::set_sort_reversed)]
         sort_reversed: Cell<bool>,
         #[property(get, set = Self::set_search_text)]
-        search_text: RefCell<String>,
+        pub search_text: RefCell<String>,
+        /// One of `search::KINDS`.
+        #[property(get, set = Self::set_search_kind)]
+        pub search_kind: RefCell<String>,
+        /// One of the `search::DATES` nicks.
+        #[property(get, set = Self::set_search_date)]
+        pub search_date: RefCell<String>,
+        /// "name", "both" or "content".
+        #[property(get, set = Self::set_search_match)]
+        pub search_match: RefCell<String>,
+        /// True while the list shows search results instead of the folder.
+        #[property(get)]
+        pub searching: Cell<bool>,
         #[property(get, set = Self::set_extra_filter, nullable)]
         extra_filter: RefCell<Option<gtk::Filter>>,
         #[property(get)]
@@ -44,20 +56,20 @@ mod imp {
         pub starred_store: gio::ListStore,
         pub starred_gen: Cell<u64>,
         starred_handler: RefCell<Option<glib::SignalHandlerId>>,
+        /// Root of the pipeline while searching; filled by `search::run`.
+        pub search_store: gio::ListStore,
+        pub search_gen: Cell<u64>,
         hidden_filter: gtk::CustomFilter,
-        search_filter: gtk::CustomFilter,
         every_filter: gtk::EveryFilter,
         sorter: gtk::CustomSorter,
         // Shared with the filter/sorter closures.
         hidden_state: Rc<Cell<bool>>,
-        search_state: Rc<RefCell<String>>,
         sort_state: Rc<Cell<(SortKey, bool)>>,
     }
 
     impl Default for FolderModel {
         fn default() -> Self {
             let hidden_state = Rc::new(Cell::new(false));
-            let search_state = Rc::new(RefCell::new(String::new()));
             let sort_state = Rc::new(Cell::new((SortKey::Name, false)));
 
             let dir_list = gtk::DirectoryList::new(Some(file_utils::ATTRIBUTES), gio::File::NONE);
@@ -71,21 +83,8 @@ mod imp {
                     hidden_state.get() || !(info.is_hidden() || info.is_backup())
                 }
             ));
-            let search_filter = gtk::CustomFilter::new(glib::clone!(
-                #[strong]
-                search_state,
-                move |obj| {
-                    let needle = search_state.borrow();
-                    if needle.is_empty() {
-                        return true;
-                    }
-                    let info = obj.downcast_ref::<gio::FileInfo>().unwrap();
-                    info.display_name().to_lowercase().contains(needle.as_str())
-                }
-            ));
             let every_filter = gtk::EveryFilter::new();
             every_filter.append(hidden_filter.clone());
-            every_filter.append(search_filter.clone());
 
             let sorter = gtk::CustomSorter::new(glib::clone!(
                 #[strong]
@@ -113,6 +112,10 @@ mod imp {
                 sort_key: Default::default(),
                 sort_reversed: Default::default(),
                 search_text: Default::default(),
+                search_kind: RefCell::new("any".into()),
+                search_date: RefCell::new("any".into()),
+                search_match: RefCell::new("name".into()),
+                searching: Default::default(),
                 extra_filter: Default::default(),
                 loading: Default::default(),
                 error_message: Default::default(),
@@ -123,12 +126,12 @@ mod imp {
                 starred_store: gio::ListStore::new::<gio::FileInfo>(),
                 starred_gen: Default::default(),
                 starred_handler: Default::default(),
+                search_store: gio::ListStore::new::<gio::FileInfo>(),
+                search_gen: Default::default(),
                 hidden_filter,
-                search_filter,
                 every_filter,
                 sorter,
                 hidden_state,
-                search_state,
                 sort_state,
             }
         }
@@ -259,16 +262,48 @@ mod imp {
 
         fn set_search_text(&self, text: String) {
             let text = text.to_lowercase();
-            let old = self.search_state.replace(text.clone());
+            if *self.search_text.borrow() == text {
+                return;
+            }
             self.search_text.replace(text.clone());
-            let change = if text.starts_with(&old) {
-                gtk::FilterChange::MoreStrict
-            } else if old.starts_with(&text) {
-                gtk::FilterChange::LessStrict
-            } else {
-                gtk::FilterChange::Different
-            };
-            self.search_filter.changed(change);
+            let searching = !text.is_empty();
+            if self.searching.replace(searching) != searching {
+                if searching {
+                    self.filtered.set_model(Some(&self.search_store));
+                } else {
+                    self.search_gen.set(self.search_gen.get() + 1);
+                    self.search_store.remove_all();
+                    let root: &gio::ListModel = if self.is_starred() {
+                        self.starred_store.upcast_ref()
+                    } else {
+                        self.dir_list.upcast_ref()
+                    };
+                    self.filtered.set_model(Some(root));
+                    self.set_loading(false);
+                }
+                self.obj().notify_searching();
+            }
+            if searching {
+                self.obj().restart_search();
+            }
+        }
+
+        fn set_search_kind(&self, kind: String) {
+            if self.search_kind.replace(kind.clone()) != kind && self.searching.get() {
+                self.obj().restart_search();
+            }
+        }
+
+        fn set_search_date(&self, date: String) {
+            if self.search_date.replace(date.clone()) != date && self.searching.get() {
+                self.obj().restart_search();
+            }
+        }
+
+        fn set_search_match(&self, m: String) {
+            if self.search_match.replace(m.clone()) != m && self.searching.get() {
+                self.obj().restart_search();
+            }
         }
 
         fn set_extra_filter(&self, filter: Option<gtk::Filter>) {
@@ -337,6 +372,10 @@ impl FolderModel {
 
     pub fn reload(&self) {
         let imp = self.imp();
+        if imp.searching.get() {
+            self.restart_search();
+            return;
+        }
         if imp.is_starred() {
             self.load_starred();
             return;
@@ -344,6 +383,62 @@ impl FolderModel {
         let file = self.location();
         imp.dir_list.set_file(gio::File::NONE);
         imp.dir_list.set_file(file.as_ref());
+    }
+
+    /// Drop the results and search again after a short pause, so typing does not start a
+    /// walk per keystroke.
+    fn restart_search(&self) {
+        let imp = self.imp();
+        let generation = imp.search_gen.get() + 1;
+        imp.search_gen.set(generation);
+        imp.search_store.remove_all();
+        let Some(root) = self.location() else { return };
+        imp.set_loading(true);
+        let query = crate::search::Query {
+            text: imp.search_text.borrow().clone(),
+            matching: match imp.search_match.borrow().as_str() {
+                "both" => crate::search::Match::NameOrContent,
+                "content" => crate::search::Match::Content,
+                _ => crate::search::Match::Name,
+            },
+            kind: imp.search_kind.borrow().clone(),
+            since: crate::search::since_for(&imp.search_date.borrow()),
+            recursive: !imp.is_starred() && crate::prefs::recursive_search_for(&root),
+            show_hidden: imp.show_hidden.get(),
+        };
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = model)]
+            self,
+            async move {
+                glib::timeout_future(std::time::Duration::from_millis(150)).await;
+                let alive = || model.imp().search_gen.get() == generation;
+                if !alive() {
+                    return;
+                }
+                // Favorites are a list, not a folder: search among them directly.
+                if model.imp().is_starred() {
+                    let store = &model.imp().starred_store;
+                    let hits: Vec<gio::FileInfo> = store
+                        .iter::<gio::FileInfo>()
+                        .flatten()
+                        .filter(|i| i.display_name().to_lowercase().contains(&query.text))
+                        .collect();
+                    model.imp().search_store.splice(0, 0, &hits);
+                } else {
+                    crate::search::run(root, query, alive, |hits| {
+                        model.imp().search_store.splice(
+                            model.imp().search_store.n_items(),
+                            0,
+                            &hits,
+                        );
+                    })
+                    .await;
+                }
+                if alive() {
+                    model.imp().set_loading(false);
+                }
+            }
+        ));
     }
 
     /// Re-read `file`'s attributes into the info already in the list, so bound cells rebind
