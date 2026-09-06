@@ -1067,7 +1067,8 @@ impl BrowserView {
             None,
             move |source, x, y| {
                 let stack = view.imp().stack.clone().upcast::<gtk::Widget>();
-                let pos = cell_at(&stack, x, y).as_ref().and_then(cell_position)?;
+                let cell = cell_at(&stack, x, y)?;
+                let pos = cell_position(&cell)?;
                 let sel = view.model().selection();
                 if !sel.is_selected(pos) {
                     sel.select_item(pos, true);
@@ -1077,7 +1078,7 @@ impl BrowserView {
                     return None;
                 }
                 // Drag the whole row, not the cell the gesture started on.
-                if let Some(row) = cell_at(&stack, x, y).and_then(|c| row_widget(&c)) {
+                if let Some(row) = row_widget(&cell) {
                     let paintable = gtk::WidgetPaintable::new(Some(&row));
                     source.set_icon(Some(&paintable), row.width() / 2, row.height() / 2);
                 }
