@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=unzip
+Exec=sh -c 'unzip -p "$1" Thumbnails/thumbnail.png > "$2"' x %i %o
+MimeType=application/vnd.oasis.opendocument.text;application/vnd.oasis.opendocument.spreadsheet;application/vnd.oasis.opendocument.presentation;application/vnd.oasis.opendocument.graphics;application/vnd.oasis.opendocument.formula;application/vnd.oasis.opendocument.text-template;application/vnd.oasis.opendocument.spreadsheet-template;application/vnd.oasis.opendocument.presentation-template;

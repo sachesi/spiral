@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.sachesi.spiral</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Spiral</name>
+  <summary>Browse and manage your files</summary>
+  <description>
+    <p>Spiral is a GTK4 and libadwaita file manager for Wayland desktops that come without one. It follows the layout and behaviour of GNOME Files and adds a file chooser portal backend, so applications that open and save files through the portal get the same picker.</p>
+    <ul>
+      <li>Grid and list views, tabs, and a places sidebar with devices, bookmarks and favorites</li>
+      <li>Copy, move, trash, rename and duplicate with progress, conflict handling and undo</li>
+      <li>Archive extraction and creation with the tools installed on the system</li>
+      <li>Sandboxed thumbnails, drag and drop, and "Open in Terminal"</li>
+      <li>The org.freedesktop.FileManager1 service, so browsers and chat apps can show a file in its folder</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.sachesi.spiral.desktop</launchable>
+  <url type="homepage">https://github.com/sachesi/spiral</url>
+  <url type="bugtracker">https://github.com/sachesi/spiral/issues</url>
+  <url type="vcs-browser">https://github.com/sachesi/spiral</url>
+  <developer id="io.github.sachesi"><name>sachesi</name></developer>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-09-06">
+      <description><p>First release.</p></description>
+    </release>
+  </releases>
+</component>

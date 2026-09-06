@@ -1,0 +1,39 @@
+[package]
+name = "spiral"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "GPL-3.0-or-later"
+description = "A GTK4 file manager with a file chooser portal backend"
+repository = "https://github.com/sachesi/spiral"
+readme = "README.md"
+
+[[bin]]
+name = "spiral"
+path = "src/bin/spiral.rs"
+
+[[bin]]
+name = "xdg-desktop-portal-spiral"
+path = "src/bin/xdg-desktop-portal-spiral.rs"
+
+[[bin]]
+name = "spiral-thumbnailer"
+path = "src/bin/spiral-thumbnailer.rs"
+
+[dependencies]
+gtk4 = { version = "0.11", features = ["v4_22"] }
+libadwaita = { version = "0.9", features = ["v1_9"] }
+gio = { version = "0.22", features = ["v2_80"] }
+gdk4-wayland = "0.11"
+ashpd = { version = "0.13", default-features = false, features = ["backend", "file_chooser", "tokio"] }
+tokio = { version = "1", features = ["rt"] }
+async-channel = "2"
+async-trait = "0.1"
+futures-channel = "0.3"
+futures-util = "0.3"
+gettext-rs = { version = "0.7", features = ["gettext-system"] }
+libseccomp = "0.3"
+libc = "0.2.189"
+
+[build-dependencies]
+glib-build-tools = "0.22"

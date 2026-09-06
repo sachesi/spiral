@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/io/github/sachesi/spiral">
+    <file>style.css</file>
+    <file preprocess="xml-stripblanks">ui/window.ui</file>
+    <file preprocess="xml-stripblanks">ui/browser_view.ui</file>
+    <file preprocess="xml-stripblanks">ui/path_bar.ui</file>
+    <file preprocess="xml-stripblanks">ui/places_sidebar.ui</file>
+    <file preprocess="xml-stripblanks" alias="shortcuts-dialog.ui">ui/shortcuts_dialog.ui</file>
+    <file preprocess="xml-stripblanks" alias="icons/scalable/apps/io.github.sachesi.spiral.svg">icons/hicolor/scalable/apps/io.github.sachesi.spiral.svg</file>
+    <file preprocess="xml-stripblanks" alias="icons/symbolic/apps/io.github.sachesi.spiral-symbolic.svg">icons/hicolor/symbolic/apps/io.github.sachesi.spiral-symbolic.svg</file>
+  </gresource>
+</gresources>

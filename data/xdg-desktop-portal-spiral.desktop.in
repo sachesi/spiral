@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Spiral File Chooser
+Comment=File chooser dialogs shown on behalf of other applications
+Exec=@libexecdir@/xdg-desktop-portal-spiral
+Icon=io.github.sachesi.spiral
+NoDisplay=true

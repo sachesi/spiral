@@ -1,0 +1,65 @@
+using Gtk 4.0;
+
+menu current_menu {
+  section {
+    item {
+      label: _("New _Folder…");
+      action: "view.new-folder";
+    }
+    item {
+      label: _("New _Document");
+      action: "view.new-file";
+    }
+  }
+  section {
+    item {
+      label: _("_Paste");
+      action: "view.paste";
+    }
+    item {
+      label: _("Select _All");
+      action: "view.select-all";
+    }
+  }
+  section {
+    item {
+      label: _("Open in New _Tab");
+      action: "win.open-current-new-tab";
+    }
+    item {
+      label: _("R_eload");
+      action: "win.reload";
+    }
+    item {
+      label: _("_Empty Trash…");
+      action: "view.empty-trash";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
+      label: _("P_roperties");
+      action: "view.properties";
+    }
+  }
+}
+
+template $SpiralPathBar : Box {
+  valign: center;
+  styles ["linked", "spiral-pathbar"]
+
+  ScrolledWindow scrolled {
+    hscrollbar-policy: external;
+    vscrollbar-policy: never;
+    hexpand: true;
+    propagate-natural-width: true;
+    child: Box buttons_box {};
+  }
+
+  MenuButton menu_button {
+    icon-name: "view-more-symbolic";
+    tooltip-text: _("Current Folder Menu");
+    menu-model: current_menu;
+    styles ["flat"]
+  }
+}

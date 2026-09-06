@@ -1,0 +1,185 @@
+using Gtk 4.0;
+using Adw 1;
+
+Adw.ShortcutsDialog shortcuts_dialog {
+  Adw.ShortcutsSection {
+    title: _("General");
+
+    Adw.ShortcutsItem {
+      title: _("New Window");
+      accelerator: "<Control>n";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("New Tab");
+      accelerator: "<Control>t";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Close Tab");
+      accelerator: "<Control>w";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Close Window");
+      accelerator: "<Control><Shift>w";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Show All Tabs");
+      accelerator: "<Control><Shift>o";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Preferences");
+      accelerator: "<Control>comma";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Keyboard Shortcuts");
+      accelerator: "<Control>question";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Quit");
+      accelerator: "<Control>q";
+    }
+  }
+
+  Adw.ShortcutsSection {
+    title: _("Navigation");
+
+    Adw.ShortcutsItem {
+      title: _("Back");
+      accelerator: "<Alt>Left";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Forward");
+      accelerator: "<Alt>Right";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Parent Folder");
+      accelerator: "<Alt>Up BackSpace";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Home Folder");
+      accelerator: "<Alt>Home";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Edit Location");
+      accelerator: "<Control>l";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Search Current Folder");
+      accelerator: "<Control>f";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Reload");
+      accelerator: "F5 <Control>r";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Add Bookmark");
+      accelerator: "<Control>d";
+    }
+  }
+
+  Adw.ShortcutsSection {
+    title: _("View");
+
+    Adw.ShortcutsItem {
+      title: _("Switch Between Grid and List");
+      accelerator: "<Control>1 <Control>2";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Zoom In");
+      accelerator: "<Control>plus";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Zoom Out");
+      accelerator: "<Control>minus";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Show Hidden Files");
+      accelerator: "<Control>h";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Show Sidebar");
+      accelerator: "F9";
+    }
+  }
+
+  Adw.ShortcutsSection {
+    title: _("Files");
+
+    Adw.ShortcutsItem {
+      title: _("Select All");
+      accelerator: "<Control>a";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Cut");
+      accelerator: "<Control>x";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Copy");
+      accelerator: "<Control>c";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Paste");
+      accelerator: "<Control>v";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Rename");
+      accelerator: "F2";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("New Folder");
+      accelerator: "<Control><Shift>n";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Move to Trash");
+      accelerator: "Delete";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Delete Permanently");
+      accelerator: "<Shift>Delete";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Properties");
+      accelerator: "<Alt>Return";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Context Menu");
+      accelerator: "Menu <Shift>F10";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Undo");
+      accelerator: "<Control>z";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Redo");
+      accelerator: "<Control><Shift>z";
+    }
+  }
+}
