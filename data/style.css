@@ -183,7 +183,7 @@ rubberband {
   padding-bottom: 0px;
 }
 
-/* Files cut to the clipboard */
+/* Files cut to the clipboard: below the 0.55 of a dim label, so whole rows read as faded */
 .view .spiral-cut {
-  opacity: 0.45;
+  opacity: 0.35;
 }
