@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-06 19:34+0300\n"
+"POT-Creation-Date: 2026-09-06 21:28+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -222,6 +222,17 @@ msgstr "sachesi"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"Search walks subfolders, filters by type and date and can match file "
+"contents. Visible columns and captions dialogs, expandable folders in the "
+"list view. Restore from trash, links, Copy to and Move to, Run as a Program, "
+"path bar and tab context menus, tabs moved between windows and restored "
+"after closing. Password-protected archives. Lock emblems and greyed actions "
+"for read-only files, folders that follow outside changes, and the clipboard "
+"pastes paths into terminals."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:32
+msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
 "calls no longer block the interface on slow mounts."
@@ -231,7 +242,7 @@ msgstr ""
 "-s, -q. Обращения к файловой системе больше не блокируют интерфейс на "
 "медленных точках монтирования."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:31
+#: data/io.github.sachesi.spiral.metainfo.xml:36
 msgid "First release."
 msgstr "Первый выпуск."
 
@@ -271,47 +282,47 @@ msgstr "sachesi"
 msgid "Untitled Document"
 msgstr "Безымянный документ"
 
-#: src/browser_actions.rs:375
+#: src/browser_actions.rs:385
 #, no-c-format
 msgid "Extract To"
 msgstr "Распаковать в"
 
-#: src/browser_actions.rs:376 src/ops/archive.rs:351
+#: src/browser_actions.rs:386 src/ops/archive.rs:351
 #, no-c-format
 msgid "_Extract"
 msgstr "_Распаковать"
 
-#: src/browser_actions.rs:402
+#: src/browser_actions.rs:412
 #, no-c-format
 msgid "Archive"
 msgstr "Архив"
 
-#: src/browser_actions.rs:488
+#: src/browser_actions.rs:499
 #, no-c-format
 msgid "Move To"
 msgstr "Переместить в"
 
-#: src/browser_actions.rs:490
+#: src/browser_actions.rs:501
 #, no-c-format
 msgid "Copy To"
 msgstr "Копировать в"
 
-#: src/browser_actions.rs:493
+#: src/browser_actions.rs:504
 #, no-c-format
 msgid "_Move"
 msgstr "_Переместить"
 
-#: src/browser_actions.rs:495 ui/browser_view.ui:171
+#: src/browser_actions.rs:506 ui/browser_view.ui:171
 #, no-c-format
 msgid "_Copy"
 msgstr "_Копировать"
 
-#: src/browser_actions.rs:592
+#: src/browser_actions.rs:611
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Безвозвратно удалить «%s»?"
 
-#: src/browser_actions.rs:594
+#: src/browser_actions.rs:613
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -319,12 +330,12 @@ msgstr[0] "Безвозвратно удалить %d объект?"
 msgstr[1] "Безвозвратно удалить %d объекта?"
 msgstr[2] "Безвозвратно удалить %d объектов?"
 
-#: src/browser_actions.rs:602
+#: src/browser_actions.rs:621
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Безвозвратно удалённые объекты нельзя восстановить."
 
-#: src/browser_actions.rs:607 src/browser_actions.rs:631
+#: src/browser_actions.rs:626 src/browser_actions.rs:650
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
 #: src/ops/archive.rs:350 src/ops/conflict.rs:63 src/ops/conflict.rs:314
 #: src/ops/walk.rs:206 src/places_sidebar.rs:606
@@ -333,27 +344,27 @@ msgstr "Безвозвратно удалённые объекты нельзя 
 msgid "_Cancel"
 msgstr "_Отмена"
 
-#: src/browser_actions.rs:608
+#: src/browser_actions.rs:627
 #, no-c-format
 msgid "_Delete"
 msgstr "_Удалить"
 
-#: src/browser_actions.rs:624
+#: src/browser_actions.rs:643
 #, no-c-format
 msgid "Empty Trash?"
 msgstr "Очистить корзину?"
 
-#: src/browser_actions.rs:626
+#: src/browser_actions.rs:645
 #, no-c-format
 msgid "All items in the Trash will be permanently deleted."
 msgstr "Все объекты в корзине будут безвозвратно удалены."
 
-#: src/browser_actions.rs:632 src/places_sidebar.rs:608 ui/browser_view.ui:296
+#: src/browser_actions.rs:651 src/places_sidebar.rs:608 ui/browser_view.ui:296
 #, no-c-format
 msgid "_Empty Trash"
 msgstr "_Очистить корзину"
 
-#: src/browser_view.rs:389
+#: src/browser_view.rs:390
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
@@ -361,7 +372,7 @@ msgstr[0] "Выбрана %d папка"
 msgstr[1] "Выбраны %d папки"
 msgstr[2] "Выбрано %d папок"
 
-#: src/browser_view.rs:393
+#: src/browser_view.rs:394
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
@@ -369,39 +380,49 @@ msgstr[0] "Выбран %d объект"
 msgstr[1] "Выбрано %d объекта"
 msgstr[2] "Выбрано %d объектов"
 
-#: src/browser_view.rs:782 src/dialogs/open_with.rs:201
+#: src/browser_view.rs:492
+#, no-c-format
+msgid "Remove from Starred"
+msgstr "Удалить из избранного"
+
+#: src/browser_view.rs:494
+#, no-c-format
+msgid "Add to Starred"
+msgstr "Добавить в избранное"
+
+#: src/browser_view.rs:854 src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не удалось открыть"
 
-#: src/browser_view.rs:785 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:857 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:635
 #, no-c-format
 msgid "_OK"
 msgstr "_ОК"
 
-#: src/browser_view.rs:798
+#: src/browser_view.rs:870
 #, no-c-format
 msgid "No Results Found"
 msgstr "Ничего не найдено"
 
-#: src/browser_view.rs:800 ui/browser_view.ui:66
+#: src/browser_view.rs:872 ui/browser_view.ui:66
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Папка пуста"
 
-#: src/browser_view.rs:820
+#: src/browser_view.rs:892
 #, no-c-format
 msgid "Loading…"
 msgstr "Загрузка…"
 
-#: src/browser_view.rs:836
+#: src/browser_view.rs:908
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Выбран объект «%s»"
 
-#: src/browser_view.rs:841
+#: src/browser_view.rs:913
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -410,23 +431,23 @@ msgstr[1] "%d других объекта выбрано"
 msgstr[2] "%d других объектов выбрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:847
+#: src/browser_view.rs:919
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1267
+#: src/browser_view.rs:1401
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:1319 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1476 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr "Расположение"
 
-#: src/browser_view.rs:1436 src/dialogs/columns.rs:31
+#: src/browser_view.rs:1594 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr "Избранное"
@@ -456,7 +477,7 @@ msgstr "Третья"
 msgid "Captions"
 msgstr "Подписи"
 
-#: src/dialogs/columns.rs:47
+#: src/dialogs/columns.rs:40
 #, no-c-format
 msgid "Visible Columns"
 msgstr "Видимые столбцы"
@@ -1640,7 +1661,7 @@ msgstr "Назад"
 msgid "Forward"
 msgstr "Вперёд"
 
-#: src/portal/chooser_window.rs:148 src/window.rs:718 ui/window.ui:404
+#: src/portal/chooser_window.rs:148 src/window.rs:729 ui/window.ui:404
 #: ui/window.ui:480
 #, no-c-format
 msgid "List View"
@@ -1695,12 +1716,12 @@ msgstr "Отмена"
 msgid "No terminal emulator found"
 msgstr "Эмулятор терминала не найден"
 
-#: src/window.rs:541 ui/shortcuts_dialog.ui:222
+#: src/window.rs:552 ui/shortcuts_dialog.ui:222
 #, no-c-format
 msgid "Undo"
 msgstr "Отменить"
 
-#: src/window.rs:720
+#: src/window.rs:731
 #, no-c-format
 msgid "Grid View"
 msgstr "В виде сетки"
