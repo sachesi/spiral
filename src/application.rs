@@ -248,23 +248,14 @@ impl SpiralApplication {
         first
     }
 
-    /// FileManager1.ShowFolders: one tab per folder.
+    /// FileManager1.ShowFolders: a window with one tab per folder.
     pub fn show_folders(&self, files: &[gio::File]) {
-        let win = self.present_window();
-        for f in files {
-            win.open_location(f);
-        }
+        self.open_window(files);
     }
 
-    /// FileManager1.ShowItems: open each parent folder and select the items in it.
+    /// FileManager1.ShowItems: a window per parent folder with the items selected.
     pub fn show_items(&self, files: &[gio::File]) {
-        let win = self.present_window();
-        for (parent, items) in group_by_parent(files) {
-            win.open_location(&parent);
-            if let Some(view) = win.current_view() {
-                view.select_files_when_loaded(items);
-            }
-        }
+        self.select_in_windows(files);
     }
 
     pub fn show_item_properties(&self, files: &[gio::File]) {
