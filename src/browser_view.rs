@@ -1554,7 +1554,8 @@ impl BrowserView {
     /// A star per row that toggles the favourite, like the Nautilus star column.
     fn star_column(&self) -> gtk::ColumnViewColumn {
         let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(|_, item| {
+        let view = self.clone();
+        factory.connect_setup(move |_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let button = gtk::Button::builder()
                 .icon_name("non-starred-symbolic")
@@ -1578,6 +1579,7 @@ impl BrowserView {
             ));
             item.set_child(Some(&button));
             remember_list_item(&button, item);
+            view.setup_cell_dnd(&button);
         });
         factory.connect_bind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
