@@ -21,19 +21,12 @@ pub fn columns_dialog() -> adw::Dialog {
         .margin_start(12)
         .margin_end(12)
         .build();
-    let mut keys: Vec<&'static str> = Vec::new();
-    for (key, title) in file_utils::optional_columns() {
-        keys.push(key);
-        list.append(&switch_row(&title, key, &visible, &keys, &settings));
+    let mut columns: Vec<(&'static str, String)> = file_utils::optional_columns().to_vec();
+    columns.push(("star", gettext("Star")));
+    let keys: Vec<&'static str> = columns.iter().map(|(k, _)| *k).collect();
+    for (key, title) in &columns {
+        list.append(&switch_row(title, key, &visible, &keys, &settings));
     }
-    keys.push("star");
-    list.append(&switch_row(
-        &gettext("Star"),
-        "star",
-        &visible,
-        &keys,
-        &settings,
-    ));
     let view = adw::ToolbarView::builder()
         .content(
             &gtk::ScrolledWindow::builder()

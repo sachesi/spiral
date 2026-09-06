@@ -63,6 +63,8 @@ mod imp {
         pub closed_tabs: RefCell<Vec<gio::File>>,
         /// The tab whose context menu is open, if any.
         pub menu_page: RefCell<Option<adw::TabPage>>,
+        /// Set while the search filter rows are being updated from a tab, not the user.
+        pub syncing_search: std::cell::Cell<bool>,
     }
 
     impl Default for SpiralWindow {
@@ -92,6 +94,7 @@ mod imp {
                 ),
                 closed_tabs: Default::default(),
                 menu_page: Default::default(),
+                syncing_search: Default::default(),
             }
         }
     }
@@ -509,6 +512,9 @@ mod imp {
         /// The filter rows write to the current tab's model; each tab keeps its own.
         #[template_callback]
         fn on_search_filter_changed(&self, _pspec: glib::ParamSpec, _row: &adw::ComboRow) {
+            if self.syncing_search.get() {
+                return;
+            }
             let Some(v) = self.obj().current_view() else {
                 return;
             };
@@ -725,7 +731,7 @@ impl SpiralWindow {
     }
 
     /// Refresh header widgets from the selected tab.
-    fn sync_header(&self) {
+    pub(crate) fn sync_header(&self) {
         let imp = self.imp();
         let Some(view) = self.current_view() else {
             return;
@@ -745,6 +751,7 @@ impl SpiralWindow {
             imp.search_entry.set_text(&search);
         }
         let pos = |list: &[&str], v: &str| list.iter().position(|k| *k == v).unwrap_or(0) as u32;
+        imp.syncing_search.set(true);
         imp.search_kind_row
             .set_selected(pos(&crate::search::KINDS, &model.search_kind()));
         let dates: Vec<&str> = crate::search::DATES.iter().map(|(n, _)| *n).collect();
@@ -752,6 +759,7 @@ impl SpiralWindow {
             .set_selected(pos(&dates, &model.search_date()));
         imp.search_match_row
             .set_selected(pos(&MATCHES, &model.search_match()));
+        imp.syncing_search.set(false);
         if search.is_empty() && imp.search_button.is_active() {
             imp.search_button.set_active(false);
         }
