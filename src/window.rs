@@ -11,6 +11,8 @@ use crate::progress_indicator::ProgressIndicator;
 use crate::{adw, gio, glib, gtk};
 
 const GRID_ZOOM_SIZES: [i32; 5] = [48, 64, 96, 168, 256];
+/// Search match modes in the order of the "Match" row.
+const MATCHES: [&str; 3] = ["name", "both", "content"];
 const LIST_ZOOM_SIZES: [i32; 5] = [16, 24, 32, 48, 64];
 
 mod imp {
@@ -42,6 +44,12 @@ mod imp {
         #[template_child]
         pub search_button: TemplateChild<gtk::ToggleButton>,
         #[template_child]
+        pub search_kind_row: TemplateChild<adw::ComboRow>,
+        #[template_child]
+        pub search_date_row: TemplateChild<adw::ComboRow>,
+        #[template_child]
+        pub search_match_row: TemplateChild<adw::ComboRow>,
+        #[template_child]
         pub view_split_button: TemplateChild<adw::SplitButton>,
         #[template_child]
         pub view_split_button_bottom: TemplateChild<adw::SplitButton>,
@@ -63,6 +71,9 @@ mod imp {
                 location_entry: Default::default(),
                 search_entry: Default::default(),
                 search_button: Default::default(),
+                search_kind_row: Default::default(),
+                search_date_row: Default::default(),
+                search_match_row: Default::default(),
                 view_split_button: Default::default(),
                 view_split_button_bottom: Default::default(),
                 settings: gio::Settings::new(crate::config::APP_ID),
@@ -413,6 +424,18 @@ mod imp {
         fn on_stop_search(&self, _entry: &gtk::SearchEntry) {
             self.search_button.set_active(false);
         }
+
+        /// The filter rows write to the current tab's model; each tab keeps its own.
+        #[template_callback]
+        fn on_search_filter_changed(&self, _pspec: glib::ParamSpec, _row: &adw::ComboRow) {
+            let Some(v) = self.obj().current_view() else {
+                return;
+            };
+            let model = v.model();
+            model.set_search_kind(crate::search::KINDS[self.search_kind_row.selected() as usize]);
+            model.set_search_date(crate::search::DATES[self.search_date_row.selected() as usize].0);
+            model.set_search_match(MATCHES[self.search_match_row.selected() as usize]);
+        }
     }
 }
 
@@ -622,10 +645,19 @@ impl SpiralWindow {
             &loc.map(|l| file_utils::location_name(&l))
                 .unwrap_or_default(),
         ));
-        let search = view.model().search_text();
+        let model = view.model();
+        let search = model.search_text();
         if imp.search_entry.text().as_str() != search {
             imp.search_entry.set_text(&search);
         }
+        let pos = |list: &[&str], v: &str| list.iter().position(|k| *k == v).unwrap_or(0) as u32;
+        imp.search_kind_row
+            .set_selected(pos(&crate::search::KINDS, &model.search_kind()));
+        let dates: Vec<&str> = crate::search::DATES.iter().map(|(n, _)| *n).collect();
+        imp.search_date_row
+            .set_selected(pos(&dates, &model.search_date()));
+        imp.search_match_row
+            .set_selected(pos(&MATCHES, &model.search_match()));
         if search.is_empty() && imp.search_button.is_active() {
             imp.search_button.set_active(false);
         }

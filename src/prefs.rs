@@ -79,3 +79,7 @@ pub fn thumbnails_for(file: &gio::File) -> bool {
 pub fn counts_for(file: &gio::File) -> bool {
     scope_allows("item-counts", file)
 }
+
+pub fn recursive_search_for(file: &gio::File) -> bool {
+    scope_allows("recursive-search", file)
+}

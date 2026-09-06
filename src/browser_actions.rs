@@ -272,9 +272,10 @@ impl BrowserView {
             "restore",
             in_trash && n > 0 && infos.iter().all(|i| i.has_attribute("trash::orig-path")),
         );
-        let in_virtual = self
-            .location()
-            .is_some_and(|l| crate::starred::is_starred_location(&l));
+        let in_virtual = self.model().searching()
+            || self
+                .location()
+                .is_some_and(|l| crate::starred::is_starred_location(&l));
         self.set_enabled(
             "open-item-location",
             n == 1 && in_virtual && file_utils::file_of(&infos[0]).parent().is_some(),

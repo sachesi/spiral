@@ -30,8 +30,17 @@ Right-clicking any crumb offers to open that folder in a new tab or window, book
 copy its location or show its properties; the ⋮ menu has the same for the current folder.
 
 Alt+Up and Backspace go to the parent, Alt+Left and Alt+Right through the history.
-Typing with the view focused starts a search, which filters the current folder by name
-and nothing deeper.
+
+## Search
+
+Typing with the view focused, or Ctrl+F, starts a search. It looks through the current
+folder and, for local folders by default ("Search in Subfolders" in Preferences), every
+folder below it; the list view then shows where each result lives. The filter button next
+to the entry narrows results by type (folders, documents, images, audio, videos, PDF,
+text, spreadsheets), by modification date, and can match file contents instead of or as
+well as names. Content matching reads text files up to 10 MB with nothing indexed ahead
+of time, so it is only as fast as the disk. Each tab keeps its own filters; "Open Item
+Location" on a result jumps to its folder.
 
 ## Views
 

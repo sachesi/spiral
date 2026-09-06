@@ -117,6 +117,13 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
         None,
         &scopes,
     ));
+    performance.add(&choice_row(
+        &settings,
+        "recursive-search",
+        &gettext("Search in Subfolders"),
+        None,
+        &scopes,
+    ));
     page.add(&performance);
 
     dialog.add(&page);

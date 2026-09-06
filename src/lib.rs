@@ -44,6 +44,7 @@ pub mod places_sidebar;
 pub mod portal;
 pub mod prefs;
 pub mod progress_indicator;
+pub mod search;
 pub mod starred;
 pub mod terminal;
 pub mod thumbnails;
