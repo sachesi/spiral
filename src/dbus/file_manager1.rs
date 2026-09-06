@@ -31,10 +31,11 @@ pub fn register(
         .register_object("/org/freedesktop/FileManager1", &iface)
         .method_call(
             move |_conn, _sender, _path, _iface, method, params, invocation| {
-                let Some(app) = app.upgrade() else {
-                    invocation.return_value(None);
-                    return;
-                };
+                // Answer first. The caller is xdg-desktop-portal, with a browser blocked on
+                // it in turn, and opening a window can take a while: a cold start, a sidebar
+                // waiting on gvfs. Nothing here can fail in a way worth reporting back.
+                invocation.return_value(None);
+                let Some(app) = app.upgrade() else { return };
                 let (uris, _startup_id) = params.get::<(Vec<String>, String)>().unwrap_or_default();
                 let files: Vec<gio::File> = uris.iter().map(|u| gio::File::for_uri(u)).collect();
                 match method {
@@ -43,7 +44,6 @@ pub fn register(
                     "ShowItemProperties" => app.show_item_properties(&files),
                     _ => {}
                 }
-                invocation.return_value(None);
             },
         )
         .build()?;
@@ -51,8 +51,14 @@ pub fn register(
         connection,
         "org.freedesktop.FileManager1",
         gio::BusNameOwnerFlags::NONE,
-        |_, _| {},
-        |_, name| glib::g_warning!("spiral", "lost D-Bus name {name}"),
+        |_, name| glib::g_debug!("spiral", "owning D-Bus name {name}"),
+        |_, name| {
+            glib::g_warning!(
+                "spiral",
+                "not owning D-Bus name {name}: another file manager holds it, so \
+                 \"Show in folder\" from other applications will not reach Spiral"
+            )
+        },
     );
     Ok(Registration { object, owner })
 }
