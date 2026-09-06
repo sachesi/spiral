@@ -1236,8 +1236,9 @@ impl BrowserView {
 
     fn setup_grid_factory(&self) {
         let factory = gtk::SignalListItemFactory::new();
-        let view = self.clone();
+        let view = self.downgrade();
         factory.connect_setup(move |_, item| {
+            let Some(view) = view.upgrade() else { return };
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let image = gtk::Image::builder()
                 .pixel_size(view.icon_size())
@@ -1296,8 +1297,9 @@ impl BrowserView {
             remember_list_item(&bx, item);
             view.setup_cell_dnd(&bx);
         });
-        let view = self.clone();
+        let view = self.downgrade();
         factory.connect_bind(move |_, item| {
+            let Some(view) = view.upgrade() else { return };
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let Some(info) = item.item().and_then(|o| crate::folder_model::info_of(&o)) else {
                 return;
@@ -1340,8 +1342,9 @@ impl BrowserView {
     fn setup_columns(&self) {
         let cv = &self.imp().column_view;
         let name_factory = gtk::SignalListItemFactory::new();
-        let view = self.clone();
+        let view = self.downgrade();
         name_factory.connect_setup(move |_, item| {
+            let Some(view) = view.upgrade() else { return };
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let bx = gtk::Box::builder()
                 .spacing(6)
@@ -1368,8 +1371,9 @@ impl BrowserView {
             remember_list_item(&bx, item);
             view.setup_cell_dnd(&bx);
         });
-        let view = self.clone();
+        let view = self.downgrade();
         name_factory.connect_bind(move |_, item| {
+            let Some(view) = view.upgrade() else { return };
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let Some(info) = item.item().and_then(|o| crate::folder_model::info_of(&o)) else {
                 return;
@@ -1410,8 +1414,9 @@ impl BrowserView {
                         f: fn(&gio::FileInfo) -> String,
                         tip: Option<fn(&gio::FileInfo) -> String>| {
             let factory = gtk::SignalListItemFactory::new();
-            let view = self.clone();
+            let view = self.downgrade();
             factory.connect_setup(move |_, item| {
+                let Some(view) = view.upgrade() else { return };
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 let label = gtk::Label::builder()
                     .xalign(xalign)
@@ -1560,8 +1565,9 @@ impl BrowserView {
     /// A star per row that toggles the favourite, like the Nautilus star column.
     fn star_column(&self) -> gtk::ColumnViewColumn {
         let factory = gtk::SignalListItemFactory::new();
-        let view = self.clone();
+        let view = self.downgrade();
         factory.connect_setup(move |_, item| {
+            let Some(view) = view.upgrade() else { return };
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let button = gtk::Button::builder()
                 .icon_name("non-starred-symbolic")
