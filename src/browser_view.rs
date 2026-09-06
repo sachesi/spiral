@@ -480,6 +480,15 @@ pub fn preferred_action(target: &gtk::DropTarget) -> gtk::gdk::DragAction {
 
 /// Cells keep a weak link to their `ListItem`: its position is live, unlike a cached
 /// number, when items are inserted above it.
+/// Files waiting on the clipboard as a cut are dimmed, the way Nautilus marks them.
+fn set_cut(cell: &impl IsA<gtk::Widget>, info: &gio::FileInfo) {
+    if crate::clipboard::is_cut(&file_utils::file_of(info)) {
+        cell.add_css_class("spiral-cut");
+    } else {
+        cell.remove_css_class("spiral-cut");
+    }
+}
+
 fn remember_list_item(cell: &impl IsA<gtk::Widget>, item: &gtk::ListItem) {
     unsafe { cell.set_data("list-item", item.downgrade()) };
 }
@@ -1106,6 +1115,13 @@ impl BrowserView {
         true
     }
 
+    /// Rebind every row so cell state that lives outside the file info follows:
+    /// lock emblems, cut dimming, stars.
+    pub(crate) fn refresh_cells(&self) {
+        let sel = self.model().selection();
+        sel.items_changed(0, sel.n_items(), sel.n_items());
+    }
+
     pub fn grab_view_focus(&self) {
         let imp = self.imp();
         match imp.view_mode.get() {
@@ -1191,6 +1207,7 @@ impl BrowserView {
             let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
             let captions = labels.last_child().and_downcast::<gtk::Label>().unwrap();
             view.bind_icon(&image, &emblem, &info);
+            set_cut(&bx, &info);
             label.set_text(&info.display_name());
             label.set_tooltip_text(Some(&info.display_name()));
             item.set_accessible_label(&info.display_name());
@@ -1262,6 +1279,7 @@ impl BrowserView {
             let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
             view.bind_icon(&image, &emblem, &info);
+            set_cut(&bx, &info);
             label.set_text(&info.display_name());
         });
         name_factory.connect_unbind(|_, item| {

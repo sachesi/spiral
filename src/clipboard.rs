@@ -1,11 +1,38 @@
 //! File clipboard using Nautilus' `x-special/gnome-copied-files` plus a `gdk::FileList`,
 //! which GDK serialises as `text/uri-list` and as plain-text paths for terminals and editors.
 
+use std::cell::RefCell;
+use std::collections::HashSet;
+
 use crate::gtk::prelude::*;
 use crate::{gdk, gio, glib};
 
 const GNOME_MIME: &str = "x-special/gnome-copied-files";
 const URI_LIST: &str = "text/uri-list";
+
+thread_local! {
+    /// URIs of the files the clipboard currently holds as a cut, so views can dim them.
+    static CUT: RefCell<HashSet<String>> = RefCell::new(HashSet::new());
+}
+
+pub fn is_cut(file: &gio::File) -> bool {
+    CUT.with(|c| c.borrow().contains(file.uri().as_str()))
+}
+
+/// Re-read the clipboard into the cut set. Returns whether the set changed.
+pub async fn refresh_cut(clipboard: &gdk::Clipboard) -> bool {
+    let mut cut = HashSet::new();
+    if has_files(clipboard)
+        && let Some((files, true)) = read(clipboard).await
+    {
+        cut = files.iter().map(|f| f.uri().to_string()).collect();
+    }
+    CUT.with(|c| {
+        let changed = *c.borrow() != cut;
+        *c.borrow_mut() = cut;
+        changed
+    })
+}
 
 pub fn set(clipboard: &gdk::Clipboard, files: &[gio::File], cut: bool) {
     let uris: Vec<String> = files.iter().map(|f| f.uri().to_string()).collect();

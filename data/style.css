@@ -182,3 +182,8 @@ rubberband {
 .toolbar.no-bottom-padding {
   padding-bottom: 0px;
 }
+
+/* Files cut to the clipboard */
+.view .spiral-cut {
+  opacity: 0.45;
+}

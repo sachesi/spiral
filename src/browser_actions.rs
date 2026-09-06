@@ -190,8 +190,7 @@ impl BrowserView {
                             // Cells bound before the answer arrived assumed a writable
                             // folder; rebind them so their lock emblems follow.
                             if !writable {
-                                let sel = view.model().selection();
-                                sel.items_changed(0, sel.n_items(), sel.n_items());
+                                view.refresh_cells();
                             }
                         }
                     }
@@ -201,7 +200,18 @@ impl BrowserView {
         self.clipboard().connect_changed(glib::clone!(
             #[strong]
             update,
-            move |_| update()
+            #[weak(rename_to = view)]
+            self,
+            move |cb| {
+                update();
+                // Files cut to the clipboard are dimmed, so follow every change.
+                let cb = cb.clone();
+                glib::spawn_future_local(async move {
+                    if clipboard::refresh_cut(&cb).await {
+                        view.refresh_cells();
+                    }
+                });
+            }
         ));
         for key in ["show-delete-permanently", "show-create-link"] {
             imp.settings.connect_changed(
@@ -424,6 +434,7 @@ impl BrowserView {
             crate::starred::set_starred(&f, starred);
         }
         self.update_action_state();
+        self.refresh_cells();
     }
 
     fn submit(&self, kind: JobKind) {
