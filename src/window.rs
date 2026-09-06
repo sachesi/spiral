@@ -1,6 +1,7 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gettextrs::gettext;
+use std::cell::RefCell;
 
 use crate::browser_view::BrowserView;
 use crate::enums::{SortKey, ViewMode};
@@ -14,6 +15,8 @@ const GRID_ZOOM_SIZES: [i32; 5] = [48, 64, 96, 168, 256];
 /// Search match modes in the order of the "Match" row.
 const MATCHES: [&str; 3] = ["name", "both", "content"];
 const LIST_ZOOM_SIZES: [i32; 5] = [16, 24, 32, 48, 64];
+/// How many closed tabs "Restore Closed Tab" remembers per window.
+const CLOSED_TABS_MAX: usize = 20;
 
 mod imp {
     use super::*;
@@ -55,6 +58,8 @@ mod imp {
         pub view_split_button_bottom: TemplateChild<adw::SplitButton>,
         pub settings: gio::Settings,
         pub sort_action: gio::SimpleAction,
+        /// Locations of tabs closed in this window, most recent last.
+        pub closed_tabs: RefCell<Vec<gio::File>>,
     }
 
     impl Default for SpiralWindow {
@@ -82,6 +87,7 @@ mod imp {
                     Some(glib::VariantTy::STRING),
                     &"name-asc".to_variant(),
                 ),
+                closed_tabs: Default::default(),
             }
         }
     }
@@ -117,6 +123,16 @@ mod imp {
                 if let Some(page) = win.imp().tab_view.selected_page() {
                     win.imp().tab_view.close_page(&page);
                 }
+            });
+            klass.install_action("win.restore-tab", None, |win, _, _| {
+                let loc = win.imp().closed_tabs.borrow_mut().pop();
+                if let Some(loc) = loc {
+                    win.add_tab(&loc, true);
+                }
+                win.action_set_enabled(
+                    "win.restore-tab",
+                    !win.imp().closed_tabs.borrow().is_empty(),
+                );
             });
             klass.install_action("win.back", None, |win, _, _| {
                 if let Some(v) = win.current_view() {
@@ -184,6 +200,7 @@ mod imp {
             klass.add_binding_action(Key::f, M::CONTROL_MASK, "win.search");
             klass.add_binding_action(Key::t, M::CONTROL_MASK, "win.new-tab");
             klass.add_binding_action(Key::w, M::CONTROL_MASK, "win.close-tab");
+            klass.add_binding_action(Key::t, M::CONTROL_MASK | M::SHIFT_MASK, "win.restore-tab");
             klass.add_binding_action(Key::o, M::CONTROL_MASK | M::SHIFT_MASK, "win.tab-overview");
             klass.add_binding_action(Key::h, M::CONTROL_MASK, "win.show-hidden");
             klass.add_binding_action(Key::F9, M::empty(), "win.sidebar-visible");
@@ -231,6 +248,7 @@ mod imp {
                 }
             ));
             obj.add_action(&self.sort_action);
+            obj.action_set_enabled("win.restore-tab", false);
             obj.sync_view_button();
             obj.zoom(0);
 
@@ -392,6 +410,18 @@ mod imp {
 
         #[template_callback]
         fn on_close_page(&self, page: &adw::TabPage, tab_view: &adw::TabView) -> bool {
+            if let Some(loc) = page
+                .child()
+                .downcast_ref::<BrowserView>()
+                .and_then(|v| v.location())
+            {
+                let mut closed = self.closed_tabs.borrow_mut();
+                if closed.len() == CLOSED_TABS_MAX {
+                    closed.remove(0);
+                }
+                closed.push(loc);
+                self.obj().action_set_enabled("win.restore-tab", true);
+            }
             tab_view.close_page_finish(page, true);
             if tab_view.n_pages() == 0 {
                 self.obj().close();
