@@ -153,6 +153,12 @@ impl BrowserView {
                         if view.location().is_some_and(|l| l.equal(&dir)) {
                             view.imp().can_write.set(writable);
                             update();
+                            // Cells bound before the answer arrived assumed a writable
+                            // folder; rebind them so their lock emblems follow.
+                            if !writable {
+                                let sel = view.model().selection();
+                                sel.items_changed(0, sel.n_items(), sel.n_items());
+                            }
                         }
                     }
                 ));
