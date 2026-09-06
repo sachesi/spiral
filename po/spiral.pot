@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.4.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 00:08+0300\n"
+"POT-Creation-Date: 2026-09-07 00:24+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -317,7 +317,7 @@ msgstr ""
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:629 src/browser_view.rs:855
+#: src/browser_actions.rs:629 src/browser_view.rs:864
 #: src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
@@ -364,63 +364,63 @@ msgstr ""
 msgid "All items in the Trash will be permanently deleted."
 msgstr ""
 
-#: src/browser_actions.rs:679 src/places_sidebar.rs:608 ui/browser_view.ui:312
+#: src/browser_actions.rs:679 src/places_sidebar.rs:608 ui/browser_view.ui:313
 #, no-c-format
 msgid "_Empty Trash"
 msgstr ""
 
-#: src/browser_view.rs:396
+#: src/browser_view.rs:398
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:400
+#: src/browser_view.rs:402
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:501
+#: src/browser_view.rs:510
 #, no-c-format
 msgid "Remove from Starred"
 msgstr ""
 
-#: src/browser_view.rs:503
+#: src/browser_view.rs:512
 #, no-c-format
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view.rs:866 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:875 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:635
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view.rs:879
+#: src/browser_view.rs:888
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:881 ui/browser_view.ui:66
+#: src/browser_view.rs:890 ui/browser_view.ui:66
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:901
+#: src/browser_view.rs:910
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:917
+#: src/browser_view.rs:926
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:922
+#: src/browser_view.rs:931
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -428,23 +428,23 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:928
+#: src/browser_view.rs:937
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:1468
+#: src/browser_view.rs:1491
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:1548 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1571 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr ""
 
-#: src/browser_view.rs:1670 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1693 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr ""
@@ -1647,7 +1647,7 @@ msgstr ""
 msgid "Forward"
 msgstr ""
 
-#: src/portal/chooser_window.rs:148 src/window.rs:934 ui/window.ui:418
+#: src/portal/chooser_window.rs:148 src/window.rs:965 ui/window.ui:418
 #: ui/window.ui:502
 #, no-c-format
 msgid "List View"
@@ -1700,12 +1700,12 @@ msgstr ""
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:588 ui/shortcuts_dialog.ui:234
+#: src/window.rs:591 ui/shortcuts_dialog.ui:234
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:936
+#: src/window.rs:967
 #, no-c-format
 msgid "Grid View"
 msgstr ""
@@ -1739,7 +1739,7 @@ msgstr ""
 msgid "_Run as a Program"
 msgstr ""
 
-#: ui/browser_view.ui:160 ui/browser_view.ui:298
+#: ui/browser_view.ui:160 ui/browser_view.ui:299
 msgid "Open in _Terminal"
 msgstr ""
 
@@ -1803,7 +1803,7 @@ msgstr ""
 msgid "_Delete From Trash…"
 msgstr ""
 
-#: ui/browser_view.ui:249 ui/browser_view.ui:317 ui/path_bar.ui:55
+#: ui/browser_view.ui:249 ui/browser_view.ui:318 ui/path_bar.ui:55
 #: ui/path_bar.ui:83
 msgid "P_roperties"
 msgstr ""
@@ -1816,31 +1816,31 @@ msgstr ""
 msgid "_Move Here"
 msgstr ""
 
-#: ui/browser_view.ui:265
+#: ui/browser_view.ui:266
 msgid "_Link Here"
 msgstr ""
 
-#: ui/browser_view.ui:273 ui/path_bar.ui:12
+#: ui/browser_view.ui:274 ui/path_bar.ui:12
 msgid "New _Folder…"
 msgstr ""
 
-#: ui/browser_view.ui:277 ui/path_bar.ui:16
+#: ui/browser_view.ui:278 ui/path_bar.ui:16
 msgid "New _Document"
 msgstr ""
 
-#: ui/browser_view.ui:283 ui/path_bar.ui:22
+#: ui/browser_view.ui:284 ui/path_bar.ui:22
 msgid "_Paste"
 msgstr ""
 
-#: ui/browser_view.ui:287
+#: ui/browser_view.ui:288
 msgid "Paste as _Link"
 msgstr ""
 
-#: ui/browser_view.ui:292 ui/path_bar.ui:26
+#: ui/browser_view.ui:293 ui/path_bar.ui:26
 msgid "Select _All"
 msgstr ""
 
-#: ui/browser_view.ui:305 ui/path_bar.ui:73
+#: ui/browser_view.ui:306 ui/path_bar.ui:73
 msgid "Add to _Bookmarks"
 msgstr ""
 

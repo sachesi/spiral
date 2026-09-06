@@ -29,7 +29,8 @@ by side, dragging between them, copying from one to the other. It stays as you l
 for new tabs and windows too. F6 moves between the panes, and so does clicking in one.
 The pane in charge is outlined, and the path bar, the header buttons and the keyboard all
 act on that one. Drag the handle to give a pane more room. A window too narrow for two
-panes shows the left one alone and takes the second one back when it grows.
+panes shows the left one alone and takes the second one back, at the folder it was
+showing, when it grows.
 
 ## Getting around
 
@@ -97,7 +98,8 @@ Dropping files asks what to do with them: copy, move or link. It always asks, be
 nothing in a drop tells a held modifier apart from a plain drag: under Wayland the
 compositor settles the question before the files ever reach Spiral. "Ask What to Do With
 Dropped Files" in Preferences turns the question off, and then dragging inside Spiral
-moves, Ctrl makes it a copy, and drags from other applications copy.
+moves, Ctrl makes it a copy, Ctrl+Shift makes a link, and drags from other applications
+copy.
 A drag starts anywhere on a row or a grid tile, and a folder accepts a drop anywhere on
 its row. Drop targets are folders in the view, breadcrumbs and sidebar entries except
 Trash and Favorites. Cut, copy and paste use the same clipboard format as GNOME Files, so

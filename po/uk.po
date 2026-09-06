@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 00:08+0300\n"
+"POT-Creation-Date: 2026-09-07 00:24+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -354,7 +354,7 @@ msgstr "_Пересунути"
 msgid "_Copy"
 msgstr "_Копіювати"
 
-#: src/browser_actions.rs:629 src/browser_view.rs:855
+#: src/browser_actions.rs:629 src/browser_view.rs:864
 #: src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
@@ -402,12 +402,12 @@ msgstr "Спорожнити смітник?"
 msgid "All items in the Trash will be permanently deleted."
 msgstr "Усі об’єкти у смітнику буде остаточно вилучено."
 
-#: src/browser_actions.rs:679 src/places_sidebar.rs:608 ui/browser_view.ui:312
+#: src/browser_actions.rs:679 src/places_sidebar.rs:608 ui/browser_view.ui:313
 #, no-c-format
 msgid "_Empty Trash"
 msgstr "_Спорожнити смітник"
 
-#: src/browser_view.rs:396
+#: src/browser_view.rs:398
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
@@ -415,7 +415,7 @@ msgstr[0] "Вибрано %d теку"
 msgstr[1] "Вибрано %d теки"
 msgstr[2] "Вибрано %d тек"
 
-#: src/browser_view.rs:400
+#: src/browser_view.rs:402
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
@@ -423,44 +423,44 @@ msgstr[0] "Вибрано %d об’єкт"
 msgstr[1] "Вибрано %d об’єкти"
 msgstr[2] "Вибрано %d об’єктів"
 
-#: src/browser_view.rs:501
+#: src/browser_view.rs:510
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Вилучити з вибраного"
 
-#: src/browser_view.rs:503
+#: src/browser_view.rs:512
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Додати до вибраного"
 
-#: src/browser_view.rs:866 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:875 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:635
 #, no-c-format
 msgid "_OK"
 msgstr "_Гаразд"
 
-#: src/browser_view.rs:879
+#: src/browser_view.rs:888
 #, no-c-format
 msgid "No Results Found"
 msgstr "Нічого не знайдено"
 
-#: src/browser_view.rs:881 ui/browser_view.ui:66
+#: src/browser_view.rs:890 ui/browser_view.ui:66
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Тека порожня"
 
-#: src/browser_view.rs:901
+#: src/browser_view.rs:910
 #, no-c-format
 msgid "Loading…"
 msgstr "Завантаження…"
 
-#: src/browser_view.rs:917
+#: src/browser_view.rs:926
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Вибрано «%s»"
 
-#: src/browser_view.rs:922
+#: src/browser_view.rs:931
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -469,23 +469,23 @@ msgstr[1] "%d інші об’єкти вибрано"
 msgstr[2] "%d інших об’єктів вибрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:928
+#: src/browser_view.rs:937
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1468
+#: src/browser_view.rs:1491
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:1548 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1571 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr "Розташування"
 
-#: src/browser_view.rs:1670 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1693 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr "Улюблене"
@@ -645,7 +645,9 @@ msgstr "Питати, що робити з перетягнутими файла
 #: src/dialogs/preferences.rs:52
 #, no-c-format
 msgid "Off, Ctrl copies and dragging inside Spiral moves without asking"
-msgstr "Якщо вимкнено, Ctrl копіює, а перетягування всередині Spiral переміщує без питань"
+msgstr ""
+"Якщо вимкнено, Ctrl копіює, а перетягування всередині Spiral переміщує без "
+"питань"
 
 #: src/dialogs/preferences.rs:61
 #, no-c-format
@@ -1726,7 +1728,7 @@ msgstr "Назад"
 msgid "Forward"
 msgstr "Вперед"
 
-#: src/portal/chooser_window.rs:148 src/window.rs:934 ui/window.ui:418
+#: src/portal/chooser_window.rs:148 src/window.rs:965 ui/window.ui:418
 #: ui/window.ui:502
 #, no-c-format
 msgid "List View"
@@ -1780,12 +1782,12 @@ msgstr "Скасувати"
 msgid "No terminal emulator found"
 msgstr "Емулятор термінала не знайдено"
 
-#: src/window.rs:588 ui/shortcuts_dialog.ui:234
+#: src/window.rs:591 ui/shortcuts_dialog.ui:234
 #, no-c-format
 msgid "Undo"
 msgstr "Повернути"
 
-#: src/window.rs:936
+#: src/window.rs:967
 #, no-c-format
 msgid "Grid View"
 msgstr "У вигляді сітки"
@@ -1819,7 +1821,7 @@ msgstr "Відкрити за _допомогою…"
 msgid "_Run as a Program"
 msgstr "Запустити як _програму"
 
-#: ui/browser_view.ui:160 ui/browser_view.ui:298
+#: ui/browser_view.ui:160 ui/browser_view.ui:299
 msgid "Open in _Terminal"
 msgstr "Відкрити в _терміналі"
 
@@ -1883,7 +1885,7 @@ msgstr "Вилучити _остаточно…"
 msgid "_Delete From Trash…"
 msgstr "Ви_лучити зі смітника…"
 
-#: ui/browser_view.ui:249 ui/browser_view.ui:317 ui/path_bar.ui:55
+#: ui/browser_view.ui:249 ui/browser_view.ui:318 ui/path_bar.ui:55
 #: ui/path_bar.ui:83
 msgid "P_roperties"
 msgstr "В_ластивості"
@@ -1896,31 +1898,31 @@ msgstr "_Копіювати сюди"
 msgid "_Move Here"
 msgstr "_Пересунути сюди"
 
-#: ui/browser_view.ui:265
+#: ui/browser_view.ui:266
 msgid "_Link Here"
 msgstr "_Створити посилання тут"
 
-#: ui/browser_view.ui:273 ui/path_bar.ui:12
+#: ui/browser_view.ui:274 ui/path_bar.ui:12
 msgid "New _Folder…"
 msgstr "Створити _теку…"
 
-#: ui/browser_view.ui:277 ui/path_bar.ui:16
+#: ui/browser_view.ui:278 ui/path_bar.ui:16
 msgid "New _Document"
 msgstr "Створити _документ"
 
-#: ui/browser_view.ui:283 ui/path_bar.ui:22
+#: ui/browser_view.ui:284 ui/path_bar.ui:22
 msgid "_Paste"
 msgstr "Вст_авити"
 
-#: ui/browser_view.ui:287
+#: ui/browser_view.ui:288
 msgid "Paste as _Link"
 msgstr "Вставити як _посилання"
 
-#: ui/browser_view.ui:292 ui/path_bar.ui:26
+#: ui/browser_view.ui:293 ui/path_bar.ui:26
 msgid "Select _All"
 msgstr "Вибрати _все"
 
-#: ui/browser_view.ui:305 ui/path_bar.ui:73
+#: ui/browser_view.ui:306 ui/path_bar.ui:73
 msgid "Add to _Bookmarks"
 msgstr "Додати до _закладок"
 

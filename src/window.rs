@@ -63,6 +63,8 @@ mod imp {
         pub active_view: RefCell<Option<glib::WeakRef<BrowserView>>>,
         /// Set while the window is too narrow for a second pane.
         pub narrow: std::cell::Cell<bool>,
+        /// Where each tab's second pane was looking when it was folded away.
+        pub folded: RefCell<Vec<(glib::WeakRef<adw::TabPage>, gio::File)>>,
         /// Locations of tabs closed in this window, most recent last.
         pub closed_tabs: RefCell<Vec<gio::File>>,
         /// The tab whose context menu is open, if any.
@@ -98,6 +100,7 @@ mod imp {
                 ),
                 active_view: Default::default(),
                 narrow: Default::default(),
+                folded: Default::default(),
                 closed_tabs: Default::default(),
                 menu_page: Default::default(),
                 syncing_search: Default::default(),
@@ -720,20 +723,48 @@ impl SpiralWindow {
             };
             match (want, paned.end_child()) {
                 (true, None) => {
-                    let loc = paned
-                        .start_child()
-                        .and_downcast::<BrowserView>()
-                        .and_then(|v| v.location())
+                    let loc = self
+                        .take_folded(&page)
+                        .or_else(|| {
+                            paned
+                                .start_child()
+                                .and_downcast::<BrowserView>()
+                                .and_then(|v| v.location())
+                        })
                         .unwrap_or_else(|| gio::File::for_path(glib::home_dir()));
                     let view = BrowserView::new(&loc);
                     self.attach_view(&page, &view);
                     paned.set_end_child(Some(&view));
                 }
-                (false, Some(_)) => paned.set_end_child(gtk::Widget::NONE),
+                (false, Some(child)) => {
+                    // Folding the pane away throws the view out, so keep the folder it was
+                    // showing and open there again rather than beside the left pane.
+                    if let Some(loc) = child
+                        .downcast_ref::<BrowserView>()
+                        .and_then(|v| v.location())
+                    {
+                        self.remember_folded(&page, loc);
+                    }
+                    paned.set_end_child(gtk::Widget::NONE);
+                }
                 _ => {}
             }
         }
         self.refresh_active();
+    }
+
+    fn remember_folded(&self, page: &adw::TabPage, location: gio::File) {
+        let mut folded = self.imp().folded.borrow_mut();
+        folded.retain(|(p, _)| p.upgrade().is_some_and(|p| &p != page));
+        folded.push((page.downgrade(), location));
+    }
+
+    fn take_folded(&self, page: &adw::TabPage) -> Option<gio::File> {
+        let mut folded = self.imp().folded.borrow_mut();
+        let at = folded
+            .iter()
+            .position(|(p, _)| p.upgrade().as_ref() == Some(page))?;
+        Some(folded.remove(at).1)
     }
 
     /// F6: hand the focus to the other pane.
