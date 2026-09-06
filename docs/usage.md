@@ -66,9 +66,19 @@ Drop targets are folders in the view, breadcrumbs and sidebar entries except Tra
 Favorites. Cut, copy and paste use the same clipboard format as GNOME Files, so the two
 interoperate. "Paste Into Folder" pastes into a selected folder without entering it.
 
-Delete moves to trash, Shift+Delete deletes for good after asking. Locations that cannot
-trash (some shares) offer permanent deletion instead. Everything else about operations,
+"Copy to…" and "Move to…" ask for a folder instead of using the clipboard. "Paste as
+Link" and, when turned on in Preferences, "Create Link" make symbolic links; a link
+beside its target is called "Link to name".
+
+Delete moves to trash, Shift+Delete deletes for good after asking; the menu entry for it
+is off by default and lives in Preferences under Optional Context Menu Actions. Locations
+that cannot trash (some shares) offer permanent deletion instead. Inside Trash the menu
+offers "Restore From Trash" and "Delete From Trash". Everything else about operations,
 conflicts and undo is in [file-operations.md](file-operations.md).
+
+Executable files get "Run as a Program": scripts run in the terminal so their output can
+be read, binaries start on their own. In Favorites, "Open Item Location" jumps to the
+folder holding the item and selects it there.
 
 ## Favorites
 

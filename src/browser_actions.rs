@@ -64,6 +64,7 @@ impl BrowserView {
         add("open-with", |v| v.open_with());
         add("star", |v| v.set_selection_starred(true));
         add("unstar", |v| v.set_selection_starred(false));
+        add("open-item-location", |v| v.open_item_location());
         add("bookmark", |v| {
             if let Some(dir) = v.location() {
                 crate::bookmarks::add(&dir);
@@ -84,6 +85,21 @@ impl BrowserView {
                 v.submit_on_selection(|files| JobKind::Trash { files })
             }),
             add("delete", |v| v.delete_selected()),
+            add("delete-permanently", |v| v.delete_selected()),
+            add("delete-from-trash", |v| v.delete_selected()),
+            add("restore", |v| v.restore_selected()),
+            add("create-link", |v| {
+                if let Some(dest) = v.location() {
+                    v.submit_on_selection(|files| JobKind::Link {
+                        files,
+                        dest: dest.clone(),
+                    });
+                }
+            }),
+            add("paste-link", |v| v.paste_link()),
+            add("copy-to", |v| v.transfer_to(false)),
+            add("move-to", |v| v.transfer_to(true)),
+            add("run", |v| v.run_selected()),
             add("rename", |v| v.rename_selected()),
             add("new-file", |v| {
                 if let Some(parent) = v.location() {
@@ -164,7 +180,21 @@ impl BrowserView {
                 ));
             }
         ));
-        self.clipboard().connect_changed(move |_| update());
+        self.clipboard().connect_changed(glib::clone!(
+            #[strong]
+            update,
+            move |_| update()
+        ));
+        for key in ["show-delete-permanently", "show-create-link"] {
+            imp.settings.connect_changed(
+                Some(key),
+                glib::clone!(
+                    #[strong]
+                    update,
+                    move |_, _| update()
+                ),
+            );
+        }
         self.update_action_state();
 
         // Right click: item menu or background menu.
@@ -232,11 +262,44 @@ impl BrowserView {
         self.set_enabled("rename", n == 1 && !in_trash && can_rename);
         self.set_enabled("trash", n > 0 && !in_trash && can_trash);
         self.set_enabled("delete", n > 0 && can_delete);
+        let show_delete = self.imp().settings.boolean("show-delete-permanently");
+        self.set_enabled(
+            "delete-permanently",
+            n > 0 && can_delete && !in_trash && show_delete,
+        );
+        self.set_enabled("delete-from-trash", n > 0 && can_delete && in_trash);
+        self.set_enabled(
+            "restore",
+            in_trash && n > 0 && infos.iter().all(|i| i.has_attribute("trash::orig-path")),
+        );
+        let in_virtual = self
+            .location()
+            .is_some_and(|l| crate::starred::is_starred_location(&l));
+        self.set_enabled(
+            "open-item-location",
+            n == 1 && in_virtual && file_utils::file_of(&infos[0]).parent().is_some(),
+        );
+        self.set_enabled("copy-to", n > 0 && !in_trash);
+        self.set_enabled("move-to", n > 0 && !in_trash && can_delete);
+        self.set_enabled("run", n == 1 && file_utils::is_program(&infos[0]));
         self.set_enabled("new-folder", can_write && !in_trash);
         self.set_enabled("new-file", can_write && !in_trash);
         self.set_enabled("empty-trash", in_trash && self.model().n_items() > 0);
         self.set_enabled("properties", n > 0 || self.location().is_some());
         let local = infos.iter().all(|i| file_utils::file_of(i).is_native());
+        let local_dir = self.location().is_some_and(|l| l.is_native());
+        self.set_enabled(
+            "create-link",
+            n > 0
+                && local
+                && local_dir
+                && can_write
+                && self.imp().settings.boolean("show-create-link"),
+        );
+        self.set_enabled(
+            "paste-link",
+            can_write && local_dir && !in_trash && has_clip,
+        );
         let archives = n > 0
             && local
             && infos.iter().all(|i| {
@@ -390,6 +453,112 @@ impl BrowserView {
                 }
             }
         ));
+    }
+
+    /// Choose a folder, then copy or move the selection there.
+    fn transfer_to(&self, is_move: bool) {
+        let files = self.selected();
+        if files.is_empty() {
+            return;
+        }
+        let dialog = gtk::FileDialog::builder()
+            .title(if is_move {
+                gettext("Move To")
+            } else {
+                gettext("Copy To")
+            })
+            .accept_label(if is_move {
+                gettext("_Move")
+            } else {
+                gettext("_Copy")
+            })
+            .initial_folder(
+                &self
+                    .location()
+                    .unwrap_or_else(|| gio::File::for_path(glib::home_dir())),
+            )
+            .build();
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                let win = view.root().and_downcast::<gtk::Window>();
+                if let Ok(dest) = dialog.select_folder_future(win.as_ref()).await {
+                    let pairs = files.into_iter().map(|f| (f, dest.clone())).collect();
+                    view.submit(JobKind::Transfer { pairs, is_move });
+                }
+            }
+        ));
+    }
+
+    fn paste_link(&self) {
+        let Some(dest) = self.location() else { return };
+        let cb = self.clipboard();
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                if let Some((files, _)) = clipboard::read(&cb).await {
+                    view.submit(JobKind::Link { files, dest });
+                }
+            }
+        ));
+    }
+
+    /// Move trashed items back to where they came from.
+    fn restore_selected(&self) {
+        let pairs: Vec<(gio::File, gio::File)> = self
+            .model()
+            .selected_infos()
+            .iter()
+            .filter_map(|info| {
+                let orig = info.attribute_byte_string("trash::orig-path")?;
+                Some((
+                    file_utils::file_of(info),
+                    gio::File::for_path(orig.as_str()),
+                ))
+            })
+            .collect();
+        if !pairs.is_empty() {
+            self.submit(JobKind::Restore { pairs });
+        }
+    }
+
+    /// Go to the folder holding the selected item and select it there.
+    fn open_item_location(&self) {
+        let files = self.selected();
+        let [file] = files.as_slice() else { return };
+        let Some(parent) = file.parent() else { return };
+        self.go_to(&parent);
+        self.select_files_when_loaded(vec![file.clone()]);
+    }
+
+    /// Scripts run in the terminal so their output can be seen; binaries start directly.
+    fn run_selected(&self) {
+        let infos = self.model().selected_infos();
+        let [info] = infos.as_slice() else { return };
+        let file = file_utils::file_of(info);
+        let Some(path) = file.path() else { return };
+        let is_script = info
+            .content_type()
+            .is_some_and(|ct| gio::content_type_is_a(&ct, "text/plain"));
+        let result = if is_script {
+            let dir = path
+                .parent()
+                .map(std::path::Path::to_path_buf)
+                .unwrap_or_default();
+            crate::terminal::run(&dir, &path)
+        } else {
+            gio::AppInfo::create_from_commandline(
+                glib::shell_quote(&path).to_string_lossy().as_ref(),
+                None,
+                gio::AppInfoCreateFlags::NONE,
+            )
+            .and_then(|app| app.launch(&[], Some(&self.display().app_launch_context())))
+        };
+        if let Err(e) = result {
+            self.show_error(e.message());
+        }
     }
 
     fn delete_selected(&self) {

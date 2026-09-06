@@ -11,8 +11,8 @@ use crate::{gio, glib};
 /// Attributes requested from `gtk::DirectoryList` for every view.
 pub const ATTRIBUTES: &str = "standard::*,time::modified,thumbnail::path,thumbnail::is-valid,\
 thumbnail::failed,access::can-read,access::can-write,access::can-delete,access::can-trash,\
-access::can-rename,unix::mode,owner::user,\
-owner::group,metadata::custom-icon,metadata::custom-icon-name";
+access::can-rename,access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,\
+metadata::custom-icon,metadata::custom-icon-name";
 
 /// Icon to draw for `info`, honouring the Nautilus-compatible custom icon metadata.
 pub fn icon_of(info: &gio::FileInfo) -> gio::Icon {
@@ -53,6 +53,16 @@ pub fn is_locked(info: &gio::FileInfo, folder_writable: bool) -> bool {
     folder_writable
         && !allows(info, "access::can-write")
         && !file_of(info).uri().starts_with("trash:")
+}
+
+/// A file "Run as a Program" can start: executable bit set and a type that is a program.
+pub fn is_program(info: &gio::FileInfo) -> bool {
+    !is_dir(info)
+        && info.has_attribute("access::can-execute")
+        && info.boolean("access::can-execute")
+        && info
+            .content_type()
+            .is_some_and(|ct| gio::content_type_can_be_executable(&ct))
 }
 
 pub fn is_dir(info: &gio::FileInfo) -> bool {

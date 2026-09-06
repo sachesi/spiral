@@ -52,6 +52,11 @@ pub enum JobKind {
         archives: Vec<gio::File>,
         dest: gio::File,
     },
+    /// Symbolic links to `files`, created in `dest`.
+    Link {
+        files: Vec<gio::File>,
+        dest: gio::File,
+    },
     /// Pack `files` into `dest/file_name`.
     Compress {
         files: Vec<gio::File>,
@@ -123,6 +128,11 @@ impl JobKind {
             JobKind::Compress { file_name, .. } => {
                 gettext("Compressing to “%s”").replace("%s", file_name)
             }
+            JobKind::Link { files, .. } => match files.len() {
+                1 => gettext("Creating link to “%s”").replace("%s", &name(&files[0])),
+                k => ngettext("Creating %d link", "Creating %d links", k as u32)
+                    .replace("%d", &k.to_string()),
+            },
         }
     }
 
@@ -175,6 +185,11 @@ impl JobKind {
                     .replace("%d", &k.to_string()),
             },
             JobKind::Compress { file_name, .. } => gettext("Created “%s”").replace("%s", file_name),
+            JobKind::Link { files, .. } => match files.len() {
+                1 => gettext("Created link to “%s”").replace("%s", &name(&files[0])),
+                k => ngettext("Created %d link", "Created %d links", k as u32)
+                    .replace("%d", &k.to_string()),
+            },
         }
     }
 }

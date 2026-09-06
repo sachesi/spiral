@@ -70,6 +70,28 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     views.add(&guess);
     page.add(&views);
 
+    let optional = adw::PreferencesGroup::builder()
+        .title(gettext("Optional Context Menu Actions"))
+        .description(gettext(
+            "Shift+Delete deletes permanently either way, and links can always be pasted.",
+        ))
+        .build();
+    let create_link = adw::SwitchRow::builder()
+        .title(gettext("Create Link"))
+        .build();
+    settings
+        .bind("show-create-link", &create_link, "active")
+        .build();
+    optional.add(&create_link);
+    let delete_permanently = adw::SwitchRow::builder()
+        .title(gettext("Delete Permanently"))
+        .build();
+    settings
+        .bind("show-delete-permanently", &delete_permanently, "active")
+        .build();
+    optional.add(&delete_permanently);
+    page.add(&optional);
+
     let performance = adw::PreferencesGroup::builder()
         .title(gettext("Performance"))
         .description(gettext(

@@ -774,7 +774,7 @@ impl BrowserView {
         ));
     }
 
-    fn show_error(&self, message: &str) {
+    pub(crate) fn show_error(&self, message: &str) {
         let dialog = adw::AlertDialog::builder()
             .heading(gettext("Could Not Open"))
             .body(message)
