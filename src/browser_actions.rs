@@ -551,7 +551,15 @@ impl BrowserView {
         let files = self.selected();
         let [file] = files.as_slice() else { return };
         let Some(parent) = file.parent() else { return };
-        self.go_to(&parent);
+        if self.location().is_some_and(|l| l.equal(&parent)) {
+            // Already there: only the search has to end, and the header must follow.
+            self.model().set_search_text("");
+            if let Some(win) = self.root().and_downcast::<crate::window::SpiralWindow>() {
+                win.sync_header();
+            }
+        } else {
+            self.go_to(&parent);
+        }
         self.select_files_when_loaded(vec![file.clone()]);
     }
 

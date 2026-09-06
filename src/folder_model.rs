@@ -165,7 +165,12 @@ mod imp {
             self.dir_list.connect_loading_notify(glib::clone!(
                 #[weak]
                 obj,
-                move |dl| obj.imp().set_loading(dl.is_loading())
+                move |dl| {
+                    // While searching, the search decides when loading ends.
+                    if !obj.imp().searching.get() {
+                        obj.imp().set_loading(dl.is_loading());
+                    }
+                }
             ));
             let id = crate::starred::list().connect_items_changed(glib::clone!(
                 #[weak]
