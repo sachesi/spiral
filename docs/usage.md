@@ -26,6 +26,8 @@ the filesystem. Crumbs are drop targets. Click the last one, or press Ctrl+L, to
 location instead: an absolute path, `~/something`, or a URI such as `trash:///`,
 `starred:///` or `sftp://host/path`. Folder names complete inline as you type; Tab
 accepts, Esc goes back to the crumbs. Hidden folders only complete if you typed the dot.
+Right-clicking any crumb offers to open that folder in a new tab or window, bookmark it,
+copy its location or show its properties; the ⋮ menu has the same for the current folder.
 
 Alt+Up and Backspace go to the parent, Alt+Left and Alt+Right through the history.
 Typing with the view focused starts a search, which filters the current folder by name

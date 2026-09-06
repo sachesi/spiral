@@ -27,6 +27,10 @@ menu current_menu {
       action: "win.open-current-new-tab";
     }
     item {
+      label: _("Open in New _Window");
+      action: "crumb.open-new-window";
+    }
+    item {
       label: _("R_eload");
       action: "win.reload";
     }
@@ -38,8 +42,41 @@ menu current_menu {
   }
   section {
     item {
+      label: _("_Copy Location");
+      action: "crumb.copy-location";
+    }
+    item {
       label: _("P_roperties");
       action: "view.properties";
+    }
+  }
+}
+
+menu crumb_menu {
+  section {
+    item {
+      label: _("Open in New _Tab");
+      action: "crumb.open-new-tab";
+    }
+    item {
+      label: _("Open in New _Window");
+      action: "crumb.open-new-window";
+    }
+  }
+  section {
+    item {
+      label: _("Add to _Bookmarks");
+      action: "crumb.add-bookmark";
+    }
+    item {
+      label: _("_Copy Location");
+      action: "crumb.copy-location";
+    }
+  }
+  section {
+    item {
+      label: _("P_roperties");
+      action: "crumb.properties";
     }
   }
 }
