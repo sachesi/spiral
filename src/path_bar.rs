@@ -24,6 +24,9 @@ mod imp {
         pub menu_button: TemplateChild<gtk::MenuButton>,
         #[property(get, set = Self::set_location, nullable)]
         location: RefCell<Option<gio::File>>,
+        /// Root and name of the mount the location is on, looked up in the background;
+        /// None for home and `/`.
+        pub mount: RefCell<Option<(gio::File, String)>>,
     }
 
     #[glib::object_subclass]
@@ -102,7 +105,47 @@ mod imp {
                 return;
             }
             self.location.replace(file.clone());
+            self.mount.replace(None);
             self.rebuild(file.as_ref());
+            // The mount lookup can talk to gvfs, so the chain is drawn from `/` first and
+            // redrawn from the mount point once known.
+            let Some(file) = file else { return };
+            let home = gio::File::for_path(glib::home_dir());
+            if file.equal(&home) || file.has_prefix(&home) {
+                return;
+            }
+            glib::spawn_future_local(glib::clone!(
+                #[weak(rename_to = bar)]
+                self.obj(),
+                async move {
+                    let lookup = file.clone();
+                    // Mount objects are not Send; only the root URI and name travel back.
+                    let Ok(Some((root, name))) = gio::spawn_blocking(move || {
+                        lookup
+                            .find_enclosing_mount(gio::Cancellable::NONE)
+                            .ok()
+                            .map(|m| (m.root().uri().to_string(), m.name().to_string()))
+                    })
+                    .await
+                    else {
+                        return;
+                    };
+                    let root = gio::File::for_uri(&root);
+                    if root.path().is_some_and(|p| p.as_os_str() == "/") {
+                        return;
+                    }
+                    let imp = bar.imp();
+                    if imp
+                        .location
+                        .borrow()
+                        .as_ref()
+                        .is_some_and(|l| l.equal(&file))
+                    {
+                        imp.mount.replace(Some((root, name)));
+                        imp.rebuild(Some(&file));
+                    }
+                }
+            ));
         }
 
         fn rebuild(&self, file: Option<&gio::File>) {
@@ -112,7 +155,8 @@ mod imp {
             let Some(file) = file else { return };
 
             // Chain from the nearest "root": home, a mount point, or the filesystem root.
-            let root = chain_root(file);
+            let mount = self.mount.borrow().clone();
+            let root = chain_root(file, mount.as_ref());
             let mut chain = vec![file.clone()];
             let mut cur = file.clone();
             while !cur.equal(&root) {
@@ -132,7 +176,7 @@ mod imp {
                 let container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
                 let label = gtk::Label::builder().single_line_mode(true).build();
                 if i == 0 {
-                    let (icon, name) = root_icon_and_name(&f);
+                    let (icon, name) = root_icon_and_name(&f, mount.as_ref());
                     let child = gtk::Box::new(gtk::Orientation::Horizontal, 6);
                     child.append(&gtk::Image::from_icon_name(icon));
                     label.set_label(&name);
@@ -209,16 +253,13 @@ mod imp {
 }
 
 /// Where the crumb chain starts for `file`.
-fn chain_root(file: &gio::File) -> gio::File {
+fn chain_root(file: &gio::File, mount: Option<&(gio::File, String)>) -> gio::File {
     let home = gio::File::for_path(glib::home_dir());
     if file.equal(&home) || file.has_prefix(&home) {
         return home;
     }
-    if let Ok(mount) = file.find_enclosing_mount(gio::Cancellable::NONE) {
-        let root = mount.root();
-        if root.path().is_none_or(|p| p.as_os_str() != "/") {
-            return root;
-        }
+    if let Some((root, _)) = mount {
+        return root.clone();
     }
     let mut cur = file.clone();
     while let Some(p) = cur.parent() {
@@ -227,7 +268,10 @@ fn chain_root(file: &gio::File) -> gio::File {
     cur
 }
 
-fn root_icon_and_name(root: &gio::File) -> (&'static str, String) {
+fn root_icon_and_name(
+    root: &gio::File,
+    mount: Option<&(gio::File, String)>,
+) -> (&'static str, String) {
     let home = gio::File::for_path(glib::home_dir());
     if root.equal(&home) {
         return ("user-home-symbolic", gettext("Home"));
@@ -244,13 +288,13 @@ fn root_icon_and_name(root: &gio::File) -> (&'static str, String) {
             .unwrap_or_else(|| gettext("System"));
         return ("drive-harddisk-symbolic", name);
     }
-    if let Ok(mount) = root.find_enclosing_mount(gio::Cancellable::NONE) {
+    if let Some((_, name)) = mount {
         let icon = if root.is_native() {
             "drive-removable-media-symbolic"
         } else {
             "folder-remote-symbolic"
         };
-        return (icon, mount.name().to_string());
+        return (icon, name.clone());
     }
     ("folder-symbolic", file_utils::location_name(root))
 }

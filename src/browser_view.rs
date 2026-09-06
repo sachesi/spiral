@@ -55,6 +55,8 @@ mod imp {
         pub folder_view: Cell<Option<ViewMode>>,
         /// Sort order remembered for the current folder, if any.
         pub folder_sort: Cell<Option<(SortKey, bool)>>,
+        /// Whether the current folder accepts new files, looked up when it is entered.
+        pub can_write: Cell<bool>,
         /// Bumped per navigation so late view lookups for an old folder are dropped.
         pub nav_gen: Cell<u64>,
         #[property(get, nullable)]
@@ -121,6 +123,7 @@ mod imp {
                 list_icon_size: Cell::new(32),
                 folder_view: Default::default(),
                 folder_sort: Default::default(),
+                can_write: Cell::new(true),
                 nav_gen: Default::default(),
                 location: Default::default(),
                 history: Default::default(),
@@ -352,6 +355,24 @@ fn global_view_mode(settings: &gio::Settings, key: &str) -> ViewMode {
     }
 }
 
+/// Store a per-folder metadata attribute without waiting for the metadata daemon.
+fn remember(dir: gio::File, attribute: &'static str, value: String) {
+    let info = gio::FileInfo::new();
+    info.set_attribute_string(attribute, &value);
+    glib::spawn_future_local(async move {
+        if let Err(e) = dir
+            .set_attributes_future(
+                &info,
+                gio::FileQueryInfoFlags::NONE,
+                glib::Priority::DEFAULT,
+            )
+            .await
+        {
+            glib::g_debug!("spiral", "cannot set {attribute} on {}: {e}", dir.uri());
+        }
+    });
+}
+
 fn folders_selected(n: usize) -> String {
     ngettext("%d folder selected", "%d folders selected", n as u32).replace("%d", &n.to_string())
 }
@@ -501,16 +522,7 @@ impl BrowserView {
             Some(dir) if crate::prefs::remember_view() => {
                 imp.folder_sort.set(Some((key, reversed)));
                 let value = format!("{}-{}", key.nick(), if reversed { "desc" } else { "asc" });
-                glib::spawn_future_local(async move {
-                    if let Err(e) = dir.set_attribute_string(
-                        "metadata::spiral-sort",
-                        &value,
-                        gio::FileQueryInfoFlags::NONE,
-                        gio::Cancellable::NONE,
-                    ) {
-                        glib::g_debug!("spiral", "cannot remember sort for {}: {e}", dir.uri());
-                    }
-                });
+                remember(dir, "metadata::spiral-sort", value);
             }
             _ => {
                 let _ = imp.settings.set_string("sort-key", key.nick());
@@ -617,16 +629,7 @@ impl BrowserView {
             }
             Some(dir) if crate::prefs::remember_view() => {
                 self.imp().folder_view.set(Some(next));
-                glib::spawn_future_local(async move {
-                    if let Err(e) = dir.set_attribute_string(
-                        "metadata::spiral-view",
-                        nick,
-                        gio::FileQueryInfoFlags::NONE,
-                        gio::Cancellable::NONE,
-                    ) {
-                        glib::g_debug!("spiral", "cannot remember view for {}: {e}", dir.uri());
-                    }
-                });
+                remember(dir, "metadata::spiral-view", nick.to_string());
             }
             _ => {
                 let _ = self.imp().settings.set_string("view-mode", nick);

@@ -49,7 +49,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                     continue;
                 }
                 let dest_name = if same_parent {
-                    unique_copy_name(&dest_dir, &name(&src))
+                    unique_copy_name(&dest_dir, &name(&src)).await
                 } else {
                     name(&src)
                 };
@@ -150,9 +150,12 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
             job.set_files_total(pairs.len() as u64);
             for (item, original) in pairs {
                 if let Some(parent) = original.parent()
-                    && !parent.query_exists(gio::Cancellable::NONE)
+                    && !exists(&parent).await
                 {
-                    let _ = parent.make_directory_with_parents(gio::Cancellable::NONE);
+                    let _ = gio::spawn_blocking(move || {
+                        parent.make_directory_with_parents(gio::Cancellable::NONE)
+                    })
+                    .await;
                 }
                 let Some(parent) = original.parent() else {
                     continue;
@@ -322,8 +325,7 @@ async fn transfer_one(
             match dest.make_directory_future(PRIO).await {
                 Ok(()) => {}
                 Err(e) if e.matches(gio::IOErrorEnum::Exists) => {
-                    let dest_is_dir = dest.query_file_type(NOFOLLOW, gio::Cancellable::NONE)
-                        == gio::FileType::Directory;
+                    let dest_is_dir = file_type(&dest).await == gio::FileType::Directory;
                     if !dest_is_dir || !overwrite {
                         match resolve_conflict(job, mgr, src, &dest, dest_is_dir).await? {
                             Step::Skip => return Ok(None),
@@ -455,7 +457,7 @@ async fn resolve_conflict(
 
 /// Post-order recursive delete.
 async fn delete_recursive(job: &Job, mgr: &JobManager, file: &gio::File) -> Res<()> {
-    let ftype = file.query_file_type(NOFOLLOW, gio::Cancellable::NONE);
+    let ftype = file_type(file).await;
     if ftype == gio::FileType::Directory && !in_trash(file) {
         for (child, _) in children(file, "standard::name").await {
             Box::pin(delete_recursive(job, mgr, &child)).await?;
@@ -478,8 +480,22 @@ async fn delete_recursive(job: &Job, mgr: &JobManager, file: &gio::File) -> Res<
     Ok(())
 }
 
+/// Type without following symlinks; Unknown when the file is missing or unreadable.
+async fn file_type(file: &gio::File) -> gio::FileType {
+    file.query_info_future("standard::type", NOFOLLOW, PRIO)
+        .await
+        .map(|i| i.file_type())
+        .unwrap_or(gio::FileType::Unknown)
+}
+
+async fn exists(file: &gio::File) -> bool {
+    file.query_info_future("standard::type", NOFOLLOW, PRIO)
+        .await
+        .is_ok()
+}
+
 /// "x.txt" -> "x (copy).txt", "x (copy 2).txt", ... first one not present in `dir`.
-fn unique_copy_name(dir: &gio::File, original: &str) -> String {
+async fn unique_copy_name(dir: &gio::File, original: &str) -> String {
     let (stem, ext) = match original.rfind('.').filter(|&i| i > 0) {
         Some(i) => (&original[..i], &original[i..]),
         None => (original, ""),
@@ -493,7 +509,7 @@ fn unique_copy_name(dir: &gio::File, original: &str) -> String {
         } else {
             format!("{stem} ({copy} {n}){ext}")
         };
-        if !dir.child(&candidate).query_exists(gio::Cancellable::NONE) {
+        if !exists(&dir.child(&candidate)).await {
             return candidate;
         }
         n += 1;
