@@ -284,7 +284,10 @@ impl BrowserView {
         );
         self.set_enabled("cut", n > 0 && !in_trash && can_delete);
         self.set_enabled("copy", n > 0);
-        let has_clip = clipboard::has_files(&self.clipboard());
+        let cb = self.clipboard();
+        let has_files = clipboard::has_files(&cb);
+        // Images are pasted as a new file, so they count too.
+        let has_clip = has_files || clipboard::has_image(&cb);
         self.set_enabled("paste", can_write && !in_trash && has_clip);
         self.set_enabled("paste-into", dir_writable && !in_trash && has_clip);
         self.set_enabled("rename", n == 1 && !in_trash && can_rename);
@@ -327,7 +330,7 @@ impl BrowserView {
         );
         self.set_enabled(
             "paste-link",
-            can_write && local_dir && !in_trash && has_clip,
+            can_write && local_dir && !in_trash && has_files,
         );
         let archives = n > 0
             && local
@@ -467,6 +470,10 @@ impl BrowserView {
         };
         let cb = self.clipboard();
         if !clipboard::has_files(&cb) {
+            // An image and no files: a screenshot, saved into the folder as a PNG.
+            if clipboard::has_image(&cb) {
+                self.paste_image(dest);
+            }
             return;
         }
         glib::spawn_future_local(glib::clone!(
@@ -483,6 +490,24 @@ impl BrowserView {
                 });
                 if cut {
                     cb.set_content(gtk::gdk::ContentProvider::NONE).ok();
+                }
+            }
+        ));
+    }
+
+    fn paste_image(&self, dest: gio::File) {
+        let cb = self.clipboard();
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                match cb.read_texture_future().await {
+                    Ok(Some(image)) => view.submit(JobKind::SaveImage {
+                        parent: dest,
+                        image,
+                    }),
+                    Ok(None) => {}
+                    Err(e) => view.show_error(&gettext("Could Not Paste Image"), e.message()),
                 }
             }
         ));
@@ -598,7 +623,7 @@ impl BrowserView {
             .and_then(|app| app.launch(&[], Some(&self.display().app_launch_context())))
         };
         if let Err(e) = result {
-            self.show_error(e.message());
+            self.show_error(&gettext("Could Not Open"), e.message());
         }
     }
 

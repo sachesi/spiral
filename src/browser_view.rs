@@ -843,15 +843,15 @@ impl BrowserView {
             async move {
                 if let Err(e) = gio::AppInfo::launch_default_for_uri_future(&uri, Some(&ctx)).await
                 {
-                    view.show_error(e.message());
+                    view.show_error(&gettext("Could Not Open"), e.message());
                 }
             }
         ));
     }
 
-    pub(crate) fn show_error(&self, message: &str) {
+    pub(crate) fn show_error(&self, heading: &str, message: &str) {
         let dialog = adw::AlertDialog::builder()
-            .heading(gettext("Could Not Open"))
+            .heading(heading)
             .body(message)
             .build();
         dialog.add_response("ok", &gettext("_OK"));

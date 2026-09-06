@@ -57,6 +57,11 @@ pub enum JobKind {
         files: Vec<gio::File>,
         dest: gio::File,
     },
+    /// Write an image held by the clipboard, a screenshot say, into `parent` as a PNG.
+    SaveImage {
+        parent: gio::File,
+        image: crate::gdk::Texture,
+    },
     /// Pack `files` into `dest/file_name`, encrypted when `password` is set.
     Compress {
         files: Vec<gio::File>,
@@ -116,6 +121,7 @@ impl JobKind {
                 gettext("Creating folder “%s”").replace("%s", name)
             }
             JobKind::CreateFile { name, .. } => gettext("Creating “%s”").replace("%s", name),
+            JobKind::SaveImage { .. } => gettext("Saving pasted image"),
             JobKind::Restore { pairs } => match pairs.len() {
                 1 => gettext("Restoring “%s”").replace("%s", &name(&pairs[0].1)),
                 k => ngettext("Restoring %d file", "Restoring %d files", k as u32)
@@ -175,6 +181,7 @@ impl JobKind {
                 gettext("Created folder “%s”").replace("%s", name)
             }
             JobKind::CreateFile { name, .. } => gettext("Created “%s”").replace("%s", name),
+            JobKind::SaveImage { .. } => gettext("Saved pasted image"),
             JobKind::Restore { pairs } => match pairs.len() {
                 1 => gettext("Restored “%s”").replace("%s", &name(&pairs[0].1)),
                 k => ngettext("Restored %d file", "Restored %d files", k as u32)
