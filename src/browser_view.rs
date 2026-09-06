@@ -40,6 +40,10 @@ mod imp {
         pub item_menu: TemplateChild<gio::MenuModel>,
         #[template_child]
         pub background_menu: TemplateChild<gio::MenuModel>,
+        #[template_child]
+        pub drop_menu: TemplateChild<gio::MenuModel>,
+        /// Files waiting for the drop menu to say what to do with them.
+        pub pending_drop: RefCell<Option<(Vec<gio::File>, gio::File)>>,
 
         #[property(get)]
         pub model: FolderModel,
@@ -119,6 +123,8 @@ mod imp {
                 floating_details: Default::default(),
                 item_menu: Default::default(),
                 background_menu: Default::default(),
+                drop_menu: Default::default(),
+                pending_drop: Default::default(),
                 chooser_mode: Default::default(),
                 actions: gio::SimpleActionGroup::new(),
                 popover: Default::default(),
@@ -178,8 +184,8 @@ mod imp {
                     obj,
                     #[upgrade_or]
                     false,
-                    move |t, value, _, _| match obj.location() {
-                        Some(loc) => obj.drop_files(t, value, &loc),
+                    move |t, value, x, y| match obj.location() {
+                        Some(loc) => obj.drop_files(t, value, &loc, x, y),
                         None => false,
                     }
                 ));
@@ -462,8 +468,9 @@ fn unbind_icon(image: &gtk::Image) {
     image.remove_css_class("file-thumbnail");
 }
 
-/// Copy when the source only offers copy (Ctrl held), move for drags started in this process,
-/// copy for drags from other applications.
+/// One offered action means the modifier already chose: Ctrl copies, Shift moves,
+/// Ctrl+Shift links. Otherwise move for drags started in this process, copy for drags from
+/// other applications.
 pub fn preferred_action(target: &gtk::DropTarget) -> gtk::gdk::DragAction {
     let Some(drop) = target.current_drop() else {
         return gtk::gdk::DragAction::COPY;
@@ -471,6 +478,8 @@ pub fn preferred_action(target: &gtk::DropTarget) -> gtk::gdk::DragAction {
     let actions = drop.actions();
     if actions == gtk::gdk::DragAction::COPY {
         gtk::gdk::DragAction::COPY
+    } else if actions == gtk::gdk::DragAction::LINK {
+        gtk::gdk::DragAction::LINK
     } else if actions.contains(gtk::gdk::DragAction::MOVE) && drop.drag().is_some() {
         // Same-process drag: default to move like Nautilus does for local files.
         gtk::gdk::DragAction::MOVE
@@ -1149,11 +1158,11 @@ impl BrowserView {
             cell,
             #[upgrade_or]
             false,
-            move |t, value, _, _| {
+            move |t, value, x, y| {
                 let Some(folder) = view.cell_folder(&cell) else {
                     return false;
                 };
-                view.drop_files(t, value, &folder)
+                view.drop_files(t, value, &folder, x, y)
             }
         ));
         cell.add_controller(target);
@@ -1172,6 +1181,8 @@ impl BrowserView {
         target: &gtk::DropTarget,
         value: &glib::Value,
         folder: &gio::File,
+        x: f64,
+        y: f64,
     ) -> bool {
         let Ok(list) = value.get::<gtk::gdk::FileList>() else {
             return false;
@@ -1184,7 +1195,66 @@ impl BrowserView {
         if files.is_empty() {
             return false;
         }
-        let action = preferred_action(target);
+        // A drag with no modifier still offers every action, so it is the drop that has to
+        // decide. Ask, unless the modifier already narrowed it down to one.
+        let offered = target
+            .current_drop()
+            .map(|d| d.actions())
+            .unwrap_or(gtk::gdk::DragAction::COPY);
+        let undecided = offered
+            .iter()
+            .filter(|a| {
+                matches!(
+                    *a,
+                    gtk::gdk::DragAction::COPY
+                        | gtk::gdk::DragAction::MOVE
+                        | gtk::gdk::DragAction::LINK
+                )
+            })
+            .count()
+            > 1;
+        if undecided && self.imp().settings.boolean("ask-on-drop") {
+            self.imp()
+                .pending_drop
+                .replace(Some((files, folder.clone())));
+            self.ask_drop_action(target, x, y);
+            return true;
+        }
+        self.run_drop(files, folder, preferred_action(target))
+    }
+
+    /// Put the drop menu where the files landed.
+    fn ask_drop_action(&self, target: &gtk::DropTarget, x: f64, y: f64) {
+        let point = target
+            .widget()
+            .and_then(|w| w.compute_point(self, &gtk::graphene::Point::new(x as f32, y as f32)));
+        let (px, py) = match point {
+            // Drops on the sidebar or a breadcrumb land outside the view: use its middle.
+            Some(p)
+                if (0.0..self.width() as f32).contains(&p.x())
+                    && (0.0..self.height() as f32).contains(&p.y()) =>
+            {
+                (p.x() as f64, p.y() as f64)
+            }
+            _ => (self.width() as f64 / 2.0, self.height() as f64 / 2.0),
+        };
+        self.popup_model(&self.imp().drop_menu, px, py);
+    }
+
+    /// Carry out a drop, once it is clear what it should do.
+    fn run_drop(
+        &self,
+        files: Vec<gio::File>,
+        folder: &gio::File,
+        action: gtk::gdk::DragAction,
+    ) -> bool {
+        if action == gtk::gdk::DragAction::LINK {
+            self.submit_kind(crate::ops::JobKind::Link {
+                files,
+                dest: folder.clone(),
+            });
+            return true;
+        }
         let is_move = action == gtk::gdk::DragAction::MOVE;
         // Moving onto the folder the files already live in is a no-op.
         if is_move
@@ -1197,6 +1267,13 @@ impl BrowserView {
         let pairs = files.into_iter().map(|f| (f, folder.clone())).collect();
         self.submit_kind(crate::ops::JobKind::Transfer { pairs, is_move });
         true
+    }
+
+    /// A drop menu entry was picked. Taking the files means a second click does nothing.
+    pub(crate) fn finish_drop(&self, action: gtk::gdk::DragAction) {
+        if let Some((files, folder)) = self.imp().pending_drop.take() {
+            self.run_drop(files, &folder, action);
+        }
     }
 
     /// Re-apply the cell state that lives outside the file info: lock emblems, cut

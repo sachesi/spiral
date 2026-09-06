@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-06 23:49+0300\n"
+"POT-Creation-Date: 2026-09-07 00:02+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -173,6 +173,10 @@ msgid "Show places sidebar"
 msgstr "Показувати бічну панель"
 
 #: data/io.github.sachesi.spiral.gschema.xml:143
+msgid "Ask whether to copy or move dropped files"
+msgstr "Питати, копіювати чи перемістити перетягнуті файли"
+
+#: data/io.github.sachesi.spiral.gschema.xml:147
 msgid "Show two folder panes side by side"
 msgstr "Показувати дві панелі тек поруч"
 
@@ -305,63 +309,63 @@ msgstr "[ФАЙЛ…]"
 msgid "translator-credits"
 msgstr "sachesi"
 
-#: src/browser_actions.rs:126
+#: src/browser_actions.rs:129
 #, no-c-format
 msgid "Untitled Document"
 msgstr "Документ без назви"
 
-#: src/browser_actions.rs:388
+#: src/browser_actions.rs:391
 #, no-c-format
 msgid "Extract To"
 msgstr "Розпакувати до"
 
-#: src/browser_actions.rs:389 src/ops/archive.rs:351
+#: src/browser_actions.rs:392 src/ops/archive.rs:351
 #, no-c-format
 msgid "_Extract"
 msgstr "_Розпакувати"
 
-#: src/browser_actions.rs:415
+#: src/browser_actions.rs:418
 #, no-c-format
 msgid "Archive"
 msgstr "Архів"
 
-#: src/browser_actions.rs:510
+#: src/browser_actions.rs:513
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr "Не вдалося вставити зображення"
 
-#: src/browser_actions.rs:524
+#: src/browser_actions.rs:527
 #, no-c-format
 msgid "Move To"
 msgstr "Пересунути до"
 
-#: src/browser_actions.rs:526
+#: src/browser_actions.rs:529
 #, no-c-format
 msgid "Copy To"
 msgstr "Копіювати до"
 
-#: src/browser_actions.rs:529
+#: src/browser_actions.rs:532
 #, no-c-format
 msgid "_Move"
 msgstr "_Пересунути"
 
-#: src/browser_actions.rs:531 ui/browser_view.ui:171
+#: src/browser_actions.rs:534 ui/browser_view.ui:171
 #, no-c-format
 msgid "_Copy"
 msgstr "_Копіювати"
 
-#: src/browser_actions.rs:626 src/browser_view.rs:846
+#: src/browser_actions.rs:629 src/browser_view.rs:855
 #: src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не вдалося відкрити"
 
-#: src/browser_actions.rs:636
+#: src/browser_actions.rs:639
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Остаточно вилучити «%s»?"
 
-#: src/browser_actions.rs:638
+#: src/browser_actions.rs:641
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -369,12 +373,12 @@ msgstr[0] "Остаточно вилучити %d об’єкт?"
 msgstr[1] "Остаточно вилучити %d об’єкти?"
 msgstr[2] "Остаточно вилучити %d об’єктів?"
 
-#: src/browser_actions.rs:646
+#: src/browser_actions.rs:649
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Остаточно вилучені об’єкти неможливо відновити."
 
-#: src/browser_actions.rs:651 src/browser_actions.rs:675
+#: src/browser_actions.rs:654 src/browser_actions.rs:678
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
 #: src/ops/archive.rs:350 src/ops/conflict.rs:63 src/ops/conflict.rs:314
 #: src/ops/walk.rs:223 src/places_sidebar.rs:606
@@ -383,27 +387,27 @@ msgstr "Остаточно вилучені об’єкти неможливо �
 msgid "_Cancel"
 msgstr "_Скасувати"
 
-#: src/browser_actions.rs:652
+#: src/browser_actions.rs:655
 #, no-c-format
 msgid "_Delete"
 msgstr "В_илучити"
 
-#: src/browser_actions.rs:668
+#: src/browser_actions.rs:671
 #, no-c-format
 msgid "Empty Trash?"
 msgstr "Спорожнити смітник?"
 
-#: src/browser_actions.rs:670
+#: src/browser_actions.rs:673
 #, no-c-format
 msgid "All items in the Trash will be permanently deleted."
 msgstr "Усі об’єкти у смітнику буде остаточно вилучено."
 
-#: src/browser_actions.rs:676 src/places_sidebar.rs:608 ui/browser_view.ui:296
+#: src/browser_actions.rs:679 src/places_sidebar.rs:608 ui/browser_view.ui:312
 #, no-c-format
 msgid "_Empty Trash"
 msgstr "_Спорожнити смітник"
 
-#: src/browser_view.rs:390
+#: src/browser_view.rs:396
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
@@ -411,7 +415,7 @@ msgstr[0] "Вибрано %d теку"
 msgstr[1] "Вибрано %d теки"
 msgstr[2] "Вибрано %d тек"
 
-#: src/browser_view.rs:394
+#: src/browser_view.rs:400
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
@@ -419,44 +423,44 @@ msgstr[0] "Вибрано %d об’єкт"
 msgstr[1] "Вибрано %d об’єкти"
 msgstr[2] "Вибрано %d об’єктів"
 
-#: src/browser_view.rs:492
+#: src/browser_view.rs:501
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Вилучити з вибраного"
 
-#: src/browser_view.rs:494
+#: src/browser_view.rs:503
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Додати до вибраного"
 
-#: src/browser_view.rs:857 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:866 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:635
 #, no-c-format
 msgid "_OK"
 msgstr "_Гаразд"
 
-#: src/browser_view.rs:870
+#: src/browser_view.rs:879
 #, no-c-format
 msgid "No Results Found"
 msgstr "Нічого не знайдено"
 
-#: src/browser_view.rs:872 ui/browser_view.ui:66
+#: src/browser_view.rs:881 ui/browser_view.ui:66
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Тека порожня"
 
-#: src/browser_view.rs:892
+#: src/browser_view.rs:901
 #, no-c-format
 msgid "Loading…"
 msgstr "Завантаження…"
 
-#: src/browser_view.rs:908
+#: src/browser_view.rs:917
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Вибрано «%s»"
 
-#: src/browser_view.rs:913
+#: src/browser_view.rs:922
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -465,23 +469,23 @@ msgstr[1] "%d інші об’єкти вибрано"
 msgstr[2] "%d інших об’єктів вибрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:919
+#: src/browser_view.rs:928
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1406
+#: src/browser_view.rs:1483
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:1486 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1563 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr "Розташування"
 
-#: src/browser_view.rs:1608 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1685 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr "Улюблене"
@@ -633,44 +637,54 @@ msgstr "Повна дата й час"
 msgid "Relative"
 msgstr "Відносний"
 
-#: src/dialogs/preferences.rs:53
+#: src/dialogs/preferences.rs:50
+#, no-c-format
+msgid "Ask What to Do With Dropped Files"
+msgstr "Питати, що робити з перетягнутими файлами"
+
+#: src/dialogs/preferences.rs:52
+#, no-c-format
+msgid "Off, dragging inside Spiral moves and dragging from elsewhere copies"
+msgstr "Якщо вимкнено, перетягування всередині Spiral переміщує, а з інших програм копіює"
+
+#: src/dialogs/preferences.rs:61
 #, no-c-format
 msgid "Views"
 msgstr "Перегляд"
 
-#: src/dialogs/preferences.rs:56
+#: src/dialogs/preferences.rs:64
 #, no-c-format
 msgid "Remember View per Folder"
 msgstr "Запам’ятовувати вигляд для кожної теки"
 
-#: src/dialogs/preferences.rs:58
+#: src/dialogs/preferences.rs:66
 #, no-c-format
 msgid "Switching the view or the sort order applies to the current folder only"
 msgstr "Перемикання вигляду та впорядкування діють лише для поточної теки"
 
-#: src/dialogs/preferences.rs:64
+#: src/dialogs/preferences.rs:72
 #, no-c-format
 msgid "Grid View for Media Folders"
 msgstr "Сітка для тек із медіафайлами"
 
-#: src/dialogs/preferences.rs:66
+#: src/dialogs/preferences.rs:74
 #, no-c-format
 msgid "Folders that are mostly images and videos open in grid view"
 msgstr ""
 "Теки, що складаються переважно із зображень і відео, відкриваються у вигляді "
 "сітки"
 
-#: src/dialogs/preferences.rs:72
+#: src/dialogs/preferences.rs:80
 #, no-c-format
 msgid "Expandable Folders in List View"
 msgstr "Розгортувані теки у вигляді списку"
 
-#: src/dialogs/preferences.rs:79
+#: src/dialogs/preferences.rs:87
 #, no-c-format
 msgid "Optional Context Menu Actions"
 msgstr "Додаткові дії контекстного меню"
 
-#: src/dialogs/preferences.rs:81
+#: src/dialogs/preferences.rs:89
 #, no-c-format
 msgid ""
 "Shift+Delete deletes permanently either way, and links can always be pasted."
@@ -678,74 +692,74 @@ msgstr ""
 "Shift+Delete у будь-якому разі вилучає остаточно, а посилання завжди можна "
 "вставити."
 
-#: src/dialogs/preferences.rs:85
+#: src/dialogs/preferences.rs:93
 #, no-c-format
 msgid "Create Link"
 msgstr "Створити посилання"
 
-#: src/dialogs/preferences.rs:92 ui/shortcuts_dialog.ui:216
+#: src/dialogs/preferences.rs:100 ui/shortcuts_dialog.ui:216
 #, no-c-format
 msgid "Delete Permanently"
 msgstr "Вилучити остаточно"
 
-#: src/dialogs/preferences.rs:101
+#: src/dialogs/preferences.rs:109
 #, no-c-format
 msgid "Performance"
 msgstr "Швидкодія"
 
-#: src/dialogs/preferences.rs:103
+#: src/dialogs/preferences.rs:111
 #, no-c-format
 msgid "Reading every file on a network share or a slow disk can take a while."
 msgstr ""
 "Читання всіх файлів на мережевому ресурсі або повільному диску може тривати "
 "довго."
 
-#: src/dialogs/preferences.rs:107
+#: src/dialogs/preferences.rs:115
 #, no-c-format
 msgid "Local Files Only"
 msgstr "Лише локальні файли"
 
-#: src/dialogs/preferences.rs:108
+#: src/dialogs/preferences.rs:116
 #, no-c-format
 msgid "All Files"
 msgstr "Усі файли"
 
-#: src/dialogs/preferences.rs:109
+#: src/dialogs/preferences.rs:117
 #, no-c-format
 msgid "Never"
 msgstr "Ніколи"
 
-#: src/dialogs/preferences.rs:114
+#: src/dialogs/preferences.rs:122
 #, no-c-format
 msgid "Show Thumbnails"
 msgstr "Показувати мініатюри"
 
-#: src/dialogs/preferences.rs:121
+#: src/dialogs/preferences.rs:129
 #, no-c-format
 msgid "Count Items in Folders"
 msgstr "Підраховувати об’єкти в теках"
 
-#: src/dialogs/preferences.rs:128
+#: src/dialogs/preferences.rs:136
 #, no-c-format
 msgid "Search in Subfolders"
 msgstr "Пошук у підтеках"
 
-#: src/dialogs/preferences.rs:163
+#: src/dialogs/preferences.rs:171
 #, no-c-format
 msgid "Automatic"
 msgstr "Автоматично"
 
-#: src/dialogs/preferences.rs:171
+#: src/dialogs/preferences.rs:179
 #, no-c-format
 msgid "Automatic uses %s"
 msgstr "Автоматично: %s"
 
-#: src/dialogs/preferences.rs:172
+#: src/dialogs/preferences.rs:180
 #, no-c-format
 msgid "No terminal emulator found in PATH"
 msgstr "У PATH не знайдено емулятора термінала"
 
-#: src/dialogs/preferences.rs:175
+#: src/dialogs/preferences.rs:183
 #, no-c-format
 msgid "Terminal"
 msgstr "Термінал"
@@ -1805,7 +1819,7 @@ msgstr "Відкрити за _допомогою…"
 msgid "_Run as a Program"
 msgstr "Запустити як _програму"
 
-#: ui/browser_view.ui:160 ui/browser_view.ui:282
+#: ui/browser_view.ui:160 ui/browser_view.ui:298
 msgid "Open in _Terminal"
 msgstr "Відкрити в _терміналі"
 
@@ -1869,32 +1883,44 @@ msgstr "Вилучити _остаточно…"
 msgid "_Delete From Trash…"
 msgstr "Ви_лучити зі смітника…"
 
-#: ui/browser_view.ui:249 ui/browser_view.ui:301 ui/path_bar.ui:55
+#: ui/browser_view.ui:249 ui/browser_view.ui:317 ui/path_bar.ui:55
 #: ui/path_bar.ui:83
 msgid "P_roperties"
 msgstr "В_ластивості"
 
-#: ui/browser_view.ui:257 ui/path_bar.ui:12
+#: ui/browser_view.ui:257
+msgid "_Copy Here"
+msgstr "_Копіювати сюди"
+
+#: ui/browser_view.ui:261
+msgid "_Move Here"
+msgstr "_Пересунути сюди"
+
+#: ui/browser_view.ui:265
+msgid "_Link Here"
+msgstr "_Створити посилання тут"
+
+#: ui/browser_view.ui:273 ui/path_bar.ui:12
 msgid "New _Folder…"
 msgstr "Створити _теку…"
 
-#: ui/browser_view.ui:261 ui/path_bar.ui:16
+#: ui/browser_view.ui:277 ui/path_bar.ui:16
 msgid "New _Document"
 msgstr "Створити _документ"
 
-#: ui/browser_view.ui:267 ui/path_bar.ui:22
+#: ui/browser_view.ui:283 ui/path_bar.ui:22
 msgid "_Paste"
 msgstr "Вст_авити"
 
-#: ui/browser_view.ui:271
+#: ui/browser_view.ui:287
 msgid "Paste as _Link"
 msgstr "Вставити як _посилання"
 
-#: ui/browser_view.ui:276 ui/path_bar.ui:26
+#: ui/browser_view.ui:292 ui/path_bar.ui:26
 msgid "Select _All"
 msgstr "Вибрати _все"
 
-#: ui/browser_view.ui:289 ui/path_bar.ui:73
+#: ui/browser_view.ui:305 ui/path_bar.ui:73
 msgid "Add to _Bookmarks"
 msgstr "Додати до _закладок"
 
