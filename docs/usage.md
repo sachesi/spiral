@@ -61,6 +61,9 @@ Files and folders you cannot read or change carry a small lock, and the actions 
 not allow (cut, rename, trash, delete) are greyed out. Folders you are looking at update
 themselves when something else creates, deletes or rewrites a file in them.
 
+With "Expandable Folders in List View" on, every folder in the list gets an arrow that
+unfolds its contents in place, as deep as you like; the grid never shows children.
+
 The grid can show up to three lines under each name: size or item count, date,
 permissions, type, MIME type, owner, group; "Captions…" in the view menu picks them. In
 the list, "Visible Columns…" chooses among size, type, modified, accessed, created,

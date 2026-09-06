@@ -68,6 +68,11 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
         .build();
     settings.bind("guess-view", &guess, "active").build();
     views.add(&guess);
+    let tree = adw::SwitchRow::builder()
+        .title(gettext("Expandable Folders in List View"))
+        .build();
+    settings.bind("use-tree-view", &tree, "active").build();
+    views.add(&tree);
     page.add(&views);
 
     let optional = adw::PreferencesGroup::builder()
