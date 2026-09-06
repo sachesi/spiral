@@ -6,7 +6,7 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: spiral 0.4.0\n"
+"Project-Id-Version: spiral 0.5.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
 "POT-Creation-Date: 2026-09-07 00:24+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -211,6 +211,16 @@ msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"Two folder panes side by side, off by default and turned on with F3: F6 "
+"moves between them, the pane in charge is outlined, and everything outside "
+"the view acts on that one. Dropping files asks whether to copy, move or "
+"link, which Preferences can turn off. An up button beside back and forward. "
+"\"Show in folder\" from a browser no longer waits twenty-five seconds on a "
+"portal deadlock, and opens a window of its own with the file selected."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:32
+msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
 "folder as a PNG. The clipboard keys work with the focus anywhere in the "
@@ -219,7 +229,7 @@ msgid ""
 "as the file extension, and a star toggle that follows the favourites."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:32
+#: data/io.github.sachesi.spiral.metainfo.xml:37
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -230,14 +240,14 @@ msgid ""
 "pastes paths into terminals."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:37
+#: data/io.github.sachesi.spiral.metainfo.xml:42
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
 "calls no longer block the interface on slow mounts."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:41
+#: data/io.github.sachesi.spiral.metainfo.xml:46
 msgid "First release."
 msgstr ""
 

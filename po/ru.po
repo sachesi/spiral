@@ -230,6 +230,23 @@ msgstr "sachesi"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"Two folder panes side by side, off by default and turned on with F3: F6 "
+"moves between them, the pane in charge is outlined, and everything outside "
+"the view acts on that one. Dropping files asks whether to copy, move or "
+"link, which Preferences can turn off. An up button beside back and forward. "
+"\"Show in folder\" from a browser no longer waits twenty-five seconds on a "
+"portal deadlock, and opens a window of its own with the file selected."
+msgstr ""
+"Две панели папок рядом, по умолчанию выключены и включаются по F3: F6 "
+"переключает между ними, активная панель обведена, и всё за пределами области "
+"просмотра действует именно на неё. При перетаскивании файлов Spiral "
+"спрашивает, копировать, переместить или создать ссылку; в параметрах это "
+"можно отключить. Кнопка «вверх» рядом с кнопками назад и вперёд. «Показать в "
+"папке» из браузера больше не ждёт двадцать пять секунд из-за взаимной "
+"блокировки портала и открывает отдельное окно с выделенным файлом."
+
+#: data/io.github.sachesi.spiral.metainfo.xml:32
+msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
 "folder as a PNG. The clipboard keys work with the focus anywhere in the "
@@ -245,7 +262,7 @@ msgstr ""
 "столбцы списка с изменяемой шириной, тип показан как расширение файла, "
 "переключатель звёздочки следует за избранным."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:32
+#: data/io.github.sachesi.spiral.metainfo.xml:37
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -263,7 +280,7 @@ msgstr ""
 "паролем. Эмблемы замка и недоступные действия для файлов только для чтения, "
 "папки следят за изменениями извне, а буфер обмена вставляет пути в терминалы."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:37
+#: data/io.github.sachesi.spiral.metainfo.xml:42
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
@@ -274,7 +291,7 @@ msgstr ""
 "-s, -q. Обращения к файловой системе больше не блокируют интерфейс на "
 "медленных точках монтирования."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:41
+#: data/io.github.sachesi.spiral.metainfo.xml:46
 msgid "First release."
 msgstr "Первый выпуск."
 
