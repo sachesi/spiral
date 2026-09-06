@@ -24,13 +24,12 @@ move to a bar at the bottom.
 
 ## Two panes
 
-Every tab is split down the middle by default: two folders side by side, dragging between
-them, copying from one to the other. F3, or "Split View" in the view menu, turns the
-second pane off and on for every tab; F6 moves between the panes, and so does clicking in
-one. The pane in charge is outlined, and the path bar, the header buttons and the
-keyboard all act on that one. Drag the handle to give a pane more room. A window too
-narrow for two panes shows the left one alone and takes the second one back when it
-grows.
+F3, or "Split View" in the view menu, splits every tab down the middle: two folders side
+by side, dragging between them, copying from one to the other. It stays as you leave it,
+for new tabs and windows too. F6 moves between the panes, and so does clicking in one.
+The pane in charge is outlined, and the path bar, the header buttons and the keyboard all
+act on that one. Drag the handle to give a pane more room. A window too narrow for two
+panes shows the left one alone and takes the second one back when it grows.
 
 ## Getting around
 

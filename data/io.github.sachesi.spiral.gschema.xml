@@ -139,7 +139,7 @@
       <summary>Show places sidebar</summary>
     </key>
     <key name="split-view" type="b">
-      <default>true</default>
+      <default>false</default>
       <summary>Show two folder panes side by side</summary>
     </key>
   </schema>
