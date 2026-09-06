@@ -105,13 +105,14 @@ pub fn short_type_string(info: &gio::FileInfo) -> String {
 }
 
 /// The extension of `name`, if it looks like one: after a dot that is not the first
-/// character, short, and alphanumeric. Compound archive suffixes keep their `tar`.
+/// character, short, alphanumeric and not a bare number, so `libfoo.so.6` and `page.1`
+/// keep their description. Compound archive suffixes keep their `tar`.
 fn extension(name: &str) -> Option<String> {
     let (stem, ext) = name.rsplit_once('.')?;
     if stem.is_empty()
-        || ext.is_empty()
         || ext.len() > 8
-        || !ext.chars().all(|c| c.is_alphanumeric())
+        || !ext.chars().all(char::is_alphanumeric)
+        || !ext.chars().any(char::is_alphabetic)
     {
         return None;
     }
@@ -352,4 +353,28 @@ fn name_cmp(a: &gio::FileInfo, b: &gio::FileInfo) -> Ordering {
     let ka = glib::FilenameCollationKey::from(a.display_name());
     let kb = glib::FilenameCollationKey::from(b.display_name());
     ka.cmp(&kb)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn extensions() {
+        for (name, want) in [
+            ("banana.txt", Some("txt")),
+            ("Photo.JPG", Some("jpg")),
+            ("archive.tar.gz", Some("tar.gz")),
+            ("no-extension", None),
+            (".bashrc", None),
+            ("trailing.", None),
+            ("libfoo.so.6", None),
+            ("page.1", None),
+            ("long.extensionhere", None),
+        ] {
+            assert_eq!(
+                super::extension(name).as_deref(),
+                want,
+                "extension of {name}"
+            );
+        }
+    }
 }
