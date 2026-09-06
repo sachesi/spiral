@@ -49,7 +49,7 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     let ask_on_drop = adw::SwitchRow::builder()
         .title(gettext("Ask What to Do With Dropped Files"))
         .subtitle(gettext(
-            "Off, dragging inside Spiral moves and dragging from elsewhere copies",
+            "Off, Ctrl copies and dragging inside Spiral moves without asking",
         ))
         .build();
     settings.bind("ask-on-drop", &ask_on_drop, "active").build();

@@ -1195,25 +1195,10 @@ impl BrowserView {
         if files.is_empty() {
             return false;
         }
-        // A drag with no modifier still offers every action, so it is the drop that has to
-        // decide. Ask, unless the modifier already narrowed it down to one.
-        let offered = target
-            .current_drop()
-            .map(|d| d.actions())
-            .unwrap_or(gtk::gdk::DragAction::COPY);
-        let undecided = offered
-            .iter()
-            .filter(|a| {
-                matches!(
-                    *a,
-                    gtk::gdk::DragAction::COPY
-                        | gtk::gdk::DragAction::MOVE
-                        | gtk::gdk::DragAction::LINK
-                )
-            })
-            .count()
-            > 1;
-        if undecided && self.imp().settings.boolean("ask-on-drop") {
+        // Always ask, since nothing here can tell a held modifier from a plain drop.
+        // Wayland has the compositor pick the action before the drop reaches us, and the
+        // pointer carries no keyboard modifiers while the drag grab is on.
+        if self.imp().settings.boolean("ask-on-drop") {
             self.imp()
                 .pending_drop
                 .replace(Some((files, folder.clone())));
