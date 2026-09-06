@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.2.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-06 19:24+0300\n"
+"POT-Creation-Date: 2026-09-06 19:34+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,7 +28,7 @@ msgid "File Manager"
 msgstr ""
 
 #: data/io.github.sachesi.spiral.desktop:4
-#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:343
+#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:352
 #, no-c-format
 msgid "Browse and manage your files"
 msgstr ""
@@ -238,7 +238,7 @@ msgid "[FILE…]"
 msgstr ""
 
 #. Translators: put your name here, one per line, optionally with an email address.
-#: src/application.rs:345
+#: src/application.rs:354
 #, no-c-format
 msgid "translator-credits"
 msgstr ""
@@ -485,7 +485,7 @@ msgstr ""
 msgid "Default"
 msgstr ""
 
-#: src/dialogs/preferences.rs:10 ui/shortcuts_dialog.ui:45
+#: src/dialogs/preferences.rs:10 ui/shortcuts_dialog.ui:51
 #, no-c-format
 msgid "Preferences"
 msgstr ""
@@ -597,7 +597,7 @@ msgstr ""
 msgid "Create Link"
 msgstr ""
 
-#: src/dialogs/preferences.rs:92 ui/shortcuts_dialog.ui:198
+#: src/dialogs/preferences.rs:92 ui/shortcuts_dialog.ui:204
 #, no-c-format
 msgid "Delete Permanently"
 msgstr ""
@@ -662,7 +662,7 @@ msgstr ""
 msgid "Terminal"
 msgstr ""
 
-#: src/dialogs/properties.rs:81 ui/shortcuts_dialog.ui:204
+#: src/dialogs/properties.rs:81 ui/shortcuts_dialog.ui:210
 #, no-c-format
 msgid "Properties"
 msgstr ""
@@ -695,7 +695,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/dialogs/properties.rs:243 src/file_utils.rs:119 src/file_utils.rs:135
-#: ui/window.ui:297
+#: ui/window.ui:327
 #, no-c-format
 msgid "Type"
 msgstr ""
@@ -715,7 +715,7 @@ msgstr ""
 msgid "Size"
 msgstr ""
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:120 ui/window.ui:318
+#: src/dialogs/properties.rs:259 src/file_utils.rs:120 ui/window.ui:348
 #, no-c-format
 msgid "Modified"
 msgstr ""
@@ -730,7 +730,7 @@ msgstr ""
 msgid "Default Application"
 msgstr ""
 
-#: src/dialogs/properties.rs:296 ui/window.ui:304
+#: src/dialogs/properties.rs:296 ui/window.ui:334
 #, no-c-format
 msgid "Images"
 msgstr ""
@@ -999,7 +999,7 @@ msgid "_Create"
 msgstr ""
 
 #: src/naming.rs:266 src/portal/chooser_window.rs:174
-#: ui/shortcuts_dialog.ui:186
+#: ui/shortcuts_dialog.ui:192
 #, no-c-format
 msgid "New Folder"
 msgstr ""
@@ -1507,7 +1507,7 @@ msgstr ""
 msgid "copy"
 msgstr ""
 
-#: src/path_bar.rs:268 ui/shortcuts_dialog.ui:92
+#: src/path_bar.rs:268 ui/shortcuts_dialog.ui:98
 #, no-c-format
 msgid "Edit Location"
 msgstr ""
@@ -1564,20 +1564,20 @@ msgstr ""
 msgid "Do _Not Empty"
 msgstr ""
 
-#: src/portal/chooser_window.rs:118 ui/shortcuts_dialog.ui:68 ui/window.ui:203
-#: ui/window.ui:429
+#: src/portal/chooser_window.rs:118 ui/shortcuts_dialog.ui:74 ui/window.ui:233
+#: ui/window.ui:463
 #, no-c-format
 msgid "Back"
 msgstr ""
 
-#: src/portal/chooser_window.rs:123 ui/shortcuts_dialog.ui:74 ui/window.ui:211
-#: ui/window.ui:437
+#: src/portal/chooser_window.rs:123 ui/shortcuts_dialog.ui:80 ui/window.ui:241
+#: ui/window.ui:471
 #, no-c-format
 msgid "Forward"
 msgstr ""
 
-#: src/portal/chooser_window.rs:148 src/window.rs:624 ui/window.ui:374
-#: ui/window.ui:446
+#: src/portal/chooser_window.rs:148 src/window.rs:718 ui/window.ui:404
+#: ui/window.ui:480
 #, no-c-format
 msgid "List View"
 msgstr ""
@@ -1619,7 +1619,7 @@ msgstr ""
 msgid "Show File Operations"
 msgstr ""
 
-#: src/progress_indicator.rs:296 ui/window.ui:257
+#: src/progress_indicator.rs:296 ui/window.ui:287
 #, no-c-format
 msgid "Cancel"
 msgstr ""
@@ -1629,12 +1629,12 @@ msgstr ""
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:460 ui/shortcuts_dialog.ui:216
+#: src/window.rs:541 ui/shortcuts_dialog.ui:222
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:626
+#: src/window.rs:720
 #, no-c-format
 msgid "Grid View"
 msgstr ""
@@ -1802,102 +1802,106 @@ msgid "Close Tab"
 msgstr ""
 
 #: ui/shortcuts_dialog.ui:33
-msgid "Close Window"
+msgid "Restore Closed Tab"
 msgstr ""
 
 #: ui/shortcuts_dialog.ui:39
+msgid "Close Window"
+msgstr ""
+
+#: ui/shortcuts_dialog.ui:45
 msgid "Show All Tabs"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:51
+#: ui/shortcuts_dialog.ui:57
 msgid "Keyboard Shortcuts"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:57
+#: ui/shortcuts_dialog.ui:63
 msgid "Quit"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:65
+#: ui/shortcuts_dialog.ui:71
 msgid "Navigation"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:80
+#: ui/shortcuts_dialog.ui:86
 msgid "Parent Folder"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:86
+#: ui/shortcuts_dialog.ui:92
 msgid "Home Folder"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:98 ui/window.ui:364
+#: ui/shortcuts_dialog.ui:104 ui/window.ui:394
 msgid "Search Current Folder"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:104
+#: ui/shortcuts_dialog.ui:110
 msgid "Reload"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:110
+#: ui/shortcuts_dialog.ui:116
 msgid "Add Bookmark"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:118
+#: ui/shortcuts_dialog.ui:124
 msgid "View"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:121
+#: ui/shortcuts_dialog.ui:127
 msgid "Switch Between Grid and List"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:127 ui/window.ui:395 ui/window.ui:467
+#: ui/shortcuts_dialog.ui:133 ui/window.ui:425 ui/window.ui:501
 msgid "Zoom In"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:133 ui/window.ui:385 ui/window.ui:457
+#: ui/shortcuts_dialog.ui:139 ui/window.ui:415 ui/window.ui:491
 msgid "Zoom Out"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:139
+#: ui/shortcuts_dialog.ui:145
 msgid "Show Hidden Files"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:145 ui/window.ui:193
+#: ui/shortcuts_dialog.ui:151 ui/window.ui:223
 msgid "Show Sidebar"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:153 ui/window.ui:117 ui/window.ui:151
+#: ui/shortcuts_dialog.ui:159 ui/window.ui:147 ui/window.ui:181
 msgid "Files"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:156
+#: ui/shortcuts_dialog.ui:162
 msgid "Select All"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:162
+#: ui/shortcuts_dialog.ui:168
 msgid "Cut"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:168
+#: ui/shortcuts_dialog.ui:174
 msgid "Copy"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:174
+#: ui/shortcuts_dialog.ui:180
 msgid "Paste"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:180
+#: ui/shortcuts_dialog.ui:186
 msgid "Rename"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:192
+#: ui/shortcuts_dialog.ui:198
 msgid "Move to Trash"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:210
+#: ui/shortcuts_dialog.ui:216
 msgid "Context Menu"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:222
+#: ui/shortcuts_dialog.ui:228
 msgid "Redo"
 msgstr ""
 
@@ -1913,158 +1917,182 @@ msgstr ""
 msgid "Show All Ta_bs"
 msgstr ""
 
-#: ui/window.ui:26
-msgid "_Undo"
+#: ui/window.ui:24
+msgid "Re_store Closed Tab"
 msgstr ""
 
 #: ui/window.ui:30
+msgid "_Undo"
+msgstr ""
+
+#: ui/window.ui:34
 msgid "_Redo"
 msgstr ""
 
-#: ui/window.ui:36
+#: ui/window.ui:40
 msgid "_Preferences"
 msgstr ""
 
-#: ui/window.ui:40
+#: ui/window.ui:44
 msgid "_Keyboard Shortcuts"
 msgstr ""
 
-#: ui/window.ui:44
+#: ui/window.ui:48
 msgid "_About Spiral"
 msgstr ""
 
-#: ui/window.ui:51
+#: ui/window.ui:55
 msgid "Icon Size"
 msgstr ""
 
-#: ui/window.ui:61
+#: ui/window.ui:65
 msgid "Sort"
 msgstr ""
 
-#: ui/window.ui:63
+#: ui/window.ui:67
 msgid "_A-Z"
 msgstr ""
 
-#: ui/window.ui:68
+#: ui/window.ui:72
 msgid "_Z-A"
 msgstr ""
 
-#: ui/window.ui:73
+#: ui/window.ui:77
 msgid "Last _Modified"
 msgstr ""
 
-#: ui/window.ui:78
+#: ui/window.ui:82
 msgid "_First Modified"
 msgstr ""
 
-#: ui/window.ui:83
+#: ui/window.ui:87
 msgid "_Size"
 msgstr ""
 
-#: ui/window.ui:88
+#: ui/window.ui:92
 msgid "_Type"
 msgstr ""
 
-#: ui/window.ui:95
+#: ui/window.ui:99
 msgid "_Visible Columns…"
 msgstr ""
 
-#: ui/window.ui:100
+#: ui/window.ui:104
 msgid "Ca_ptions…"
 msgstr ""
 
-#: ui/window.ui:107
+#: ui/window.ui:111
 msgid "Show _Hidden Files"
 msgstr ""
 
-#: ui/window.ui:111
+#: ui/window.ui:115
 msgid "Show _Sidebar"
 msgstr ""
 
-#: ui/window.ui:159
+#: ui/window.ui:123
+msgid "Move Tab _Left"
+msgstr ""
+
+#: ui/window.ui:127
+msgid "Move Tab _Right"
+msgstr ""
+
+#: ui/window.ui:131
+msgid "Move Tab to New _Window"
+msgstr ""
+
+#: ui/window.ui:137
+msgid "Close _Other Tabs"
+msgstr ""
+
+#: ui/window.ui:141
+msgid "_Close Tab"
+msgstr ""
+
+#: ui/window.ui:189
 msgid "Main Menu"
 msgstr ""
 
-#: ui/window.ui:276
+#: ui/window.ui:306
 msgid "Search"
 msgstr ""
 
-#: ui/window.ui:284
+#: ui/window.ui:314
 msgid "Search Filters"
 msgstr ""
 
-#: ui/window.ui:301
+#: ui/window.ui:331
 msgid "Anything"
 msgstr ""
 
-#: ui/window.ui:302
+#: ui/window.ui:332
 msgid "Folders"
 msgstr ""
 
-#: ui/window.ui:303
+#: ui/window.ui:333
 msgid "Documents"
 msgstr ""
 
-#: ui/window.ui:305
+#: ui/window.ui:335
 msgid "Audio"
 msgstr ""
 
-#: ui/window.ui:306
+#: ui/window.ui:336
 msgid "Videos"
 msgstr ""
 
-#: ui/window.ui:307
+#: ui/window.ui:337
 msgid "PDF"
 msgstr ""
 
-#: ui/window.ui:308
+#: ui/window.ui:338
 msgid "Text"
 msgstr ""
 
-#: ui/window.ui:309
+#: ui/window.ui:339
 msgid "Spreadsheets"
 msgstr ""
 
-#: ui/window.ui:322
+#: ui/window.ui:352
 msgid "Any Time"
 msgstr ""
 
-#: ui/window.ui:323
+#: ui/window.ui:353
 msgid "Today"
 msgstr ""
 
-#: ui/window.ui:324
+#: ui/window.ui:354
 msgid "Yesterday"
 msgstr ""
 
-#: ui/window.ui:325
+#: ui/window.ui:355
 msgid "Past Week"
 msgstr ""
 
-#: ui/window.ui:326
+#: ui/window.ui:356
 msgid "Past Month"
 msgstr ""
 
-#: ui/window.ui:327
+#: ui/window.ui:357
 msgid "Past Year"
 msgstr ""
 
-#: ui/window.ui:336
+#: ui/window.ui:366
 msgid "Match"
 msgstr ""
 
-#: ui/window.ui:340
+#: ui/window.ui:370
 msgid "Only Filename"
 msgstr ""
 
-#: ui/window.ui:341
+#: ui/window.ui:371
 msgid "Content & Filename"
 msgstr ""
 
-#: ui/window.ui:342
+#: ui/window.ui:372
 msgid "Only Contents"
 msgstr ""
 
-#: ui/window.ui:375 ui/window.ui:447
+#: ui/window.ui:405 ui/window.ui:481
 msgid "View Options"
 msgstr ""
