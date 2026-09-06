@@ -30,6 +30,7 @@ mod imp {
     impl ApplicationImpl for SpiralApplication {
         fn startup(&self) {
             self.parent_startup();
+            crate::init_style();
             let app = self.obj();
             self.job_manager.set(JobManager::new(&app)).ok();
             app.setup_actions();
@@ -99,19 +100,14 @@ mod imp {
             object_path: &str,
         ) -> Result<(), glib::Error> {
             self.parent_dbus_register(connection, object_path)?;
-            match crate::dbus::file_manager1::register(&self.obj(), connection) {
-                Ok(reg) => {
-                    self.file_manager1.replace(Some(reg));
-                }
-                Err(e) => glib::g_warning!("spiral", "FileManager1 registration failed: {e}"),
-            }
+            self.file_manager1
+                .replace(Some(crate::dbus::file_manager1::register(connection)));
             Ok(())
         }
 
         fn dbus_unregister(&self, connection: &gio::DBusConnection, object_path: &str) {
             if let Some(reg) = self.file_manager1.take() {
-                let _ = connection.unregister_object(reg.object);
-                gio::bus_unown_name(reg.owner);
+                reg.stop();
             }
             self.parent_dbus_unregister(connection, object_path);
         }

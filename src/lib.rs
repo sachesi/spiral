@@ -8,7 +8,12 @@ pub use libadwaita as adw;
 
 /// Register resources, set up i18n and initialize libadwaita.
 /// Must run before any widget is created, in every binary.
-pub fn init() {
+/// Translations, resources, the application name: everything that does not touch GTK.
+///
+/// Keep this the only thing an application does before it registers on the bus. GTK 4.22
+/// reads its settings from xdg-desktop-portal, and that portal may well be the one waiting
+/// on us to answer a D-Bus call, so initialising GTK first deadlocks the pair.
+pub fn init_early() {
     gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
     gettextrs::bindtextdomain(config::GETTEXT_PACKAGE, config::LOCALEDIR).ok();
     gettextrs::bind_textdomain_codeset(config::GETTEXT_PACKAGE, "UTF-8").ok();
@@ -16,8 +21,10 @@ pub fn init() {
 
     gio::resources_register_include!("spiral.gresource").expect("register resources");
     glib::set_application_name("Spiral");
-    adw::init().expect("libadwaita init");
+}
 
+/// The stylesheet. Needs GTK started, so `AdwApplication` calls it from `startup`.
+pub fn init_style() {
     let css = gtk::CssProvider::new();
     css.load_from_resource(&format!("{}/style.css", config::RESOURCE_PATH));
     if let Some(display) = gtk::gdk::Display::default() {
@@ -27,6 +34,13 @@ pub fn init() {
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
     }
+}
+
+/// Full setup for binaries without an `AdwApplication` of their own.
+pub fn init() {
+    init_early();
+    adw::init().expect("libadwaita init");
+    init_style();
 }
 pub mod browser_actions;
 pub mod browser_view;
