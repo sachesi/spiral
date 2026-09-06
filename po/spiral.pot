@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: spiral 0.3.0\n"
+"Project-Id-Version: spiral 0.4.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-06 21:55+0300\n"
+"POT-Creation-Date: 2026-09-06 21:57+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -203,6 +203,16 @@ msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"A new application icon. Files cut to the clipboard are faded until they are "
+"pasted, and an image on the clipboard, a screenshot say, pastes into the "
+"folder as a PNG. The clipboard keys work with the focus anywhere in the "
+"window. Drags start anywhere on a row or grid tile and folders accept a drop "
+"across their whole row. Compact, resizable list columns with the type shown "
+"as the file extension, and a star toggle that follows the favourites."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:32
+msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
 "list view. Restore from trash, links, Copy to and Move to, Run as a Program, "
@@ -212,14 +222,14 @@ msgid ""
 "pastes paths into terminals."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:32
+#: data/io.github.sachesi.spiral.metainfo.xml:37
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
 "calls no longer block the interface on slow mounts."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:36
+#: data/io.github.sachesi.spiral.metainfo.xml:41
 msgid "First release."
 msgstr ""
 

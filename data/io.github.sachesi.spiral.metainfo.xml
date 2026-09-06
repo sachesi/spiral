@@ -22,6 +22,11 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.4.0" date="2026-09-06">
+      <description>
+        <p>A new application icon. Files cut to the clipboard are faded until they are pasted, and an image on the clipboard, a screenshot say, pastes into the folder as a PNG. The clipboard keys work with the focus anywhere in the window. Drags start anywhere on a row or grid tile and folders accept a drop across their whole row. Compact, resizable list columns with the type shown as the file extension, and a star toggle that follows the favourites.</p>
+      </description>
+    </release>
     <release version="0.3.0" date="2026-09-06">
       <description>
         <p>Search walks subfolders, filters by type and date and can match file contents. Visible columns and captions dialogs, expandable folders in the list view. Restore from trash, links, Copy to and Move to, Run as a Program, path bar and tab context menus, tabs moved between windows and restored after closing. Password-protected archives. Lock emblems and greyed actions for read-only files, folders that follow outside changes, and the clipboard pastes paths into terminals.</p>
