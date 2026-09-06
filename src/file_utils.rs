@@ -43,9 +43,16 @@ pub fn allows(info: &gio::FileInfo, attribute: &str) -> bool {
     !info.has_attribute(attribute) || info.boolean(attribute)
 }
 
-/// Files the user cannot read or change get a lock emblem, like Nautilus.
-pub fn is_locked(info: &gio::FileInfo) -> bool {
-    !allows(info, "access::can-read") || !allows(info, "access::can-write")
+/// Lock emblem rule from Nautilus: unreadable files always; read-only files only when
+/// the folder around them is writable (so a read-only tree is not a wall of locks) and
+/// never in the trash, where everything is read-only.
+pub fn is_locked(info: &gio::FileInfo, folder_writable: bool) -> bool {
+    if !allows(info, "access::can-read") {
+        return true;
+    }
+    folder_writable
+        && !allows(info, "access::can-write")
+        && !file_of(info).uri().starts_with("trash:")
 }
 
 pub fn is_dir(info: &gio::FileInfo) -> bool {

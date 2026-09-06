@@ -910,7 +910,7 @@ impl BrowserView {
     /// cannot be read or changed.
     fn bind_icon(&self, image: &gtk::Image, emblem: &gtk::Image, info: &gio::FileInfo) {
         unbind_icon(image);
-        emblem.set_visible(file_utils::is_locked(info));
+        emblem.set_visible(file_utils::is_locked(info, self.imp().can_write.get()));
         image.set_from_gicon(&crate::file_utils::icon_of(info));
         if info.is_hidden() || info.is_backup() {
             image.add_css_class("hidden-file");
