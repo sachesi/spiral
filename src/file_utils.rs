@@ -91,6 +91,37 @@ pub fn type_string(info: &gio::FileInfo) -> String {
         .unwrap_or_default()
 }
 
+/// The Type column wants a word, not a sentence: the extension, lowercased, with the
+/// full description kept for names that carry none.
+pub fn short_type_string(info: &gio::FileInfo) -> String {
+    if is_dir(info) {
+        return gettext("Folder");
+    }
+    let name = info.display_name();
+    match extension(&name) {
+        Some(ext) => ext,
+        None => type_string(info),
+    }
+}
+
+/// The extension of `name`, if it looks like one: after a dot that is not the first
+/// character, short, and alphanumeric. Compound archive suffixes keep their `tar`.
+fn extension(name: &str) -> Option<String> {
+    let (stem, ext) = name.rsplit_once('.')?;
+    if stem.is_empty()
+        || ext.is_empty()
+        || ext.len() > 8
+        || !ext.chars().all(|c| c.is_alphanumeric())
+    {
+        return None;
+    }
+    let ext = ext.to_lowercase();
+    match stem.rsplit_once('.') {
+        Some((_, "tar")) => Some(format!("tar.{ext}")),
+        _ => Some(ext),
+    }
+}
+
 pub fn modified_string(info: &gio::FileInfo) -> String {
     info.modification_date_time()
         .and_then(|d| d.to_local().ok())
@@ -306,7 +337,9 @@ pub fn compare(a: &gio::FileInfo, b: &gio::FileInfo, key: SortKey, reversed: boo
     let ord = match key {
         SortKey::Name => by_name(),
         SortKey::Size => a.size().cmp(&b.size()).then_with(by_name),
-        SortKey::Type => type_string(a).cmp(&type_string(b)).then_with(by_name),
+        SortKey::Type => short_type_string(a)
+            .cmp(&short_type_string(b))
+            .then_with(by_name),
         SortKey::Modified => a
             .modification_date_time()
             .cmp(&b.modification_date_time())

@@ -1402,10 +1402,12 @@ impl BrowserView {
         name_col.set_expand(true);
         cv.append_column(&name_col);
 
+        // `tip` fills in what an abbreviated column drops, on hover.
         let text_col = |title: String,
                         xalign: f32,
                         ellipsize: gtk::pango::EllipsizeMode,
-                        f: fn(&gio::FileInfo) -> String| {
+                        f: fn(&gio::FileInfo) -> String,
+                        tip: Option<fn(&gio::FileInfo) -> String>| {
             let factory = gtk::SignalListItemFactory::new();
             let view = self.clone();
             factory.connect_setup(move |_, item| {
@@ -1432,13 +1434,14 @@ impl BrowserView {
                 let label = item.child().and_downcast::<gtk::Label>().unwrap();
                 set_cut(&label, &info);
                 label.set_text(&f(&info));
+                label.set_tooltip_text(tip.map(|t| t(&info)).as_deref());
             });
             gtk::ColumnViewColumn::new(Some(&title), Some(factory))
         };
         let text = |key: &str| -> fn(&gio::FileInfo) -> String {
             match key {
                 "size" => file_utils::size_string,
-                "type" => file_utils::type_string,
+                "type" => file_utils::short_type_string,
                 "modified" => file_utils::modified_string,
                 "accessed" => file_utils::accessed_string,
                 "created" => file_utils::created_string,
@@ -1452,7 +1455,7 @@ impl BrowserView {
             "size" => 88,
             "owner" | "group" => 104,
             "permissions" => 112,
-            "type" => 150,
+            "type" => 92,
             _ => 148,
         };
         let mut columns: Vec<(&'static str, gtk::ColumnViewColumn)> = Vec::new();
@@ -1462,6 +1465,7 @@ impl BrowserView {
                 if key == "size" { 1.0 } else { 0.0 },
                 gtk::pango::EllipsizeMode::End,
                 text(key),
+                (key == "type").then_some(file_utils::type_string as fn(&gio::FileInfo) -> String),
             );
             col.set_fixed_width(width(key));
             col.set_resizable(true);
@@ -1477,6 +1481,7 @@ impl BrowserView {
             0.0,
             gtk::pango::EllipsizeMode::Middle,
             file_utils::location_of,
+            Some(file_utils::location_of),
         );
         location_col.set_visible(false);
         location_col.set_expand(true);
