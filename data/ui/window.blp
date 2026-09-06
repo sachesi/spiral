@@ -114,6 +114,33 @@ menu view_menu {
   }
 }
 
+menu tab_menu {
+  section {
+    item {
+      label: _("Move Tab _Left");
+      action: "win.tab-move-left";
+    }
+    item {
+      label: _("Move Tab _Right");
+      action: "win.tab-move-right";
+    }
+    item {
+      label: _("Move Tab to New _Window");
+      action: "win.tab-move-new-window";
+    }
+  }
+  section {
+    item {
+      label: _("Close _Other Tabs");
+      action: "win.close-other-tabs";
+    }
+    item {
+      label: _("_Close Tab");
+      action: "win.close-tab";
+    }
+  }
+}
+
 template $SpiralWindow : Adw.ApplicationWindow {
   title: _("Files");
   width-request: 360;
@@ -341,7 +368,11 @@ template $SpiralWindow : Adw.ApplicationWindow {
           }
 
           content: Adw.TabView tab_view {
+            menu-model: tab_menu;
             notify::selected-page => $on_selected_page_changed() swapped;
+            setup-menu => $on_setup_menu() swapped;
+            create-window => $on_create_window() swapped;
+            page-detached => $on_page_detached() swapped;
             close-page => $on_close_page() swapped;
           };
 

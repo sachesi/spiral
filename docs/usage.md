@@ -6,8 +6,11 @@ knowing and the places where Spiral does something of its own.
 ## Windows, tabs, sidebar
 
 Ctrl+T opens a tab at the current folder. "Open in New Tab" on selected folders opens
-them in the background; middle-clicking a sidebar entry opens it in a new tab too. The
-last tab closing closes the window. Window size is remembered, tabs are not.
+them in the background; middle-clicking a sidebar entry opens it in a new tab too.
+Right-clicking a tab offers moving it left, right or into a window of its own and closing
+the other tabs; dragging a tab out of the tab bar also gives it a window. Ctrl+Shift+T
+brings back the last closed tab. The last tab leaving closes the window. Window size is
+remembered, tabs are not.
 
 The sidebar lists Home, Desktop, Favorites and Trash, then the XDG user folders and the
 bookmarks from `~/.config/gtk-3.0/bookmarks` (the same file the GTK file chooser uses),
