@@ -3,7 +3,7 @@
 use std::cell::{Cell, RefCell};
 
 use adw::prelude::*;
-use gettextrs::gettext;
+use gettextrs::{gettext, ngettext};
 use gtk::subclass::prelude::*;
 
 use crate::enums::{SortKey, ViewMode};
@@ -337,6 +337,14 @@ fn global_view_mode(settings: &gio::Settings, key: &str) -> ViewMode {
     } else {
         ViewMode::Grid
     }
+}
+
+fn folders_selected(n: usize) -> String {
+    ngettext("%d folder selected", "%d folders selected", n as u32).replace("%d", &n.to_string())
+}
+
+fn items_selected(n: usize) -> String {
+    ngettext("%d item selected", "%d items selected", n as u32).replace("%d", &n.to_string())
 }
 
 /// True when at least four files were seen (2000 at most) and half or more are images or videos.
@@ -736,11 +744,20 @@ impl BrowserView {
             .sum();
         let primary = match (folders, files) {
             (1, 0) | (0, 1) => gettext("“%s” selected").replace("%s", &infos[0].display_name()),
-            (f, 0) => gettext("%d folders selected").replace("%d", &f.to_string()),
-            (0, n) => gettext("%d items selected").replace("%d", &n.to_string()),
-            (f, n) => gettext("%f folders selected, %n other items selected")
-                .replace("%f", &f.to_string())
-                .replace("%n", &n.to_string()),
+            (f, 0) => folders_selected(f),
+            (0, n) => items_selected(n),
+            (f, n) => {
+                let others = ngettext(
+                    "%d other item selected",
+                    "%d other items selected",
+                    n as u32,
+                )
+                .replace("%d", &n.to_string());
+                // Translators: %f is "%d folders selected", %n is "%d other items selected".
+                gettext("%f, %n")
+                    .replace("%f", &folders_selected(f))
+                    .replace("%n", &others)
+            }
         };
         imp.floating_primary.set_text(&primary);
         imp.floating_details.set_text(&if files > 0 {

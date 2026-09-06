@@ -600,8 +600,7 @@ impl PlacesSidebar {
         let dialog = adw::AlertDialog::builder()
             .heading(gettext("Empty Trash Before Unmounting?"))
             .body(gettext(
-                "To regain the free space on this volume the trash must be emptied. \
-                 All trashed items on the volume will be permanently lost.",
+                "To regain the free space on this volume the trash must be emptied. All trashed items on the volume will be permanently lost.",
             ))
             .build();
         dialog.add_response("cancel", &gettext("_Cancel"));

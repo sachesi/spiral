@@ -4,7 +4,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use gettextrs::gettext;
+use gettextrs::{gettext, ngettext};
 
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
@@ -195,7 +195,10 @@ impl PropertiesDialog {
             }
         } else {
             icon.set_icon_name(Some("folder-documents-symbolic"));
-            title.set_text(&gettext("%d Items").replace("%d", &infos.len().to_string()));
+            title.set_text(
+                &ngettext("%d Item", "%d Items", infos.len() as u32)
+                    .replace("%d", &infos.len().to_string()),
+            );
             head_box.append(&icon);
             head_box.append(&title);
         }
@@ -475,7 +478,7 @@ fn size_text(total: u64, count: u64) -> String {
     if count <= 1 {
         prefs::size(total)
     } else {
-        gettext("%s (%d items)")
+        ngettext("%s (%d item)", "%s (%d items)", count as u32)
             .replace("%s", &prefs::size(total))
             .replace("%d", &count.to_string())
     }

@@ -35,7 +35,7 @@ After an update, quit the old processes: `pkill -x spiral; pkill -f xdg-desktop-
 - [Portal and D-Bus integration](docs/integration.md)
 - [Hacking](docs/hacking.md)
 
-Search only filters the open folder, tabs are not restored between runs, and there are no
-translations yet.
+Search only filters the open folder and tabs are not restored between runs. The interface
+is available in English, Russian and Ukrainian.
 
 GPL-3.0-or-later.
