@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-06 21:28+0300\n"
+"POT-Creation-Date: 2026-09-06 21:55+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -282,47 +282,58 @@ msgstr "sachesi"
 msgid "Untitled Document"
 msgstr "Безымянный документ"
 
-#: src/browser_actions.rs:385
+#: src/browser_actions.rs:388
 #, no-c-format
 msgid "Extract To"
 msgstr "Распаковать в"
 
-#: src/browser_actions.rs:386 src/ops/archive.rs:351
+#: src/browser_actions.rs:389 src/ops/archive.rs:351
 #, no-c-format
 msgid "_Extract"
 msgstr "_Распаковать"
 
-#: src/browser_actions.rs:412
+#: src/browser_actions.rs:415
 #, no-c-format
 msgid "Archive"
 msgstr "Архив"
 
-#: src/browser_actions.rs:499
+#: src/browser_actions.rs:510
+#, no-c-format
+msgid "Could Not Paste Image"
+msgstr "Не удалось вставить изображение"
+
+#: src/browser_actions.rs:524
 #, no-c-format
 msgid "Move To"
 msgstr "Переместить в"
 
-#: src/browser_actions.rs:501
+#: src/browser_actions.rs:526
 #, no-c-format
 msgid "Copy To"
 msgstr "Копировать в"
 
-#: src/browser_actions.rs:504
+#: src/browser_actions.rs:529
 #, no-c-format
 msgid "_Move"
 msgstr "_Переместить"
 
-#: src/browser_actions.rs:506 ui/browser_view.ui:171
+#: src/browser_actions.rs:531 ui/browser_view.ui:171
 #, no-c-format
 msgid "_Copy"
 msgstr "_Копировать"
 
-#: src/browser_actions.rs:611
+#: src/browser_actions.rs:626 src/browser_view.rs:846
+#: src/dialogs/open_with.rs:201
+#, no-c-format
+msgid "Could Not Open"
+msgstr "Не удалось открыть"
+
+#: src/browser_actions.rs:636
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Безвозвратно удалить «%s»?"
 
-#: src/browser_actions.rs:613
+#: src/browser_actions.rs:638
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -330,36 +341,36 @@ msgstr[0] "Безвозвратно удалить %d объект?"
 msgstr[1] "Безвозвратно удалить %d объекта?"
 msgstr[2] "Безвозвратно удалить %d объектов?"
 
-#: src/browser_actions.rs:621
+#: src/browser_actions.rs:646
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Безвозвратно удалённые объекты нельзя восстановить."
 
-#: src/browser_actions.rs:626 src/browser_actions.rs:650
+#: src/browser_actions.rs:651 src/browser_actions.rs:675
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
 #: src/ops/archive.rs:350 src/ops/conflict.rs:63 src/ops/conflict.rs:314
-#: src/ops/walk.rs:206 src/places_sidebar.rs:606
+#: src/ops/walk.rs:223 src/places_sidebar.rs:606
 #: src/portal/chooser_window.rs:666
 #, no-c-format
 msgid "_Cancel"
 msgstr "_Отмена"
 
-#: src/browser_actions.rs:627
+#: src/browser_actions.rs:652
 #, no-c-format
 msgid "_Delete"
 msgstr "_Удалить"
 
-#: src/browser_actions.rs:643
+#: src/browser_actions.rs:668
 #, no-c-format
 msgid "Empty Trash?"
 msgstr "Очистить корзину?"
 
-#: src/browser_actions.rs:645
+#: src/browser_actions.rs:670
 #, no-c-format
 msgid "All items in the Trash will be permanently deleted."
 msgstr "Все объекты в корзине будут безвозвратно удалены."
 
-#: src/browser_actions.rs:651 src/places_sidebar.rs:608 ui/browser_view.ui:296
+#: src/browser_actions.rs:676 src/places_sidebar.rs:608 ui/browser_view.ui:296
 #, no-c-format
 msgid "_Empty Trash"
 msgstr "_Очистить корзину"
@@ -389,11 +400,6 @@ msgstr "Удалить из избранного"
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Добавить в избранное"
-
-#: src/browser_view.rs:854 src/dialogs/open_with.rs:201
-#, no-c-format
-msgid "Could Not Open"
-msgstr "Не удалось открыть"
 
 #: src/browser_view.rs:857 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
@@ -436,18 +442,18 @@ msgstr[2] "%d других объектов выбрано"
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1401
+#: src/browser_view.rs:1406
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:1476 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1486 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr "Расположение"
 
-#: src/browser_view.rs:1594 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1608 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr "Избранное"
@@ -720,7 +726,7 @@ msgstr "Терминал"
 msgid "Properties"
 msgstr "Свойства"
 
-#: src/dialogs/properties.rs:99 src/file_utils.rs:125 src/file_utils.rs:137
+#: src/dialogs/properties.rs:99 src/file_utils.rs:157 src/file_utils.rs:169
 #, no-c-format
 msgid "Permissions"
 msgstr "Права"
@@ -748,13 +754,13 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/dialogs/properties.rs:243 src/file_utils.rs:119 src/file_utils.rs:135
+#: src/dialogs/properties.rs:243 src/file_utils.rs:151 src/file_utils.rs:167
 #: ui/window.ui:327
 #, no-c-format
 msgid "Type"
 msgstr "Тип"
 
-#: src/dialogs/properties.rs:247 src/file_utils.rs:136
+#: src/dialogs/properties.rs:247 src/file_utils.rs:168
 #, no-c-format
 msgid "MIME Type"
 msgstr "Тип MIME"
@@ -764,17 +770,17 @@ msgstr "Тип MIME"
 msgid "Calculating…"
 msgstr "Вычисление…"
 
-#: src/dialogs/properties.rs:251 src/file_utils.rs:118 src/file_utils.rs:133
+#: src/dialogs/properties.rs:251 src/file_utils.rs:150 src/file_utils.rs:165
 #, no-c-format
 msgid "Size"
 msgstr "Размер"
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:120 ui/window.ui:348
+#: src/dialogs/properties.rs:259 src/file_utils.rs:152 ui/window.ui:348
 #, no-c-format
 msgid "Modified"
 msgstr "Изменён"
 
-#: src/dialogs/properties.rs:263 src/file_utils.rs:121
+#: src/dialogs/properties.rs:263 src/file_utils.rs:153
 #, no-c-format
 msgid "Accessed"
 msgstr "Последний доступ"
@@ -805,7 +811,7 @@ msgid "You are not the owner, so you cannot change these permissions."
 msgstr "Вы не владелец, поэтому не можете изменить эти права."
 
 #: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
-#: src/file_utils.rs:132
+#: src/file_utils.rs:164
 #, no-c-format
 msgid "None"
 msgstr "Нет"
@@ -840,12 +846,12 @@ msgstr "Чтение и запись"
 msgid "Could Not Change Permissions"
 msgstr "Не удалось изменить права"
 
-#: src/dialogs/properties.rs:452 src/file_utils.rs:123 src/file_utils.rs:138
+#: src/dialogs/properties.rs:452 src/file_utils.rs:155 src/file_utils.rs:170
 #, no-c-format
 msgid "Owner"
 msgstr "Владелец"
 
-#: src/dialogs/properties.rs:453 src/file_utils.rs:124 src/file_utils.rs:139
+#: src/dialogs/properties.rs:453 src/file_utils.rs:156 src/file_utils.rs:171
 #, no-c-format
 msgid "Group"
 msgstr "Группа"
@@ -883,32 +889,32 @@ msgstr[2] "%s (%d объектов)"
 msgid "Unknown"
 msgstr "Неизвестно"
 
-#: src/file_utils.rs:86
+#: src/file_utils.rs:86 src/file_utils.rs:98
 #, no-c-format
 msgid "Folder"
 msgstr "Папка"
 
-#: src/file_utils.rs:122
+#: src/file_utils.rs:154
 #, no-c-format
 msgid "Created"
 msgstr "Создан"
 
-#: src/file_utils.rs:134
+#: src/file_utils.rs:166
 #, no-c-format
 msgid "Date Modified"
 msgstr "Дата изменения"
 
-#: src/file_utils.rs:163
+#: src/file_utils.rs:195
 #, no-c-format
 msgid "Today, %s"
 msgstr "Сегодня, %s"
 
-#: src/file_utils.rs:164
+#: src/file_utils.rs:196
 #, no-c-format
 msgid "Yesterday, %s"
 msgstr "Вчера, %s"
 
-#: src/file_utils.rs:165
+#: src/file_utils.rs:197
 #, no-c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
@@ -916,12 +922,12 @@ msgstr[0] "%d день назад"
 msgstr[1] "%d дня назад"
 msgstr[2] "%d дней назад"
 
-#: src/file_utils.rs:166
+#: src/file_utils.rs:198
 #, no-c-format
 msgid "Last week"
 msgstr "На прошлой неделе"
 
-#: src/file_utils.rs:168
+#: src/file_utils.rs:200
 #, no-c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
@@ -929,12 +935,12 @@ msgstr[0] "%d неделю назад"
 msgstr[1] "%d недели назад"
 msgstr[2] "%d недель назад"
 
-#: src/file_utils.rs:170
+#: src/file_utils.rs:202
 #, no-c-format
 msgid "Last month"
 msgstr "В прошлом месяце"
 
-#: src/file_utils.rs:173
+#: src/file_utils.rs:205
 #, no-c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
@@ -942,12 +948,12 @@ msgstr[0] "%d месяц назад"
 msgstr[1] "%d месяца назад"
 msgstr[2] "%d месяцев назад"
 
-#: src/file_utils.rs:175
+#: src/file_utils.rs:207
 #, no-c-format
 msgid "Last year"
 msgstr "В прошлом году"
 
-#: src/file_utils.rs:178
+#: src/file_utils.rs:210
 #, no-c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
@@ -955,12 +961,12 @@ msgstr[0] "%d год назад"
 msgstr[1] "%d года назад"
 msgstr[2] "%d лет назад"
 
-#: src/file_utils.rs:247
+#: src/file_utils.rs:279
 #, no-c-format
 msgid "Empty"
 msgstr "Пусто"
 
-#: src/file_utils.rs:248
+#: src/file_utils.rs:280
 #, no-c-format
 msgid "%d item"
 msgid_plural "%d items"
@@ -968,22 +974,22 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/file_utils.rs:275 src/path_bar.rs:309 src/places_sidebar.rs:382
+#: src/file_utils.rs:307 src/path_bar.rs:309 src/places_sidebar.rs:382
 #, no-c-format
 msgid "Home"
 msgstr "Домашняя папка"
 
-#: src/file_utils.rs:278 src/path_bar.rs:312 src/places_sidebar.rs:405
+#: src/file_utils.rs:310 src/path_bar.rs:312 src/places_sidebar.rs:405
 #, no-c-format
 msgid "Trash"
 msgstr "Корзина"
 
-#: src/file_utils.rs:281 src/path_bar.rs:315 src/places_sidebar.rs:399
+#: src/file_utils.rs:313 src/path_bar.rs:315 src/places_sidebar.rs:399
 #, no-c-format
 msgid "Favorites"
 msgstr "Избранное"
 
-#: src/file_utils.rs:286 src/path_bar.rs:320
+#: src/file_utils.rs:318 src/path_bar.rs:320
 #, no-c-format
 msgid "System"
 msgstr "Система"
@@ -1109,12 +1115,12 @@ msgstr "«%s» защищён паролем"
 msgid "Archives can only be extracted to local folders"
 msgstr "Архивы можно распаковывать только в локальные папки"
 
-#: src/ops/archive.rs:407 src/ops/archive.rs:523 src/ops/job.rs:125
+#: src/ops/archive.rs:407 src/ops/archive.rs:523 src/ops/job.rs:131
 #, no-c-format
 msgid "Extracting “%s”"
 msgstr "Распаковка «%s»"
 
-#: src/ops/archive.rs:520 src/ops/walk.rs:457
+#: src/ops/archive.rs:520 src/ops/walk.rs:474
 #, no-c-format
 msgid "Waiting for your answer"
 msgstr "Ожидание вашего ответа"
@@ -1247,12 +1253,12 @@ msgstr "Ошибка при %v «%s»"
 msgid "_Retry"
 msgstr "_Повторить"
 
-#: src/ops/job.rs:76
+#: src/ops/job.rs:81
 #, no-c-format
 msgid "Copying “%s” to “%t”"
 msgstr "Копирование «%s» в «%t»"
 
-#: src/ops/job.rs:78
+#: src/ops/job.rs:83
 #, no-c-format
 msgid "Copying %d file to “%t”"
 msgid_plural "Copying %d files to “%t”"
@@ -1260,12 +1266,12 @@ msgstr[0] "Копируется %d файл в «%t»"
 msgstr[1] "Копируются %d файла в «%t»"
 msgstr[2] "Копируются %d файлов в «%t»"
 
-#: src/ops/job.rs:89
+#: src/ops/job.rs:94
 #, no-c-format
 msgid "Moving “%s” to “%t”"
 msgstr "Перемещение «%s» в «%t»"
 
-#: src/ops/job.rs:91
+#: src/ops/job.rs:96
 #, no-c-format
 msgid "Moving %d file to “%t”"
 msgid_plural "Moving %d files to “%t”"
@@ -1273,12 +1279,12 @@ msgstr[0] "Перемещается %d файл в «%t»"
 msgstr[1] "Перемещаются %d файла в «%t»"
 msgstr[2] "Перемещаются %d файлов в «%t»"
 
-#: src/ops/job.rs:99
+#: src/ops/job.rs:104
 #, no-c-format
 msgid "Moving “%s” to trash"
 msgstr "Перемещение «%s» в корзину"
 
-#: src/ops/job.rs:101
+#: src/ops/job.rs:106
 #, no-c-format
 msgid "Moving %d file to trash"
 msgid_plural "Moving %d files to trash"
@@ -1286,12 +1292,12 @@ msgstr[0] "Перемещается %d файл в корзину"
 msgstr[1] "Перемещаются %d файла в корзину"
 msgstr[2] "Перемещаются %d файлов в корзину"
 
-#: src/ops/job.rs:108
+#: src/ops/job.rs:113
 #, no-c-format
 msgid "Deleting “%s”"
 msgstr "Удаление «%s»"
 
-#: src/ops/job.rs:109
+#: src/ops/job.rs:114
 #, no-c-format
 msgid "Deleting %d file"
 msgid_plural "Deleting %d files"
@@ -1299,27 +1305,32 @@ msgstr[0] "Удаляется %d файл"
 msgstr[1] "Удаляются %d файла"
 msgstr[2] "Удаляются %d файлов"
 
-#: src/ops/job.rs:112
+#: src/ops/job.rs:117
 #, no-c-format
 msgid "Renaming “%s” to “%t”"
 msgstr "Переименование «%s» в «%t»"
 
-#: src/ops/job.rs:116
+#: src/ops/job.rs:121
 #, no-c-format
 msgid "Creating folder “%s”"
 msgstr "Создание папки «%s»"
 
-#: src/ops/job.rs:118
+#: src/ops/job.rs:123
 #, no-c-format
 msgid "Creating “%s”"
 msgstr "Создание «%s»"
 
-#: src/ops/job.rs:120
+#: src/ops/job.rs:124
+#, no-c-format
+msgid "Saving pasted image"
+msgstr "Сохранение вставленного изображения"
+
+#: src/ops/job.rs:126
 #, no-c-format
 msgid "Restoring “%s”"
 msgstr "Восстановление «%s»"
 
-#: src/ops/job.rs:121
+#: src/ops/job.rs:127
 #, no-c-format
 msgid "Restoring %d file"
 msgid_plural "Restoring %d files"
@@ -1327,7 +1338,7 @@ msgstr[0] "Восстанавливается %d файл"
 msgstr[1] "Восстанавливаются %d файла"
 msgstr[2] "Восстанавливаются %d файлов"
 
-#: src/ops/job.rs:126
+#: src/ops/job.rs:132
 #, no-c-format
 msgid "Extracting %d archive"
 msgid_plural "Extracting %d archives"
@@ -1335,17 +1346,17 @@ msgstr[0] "Распаковывается %d архив"
 msgstr[1] "Распаковываются %d архива"
 msgstr[2] "Распаковываются %d архивов"
 
-#: src/ops/job.rs:130
+#: src/ops/job.rs:136
 #, no-c-format
 msgid "Compressing to “%s”"
 msgstr "Сжатие в «%s»"
 
-#: src/ops/job.rs:133
+#: src/ops/job.rs:139
 #, no-c-format
 msgid "Creating link to “%s”"
 msgstr "Создание ссылки на «%s»"
 
-#: src/ops/job.rs:134
+#: src/ops/job.rs:140
 #, no-c-format
 msgid "Creating %d link"
 msgid_plural "Creating %d links"
@@ -1353,12 +1364,12 @@ msgstr[0] "Создаётся %d ссылка"
 msgstr[1] "Создаются %d ссылки"
 msgstr[2] "Создаётся %d ссылок"
 
-#: src/ops/job.rs:147
+#: src/ops/job.rs:153
 #, no-c-format
 msgid "Copied “%s”"
 msgstr "Скопировано: «%s»"
 
-#: src/ops/job.rs:148
+#: src/ops/job.rs:154
 #, no-c-format
 msgid "Copied %d file"
 msgid_plural "Copied %d files"
@@ -1366,12 +1377,12 @@ msgstr[0] "Скопирован %d файл"
 msgstr[1] "Скопировано %d файла"
 msgstr[2] "Скопировано %d файлов"
 
-#: src/ops/job.rs:155
+#: src/ops/job.rs:161
 #, no-c-format
 msgid "Moved “%s”"
 msgstr "Перемещено: «%s»"
 
-#: src/ops/job.rs:156
+#: src/ops/job.rs:162
 #, no-c-format
 msgid "Moved %d file"
 msgid_plural "Moved %d files"
@@ -1379,12 +1390,12 @@ msgstr[0] "Перемещён %d файл"
 msgstr[1] "Перемещено %d файла"
 msgstr[2] "Перемещено %d файлов"
 
-#: src/ops/job.rs:160
+#: src/ops/job.rs:166
 #, no-c-format
 msgid "Moved “%s” to trash"
 msgstr "В корзину перемещено: «%s»"
 
-#: src/ops/job.rs:162
+#: src/ops/job.rs:168
 #, no-c-format
 msgid "Moved %d file to trash"
 msgid_plural "Moved %d files to trash"
@@ -1392,12 +1403,12 @@ msgstr[0] "В корзину перемещён %d файл"
 msgstr[1] "В корзину перемещено %d файла"
 msgstr[2] "В корзину перемещено %d файлов"
 
-#: src/ops/job.rs:169
+#: src/ops/job.rs:175
 #, no-c-format
 msgid "Deleted “%s”"
 msgstr "Удалено: «%s»"
 
-#: src/ops/job.rs:170
+#: src/ops/job.rs:176
 #, no-c-format
 msgid "Deleted %d file"
 msgid_plural "Deleted %d files"
@@ -1405,27 +1416,32 @@ msgstr[0] "Удалён %d файл"
 msgstr[1] "Удалено %d файла"
 msgstr[2] "Удалено %d файлов"
 
-#: src/ops/job.rs:173
+#: src/ops/job.rs:179
 #, no-c-format
 msgid "Renamed to “%s”"
 msgstr "Переименовано в «%s»"
 
-#: src/ops/job.rs:175
+#: src/ops/job.rs:181
 #, no-c-format
 msgid "Created folder “%s”"
 msgstr "Создана папка «%s»"
 
-#: src/ops/job.rs:177 src/ops/job.rs:188
+#: src/ops/job.rs:183 src/ops/job.rs:195
 #, no-c-format
 msgid "Created “%s”"
 msgstr "Создано: «%s»"
 
-#: src/ops/job.rs:179
+#: src/ops/job.rs:184
+#, no-c-format
+msgid "Saved pasted image"
+msgstr "Вставленное изображение сохранено"
+
+#: src/ops/job.rs:186
 #, no-c-format
 msgid "Restored “%s”"
 msgstr "Восстановлено: «%s»"
 
-#: src/ops/job.rs:180
+#: src/ops/job.rs:187
 #, no-c-format
 msgid "Restored %d file"
 msgid_plural "Restored %d files"
@@ -1433,12 +1449,12 @@ msgstr[0] "Восстановлен %d файл"
 msgstr[1] "Восстановлено %d файла"
 msgstr[2] "Восстановлено %d файлов"
 
-#: src/ops/job.rs:184
+#: src/ops/job.rs:191
 #, no-c-format
 msgid "Extracted “%s”"
 msgstr "Распаковано: «%s»"
 
-#: src/ops/job.rs:185
+#: src/ops/job.rs:192
 #, no-c-format
 msgid "Extracted %d archive"
 msgid_plural "Extracted %d archives"
@@ -1446,12 +1462,12 @@ msgstr[0] "Распакован %d архив"
 msgstr[1] "Распаковано %d архива"
 msgstr[2] "Распаковано %d архивов"
 
-#: src/ops/job.rs:190
+#: src/ops/job.rs:197
 #, no-c-format
 msgid "Created link to “%s”"
 msgstr "Создана ссылка на «%s»"
 
-#: src/ops/job.rs:191
+#: src/ops/job.rs:198
 #, no-c-format
 msgid "Created %d link"
 msgid_plural "Created %d links"
@@ -1459,7 +1475,7 @@ msgstr[0] "Создана %d ссылка"
 msgstr[1] "Создано %d ссылки"
 msgstr[2] "Создано %d ссылок"
 
-#: src/ops/job.rs:200
+#: src/ops/job.rs:207
 #, no-c-format
 msgid "%d second"
 msgid_plural "%d seconds"
@@ -1467,7 +1483,7 @@ msgstr[0] "%d секунда"
 msgstr[1] "%d секунды"
 msgstr[2] "%d секунд"
 
-#: src/ops/job.rs:203
+#: src/ops/job.rs:210
 #, no-c-format
 msgid "%d minute"
 msgid_plural "%d minutes"
@@ -1475,7 +1491,7 @@ msgstr[0] "%d минута"
 msgstr[1] "%d минуты"
 msgstr[2] "%d минут"
 
-#: src/ops/job.rs:207
+#: src/ops/job.rs:214
 #, no-c-format
 msgid "%d hour"
 msgid_plural "%d hours"
@@ -1483,7 +1499,7 @@ msgstr[0] "%d час"
 msgstr[1] "%d часа"
 msgstr[2] "%d часов"
 
-#: src/ops/job.rs:328
+#: src/ops/job.rs:335
 #, no-c-format
 msgid "Preparing… %d file"
 msgid_plural "Preparing… %d files"
@@ -1491,17 +1507,17 @@ msgstr[0] "Подготовка… %d файл"
 msgstr[1] "Подготовка… %d файла"
 msgstr[2] "Подготовка… %d файлов"
 
-#: src/ops/job.rs:356
+#: src/ops/job.rs:363
 #, no-c-format
 msgid "%a of %b"
 msgstr "%a из %b"
 
-#: src/ops/job.rs:363
+#: src/ops/job.rs:370
 #, no-c-format
 msgid "%a, %t left (%r/s)"
 msgstr "%a, осталось %t (%r/с)"
 
-#: src/ops/job.rs:371
+#: src/ops/job.rs:378
 #, no-c-format
 msgid "%a of %b file"
 msgid_plural "%a of %b files"
@@ -1540,52 +1556,58 @@ msgstr "Папка назначения находится внутри исхо
 msgid "Trashing"
 msgstr "удалении в корзину"
 
-#: src/ops/walk.rs:154
+#: src/ops/walk.rs:171
 #, no-c-format
 msgid "Links can only point at local files"
 msgstr "Ссылки могут указывать только на локальные файлы"
 
-#: src/ops/walk.rs:199
+#: src/ops/walk.rs:216
 #, no-c-format
 msgid "Cannot Move “%s” to Trash"
 msgstr "Не удалось переместить «%s» в корзину"
 
-#: src/ops/walk.rs:201
+#: src/ops/walk.rs:218
 #, no-c-format
 msgid "This location does not support trashing. Delete it permanently instead?"
 msgstr "Это расположение не поддерживает корзину. Удалить безвозвратно?"
 
-#: src/ops/walk.rs:207
+#: src/ops/walk.rs:224
 #, no-c-format
 msgid "_Delete Permanently"
 msgstr "_Удалить безвозвратно"
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:288
+#: src/ops/walk.rs:305
 #, no-c-format
 msgid "Moving"
 msgstr "перемещении"
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:291
+#: src/ops/walk.rs:308
 #, no-c-format
 msgid "Copying"
 msgstr "копировании"
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:488
+#: src/ops/walk.rs:505
 #, no-c-format
 msgid "Deleting"
 msgstr "удалении"
 
 #. Translators: name of a symbolic link, as in “Link to report.pdf”.
-#: src/ops/walk.rs:519
+#: src/ops/walk.rs:536
 #, no-c-format
 msgid "Link to %s"
 msgstr "Ссылка на %s"
 
+#. Translators: file name given to an image pasted from the clipboard.
+#: src/ops/walk.rs:558
+#, no-c-format
+msgid "Pasted Image"
+msgstr "Вставленное изображение"
+
 #. Translators: goes into duplicate names, as in “report (copy).pdf”.
-#: src/ops/walk.rs:545
+#: src/ops/walk.rs:580
 #, no-c-format
 msgid "copy"
 msgstr "копия"

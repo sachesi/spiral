@@ -135,6 +135,23 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
             let _ = stream.close_future(PRIO).await;
             job.imp().outcome.borrow_mut().created.push(file);
         }
+        JobKind::SaveImage { parent, image } => {
+            let file = parent.child(&unique_image_name(&parent).await);
+            let png = image.save_to_png_bytes();
+            let stream = file
+                .create_future(gio::FileCreateFlags::NONE, PRIO)
+                .await
+                .map_err(|e| Fail::Failed(e.message().to_string()))?;
+            let write = stream.write_all_future(png.to_vec(), PRIO).await;
+            let _ = stream.close_future(PRIO).await;
+            match write {
+                Ok((_, _, Some(e))) | Err((_, e)) => {
+                    let _ = file.delete_future(PRIO).await;
+                    return Err(Fail::Failed(e.message().to_string()));
+                }
+                Ok(_) => job.imp().outcome.borrow_mut().created.push(file),
+            }
+        }
         JobKind::Extract { archives, dest } => {
             job.set_files_total(archives.len() as u64);
             super::archive::extract(job, mgr, archives, dest).await?;
@@ -527,6 +544,24 @@ async fn unique_link_name(dir: &gio::File, file: &gio::File) -> String {
             link_to.clone()
         } else {
             format!("{link_to} ({n})")
+        };
+        if !exists(&dir.child(&candidate)).await {
+            return candidate;
+        }
+        n += 1;
+    }
+}
+
+/// "Pasted Image.png", then numbered, first one free in `dir`.
+async fn unique_image_name(dir: &gio::File) -> String {
+    // Translators: file name given to an image pasted from the clipboard.
+    let base = gettext("Pasted Image");
+    let mut n = 1;
+    loop {
+        let candidate = if n == 1 {
+            format!("{base}.png")
+        } else {
+            format!("{base} ({n}).png")
         };
         if !exists(&dir.child(&candidate)).await {
             return candidate;

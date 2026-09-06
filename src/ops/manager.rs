@@ -234,6 +234,7 @@ fn undo_for(job: &Job) -> Option<JobKind> {
         JobKind::Transfer { is_move: false, .. }
         | JobKind::CreateFolder { .. }
         | JobKind::CreateFile { .. }
+        | JobKind::SaveImage { .. }
         | JobKind::Extract { .. }
         | JobKind::Link { .. }
         | JobKind::Compress { .. } => (!out.created.is_empty()).then(|| JobKind::Delete {
@@ -292,6 +293,7 @@ fn redo_for(undo_kind: &JobKind) -> Option<JobKind> {
         | JobKind::Transfer { is_move: false, .. }
         | JobKind::CreateFolder { .. }
         | JobKind::CreateFile { .. }
+        | JobKind::SaveImage { .. }
         | JobKind::Extract { .. }
         | JobKind::Link { .. }
         | JobKind::Compress { .. } => None,

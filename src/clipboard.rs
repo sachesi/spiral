@@ -49,6 +49,17 @@ pub fn has_files(clipboard: &gdk::Clipboard) -> bool {
     f.contain_mime_type(GNOME_MIME) || f.contain_mime_type(URI_LIST)
 }
 
+/// True when the clipboard holds an image and no files: a screenshot, say. Other
+/// applications offer the image as `image/png` and friends, so ask what GDK can turn
+/// those into rather than what is literally on offer.
+pub fn has_image(clipboard: &gdk::Clipboard) -> bool {
+    !has_files(clipboard)
+        && clipboard
+            .formats()
+            .union_deserialize_types()
+            .contains_type(gdk::Texture::static_type())
+}
+
 /// Returns (files, cut). `None` if the clipboard holds no file list.
 pub async fn read(clipboard: &gdk::Clipboard) -> Option<(Vec<gio::File>, bool)> {
     let (stream, mime) = clipboard
