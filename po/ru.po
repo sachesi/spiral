@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-06 15:04+0300\n"
-"PO-Revision-Date: 2026-09-06 15:04+0300\n"
+"POT-Creation-Date: 2026-09-06 15:22+0300\n"
+"PO-Revision-Date: 2026-09-06 15:23+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
 "Language: ru\n"
@@ -25,7 +25,7 @@ msgid "File Manager"
 msgstr "Файловый менеджер"
 
 #: data/io.github.sachesi.spiral.desktop:4
-#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:212
+#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:316
 #, no-c-format
 msgid "Browse and manage your files"
 msgstr "Просмотр и управление файлами"
@@ -154,8 +154,33 @@ msgstr ""
 msgid "First release."
 msgstr "Первый выпуск."
 
+#: src/application.rs:171
+#, no-c-format
+msgid "Open each location in its own window"
+msgstr "Открывать каждое расположение в отдельном окне"
+
+#: src/application.rs:176
+#, no-c-format
+msgid "Select the given files in their folders"
+msgstr "Выделить указанные файлы в их папках"
+
+#: src/application.rs:178
+#, no-c-format
+msgid "Close every window and quit"
+msgstr "Закрыть все окна и выйти"
+
+#: src/application.rs:179
+#, no-c-format
+msgid "Print the version and exit"
+msgstr "Показать версию и выйти"
+
+#: src/application.rs:186
+#, no-c-format
+msgid "[FILE…]"
+msgstr "[ФАЙЛ…]"
+
 #. Translators: put your name here, one per line, optionally with an email address.
-#: src/application.rs:214
+#: src/application.rs:318
 #, no-c-format
 msgid "translator-credits"
 msgstr "sachesi"
@@ -226,7 +251,7 @@ msgstr "Все объекты в корзине будут безвозврат�
 msgid "_Empty Trash"
 msgstr "_Очистить корзину"
 
-#: src/browser_view.rs:343
+#: src/browser_view.rs:356
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
@@ -234,7 +259,7 @@ msgstr[0] "Выбрана %d папка"
 msgstr[1] "Выбраны %d папки"
 msgstr[2] "Выбрано %d папок"
 
-#: src/browser_view.rs:347
+#: src/browser_view.rs:360
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
@@ -242,29 +267,29 @@ msgstr[0] "Выбран %d объект"
 msgstr[1] "Выбрано %d объекта"
 msgstr[2] "Выбрано %d объектов"
 
-#: src/browser_view.rs:697 src/dialogs/open_with.rs:213
+#: src/browser_view.rs:761 src/dialogs/open_with.rs:213
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не удалось открыть"
 
-#: src/browser_view.rs:700 src/dialogs/open_with.rs:216
+#: src/browser_view.rs:764 src/dialogs/open_with.rs:216
 #: src/dialogs/properties.rs:298 src/dialogs/properties.rs:394
 #: src/ops/walk.rs:46 src/places_sidebar.rs:635
 #, no-c-format
 msgid "_OK"
 msgstr "_ОК"
 
-#: src/browser_view.rs:730
+#: src/browser_view.rs:794
 #, no-c-format
 msgid "Loading…"
 msgstr "Загрузка…"
 
-#: src/browser_view.rs:746
+#: src/browser_view.rs:810
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Выбран объект «%s»"
 
-#: src/browser_view.rs:751
+#: src/browser_view.rs:815
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -273,27 +298,27 @@ msgstr[1] "%d других объекта выбрано"
 msgstr[2] "%d других объектов выбрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:757
+#: src/browser_view.rs:821
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1160
+#: src/browser_view.rs:1224
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:1189 src/dialogs/properties.rs:218
+#: src/browser_view.rs:1253 src/dialogs/properties.rs:218
 #, no-c-format
 msgid "Size"
 msgstr "Размер"
 
-#: src/browser_view.rs:1190 src/dialogs/properties.rs:210
+#: src/browser_view.rs:1254 src/dialogs/properties.rs:210
 #, no-c-format
 msgid "Type"
 msgstr "Тип"
 
-#: src/browser_view.rs:1191 src/dialogs/properties.rs:226
+#: src/browser_view.rs:1255 src/dialogs/properties.rs:226
 #, no-c-format
 msgid "Modified"
 msgstr "Изменён"
@@ -422,8 +447,8 @@ msgstr "Запоминать вид для каждой папки"
 
 #: src/dialogs/preferences.rs:58
 #, no-c-format
-msgid "Switching the view applies to the current folder only"
-msgstr "Переключение вида действует только для текущей папки"
+msgid "Switching the view or the sort order applies to the current folder only"
+msgstr "Переключение вида и сортировка действуют только для текущей папки"
 
 #: src/dialogs/preferences.rs:64
 #, no-c-format
@@ -1355,7 +1380,7 @@ msgstr "Назад"
 msgid "Forward"
 msgstr "Вперёд"
 
-#: src/portal/chooser_window.rs:142 src/window.rs:593 ui/window.ui:281
+#: src/portal/chooser_window.rs:142 src/window.rs:595 ui/window.ui:281
 #: ui/window.ui:353
 #, no-c-format
 msgid "List View"
@@ -1406,12 +1431,12 @@ msgstr "Отмена"
 msgid "No terminal emulator found"
 msgstr "Эмулятор терминала не найден"
 
-#: src/window.rs:438 ui/shortcuts_dialog.ui:216
+#: src/window.rs:431 ui/shortcuts_dialog.ui:216
 #, no-c-format
 msgid "Undo"
 msgstr "Отменить"
 
-#: src/window.rs:595
+#: src/window.rs:597
 #, no-c-format
 msgid "Grid View"
 msgstr "В виде сетки"

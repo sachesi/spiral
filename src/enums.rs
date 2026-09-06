@@ -33,3 +33,24 @@ pub enum SortKey {
     #[enum_value(name = "Modified", nick = "modified")]
     Modified = 3,
 }
+
+impl SortKey {
+    pub fn nick(self) -> &'static str {
+        match self {
+            Self::Name => "name",
+            Self::Size => "size",
+            Self::Type => "type",
+            Self::Modified => "modified",
+        }
+    }
+
+    pub fn from_nick(nick: &str) -> Option<Self> {
+        match nick {
+            "name" => Some(Self::Name),
+            "size" => Some(Self::Size),
+            "type" => Some(Self::Type),
+            "modified" => Some(Self::Modified),
+            _ => None,
+        }
+    }
+}

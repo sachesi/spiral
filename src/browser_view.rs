@@ -53,6 +53,8 @@ mod imp {
         list_icon_size: Cell<i32>,
         /// View mode remembered for the current folder, if any.
         pub folder_view: Cell<Option<ViewMode>>,
+        /// Sort order remembered for the current folder, if any.
+        pub folder_sort: Cell<Option<(SortKey, bool)>>,
         /// Bumped per navigation so late view lookups for an old folder are dropped.
         pub nav_gen: Cell<u64>,
         #[property(get, nullable)]
@@ -118,6 +120,7 @@ mod imp {
                 icon_size: Cell::new(96),
                 list_icon_size: Cell::new(32),
                 folder_view: Default::default(),
+                folder_sort: Default::default(),
                 nav_gen: Default::default(),
                 location: Default::default(),
                 history: Default::default(),
@@ -249,12 +252,22 @@ mod imp {
                 }
             ));
             obj.add_controller(scroll);
-            self.settings
-                .bind("sort-key", &self.model, "sort-key")
-                .build();
-            self.settings
-                .bind("sort-reversed", &self.model, "sort-reversed")
-                .build();
+            // The global sort order only drives folders without a remembered one.
+            obj.apply_global_sort();
+            for key in ["sort-key", "sort-reversed"] {
+                self.settings.connect_changed(
+                    Some(key),
+                    glib::clone!(
+                        #[weak]
+                        obj,
+                        move |_, _| {
+                            if obj.imp().folder_sort.get().is_none() {
+                                obj.apply_global_sort();
+                            }
+                        }
+                    ),
+                );
+            }
             self.settings
                 .bind("show-hidden", &self.model, "show-hidden")
                 .build();
@@ -469,13 +482,53 @@ impl BrowserView {
         )
     }
 
-    /// Pick the view for a folder: remembered per folder, else guessed from its media
-    /// content once loaded, else the global default.
+    fn apply_global_sort(&self) {
+        let imp = self.imp();
+        let key = SortKey::from_nick(&imp.settings.string("sort-key")).unwrap_or_default();
+        imp.model.set_sort_key(key);
+        imp.model
+            .set_sort_reversed(imp.settings.boolean("sort-reversed"));
+    }
+
+    /// Sort the current folder: remembered for this folder when views are remembered per
+    /// folder, otherwise as the new global order. A chooser sorts for the session only.
+    pub fn set_sort(&self, key: SortKey, reversed: bool) {
+        let imp = self.imp();
+        imp.model.set_sort_key(key);
+        imp.model.set_sort_reversed(reversed);
+        match self.location() {
+            _ if self.chooser_mode() => {}
+            Some(dir) if crate::prefs::remember_view() => {
+                imp.folder_sort.set(Some((key, reversed)));
+                let value = format!("{}-{}", key.nick(), if reversed { "desc" } else { "asc" });
+                glib::spawn_future_local(async move {
+                    if let Err(e) = dir.set_attribute_string(
+                        "metadata::spiral-sort",
+                        &value,
+                        gio::FileQueryInfoFlags::NONE,
+                        gio::Cancellable::NONE,
+                    ) {
+                        glib::g_debug!("spiral", "cannot remember sort for {}: {e}", dir.uri());
+                    }
+                });
+            }
+            _ => {
+                let _ = imp.settings.set_string("sort-key", key.nick());
+                let _ = imp.settings.set_boolean("sort-reversed", reversed);
+            }
+        }
+    }
+
+    /// Pick the view and sort order for a folder: remembered per folder, else (for the
+    /// view) guessed from its media content once loaded, else the global default.
     fn resolve_view_mode(&self, file: &gio::File) {
         let imp = self.imp();
         let generation = imp.nav_gen.get() + 1;
         imp.nav_gen.set(generation);
         imp.folder_view.set(None);
+        if imp.folder_sort.take().is_some() {
+            self.apply_global_sort();
+        }
         // A chooser keeps one view of its own; per-folder memory and guessing are for
         // the file manager.
         if self.chooser_mode() {
@@ -497,19 +550,30 @@ impl BrowserView {
                 if remember
                     && let Ok(info) = file
                         .query_info_future(
-                            "metadata::spiral-view",
+                            "metadata::spiral-view,metadata::spiral-sort",
                             gio::FileQueryInfoFlags::NONE,
                             glib::Priority::DEFAULT,
                         )
                         .await
                     && view.imp().nav_gen.get() == generation
-                    && let Some(mode) = info
+                {
+                    if let Some((key, dir)) = info
+                        .attribute_string("metadata::spiral-sort")
+                        .and_then(|s| s.split_once('-').map(|(k, d)| (k.to_string(), d == "desc")))
+                        && let Some(key) = SortKey::from_nick(&key)
+                    {
+                        view.imp().folder_sort.set(Some((key, dir)));
+                        view.model().set_sort_key(key);
+                        view.model().set_sort_reversed(dir);
+                    }
+                    if let Some(mode) = info
                         .attribute_string("metadata::spiral-view")
                         .and_then(|s| ViewMode::from_nick(&s))
-                {
-                    view.imp().folder_view.set(Some(mode));
-                    view.set_view_mode(mode);
-                    return;
+                    {
+                        view.imp().folder_view.set(Some(mode));
+                        view.set_view_mode(mode);
+                        return;
+                    }
                 }
                 if !guess || view.imp().nav_gen.get() != generation {
                     return;
@@ -1204,16 +1268,18 @@ impl BrowserView {
             col.set_sorter(Some(&sorter));
             unsafe { col.set_data("sort-key", key) };
         }
-        let model = self.imp().model.clone();
         let cv_sorter = cv.sorter().and_downcast::<gtk::ColumnViewSorter>().unwrap();
-        cv_sorter.connect_changed(move |s, _| {
-            let Some(col) = s.primary_sort_column() else {
-                return;
-            };
-            let key = unsafe { *col.data::<SortKey>("sort-key").unwrap().as_ref() };
-            let reversed = s.primary_sort_order() == gtk::SortType::Descending;
-            model.set_sort_key(key);
-            model.set_sort_reversed(reversed);
-        });
+        cv_sorter.connect_changed(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |s, _| {
+                let Some(col) = s.primary_sort_column() else {
+                    return;
+                };
+                let key = unsafe { *col.data::<SortKey>("sort-key").unwrap().as_ref() };
+                let reversed = s.primary_sort_order() == gtk::SortType::Descending;
+                view.set_sort(key, reversed);
+            }
+        ));
     }
 }

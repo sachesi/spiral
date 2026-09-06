@@ -195,7 +195,7 @@ mod imp {
                 .bind("sidebar-visible", &*self.split_view, "show-sidebar")
                 .build();
 
-            // "sort" is a string action ("name-asc", "size-desc", ...) over the two settings keys.
+            // "sort" is a string action ("name-asc", "size-desc", ...) on the current view.
             self.sort_action.connect_activate(glib::clone!(
                 #[weak(rename_to = win)]
                 obj,
@@ -206,22 +206,14 @@ mod imp {
                     let Some((key, dir)) = v.split_once('-') else {
                         return;
                     };
-                    let s = &win.imp().settings;
-                    let _ = s.set_string("sort-key", key);
-                    let _ = s.set_boolean("sort-reversed", dir == "desc");
+                    if let Some(key) = SortKey::from_nick(key)
+                        && let Some(view) = win.current_view()
+                    {
+                        view.set_sort(key, dir == "desc");
+                    }
                 }
             ));
             obj.add_action(&self.sort_action);
-            let sync_sort = glib::clone!(
-                #[weak(rename_to = win)]
-                obj,
-                move |_: &gio::Settings, _: &str| win.sync_sort_state()
-            );
-            self.settings
-                .connect_changed(Some("sort-key"), sync_sort.clone());
-            self.settings
-                .connect_changed(Some("sort-reversed"), sync_sort);
-            obj.sync_sort_state();
             obj.sync_view_button();
             obj.zoom(0);
 
@@ -376,6 +368,7 @@ mod imp {
                 obj.insert_action_group("view", Some(&v.imp().actions));
             }
             obj.sync_header();
+            obj.sync_sort_state();
             obj.sync_view_button();
             obj.zoom(0);
         }
@@ -492,6 +485,22 @@ impl SpiralWindow {
                 }
             ),
         );
+        for prop in ["sort-key", "sort-reversed"] {
+            view.model().connect_notify_local(
+                Some(prop),
+                glib::clone!(
+                    #[weak(rename_to = win)]
+                    self,
+                    #[weak]
+                    page,
+                    move |_, _| {
+                        if win.imp().tab_view.selected_page().as_ref() == Some(&page) {
+                            win.sync_sort_state();
+                        }
+                    }
+                ),
+            );
+        }
         view.connect_open_in_new_tab(glib::clone!(
             #[weak(rename_to = win)]
             self,
@@ -561,21 +570,14 @@ impl SpiralWindow {
     }
 
     fn sync_sort_state(&self) {
-        let s = &self.imp().settings;
-        let key = match s.enum_("sort-key") {
-            k if k == SortKey::Size as i32 => "size",
-            k if k == SortKey::Type as i32 => "type",
-            k if k == SortKey::Modified as i32 => "modified",
-            _ => "name",
+        let Some(view) = self.current_view() else {
+            return;
         };
-        let dir = if s.boolean("sort-reversed") {
-            "desc"
-        } else {
-            "asc"
-        };
+        let model = view.model();
+        let dir = if model.sort_reversed() { "desc" } else { "asc" };
         self.imp()
             .sort_action
-            .set_state(&format!("{key}-{dir}").to_variant());
+            .set_state(&format!("{}-{dir}", model.sort_key().nick()).to_variant());
     }
 
     /// The split button shows the view you switch *to*, like Nautilus.

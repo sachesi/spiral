@@ -6,6 +6,8 @@ use crate::config;
 use crate::ops::JobManager;
 use crate::window::SpiralWindow;
 use crate::{adw, gio, glib};
+use std::ops::ControlFlow;
+use std::os::unix::ffi::OsStrExt;
 
 mod imp {
     use super::*;
@@ -33,22 +35,63 @@ mod imp {
             app.setup_actions();
         }
 
+        /// D-Bus activation without arguments: a window at the home folder.
         fn activate(&self) {
-            let app = self.obj();
-            let win = app.present_window();
-            if win.current_view().is_none() {
-                win.open_location(&gio::File::for_path(glib::home_dir()));
-            }
-            if app.job_manager().running() > 0 {
-                win.show_progress();
-            }
+            self.obj().open_window(&[]);
         }
 
-        fn open(&self, files: &[gio::File], _hint: &str) {
-            let win = self.obj().present_window();
-            for f in files {
-                win.open_location(f);
+        fn handle_local_options(&self, options: &glib::VariantDict) -> ControlFlow<glib::ExitCode> {
+            if options.contains("version") {
+                println!("spiral {}", config::VERSION);
+                return ControlFlow::Break(glib::ExitCode::SUCCESS);
             }
+            ControlFlow::Continue(())
+        }
+
+        /// Every invocation reaches the running instance here, like Nautilus: `-q` quits it,
+        /// anything else opens new windows.
+        fn command_line(&self, cmdline: &gio::ApplicationCommandLine) -> glib::ExitCode {
+            let app = self.obj();
+            let options = cmdline.options_dict();
+            if options.contains("quit") {
+                app.job_manager().cancel_all();
+                app.quit();
+                return glib::ExitCode::SUCCESS;
+            }
+            let files: Vec<gio::File> = options
+                .lookup_value("", Some(glib::VariantTy::BYTE_STRING_ARRAY))
+                .and_then(|v| v.get::<Vec<Vec<u8>>>())
+                .unwrap_or_default()
+                .iter()
+                .map(|arg| {
+                    let arg = arg.strip_suffix(&[0]).unwrap_or(arg);
+                    cmdline.create_file_for_arg(std::ffi::OsStr::from_bytes(arg))
+                })
+                .collect();
+            glib::g_debug!(
+                "spiral",
+                "command line: {} files, new-window={}, select={}",
+                files.len(),
+                options.contains("new-window"),
+                options.contains("select")
+            );
+            let first = if options.contains("select") {
+                app.select_in_windows(&files)
+            } else if options.contains("new-window") && files.len() > 1 {
+                let windows: Vec<SpiralWindow> = files
+                    .iter()
+                    .map(|f| app.open_window(std::slice::from_ref(f)))
+                    .collect();
+                windows.into_iter().next()
+            } else {
+                Some(app.open_window(&files))
+            };
+            if app.job_manager().running() > 0
+                && let Some(win) = first
+            {
+                win.show_progress();
+            }
+            glib::ExitCode::SUCCESS
         }
 
         fn dbus_register(
@@ -87,6 +130,18 @@ glib::wrapper! {
 
 use crate::gtk;
 
+fn group_by_parent(files: &[gio::File]) -> Vec<(gio::File, Vec<gio::File>)> {
+    let mut groups: Vec<(gio::File, Vec<gio::File>)> = Vec::new();
+    for f in files {
+        let Some(parent) = f.parent() else { continue };
+        match groups.iter_mut().find(|(p, _)| p.equal(&parent)) {
+            Some((_, items)) => items.push(f.clone()),
+            None => groups.push((parent, vec![f.clone()])),
+        }
+    }
+    groups
+}
+
 impl Default for SpiralApplication {
     fn default() -> Self {
         Self::new()
@@ -95,11 +150,68 @@ impl Default for SpiralApplication {
 
 impl SpiralApplication {
     pub fn new() -> Self {
-        glib::Object::builder()
+        let app: Self = glib::Object::builder()
             .property("application-id", config::APP_ID)
-            .property("flags", gio::ApplicationFlags::HANDLES_OPEN)
+            .property("flags", gio::ApplicationFlags::HANDLES_COMMAND_LINE)
             .property("resource-base-path", config::RESOURCE_PATH)
-            .build()
+            .build();
+        let flag = |long: &str, short: u8, description: String| {
+            app.add_main_option(
+                long,
+                glib::Char::from(short),
+                glib::OptionFlags::NONE,
+                glib::OptionArg::None,
+                &description,
+                None,
+            );
+        };
+        flag(
+            "new-window",
+            b'w',
+            gettext("Open each location in its own window"),
+        );
+        flag(
+            "select",
+            b's',
+            gettext("Select the given files in their folders"),
+        );
+        flag("quit", b'q', gettext("Close every window and quit"));
+        flag("version", 0, gettext("Print the version and exit"));
+        app.add_main_option(
+            "",
+            glib::Char::from(0),
+            glib::OptionFlags::NONE,
+            glib::OptionArg::FilenameArray,
+            "",
+            Some(&gettext("[FILE…]")),
+        );
+        app
+    }
+
+    /// A new window showing `files` as tabs, or the home folder when there are none.
+    pub fn open_window(&self, files: &[gio::File]) -> SpiralWindow {
+        let win = SpiralWindow::new(self);
+        if files.is_empty() {
+            win.open_location(&gio::File::for_path(glib::home_dir()));
+        }
+        for f in files {
+            win.open_location(f);
+        }
+        win.present();
+        win
+    }
+
+    /// `--select`: one window per parent folder with the given files selected.
+    fn select_in_windows(&self, files: &[gio::File]) -> Option<SpiralWindow> {
+        let mut first = None;
+        for (parent, items) in group_by_parent(files) {
+            let win = self.open_window(std::slice::from_ref(&parent));
+            if let Some(view) = win.current_view() {
+                view.select_files_when_loaded(items);
+            }
+            first.get_or_insert(win);
+        }
+        first
     }
 
     /// FileManager1.ShowFolders: one tab per folder.
@@ -113,15 +225,7 @@ impl SpiralApplication {
     /// FileManager1.ShowItems: open each parent folder and select the items in it.
     pub fn show_items(&self, files: &[gio::File]) {
         let win = self.present_window();
-        let mut groups: Vec<(gio::File, Vec<gio::File>)> = Vec::new();
-        for f in files {
-            let Some(parent) = f.parent() else { continue };
-            match groups.iter_mut().find(|(p, _)| p.equal(&parent)) {
-                Some((_, items)) => items.push(f.clone()),
-                None => groups.push((parent, vec![f.clone()])),
-            }
-        }
-        for (parent, items) in groups {
+        for (parent, items) in group_by_parent(files) {
             win.open_location(&parent);
             if let Some(view) = win.current_view() {
                 view.select_files_when_loaded(items);

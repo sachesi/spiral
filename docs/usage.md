@@ -41,7 +41,10 @@ Which view a folder opens in: the one it was last switched to, if "Remember View
 Folder" is on (stored in the folder's `metadata::spiral-view` attribute, invisible to
 other programs); otherwise the grid if the folder is mostly images and videos and "Grid
 View for Media Folders" is on; otherwise the global default. "Mostly" means at least four
-files, half or more of them media, looking at the first 2000 entries.
+files, half or more of them media, looking at the first 2000 entries. The sort order
+follows the same preference: with it on, sorting from the menu or a column header applies
+to that folder and is kept in `metadata::spiral-sort`; with it off, it changes the default
+for every folder.
 
 The grid can show up to three lines under each name: size or item count, date,
 permissions, type, MIME type, owner, group. There is no dialog for it yet; set the
@@ -80,8 +83,14 @@ it is read-only unless you own the file.
 
 ## Command line
 
-    spiral
-    spiral ~/Music /tmp
-    spiral trash:///
+    spiral                    # a new window at the home folder
+    spiral ~/Music /tmp       # a new window with a tab per path
+    spiral -w ~/Music /tmp    # a window per path
+    spiral -s ~/notes.txt     # the parent folder, with the file selected
+    spiral trash:///          # URIs work too
+    spiral -q                 # close every window and quit
+    spiral --version
 
-Each argument becomes a tab. A second `spiral` hands its arguments to the running one.
+Every call opens new windows in the running instance, as with GNOME Files. `-q` stops
+running file operations first, cleaning up partial files the same way the stop button
+does.
