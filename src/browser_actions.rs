@@ -10,6 +10,24 @@ use crate::file_utils;
 use crate::ops::{JobKind, JobManager};
 use crate::{clipboard, gio, glib, gtk};
 
+/// Position of the first name cell below `w`, a few levels deep at most.
+fn first_cell_position(w: &gtk::Widget, depth: u32) -> Option<u32> {
+    if depth > 4 {
+        return None;
+    }
+    if let Some(pos) = crate::browser_view::cell_position(w) {
+        return Some(pos);
+    }
+    let mut child = w.first_child();
+    while let Some(c) = child {
+        if let Some(pos) = first_cell_position(&c, depth + 1) {
+            return Some(pos);
+        }
+        child = c.next_sibling();
+    }
+    None
+}
+
 impl BrowserView {
     fn manager(&self) -> Option<JobManager> {
         self.root()
@@ -734,6 +752,12 @@ impl BrowserView {
         let mut w = stack.pick(x, y, gtk::PickFlags::DEFAULT)?;
         loop {
             if let Some(pos) = crate::browser_view::cell_position(&w) {
+                return Some(pos);
+            }
+            // Any cell of a list row counts: the name cell is the one that knows the position.
+            if w.css_name() == "row"
+                && let Some(pos) = first_cell_position(&w, 0)
+            {
                 return Some(pos);
             }
             if &w == stack.upcast_ref::<gtk::Widget>() {
