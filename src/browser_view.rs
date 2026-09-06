@@ -436,16 +436,20 @@ async fn count_children(dir: &gio::File) -> Option<u64> {
     }
 }
 
-/// Lock shown on files the user cannot read or change; hidden until bound.
+/// Width of the emblem margin beside a grid icon, as in Nautilus.
+const EMBLEM_MARGIN: i32 = 18;
+
+/// Lock shown on files the user cannot read or change, dimmed like Nautilus emblems. It
+/// keeps its place when empty so icons line up across cells.
 fn emblem_image() -> gtk::Image {
     gtk::Image::builder()
-        .icon_name("changes-prevent-symbolic")
         .pixel_size(16)
-        .halign(gtk::Align::End)
-        .valign(gtk::Align::End)
-        .visible(false)
-        .css_classes(["spiral-emblem"])
+        .css_classes(["dim-label"])
         .build()
+}
+
+fn set_emblem(emblem: &gtk::Image, locked: bool) {
+    emblem.set_icon_name(locked.then_some("changes-prevent-symbolic"));
 }
 
 fn unbind_icon(image: &gtk::Image) {
@@ -918,7 +922,10 @@ impl BrowserView {
     /// cannot be read or changed.
     fn bind_icon(&self, image: &gtk::Image, emblem: &gtk::Image, info: &gio::FileInfo) {
         unbind_icon(image);
-        emblem.set_visible(file_utils::is_locked(info, self.imp().can_write.get()));
+        set_emblem(
+            emblem,
+            file_utils::is_locked(info, self.imp().can_write.get()),
+        );
         image.set_from_gicon(&crate::file_utils::icon_of(info));
         if info.is_hidden() || info.is_backup() {
             image.add_css_class("hidden-file");
@@ -1148,15 +1155,23 @@ impl BrowserView {
                 .build();
             labels.append(&label);
             labels.append(&captions);
-            let overlay = gtk::Overlay::builder().child(&image).build();
-            overlay.add_overlay(&emblem_image());
+            // Icon between two emblem-wide margins, the lock stacked at the top of the
+            // right one: the Nautilus grid cell geometry.
+            image.set_margin_start(EMBLEM_MARGIN);
+            image.set_hexpand(true);
+            let emblem = emblem_image();
+            emblem.set_width_request(EMBLEM_MARGIN);
+            emblem.set_valign(gtk::Align::Start);
+            let icon_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            icon_row.append(&image);
+            icon_row.append(&emblem);
             let bx = gtk::Box::builder()
                 .orientation(gtk::Orientation::Vertical)
                 .spacing(6)
                 .valign(gtk::Align::Start)
                 .css_classes(["spiral-view-cell"])
                 .build();
-            bx.append(&overlay);
+            bx.append(&icon_row);
             bx.append(&labels);
             item.set_child(Some(&bx));
             remember_list_item(&bx, item);
@@ -1169,9 +1184,9 @@ impl BrowserView {
                 return;
             };
             let bx = item.child().unwrap();
-            let overlay = bx.first_child().and_downcast::<gtk::Overlay>().unwrap();
-            let image = overlay.child().and_downcast::<gtk::Image>().unwrap();
-            let emblem = overlay.last_child().and_downcast::<gtk::Image>().unwrap();
+            let icon_row = bx.first_child().unwrap();
+            let image = icon_row.first_child().and_downcast::<gtk::Image>().unwrap();
+            let emblem = icon_row.last_child().and_downcast::<gtk::Image>().unwrap();
             let labels = bx.last_child().unwrap();
             let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
             let captions = labels.last_child().and_downcast::<gtk::Label>().unwrap();
@@ -1186,8 +1201,7 @@ impl BrowserView {
             let Some(bx) = item.child() else { return };
             if let Some(image) = bx
                 .first_child()
-                .and_downcast::<gtk::Overlay>()
-                .and_then(|o| o.child())
+                .and_then(|row| row.first_child())
                 .and_downcast::<gtk::Image>()
             {
                 unbind_icon(&image);
