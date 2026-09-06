@@ -227,6 +227,7 @@ menu drop_menu {
     item {
       label: _("_Move Here");
       action: "view.drop-move";
+      hidden-when: "action-disabled";
     }
     item {
       label: _("_Link Here");

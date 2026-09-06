@@ -175,7 +175,9 @@ mod imp {
             if !obj.chooser_mode() {
                 let target = gtk::DropTarget::new(
                     gtk::gdk::FileList::static_type(),
-                    gtk::gdk::DragAction::COPY | gtk::gdk::DragAction::MOVE,
+                    gtk::gdk::DragAction::COPY
+                        | gtk::gdk::DragAction::MOVE
+                        | gtk::gdk::DragAction::LINK,
                 );
                 target.connect_enter(|t, _, _| preferred_action(t));
                 target.connect_motion(|t, _, _| preferred_action(t));
@@ -471,10 +473,17 @@ fn unbind_icon(image: &gtk::Image) {
 /// One offered action means the modifier already chose: Ctrl copies, Shift moves,
 /// Ctrl+Shift links. Otherwise move for drags started in this process, copy for drags from
 /// other applications.
+///
+/// While the drop menu is doing the deciding this says copy, whatever the drag suggests:
+/// the source is told the action as the files land, before the menu has been answered, and
+/// a source that deletes what it moved must not act on a drop the reader may still cancel.
 pub fn preferred_action(target: &gtk::DropTarget) -> gtk::gdk::DragAction {
     let Some(drop) = target.current_drop() else {
         return gtk::gdk::DragAction::COPY;
     };
+    if crate::prefs::settings().boolean("ask-on-drop") {
+        return gtk::gdk::DragAction::COPY;
+    }
     let actions = drop.actions();
     if actions == gtk::gdk::DragAction::COPY {
         gtk::gdk::DragAction::COPY
@@ -1125,7 +1134,7 @@ impl BrowserView {
         let cell = cell.clone().upcast::<gtk::Widget>();
         let target = gtk::DropTarget::new(
             gtk::gdk::FileList::static_type(),
-            gtk::gdk::DragAction::COPY | gtk::gdk::DragAction::MOVE,
+            gtk::gdk::DragAction::COPY | gtk::gdk::DragAction::MOVE | gtk::gdk::DragAction::LINK,
         );
         target.connect_enter(glib::clone!(
             #[weak(rename_to = view)]
@@ -1199,6 +1208,19 @@ impl BrowserView {
         // Wayland has the compositor pick the action before the drop reaches us, and the
         // pointer carries no keyboard modifiers while the drag grab is on.
         if self.imp().settings.boolean("ask-on-drop") {
+            // Moving into the folder the files already sit in would do nothing, so do not
+            // offer it; copying there still makes sense, and makes copies.
+            let settled = files
+                .iter()
+                .all(|f| f.parent().is_some_and(|p| p.equal(folder)));
+            if let Some(move_action) = self
+                .imp()
+                .actions
+                .lookup_action("drop-move")
+                .and_downcast::<gio::SimpleAction>()
+            {
+                move_action.set_enabled(!settled);
+            }
             self.imp()
                 .pending_drop
                 .replace(Some((files, folder.clone())));
@@ -1208,7 +1230,8 @@ impl BrowserView {
         self.run_drop(files, folder, preferred_action(target))
     }
 
-    /// Put the drop menu where the files landed.
+    /// Put the drop menu where the files landed. Closing it without a choice, by Escape or
+    /// a click outside, drops the files it was asking about.
     fn ask_drop_action(&self, target: &gtk::DropTarget, x: f64, y: f64) {
         let point = target
             .widget()

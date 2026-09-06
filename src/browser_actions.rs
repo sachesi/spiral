@@ -853,6 +853,18 @@ impl BrowserView {
                 p.set_parent(self);
                 p.set_has_arrow(false);
                 p.set_halign(gtk::Align::Start);
+                // Closing comes first and the entry activates straight after, so the files
+                // have to outlive the close by an iteration; whatever is left then was a
+                // menu dismissed without an answer.
+                p.connect_closed(glib::clone!(
+                    #[weak(rename_to = view)]
+                    self,
+                    move |_| {
+                        glib::idle_add_local_once(move || {
+                            view.imp().pending_drop.replace(None);
+                        });
+                    }
+                ));
                 imp.popover.replace(Some(p.clone()));
                 p
             }

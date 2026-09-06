@@ -38,7 +38,7 @@ pub fn register(connection: &gio::DBusConnection) -> Registration {
     std::thread::Builder::new()
         .name("filemanager1".into())
         .spawn(move || {
-            let _ = context.with_thread_default(|| {
+            let served = context.with_thread_default(|| {
                 let registration = serve(&connection);
                 thread_loop.run();
                 if let Some((object, owner)) = registration {
@@ -46,6 +46,13 @@ pub fn register(connection: &gio::DBusConnection) -> Registration {
                     gio::bus_unown_name(owner);
                 }
             });
+            if served.is_err() {
+                glib::g_warning!(
+                    "spiral",
+                    "FileManager1 not served: \"Show in folder\" from other applications \
+                     will not reach Spiral"
+                );
+            }
         })
         .expect("spawn FileManager1 thread");
     Registration { main_loop }
