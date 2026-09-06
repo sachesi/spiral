@@ -57,11 +57,12 @@ pub enum JobKind {
         files: Vec<gio::File>,
         dest: gio::File,
     },
-    /// Pack `files` into `dest/file_name`.
+    /// Pack `files` into `dest/file_name`, encrypted when `password` is set.
     Compress {
         files: Vec<gio::File>,
         dest: gio::File,
         file_name: String,
+        password: Option<String>,
     },
 }
 

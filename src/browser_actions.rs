@@ -405,11 +405,14 @@ impl BrowserView {
             #[weak(rename_to = view)]
             self,
             async move {
-                if let Some(file_name) = crate::dialogs::compress_dialog(&view, &default).await {
+                if let Some((file_name, password)) =
+                    crate::dialogs::compress_dialog(&view, &default).await
+                {
                     view.submit(JobKind::Compress {
                         files,
                         dest,
                         file_name,
+                        password,
                     });
                 }
             }

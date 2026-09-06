@@ -27,13 +27,20 @@ GNOME Files does. Extraction only targets local folders.
 7-Zip reports a percentage, which shows as a finer progress bar; the other tools advance
 per archive.
 
+An encrypted archive brings up a password prompt: every tool is started with an empty
+password so it fails instead of waiting for a terminal, and a failure that mentions a
+password or encryption asks for one and runs the tool again. A wrong password asks again;
+Cancel stops the job. The password is only ever passed on the tool's command line.
+
 ## Creating
 
 The dialog lists the formats whose tools are present: zip (`zip` or 7-Zip), tar.xz,
-tar.zst and tar.gz (`tar` plus the compressor), 7z (7-Zip). The tool runs in the folder of
-the selected items with their base names, so paths inside the archive are relative. The
-archive is written to a hidden directory first and moved into place, again without
-overwriting.
+tar.zst and tar.gz (`tar` plus the compressor), 7z (7-Zip). It opens on the format used
+last time. zip and 7z archives can take a password; with one, 7-Zip is preferred because
+it encrypts zips with AES-256, while `zip` only offers the old PKWARE scheme. The tool
+runs in the folder of the selected items with their base names, so paths inside the
+archive are relative. The archive is written to a hidden directory first and moved into
+place, again without overwriting.
 
 Progress is by bytes: the sources are measured beforehand and each entry the tool prints
 is looked up, so you get a rate and time left.
