@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
 "POT-Creation-Date: 2026-09-06 15:22+0300\n"
-"PO-Revision-Date: 2026-09-06 15:23+0300\n"
+"PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
 "Language: uk\n"
@@ -1011,9 +1011,9 @@ msgstr "Копіювання «%s» до «%t»"
 #, no-c-format
 msgid "Copying %d file to “%t”"
 msgid_plural "Copying %d files to “%t”"
-msgstr[0] "Копіювання %d файла до «%t»"
-msgstr[1] "Копіювання %d файлів до «%t»"
-msgstr[2] "Копіювання %d файлів до «%t»"
+msgstr[0] "Копіюється %d файл до «%t»"
+msgstr[1] "Копіюються %d файли до «%t»"
+msgstr[2] "Копіюються %d файлів до «%t»"
 
 #: src/ops/job.rs:83
 #, no-c-format
@@ -1024,9 +1024,9 @@ msgstr "Переміщення «%s» до «%t»"
 #, no-c-format
 msgid "Moving %d file to “%t”"
 msgid_plural "Moving %d files to “%t”"
-msgstr[0] "Переміщення %d файла до «%t»"
-msgstr[1] "Переміщення %d файлів до «%t»"
-msgstr[2] "Переміщення %d файлів до «%t»"
+msgstr[0] "Переміщується %d файл до «%t»"
+msgstr[1] "Переміщуються %d файли до «%t»"
+msgstr[2] "Переміщуються %d файлів до «%t»"
 
 #: src/ops/job.rs:93
 #, no-c-format
@@ -1037,9 +1037,9 @@ msgstr "Переміщення «%s» у смітник"
 #, no-c-format
 msgid "Moving %d file to trash"
 msgid_plural "Moving %d files to trash"
-msgstr[0] "Переміщення %d файла у смітник"
-msgstr[1] "Переміщення %d файлів у смітник"
-msgstr[2] "Переміщення %d файлів у смітник"
+msgstr[0] "Переміщується %d файл у смітник"
+msgstr[1] "Переміщуються %d файли у смітник"
+msgstr[2] "Переміщуються %d файлів у смітник"
 
 #: src/ops/job.rs:102
 #, no-c-format
@@ -1050,9 +1050,9 @@ msgstr "Вилучення «%s»"
 #, no-c-format
 msgid "Deleting %d file"
 msgid_plural "Deleting %d files"
-msgstr[0] "Вилучення %d файла"
-msgstr[1] "Вилучення %d файлів"
-msgstr[2] "Вилучення %d файлів"
+msgstr[0] "Вилучається %d файл"
+msgstr[1] "Вилучаються %d файли"
+msgstr[2] "Вилучаються %d файлів"
 
 #: src/ops/job.rs:106
 #, no-c-format
@@ -1078,17 +1078,17 @@ msgstr "Відновлення «%s»"
 #, no-c-format
 msgid "Restoring %d file"
 msgid_plural "Restoring %d files"
-msgstr[0] "Відновлення %d файла"
-msgstr[1] "Відновлення %d файлів"
-msgstr[2] "Відновлення %d файлів"
+msgstr[0] "Відновлюється %d файл"
+msgstr[1] "Відновлюються %d файли"
+msgstr[2] "Відновлюються %d файлів"
 
 #: src/ops/job.rs:120
 #, no-c-format
 msgid "Extracting %d archive"
 msgid_plural "Extracting %d archives"
-msgstr[0] "Розпакування %d архіву"
-msgstr[1] "Розпакування %d архівів"
-msgstr[2] "Розпакування %d архівів"
+msgstr[0] "Розпаковується %d архів"
+msgstr[1] "Розпаковуються %d архіви"
+msgstr[2] "Розпаковуються %d архівів"
 
 #: src/ops/job.rs:124
 #, no-c-format
