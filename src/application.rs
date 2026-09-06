@@ -54,8 +54,7 @@ mod imp {
             let app = self.obj();
             let options = cmdline.options_dict();
             if options.contains("quit") {
-                app.job_manager().cancel_all();
-                app.quit();
+                app.quit_after_jobs();
                 return glib::ExitCode::SUCCESS;
             }
             let files: Vec<gio::File> = options
@@ -186,6 +185,34 @@ impl SpiralApplication {
             Some(&gettext("[FILE…]")),
         );
         app
+    }
+
+    /// `-q`: cancel running jobs, let their cleanup finish, then quit. Ten seconds is the
+    /// most a stuck job gets.
+    fn quit_after_jobs(&self) {
+        let mgr = self.job_manager();
+        if mgr.running() == 0 {
+            self.quit();
+            return;
+        }
+        mgr.cancel_all();
+        mgr.connect_running_notify(glib::clone!(
+            #[weak(rename_to = app)]
+            self,
+            move |m| {
+                if m.running() == 0 {
+                    app.quit();
+                }
+            }
+        ));
+        glib::timeout_add_seconds_local_once(
+            10,
+            glib::clone!(
+                #[weak(rename_to = app)]
+                self,
+                move || app.quit()
+            ),
+        );
     }
 
     /// A new window showing `files` as tabs, or the home folder when there are none.
