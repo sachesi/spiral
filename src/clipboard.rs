@@ -1,4 +1,5 @@
-//! File clipboard using Nautilus' `x-special/gnome-copied-files` plus `text/uri-list`.
+//! File clipboard using Nautilus' `x-special/gnome-copied-files` plus a `gdk::FileList`,
+//! which GDK serialises as `text/uri-list` and as plain-text paths for terminals and editors.
 
 use crate::gtk::prelude::*;
 use crate::{gdk, gio, glib};
@@ -9,10 +10,9 @@ const URI_LIST: &str = "text/uri-list";
 pub fn set(clipboard: &gdk::Clipboard, files: &[gio::File], cut: bool) {
     let uris: Vec<String> = files.iter().map(|f| f.uri().to_string()).collect();
     let gnome = format!("{}\n{}", if cut { "cut" } else { "copy" }, uris.join("\n"));
-    let uri_list = uris.iter().map(|u| format!("{u}\r\n")).collect::<String>();
     let provider = gdk::ContentProvider::new_union(&[
         gdk::ContentProvider::for_bytes(GNOME_MIME, &glib::Bytes::from_owned(gnome.into_bytes())),
-        gdk::ContentProvider::for_bytes(URI_LIST, &glib::Bytes::from_owned(uri_list.into_bytes())),
+        gdk::ContentProvider::for_value(&gdk::FileList::from_array(files).to_value()),
     ]);
     let _ = clipboard.set_content(Some(&provider));
 }

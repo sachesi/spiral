@@ -10,7 +10,8 @@ use crate::{gio, glib};
 
 /// Attributes requested from `gtk::DirectoryList` for every view.
 pub const ATTRIBUTES: &str = "standard::*,time::modified,thumbnail::path,thumbnail::is-valid,\
-thumbnail::failed,access::can-write,access::can-delete,access::can-rename,unix::mode,owner::user,\
+thumbnail::failed,access::can-read,access::can-write,access::can-delete,access::can-trash,\
+access::can-rename,unix::mode,owner::user,\
 owner::group,metadata::custom-icon,metadata::custom-icon-name";
 
 /// Icon to draw for `info`, honouring the Nautilus-compatible custom icon metadata.
@@ -35,6 +36,16 @@ pub fn file_of(info: &gio::FileInfo) -> gio::File {
     info.attribute_object("standard::file")
         .and_downcast::<gio::File>()
         .expect("FileInfo without standard::file")
+}
+
+/// An `access::` permission; missing (backends that do not report it) counts as allowed.
+pub fn allows(info: &gio::FileInfo, attribute: &str) -> bool {
+    !info.has_attribute(attribute) || info.boolean(attribute)
+}
+
+/// Files the user cannot read or change get a lock emblem, like Nautilus.
+pub fn is_locked(info: &gio::FileInfo) -> bool {
+    !allows(info, "access::can-read") || !allows(info, "access::can-write")
 }
 
 pub fn is_dir(info: &gio::FileInfo) -> bool {

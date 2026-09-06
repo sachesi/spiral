@@ -36,6 +36,9 @@ mod imp {
         selection: gtk::MultiSelection,
 
         pub dir_list: gtk::DirectoryList,
+        /// `DirectoryList` only tracks additions, removals and attribute changes; this one
+        /// catches files rewritten in place so sizes, dates and thumbnails follow.
+        monitor: RefCell<Option<gio::FileMonitor>>,
         /// Root of the pipeline: `dir_list`, or `starred_store` for `starred:///`.
         filtered: gtk::FilterListModel,
         pub starred_store: gio::ListStore,
@@ -115,6 +118,7 @@ mod imp {
                 error_message: Default::default(),
                 selection,
                 dir_list,
+                monitor: Default::default(),
                 filtered,
                 starred_store: gio::ListStore::new::<gio::FileInfo>(),
                 starred_gen: Default::default(),
@@ -181,6 +185,24 @@ mod imp {
                 .as_ref()
                 .is_some_and(crate::starred::is_starred_location);
             self.dir_list.set_file(file.as_ref().filter(|_| !starred));
+            if let Some(old) = self.monitor.take() {
+                old.cancel();
+            }
+            if let Some(dir) = file.as_ref().filter(|_| !starred)
+                && let Ok(monitor) =
+                    dir.monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
+            {
+                monitor.connect_changed(glib::clone!(
+                    #[weak(rename_to = obj)]
+                    self.obj(),
+                    move |_, changed, _, event| {
+                        if event == gio::FileMonitorEvent::ChangesDoneHint {
+                            obj.refresh(changed.clone());
+                        }
+                    }
+                ));
+                self.monitor.replace(Some(monitor));
+            }
             self.location.replace(file);
             if starred {
                 self.filtered.set_model(Some(&self.starred_store));
@@ -322,6 +344,41 @@ impl FolderModel {
         let file = self.location();
         imp.dir_list.set_file(gio::File::NONE);
         imp.dir_list.set_file(file.as_ref());
+    }
+
+    /// Re-read `file`'s attributes into the info already in the list, so bound cells rebind
+    /// and the sort order follows, while the selection (tracked by object) survives.
+    fn refresh(&self, file: gio::File) {
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = model)]
+            self,
+            async move {
+                let Ok(fresh) = file
+                    .query_info_future(
+                        file_utils::ATTRIBUTES,
+                        gio::FileQueryInfoFlags::NONE,
+                        glib::Priority::DEFAULT,
+                    )
+                    .await
+                else {
+                    return;
+                };
+                let dl = &model.imp().dir_list;
+                // ponytail: linear scan per change; index by name if huge folders churn.
+                let found = (0..dl.n_items())
+                    .filter_map(|i| {
+                        dl.item(i)
+                            .and_downcast::<gio::FileInfo>()
+                            .map(|info| (i, info))
+                    })
+                    .find(|(_, info)| file_utils::file_of(info).equal(&file));
+                if let Some((pos, info)) = found {
+                    fresh.set_attribute_object("standard::file", &file);
+                    fresh.copy_into(&info);
+                    dl.items_changed(pos, 1, 1);
+                }
+            }
+        ));
     }
 
     /// Query every starred file; entries that no longer exist are unstarred.

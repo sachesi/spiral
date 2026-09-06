@@ -46,6 +46,10 @@ follows the same preference: with it on, sorting from the menu or a column heade
 to that folder and is kept in `metadata::spiral-sort`; with it off, it changes the default
 for every folder.
 
+Files and folders you cannot read or change carry a small lock, and the actions they do
+not allow (cut, rename, trash, delete) are greyed out. Folders you are looking at update
+themselves when something else creates, deletes or rewrites a file in them.
+
 The grid can show up to three lines under each name: size or item count, date,
 permissions, type, MIME type, owner, group. There is no dialog for it yet; set the
 `captions` key, see [settings.md](settings.md).

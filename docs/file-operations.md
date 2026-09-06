@@ -40,7 +40,7 @@ be `.` or `..`, or already exist; a leading dot gets a warning. New documents ar
 
 ## Undo
 
-Ctrl+Z, or the Undo button on the toast. One level. Undoing a copy, extraction, archive
+Ctrl+Z, the menu, or the Undo button on the toast shown after trashing. One level. Undoing a copy, extraction, archive
 or new folder deletes what was created; a move moves back; a trash restores from
 `trash:///` to the original place, recreating a missing parent folder and picking the
 most recently trashed item if several match; a rename renames back. Permanent deletion

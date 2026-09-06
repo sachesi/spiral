@@ -201,6 +201,13 @@ impl BrowserView {
                 .location()
                 .is_some_and(|l| crate::starred::is_starred_location(&l));
         let can_write = !virtual_dir && self.imp().can_write.get();
+        let all = |attr: &str| infos.iter().all(|i| file_utils::allows(i, attr));
+        let (can_delete, can_trash, can_rename) = (
+            all("access::can-delete"),
+            all("access::can-trash"),
+            all("access::can-rename"),
+        );
+        let dir_writable = single_dir && file_utils::allows(&infos[0], "access::can-write");
         self.set_enabled("open", n > 0);
         self.set_enabled(
             "open-new-tab",
@@ -211,14 +218,14 @@ impl BrowserView {
             "open-terminal",
             self.terminal_dir().is_some() && crate::terminal::chosen().is_some(),
         );
-        self.set_enabled("cut", n > 0 && !in_trash);
+        self.set_enabled("cut", n > 0 && !in_trash && can_delete);
         self.set_enabled("copy", n > 0);
         let has_clip = clipboard::has_files(&self.clipboard());
         self.set_enabled("paste", can_write && !in_trash && has_clip);
-        self.set_enabled("paste-into", single_dir && !in_trash && has_clip);
-        self.set_enabled("rename", n == 1 && !in_trash);
-        self.set_enabled("trash", n > 0 && !in_trash);
-        self.set_enabled("delete", n > 0);
+        self.set_enabled("paste-into", dir_writable && !in_trash && has_clip);
+        self.set_enabled("rename", n == 1 && !in_trash && can_rename);
+        self.set_enabled("trash", n > 0 && !in_trash && can_trash);
+        self.set_enabled("delete", n > 0 && can_delete);
         self.set_enabled("new-folder", can_write && !in_trash);
         self.set_enabled("new-file", can_write && !in_trash);
         self.set_enabled("empty-trash", in_trash && self.model().n_items() > 0);

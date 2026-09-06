@@ -157,8 +157,12 @@ impl JobManager {
                 let undo = undo_for(job);
                 self.set_undo(undo, None);
             }
-            let undoable = record_undo && imp.undo.borrow().is_some();
-            self.show_toast(&kind.done_message(), undoable);
+            // The operations list already shows what finished; like Nautilus, only trashing
+            // gets a toast, so Undo is one click away.
+            if matches!(kind, JobKind::Trash { .. }) {
+                let undoable = record_undo && imp.undo.borrow().is_some();
+                self.show_toast(&kind.done_message(), undoable);
+            }
         }
 
         // Keep the finished row visible briefly so the user sees it complete.

@@ -67,6 +67,8 @@ mod imp {
 
         pub actions: gio::SimpleActionGroup,
         pub popover: RefCell<Option<gtk::PopoverMenu>>,
+        /// Set while the column header is being updated from the model, not the user.
+        pub syncing_header: Cell<bool>,
 
         pub history: RefCell<Vec<gio::File>>,
         pub history_pos: Cell<usize>,
@@ -115,6 +117,7 @@ mod imp {
                 chooser_mode: Default::default(),
                 actions: gio::SimpleActionGroup::new(),
                 popover: Default::default(),
+                syncing_header: Default::default(),
                 model: FolderModel::default(),
                 view_mode: Default::default(),
                 can_go_back: Default::default(),
@@ -422,6 +425,18 @@ async fn count_children(dir: &gio::File) -> Option<u64> {
         }
         n += batch.len() as u64;
     }
+}
+
+/// Lock shown on files the user cannot read or change; hidden until bound.
+fn emblem_image() -> gtk::Image {
+    gtk::Image::builder()
+        .icon_name("changes-prevent-symbolic")
+        .pixel_size(16)
+        .halign(gtk::Align::End)
+        .valign(gtk::Align::End)
+        .visible(false)
+        .css_classes(["spiral-emblem"])
+        .build()
 }
 
 fn unbind_icon(image: &gtk::Image) {
@@ -891,9 +906,11 @@ impl BrowserView {
         }
     }
 
-    /// Icon now, thumbnail later (cancelled on unbind).
-    fn bind_icon(&self, image: &gtk::Image, info: &gio::FileInfo) {
+    /// Icon now, thumbnail later (cancelled on unbind); the lock emblem for files that
+    /// cannot be read or changed.
+    fn bind_icon(&self, image: &gtk::Image, emblem: &gtk::Image, info: &gio::FileInfo) {
         unbind_icon(image);
+        emblem.set_visible(file_utils::is_locked(info));
         image.set_from_gicon(&crate::file_utils::icon_of(info));
         if info.is_hidden() || info.is_backup() {
             image.add_css_class("hidden-file");
@@ -1127,13 +1144,15 @@ impl BrowserView {
                 .build();
             labels.append(&label);
             labels.append(&captions);
+            let overlay = gtk::Overlay::builder().child(&image).build();
+            overlay.add_overlay(&emblem_image());
             let bx = gtk::Box::builder()
                 .orientation(gtk::Orientation::Vertical)
                 .spacing(6)
                 .valign(gtk::Align::Start)
                 .css_classes(["spiral-view-cell"])
                 .build();
-            bx.append(&image);
+            bx.append(&overlay);
             bx.append(&labels);
             item.set_child(Some(&bx));
             remember_list_item(&bx, item);
@@ -1146,11 +1165,13 @@ impl BrowserView {
                 return;
             };
             let bx = item.child().unwrap();
-            let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
+            let overlay = bx.first_child().and_downcast::<gtk::Overlay>().unwrap();
+            let image = overlay.child().and_downcast::<gtk::Image>().unwrap();
+            let emblem = overlay.last_child().and_downcast::<gtk::Image>().unwrap();
             let labels = bx.last_child().unwrap();
             let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
             let captions = labels.last_child().and_downcast::<gtk::Label>().unwrap();
-            view.bind_icon(&image, &info);
+            view.bind_icon(&image, &emblem, &info);
             label.set_text(&info.display_name());
             label.set_tooltip_text(Some(&info.display_name()));
             item.set_accessible_label(&info.display_name());
@@ -1159,7 +1180,12 @@ impl BrowserView {
         factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let Some(bx) = item.child() else { return };
-            if let Some(image) = bx.first_child().and_downcast::<gtk::Image>() {
+            if let Some(image) = bx
+                .first_child()
+                .and_downcast::<gtk::Overlay>()
+                .and_then(|o| o.child())
+                .and_downcast::<gtk::Image>()
+            {
                 unbind_icon(&image);
             }
             if let Some(captions) = bx
@@ -1194,10 +1220,10 @@ impl BrowserView {
             bx.append(
                 &gtk::Label::builder()
                     .xalign(0.0)
-                    .hexpand(true)
                     .ellipsize(gtk::pango::EllipsizeMode::Middle)
                     .build(),
             );
+            bx.append(&emblem_image());
             item.set_child(Some(&bx));
             remember_list_item(&bx, item);
             view.setup_cell_dnd(&bx);
@@ -1210,8 +1236,9 @@ impl BrowserView {
             };
             let bx = item.child().unwrap();
             let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
-            let label = bx.last_child().and_downcast::<gtk::Label>().unwrap();
-            view.bind_icon(&image, &info);
+            let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
+            let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
+            view.bind_icon(&image, &emblem, &info);
             label.set_text(&info.display_name());
         });
         name_factory.connect_unbind(|_, item| {
@@ -1276,6 +1303,9 @@ impl BrowserView {
             #[weak(rename_to = view)]
             self,
             move |s, _| {
+                if view.imp().syncing_header.get() {
+                    return;
+                }
                 let Some(col) = s.primary_sort_column() else {
                     return;
                 };
@@ -1284,5 +1314,37 @@ impl BrowserView {
                 view.set_sort(key, reversed);
             }
         ));
+        // The header arrow follows the model, whichever way the order was set.
+        for prop in ["sort-key", "sort-reversed"] {
+            self.imp().model.connect_notify_local(
+                Some(prop),
+                glib::clone!(
+                    #[weak(rename_to = view)]
+                    self,
+                    move |_, _| view.sync_sort_header()
+                ),
+            );
+        }
+        self.sync_sort_header();
+    }
+
+    fn sync_sort_header(&self) {
+        let imp = self.imp();
+        let cv = &imp.column_view;
+        let key = imp.model.sort_key();
+        let order = if imp.model.sort_reversed() {
+            gtk::SortType::Descending
+        } else {
+            gtk::SortType::Ascending
+        };
+        let col =
+            cv.columns().iter::<gtk::ColumnViewColumn>().flatten().find(
+                |c| unsafe { c.data::<SortKey>("sort-key").map(|k| *k.as_ref()) } == Some(key),
+            );
+        imp.syncing_header.set(true);
+        // Clear first: the column view would otherwise keep the old column as a secondary sort.
+        cv.sort_by_column(None::<&gtk::ColumnViewColumn>, order);
+        cv.sort_by_column(col.as_ref(), order);
+        imp.syncing_header.set(false);
     }
 }
