@@ -42,7 +42,7 @@ fn app_of(row: &gtk::ListBoxRow) -> Option<gio::AppInfo> {
 }
 
 impl OpenWithDialog {
-    pub fn new(files: &[gio::File]) -> Self {
+    pub fn new(files: &[gio::File], content_type: Option<String>) -> Self {
         let dialog: Self = glib::Object::builder()
             .property("title", gettext("Open With"))
             .property("content-width", 420)
@@ -50,19 +50,7 @@ impl OpenWithDialog {
             .build();
         let imp = dialog.imp();
         imp.files.replace(files.to_vec());
-        let ct = files
-            .first()
-            .and_then(|f| {
-                f.query_info(
-                    "standard::content-type",
-                    gio::FileQueryInfoFlags::NONE,
-                    gio::Cancellable::NONE,
-                )
-                .ok()
-            })
-            .and_then(|i| i.content_type())
-            .map(|s| s.to_string());
-        imp.content_type.replace(ct);
+        imp.content_type.replace(content_type);
 
         let header = adw::HeaderBar::builder()
             .show_end_title_buttons(false)

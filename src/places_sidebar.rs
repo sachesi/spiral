@@ -546,7 +546,7 @@ impl PlacesSidebar {
                 let flags = gio::MountUnmountFlags::NONE;
                 // A volume's own trash is lost once it is unplugged; offer to empty it first.
                 if let EjectTarget::Mount(m) = &target
-                    && let Some(trash) = mount_trash(&m.root())
+                    && let Some(trash) = mount_trash(&m.root()).await
                     && !sidebar.offer_empty_trash(trash).await
                 {
                     return;
@@ -811,18 +811,23 @@ impl PlacesSidebar {
 }
 
 /// The current user's trash directory on `root`, if it holds anything.
-fn mount_trash(root: &gio::File) -> Option<gio::File> {
+async fn mount_trash(root: &gio::File) -> Option<gio::File> {
     let uid = unsafe { libc::getuid() };
     let trash = root.child(format!(".Trash-{uid}"));
-    let files = trash.child("files");
-    let mut en = files
-        .enumerate_children(
+    let en = trash
+        .child("files")
+        .enumerate_children_future(
             "standard::name",
             gio::FileQueryInfoFlags::NOFOLLOW_SYMLINKS,
-            gio::Cancellable::NONE,
+            glib::Priority::DEFAULT,
         )
+        .await
         .ok()?;
-    en.next().is_some().then_some(trash)
+    let first = en
+        .next_files_future(1, glib::Priority::DEFAULT)
+        .await
+        .ok()?;
+    (!first.is_empty()).then_some(trash)
 }
 
 async fn wait_finished(job: &crate::ops::Job) {

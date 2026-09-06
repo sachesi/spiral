@@ -7,13 +7,14 @@ use crate::adw::prelude::*;
 use crate::ops::job::{Resolution, name};
 use crate::{adw, file_utils, gio, glib, gtk};
 
-fn describe(file: &gio::File, heading: &str) -> (gio::Icon, String) {
+async fn describe(file: &gio::File, heading: &str) -> (gio::Icon, String) {
     let info = file
-        .query_info(
+        .query_info_future(
             "standard::icon,standard::size,standard::type,time::modified",
             gio::FileQueryInfoFlags::NONE,
-            gio::Cancellable::NONE,
+            glib::Priority::DEFAULT,
         )
+        .await
         .unwrap_or_default();
     let icon = info
         .icon()
@@ -142,7 +143,7 @@ pub async fn ask_conflict(
             },
         ),
     ] {
-        let (icon, text) = describe(file, &heading);
+        let (icon, text) = describe(file, &heading).await;
         let row = gtk::Box::builder().spacing(12).build();
         row.append(
             &gtk::Image::builder()

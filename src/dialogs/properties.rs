@@ -46,31 +46,47 @@ const ATTRS: &str = "standard::*,time::modified,time::access,owner::user,owner::
 unix::uid,access::*,selinux::context,metadata::custom-icon,metadata::custom-icon-name";
 
 impl PropertiesDialog {
-    pub fn new(files: &[gio::File]) -> Self {
+    /// Query the files in the background, then build and present the dialog. Nothing is
+    /// shown for files that cannot be read.
+    pub fn open(
+        files: Vec<gio::File>,
+        parent: &impl IsA<gtk::Widget>,
+        on_changed: impl Fn() + 'static,
+    ) {
+        let parent = parent.clone();
+        glib::spawn_future_local(async move {
+            let mut infos = Vec::new();
+            for f in files {
+                if let Ok(i) = f
+                    .query_info_future(
+                        ATTRS,
+                        gio::FileQueryInfoFlags::NONE,
+                        glib::Priority::DEFAULT,
+                    )
+                    .await
+                {
+                    infos.push((f, i));
+                }
+            }
+            if !infos.is_empty() && parent.root().is_some() {
+                let dialog = Self::new(&infos);
+                dialog.connect_changed(on_changed);
+                dialog.present(Some(&parent));
+            }
+        });
+    }
+
+    fn new(infos: &[(gio::File, gio::FileInfo)]) -> Self {
         let dialog: Self = glib::Object::builder()
             .property("title", gettext("Properties"))
             .property("content-width", 460)
             .build();
-
-        let infos: Vec<(gio::File, gio::FileInfo)> = files
-            .iter()
-            .filter_map(|f| {
-                f.query_info(ATTRS, gio::FileQueryInfoFlags::NONE, gio::Cancellable::NONE)
-                    .ok()
-                    .map(|i| (f.clone(), i))
-            })
-            .collect();
-
         let toolbar = adw::ToolbarView::new();
         let header = adw::HeaderBar::new();
         toolbar.add_top_bar(&header);
         dialog.set_child(Some(&toolbar));
-        if infos.is_empty() {
-            return dialog;
-        }
-
-        let general = dialog.general_page(&infos);
-        match infos.as_slice() {
+        let general = dialog.general_page(infos);
+        match infos {
             [(file, info)] if info.has_attribute("unix::mode") => {
                 let stack = adw::ViewStack::new();
                 stack
@@ -172,18 +188,35 @@ impl PropertiesDialog {
                                 std::ptr::null_mut(),
                             );
                         }
-                        match file.set_attributes_from_info(
-                            &info,
-                            gio::FileQueryInfoFlags::NONE,
-                            gio::Cancellable::NONE,
-                        ) {
-                            Ok(()) => {
-                                icon.set_icon_name(Some("folder"));
-                                reset.set_visible(false);
-                                dialog.emit_changed();
+                        glib::spawn_future_local(glib::clone!(
+                            #[strong]
+                            file,
+                            #[weak]
+                            dialog,
+                            #[weak]
+                            icon,
+                            #[weak]
+                            reset,
+                            async move {
+                                match file
+                                    .set_attributes_future(
+                                        &info,
+                                        gio::FileQueryInfoFlags::NONE,
+                                        glib::Priority::DEFAULT,
+                                    )
+                                    .await
+                                {
+                                    Ok(_) => {
+                                        icon.set_icon_name(Some("folder"));
+                                        reset.set_visible(false);
+                                        dialog.emit_changed();
+                                    }
+                                    Err(e) => {
+                                        dialog.show_error(&gettext("Could Not Reset Icon"), &e)
+                                    }
+                                }
                             }
-                            Err(e) => dialog.show_error(&gettext("Could Not Reset Icon"), &e),
-                        }
+                        ));
                     }
                 ));
                 head_box.append(&button);
@@ -274,14 +307,17 @@ impl PropertiesDialog {
         let Ok(image) = chooser.open_future(parent.as_ref()).await else {
             return;
         };
-        let uri = image.uri();
-        match file.set_attribute_string(
-            "metadata::custom-icon",
-            &uri,
-            gio::FileQueryInfoFlags::NONE,
-            gio::Cancellable::NONE,
-        ) {
-            Ok(()) => {
+        let info = gio::FileInfo::new();
+        info.set_attribute_string("metadata::custom-icon", &image.uri());
+        match file
+            .set_attributes_future(
+                &info,
+                gio::FileQueryInfoFlags::NONE,
+                glib::Priority::DEFAULT,
+            )
+            .await
+        {
+            Ok(_) => {
                 icon.set_from_gicon(&gio::FileIcon::new(&image));
                 reset.set_visible(true);
                 self.emit_changed();
@@ -379,22 +415,36 @@ fn permissions_page(file: &gio::File, info: &gio::FileInfo) -> adw::PreferencesP
             if new_mode == mode.get() {
                 return;
             }
-            match file.set_attribute_uint32(
-                "unix::mode",
-                new_mode,
-                gio::FileQueryInfoFlags::NONE,
-                gio::Cancellable::NONE,
-            ) {
-                Ok(()) => mode.set(new_mode),
-                Err(e) => {
-                    let alert = adw::AlertDialog::builder()
-                        .heading(gettext("Could Not Change Permissions"))
-                        .body(e.message())
-                        .build();
-                    alert.add_response("ok", &gettext("_OK"));
-                    alert.present(Some(&page));
+            let info = gio::FileInfo::new();
+            info.set_attribute_uint32("unix::mode", new_mode);
+            glib::spawn_future_local(glib::clone!(
+                #[strong]
+                file,
+                #[strong]
+                mode,
+                #[weak]
+                page,
+                async move {
+                    match file
+                        .set_attributes_future(
+                            &info,
+                            gio::FileQueryInfoFlags::NONE,
+                            glib::Priority::DEFAULT,
+                        )
+                        .await
+                    {
+                        Ok(_) => mode.set(new_mode),
+                        Err(e) => {
+                            let alert = adw::AlertDialog::builder()
+                                .heading(gettext("Could Not Change Permissions"))
+                                .body(e.message())
+                                .build();
+                            alert.add_response("ok", &gettext("_OK"));
+                            alert.present(Some(&page));
+                        }
+                    }
                 }
-            }
+            ));
         })
     };
 

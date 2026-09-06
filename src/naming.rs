@@ -14,12 +14,9 @@ pub enum Verdict {
     Error(String),
 }
 
-pub fn validate(
-    parent: &gio::File,
-    name: &str,
-    original: Option<&str>,
-    is_folder: bool,
-) -> Verdict {
+/// Everything that can be judged from the name alone; whether it is taken is checked
+/// separately, since that means asking the filesystem.
+pub fn validate(name: &str, original: Option<&str>, is_folder: bool) -> Verdict {
     if name.is_empty() {
         return Verdict::Error(String::new());
     }
@@ -37,13 +34,6 @@ pub fn validate(
             gettext("A file cannot be called “%s”.").replace("%s", name)
         });
     }
-    if original != Some(name) && parent.child(name).query_exists(gio::Cancellable::NONE) {
-        return Verdict::Error(if is_folder {
-            gettext("A folder with that name already exists.")
-        } else {
-            gettext("A file with that name already exists.")
-        });
-    }
     if name.starts_with('.') && original.is_none_or(|o| !o.starts_with('.')) {
         return Verdict::Warning(if is_folder {
             gettext("Folders with “.” at the beginning of their name are hidden.")
@@ -52,6 +42,14 @@ pub fn validate(
         });
     }
     Verdict::Ok
+}
+
+fn taken_message(is_folder: bool) -> String {
+    if is_folder {
+        gettext("A folder with that name already exists.")
+    } else {
+        gettext("A file with that name already exists.")
+    }
 }
 
 /// Wire an entry, feedback label and accept button to `validate`. Returns a closure that
@@ -76,16 +74,47 @@ fn bind_validation(
         #[weak]
         accept,
         move || {
-            let name = entry.text();
-            let (ok, msg) = match validate(&parent, name.trim(), original.as_deref(), is_folder) {
+            let name = entry.text().trim().to_string();
+            let (ok, msg) = match validate(&name, original.as_deref(), is_folder) {
                 Verdict::Ok => (true, String::new()),
                 Verdict::Warning(m) => (true, m),
                 Verdict::Error(m) => (false, m),
             };
-            let unchanged = original.as_deref() == Some(name.trim());
+            let unchanged = original.as_deref() == Some(name.as_str());
             accept.set_sensitive(ok && !unchanged);
             feedback.set_text(&msg);
             revealer.set_reveal_child(!msg.is_empty());
+            if !ok || unchanged {
+                return;
+            }
+            // Ask the folder whether the name is taken; the answer only counts if the
+            // entry still says the same thing when it arrives.
+            let candidate = parent.child(&name);
+            glib::spawn_future_local(glib::clone!(
+                #[weak]
+                entry,
+                #[weak]
+                feedback,
+                #[weak]
+                revealer,
+                #[weak]
+                accept,
+                async move {
+                    let taken = candidate
+                        .query_info_future(
+                            "standard::type",
+                            gio::FileQueryInfoFlags::NOFOLLOW_SYMLINKS,
+                            glib::Priority::DEFAULT,
+                        )
+                        .await
+                        .is_ok();
+                    if taken && entry.text().trim() == name {
+                        accept.set_sensitive(false);
+                        feedback.set_text(&taken_message(is_folder));
+                        revealer.set_reveal_child(true);
+                    }
+                }
+            ));
         }
     );
     entry.connect_changed(glib::clone!(

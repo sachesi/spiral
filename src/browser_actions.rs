@@ -130,7 +130,33 @@ impl BrowserView {
         self.connect_location_notify(glib::clone!(
             #[strong]
             update,
-            move |_| update()
+            move |view| {
+                // Writability is looked up once per folder, off the main loop's back.
+                view.imp().can_write.set(true);
+                update();
+                let Some(dir) = view.location() else { return };
+                glib::spawn_future_local(glib::clone!(
+                    #[weak]
+                    view,
+                    #[strong]
+                    update,
+                    async move {
+                        let writable = dir
+                            .query_info_future(
+                                "access::can-write",
+                                gio::FileQueryInfoFlags::NONE,
+                                glib::Priority::DEFAULT,
+                            )
+                            .await
+                            .map(|i| i.boolean("access::can-write"))
+                            .unwrap_or(true);
+                        if view.location().is_some_and(|l| l.equal(&dir)) {
+                            view.imp().can_write.set(writable);
+                            update();
+                        }
+                    }
+                ));
+            }
         ));
         self.clipboard().connect_changed(move |_| update());
         self.update_action_state();
@@ -174,16 +200,7 @@ impl BrowserView {
             || self
                 .location()
                 .is_some_and(|l| crate::starred::is_starred_location(&l));
-        let can_write = !virtual_dir
-            && self.location().is_some_and(|l| {
-                l.query_info(
-                    "access::can-write",
-                    gio::FileQueryInfoFlags::NONE,
-                    gio::Cancellable::NONE,
-                )
-                .map(|i| i.boolean("access::can-write"))
-                .unwrap_or(true)
-            });
+        let can_write = !virtual_dir && self.imp().can_write.get();
         self.set_enabled("open", n > 0);
         self.set_enabled(
             "open-new-tab",
@@ -507,21 +524,25 @@ impl BrowserView {
         if files.is_empty() {
             return;
         }
-        let dialog = crate::dialogs::PropertiesDialog::new(&files);
-        dialog.connect_changed(glib::clone!(
-            #[weak(rename_to = view)]
+        crate::dialogs::PropertiesDialog::open(
+            files,
             self,
-            move || view.model().reload()
-        ));
-        dialog.present(Some(self));
+            glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                move || view.model().reload()
+            ),
+        );
     }
 
     fn open_with(&self) {
-        let files = self.selected();
-        if files.is_empty() {
+        let infos = self.model().selected_infos();
+        let Some(first) = infos.first() else {
             return;
-        }
-        crate::dialogs::OpenWithDialog::new(&files).present(Some(self));
+        };
+        let content_type = first.content_type().map(|s| s.to_string());
+        let files: Vec<gio::File> = infos.iter().map(file_utils::file_of).collect();
+        crate::dialogs::OpenWithDialog::new(&files, content_type).present(Some(self));
     }
 
     /// Model position of the item cell under (x, y) in `stack` coordinates.

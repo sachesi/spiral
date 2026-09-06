@@ -263,7 +263,7 @@ impl SpiralApplication {
     pub fn show_item_properties(&self, files: &[gio::File]) {
         let win = self.present_window();
         if !files.is_empty() {
-            crate::dialogs::PropertiesDialog::new(files).present(Some(&win));
+            crate::dialogs::PropertiesDialog::open(files.to_vec(), &win, || {});
         }
     }
 

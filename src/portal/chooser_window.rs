@@ -93,12 +93,18 @@ async fn run(
                 None,
             ),
         };
-    let start = start
-        .filter(|f| {
-            f.query_file_type(gio::FileQueryInfoFlags::NONE, gio::Cancellable::NONE)
-                == gio::FileType::Directory
-        })
-        .unwrap_or_else(|| gio::File::for_path(glib::home_dir()));
+    let mut start = start.unwrap_or_else(|| gio::File::for_path(glib::home_dir()));
+    let is_dir = start
+        .query_info_future(
+            "standard::type",
+            gio::FileQueryInfoFlags::NONE,
+            glib::Priority::DEFAULT,
+        )
+        .await
+        .is_ok_and(|i| i.file_type() == gio::FileType::Directory);
+    if !is_dir {
+        start = gio::File::for_path(glib::home_dir());
+    }
 
     // ---- widgets --------------------------------------------------------------------------
     let view = BrowserView::new_chooser(&start);
@@ -473,9 +479,15 @@ async fn run(
                     let collect = collect_choices.clone();
                     let window = window.clone();
                     glib::spawn_future_local(async move {
-                        if dest.query_exists(gio::Cancellable::NONE)
-                            && !confirm_replace(&window, &name).await
-                        {
+                        let exists = dest
+                            .query_info_future(
+                                "standard::type",
+                                gio::FileQueryInfoFlags::NONE,
+                                glib::Priority::DEFAULT,
+                            )
+                            .await
+                            .is_ok();
+                        if exists && !confirm_replace(&window, &name).await {
                             return;
                         }
                         let mut sel = SelectedFiles::default();
