@@ -1,6 +1,6 @@
 //! `view.*` actions, context menus, rename and new-folder flows for `BrowserView`.
 
-use gettextrs::gettext;
+use gettextrs::{gettext, ngettext};
 
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
@@ -369,7 +369,12 @@ impl BrowserView {
         }
         let heading = match files.len() {
             1 => gettext("Permanently Delete “%s”?").replace("%s", &crate::ops::name(&files[0])),
-            n => gettext("Permanently Delete %d Items?").replace("%d", &n.to_string()),
+            n => ngettext(
+                "Permanently Delete %d Item?",
+                "Permanently Delete %d Items?",
+                n as u32,
+            )
+            .replace("%d", &n.to_string()),
         };
         let dialog = crate::adw::AlertDialog::builder()
             .heading(heading)

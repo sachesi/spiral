@@ -52,7 +52,12 @@ with `gdbus`:
 ## A few things to know before changing them
 
 User-visible strings go through `gettext` with `%s`-style placeholders and
-`str::replace`; there is no printf from Rust.
+`str::replace`; there is no printf from Rust. Counts use `ngettext` even where English
+would not need it, because the plural rules of other languages do. The catalogues live in
+`po/`; `just pot` regenerates the template from the Rust sources, the Blueprint files, the
+desktop entries, the metainfo and the schema, and `just po` merges it into every
+`po/<lang>.po`. A new language is a new line in `po/LINGUAS` plus the `.po` file. `install`
+compiles the catalogues and merges the desktop and metainfo translations with `msgfmt`.
 
 Anything that is a tool rather than a library (archives, terminals, thumbnailers) is
 discovered in `PATH` at use time and degrades to "not offered" when missing. Child

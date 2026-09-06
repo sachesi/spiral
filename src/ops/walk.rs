@@ -91,6 +91,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                             delete_instead = true;
                         }
                         Err(e) => {
+                            // Translators: fills %v in “Error While %v “%s””.
                             match ask_error(&mgr.parent_window(), &gettext("Trashing"), &f, &e)
                                 .await
                             {
@@ -263,8 +264,10 @@ async fn transfer_one(
     let mut overwrite = false;
     let base_flags = gio::FileCopyFlags::NOFOLLOW_SYMLINKS | gio::FileCopyFlags::ALL_METADATA;
     let verb = if is_move {
+        // Translators: fills %v in “Error While %v “%s””.
         gettext("Moving")
     } else {
+        // Translators: fills %v in “Error While %v “%s””.
         gettext("Copying")
     };
     loop {
@@ -462,6 +465,7 @@ async fn delete_recursive(job: &Job, mgr: &JobManager, file: &gio::File) -> Res<
         match file.delete_future(PRIO).await {
             Ok(()) => break,
             Err(e) if e.matches(gio::IOErrorEnum::NotFound) => break,
+            // Translators: fills %v in “Error While %v “%s””.
             Err(e) => match ask_error(&mgr.parent_window(), &gettext("Deleting"), file, &e).await {
                 ErrorChoice::Skip => break,
                 ErrorChoice::Retry => continue,
@@ -480,6 +484,7 @@ fn unique_copy_name(dir: &gio::File, original: &str) -> String {
         Some(i) => (&original[..i], &original[i..]),
         None => (original, ""),
     };
+    // Translators: goes into duplicate names, as in “report (copy).pdf”.
     let copy = gettext("copy");
     let mut n = 1;
     loop {

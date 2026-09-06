@@ -68,7 +68,12 @@ impl JobKind {
                 is_move: false,
             } => match pairs.len() {
                 1 => gettext("Copying “%s” to “%t”").replace("%s", &name(&pairs[0].0)),
-                k => gettext("Copying %d files to “%t”").replace("%d", &k.to_string()),
+                k => ngettext(
+                    "Copying %d file to “%t”",
+                    "Copying %d files to “%t”",
+                    k as u32,
+                )
+                .replace("%d", &k.to_string()),
             }
             .replace("%t", &name(&pairs[0].1)),
             JobKind::Transfer {
@@ -76,16 +81,27 @@ impl JobKind {
                 is_move: true,
             } => match pairs.len() {
                 1 => gettext("Moving “%s” to “%t”").replace("%s", &name(&pairs[0].0)),
-                k => gettext("Moving %d files to “%t”").replace("%d", &k.to_string()),
+                k => ngettext(
+                    "Moving %d file to “%t”",
+                    "Moving %d files to “%t”",
+                    k as u32,
+                )
+                .replace("%d", &k.to_string()),
             }
             .replace("%t", &name(&pairs[0].1)),
             JobKind::Trash { files } => match files.len() {
                 1 => gettext("Moving “%s” to trash").replace("%s", &name(&files[0])),
-                k => gettext("Moving %d files to trash").replace("%d", &k.to_string()),
+                k => ngettext(
+                    "Moving %d file to trash",
+                    "Moving %d files to trash",
+                    k as u32,
+                )
+                .replace("%d", &k.to_string()),
             },
             JobKind::Delete { files } => match files.len() {
                 1 => gettext("Deleting “%s”").replace("%s", &name(&files[0])),
-                k => gettext("Deleting %d files").replace("%d", &k.to_string()),
+                k => ngettext("Deleting %d file", "Deleting %d files", k as u32)
+                    .replace("%d", &k.to_string()),
             },
             JobKind::Rename { file, new_name } => gettext("Renaming “%s” to “%t”")
                 .replace("%s", &name(file))
@@ -96,11 +112,13 @@ impl JobKind {
             JobKind::CreateFile { name, .. } => gettext("Creating “%s”").replace("%s", name),
             JobKind::Restore { pairs } => match pairs.len() {
                 1 => gettext("Restoring “%s”").replace("%s", &name(&pairs[0].1)),
-                k => gettext("Restoring %d files").replace("%d", &k.to_string()),
+                k => ngettext("Restoring %d file", "Restoring %d files", k as u32)
+                    .replace("%d", &k.to_string()),
             },
             JobKind::Extract { archives, .. } => match archives.len() {
                 1 => gettext("Extracting “%s”").replace("%s", &name(&archives[0])),
-                k => gettext("Extracting %d archives").replace("%d", &k.to_string()),
+                k => ngettext("Extracting %d archive", "Extracting %d archives", k as u32)
+                    .replace("%d", &k.to_string()),
             },
             JobKind::Compress { file_name, .. } => {
                 gettext("Compressing to “%s”").replace("%s", file_name)
@@ -116,22 +134,30 @@ impl JobKind {
                 is_move: false,
             } => match pairs.len() {
                 1 => gettext("Copied “%s”").replace("%s", &name(&pairs[0].0)),
-                k => gettext("Copied %d files").replace("%d", &k.to_string()),
+                k => ngettext("Copied %d file", "Copied %d files", k as u32)
+                    .replace("%d", &k.to_string()),
             },
             JobKind::Transfer {
                 pairs,
                 is_move: true,
             } => match pairs.len() {
                 1 => gettext("Moved “%s”").replace("%s", &name(&pairs[0].0)),
-                k => gettext("Moved %d files").replace("%d", &k.to_string()),
+                k => ngettext("Moved %d file", "Moved %d files", k as u32)
+                    .replace("%d", &k.to_string()),
             },
             JobKind::Trash { files } => match files.len() {
                 1 => gettext("Moved “%s” to trash").replace("%s", &name(&files[0])),
-                k => gettext("Moved %d files to trash").replace("%d", &k.to_string()),
+                k => ngettext(
+                    "Moved %d file to trash",
+                    "Moved %d files to trash",
+                    k as u32,
+                )
+                .replace("%d", &k.to_string()),
             },
             JobKind::Delete { files } => match files.len() {
                 1 => gettext("Deleted “%s”").replace("%s", &name(&files[0])),
-                k => gettext("Deleted %d files").replace("%d", &k.to_string()),
+                k => ngettext("Deleted %d file", "Deleted %d files", k as u32)
+                    .replace("%d", &k.to_string()),
             },
             JobKind::Rename { new_name, .. } => gettext("Renamed to “%s”").replace("%s", new_name),
             JobKind::CreateFolder { name, .. } => {
@@ -140,11 +166,13 @@ impl JobKind {
             JobKind::CreateFile { name, .. } => gettext("Created “%s”").replace("%s", name),
             JobKind::Restore { pairs } => match pairs.len() {
                 1 => gettext("Restored “%s”").replace("%s", &name(&pairs[0].1)),
-                k => gettext("Restored %d files").replace("%d", &k.to_string()),
+                k => ngettext("Restored %d file", "Restored %d files", k as u32)
+                    .replace("%d", &k.to_string()),
             },
             JobKind::Extract { archives, .. } => match archives.len() {
                 1 => gettext("Extracted “%s”").replace("%s", &name(&archives[0])),
-                k => gettext("Extracted %d archives").replace("%d", &k.to_string()),
+                k => ngettext("Extracted %d archive", "Extracted %d archives", k as u32)
+                    .replace("%d", &k.to_string()),
             },
             JobKind::Compress { file_name, .. } => gettext("Created “%s”").replace("%s", file_name),
         }
@@ -280,7 +308,10 @@ impl Job {
         if self.throttled(false).is_none() {
             return;
         }
-        self.set_detail(gettext("Preparing… %d files").replace("%d", &files.to_string()));
+        self.set_detail(
+            ngettext("Preparing… %d file", "Preparing… %d files", files as u32)
+                .replace("%d", &files.to_string()),
+        );
     }
 
     /// Counting is over; the clock for speed and time left starts now.
@@ -320,9 +351,13 @@ impl Job {
             }
             detail
         } else {
-            gettext("%a of %b files")
-                .replace("%a", &imp.files_done.get().to_string())
-                .replace("%b", &imp.files_total.get().to_string())
+            ngettext(
+                "%a of %b file",
+                "%a of %b files",
+                imp.files_total.get() as u32,
+            )
+            .replace("%a", &imp.files_done.get().to_string())
+            .replace("%b", &imp.files_total.get().to_string())
         };
         self.set_detail(detail);
     }

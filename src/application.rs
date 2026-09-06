@@ -210,6 +210,8 @@ impl SpiralApplication {
             .issue_url("https://github.com/sachesi/spiral/issues")
             .license_type(gtk::License::Gpl30)
             .comments(gettext("Browse and manage your files"))
+            // Translators: put your name here, one per line, optionally with an email address.
+            .translator_credits(gettext("translator-credits"))
             .build();
         about.present(self.active_window().as_ref());
     }

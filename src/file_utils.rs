@@ -2,7 +2,7 @@
 
 use std::cmp::Ordering;
 
-use gettextrs::gettext;
+use gettextrs::{gettext, ngettext};
 
 use crate::enums::SortKey;
 use crate::gio::prelude::*;
@@ -91,13 +91,21 @@ pub fn relative_date(dt: &glib::DateTime) -> String {
         d if d < 0 => dt.format("%x").map(|s| s.to_string()).unwrap_or_default(),
         0 => gettext("Today, %s").replace("%s", &time),
         1 => gettext("Yesterday, %s").replace("%s", &time),
-        d if d < 7 => gettext("%d days ago").replace("%d", &n(d)),
+        d if d < 7 => ngettext("%d day ago", "%d days ago", d as u32).replace("%d", &n(d)),
         d if d < 14 => gettext("Last week"),
-        d if d < 31 => gettext("%d weeks ago").replace("%d", &n(d / 7)),
+        d if d < 31 => {
+            ngettext("%d week ago", "%d weeks ago", (d / 7) as u32).replace("%d", &n(d / 7))
+        }
         d if d < 61 => gettext("Last month"),
-        d if d < 365 => gettext("%d months ago").replace("%d", &n((d as f64 / 30.4) as i64)),
+        d if d < 365 => {
+            let m = (d as f64 / 30.4) as i64;
+            ngettext("%d month ago", "%d months ago", m as u32).replace("%d", &n(m))
+        }
         d if d < 730 => gettext("Last year"),
-        d => gettext("%d years ago").replace("%d", &n((d as f64 / 365.25) as i64)),
+        d => {
+            let y = (d as f64 / 365.25) as i64;
+            ngettext("%d year ago", "%d years ago", y as u32).replace("%d", &n(y))
+        }
     }
 }
 
@@ -166,8 +174,7 @@ pub fn caption(info: &gio::FileInfo, kind: &str) -> Option<String> {
 pub fn items_string(n: u64) -> String {
     match n {
         0 => gettext("Empty"),
-        1 => gettext("1 item"),
-        n => gettext("%d items").replace("%d", &n.to_string()),
+        n => ngettext("%d item", "%d items", n as u32).replace("%d", &n.to_string()),
     }
 }
 
