@@ -111,6 +111,10 @@ menu view_menu {
       label: _("Show _Sidebar");
       action: "win.sidebar-visible";
     }
+    item {
+      label: _("Spl_it View");
+      action: "win.split-view";
+    }
   }
 }
 
@@ -150,6 +154,8 @@ template $SpiralWindow : Adw.ApplicationWindow {
 
   Adw.Breakpoint {
     condition ("max-width: 682sp")
+    apply => $on_narrow() swapped;
+    unapply => $on_wide() swapped;
     setters {
       split_view.collapsed: true;
       split_view.sidebar-width-unit: px;

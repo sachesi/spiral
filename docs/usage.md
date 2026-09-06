@@ -22,6 +22,16 @@ removable drive has files in its trash you are asked whether to empty it first.
 Below roughly 680 px the sidebar folds away behind a button and the navigation controls
 move to a bar at the bottom.
 
+## Two panes
+
+Every tab is split down the middle by default: two folders side by side, dragging between
+them, copying from one to the other. F3, or "Split View" in the view menu, turns the
+second pane off and on for every tab; F6 moves between the panes, and so does clicking in
+one. The pane in charge is outlined, and the path bar, the header buttons and the
+keyboard all act on that one. Drag the handle to give a pane more room. A window too
+narrow for two panes shows the left one alone and takes the second one back when it
+grows.
+
 ## Getting around
 
 The path bar shows breadcrumbs starting at Home, at the mount point, or at the root of

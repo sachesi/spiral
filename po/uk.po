@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-06 21:57+0300\n"
+"POT-Creation-Date: 2026-09-06 23:49+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -26,7 +26,7 @@ msgid "File Manager"
 msgstr "Менеджер файлів"
 
 #: data/io.github.sachesi.spiral.desktop:4
-#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:352
+#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:339
 #, no-c-format
 msgid "Browse and manage your files"
 msgstr "Перегляд і керування файлами"
@@ -172,6 +172,10 @@ msgstr "Вікно розгорнуто"
 msgid "Show places sidebar"
 msgstr "Показувати бічну панель"
 
+#: data/io.github.sachesi.spiral.gschema.xml:143
+msgid "Show two folder panes side by side"
+msgstr "Показувати дві панелі тек поруч"
+
 #: data/io.github.sachesi.spiral.metainfo.xml:9
 msgid ""
 "Spiral is a GTK4 and libadwaita file manager for Wayland desktops that come "
@@ -230,12 +234,12 @@ msgid ""
 "as the file extension, and a star toggle that follows the favourites."
 msgstr ""
 "Новий значок програми. Файли, вирізані до буфера обміну, показуються "
-"приглушеними до вставлення, а зображення з буфера обміну, наприклад "
-"знімок екрана, вставляється до теки у вигляді PNG. Клавіші буфера обміну "
-"працюють за фокуса в будь-якому місці вікна. Перетягування починається в "
-"будь-якій частині рядка чи плитки, і теки приймають перетягування по "
-"всьому рядку. Компактні стовпці списку зі змінною шириною, тип показано "
-"як розширення файла, перемикач зірочки стежить за вибраним."
+"приглушеними до вставлення, а зображення з буфера обміну, наприклад знімок "
+"екрана, вставляється до теки у вигляді PNG. Клавіші буфера обміну працюють "
+"за фокуса в будь-якому місці вікна. Перетягування починається в будь-якій "
+"частині рядка чи плитки, і теки приймають перетягування по всьому рядку. "
+"Компактні стовпці списку зі змінною шириною, тип показано як розширення "
+"файла, перемикач зірочки стежить за вибраним."
 
 #: data/io.github.sachesi.spiral.metainfo.xml:32
 msgid ""
@@ -247,14 +251,13 @@ msgid ""
 "for read-only files, folders that follow outside changes, and the clipboard "
 "pastes paths into terminals."
 msgstr ""
-"Пошук обходить підтеки, фільтрує за типом і датою та вміє шукати за "
-"вмістом файлів. Діалоги видимих стовпців і підписів, розгортання тек у "
-"списку. Відновлення зі смітника, посилання, «Копіювати до» і "
-"«Перемістити до», запуск як програми, контекстні меню смужки шляху та "
-"вкладок, перенесення вкладок між вікнами й відновлення закритих. Архіви "
-"з паролем. Емблеми замка та недоступні дії для файлів лише для читання, "
-"теки стежать за змінами ззовні, а буфер обміну вставляє шляхи в "
-"термінали."
+"Пошук обходить підтеки, фільтрує за типом і датою та вміє шукати за вмістом "
+"файлів. Діалоги видимих стовпців і підписів, розгортання тек у списку. "
+"Відновлення зі смітника, посилання, «Копіювати до» і «Перемістити до», "
+"запуск як програми, контекстні меню смужки шляху та вкладок, перенесення "
+"вкладок між вікнами й відновлення закритих. Архіви з паролем. Емблеми замка "
+"та недоступні дії для файлів лише для читання, теки стежать за змінами "
+"ззовні, а буфер обміну вставляє шляхи в термінали."
 
 #: data/io.github.sachesi.spiral.metainfo.xml:37
 msgid ""
@@ -271,33 +274,33 @@ msgstr ""
 msgid "First release."
 msgstr "Перший випуск."
 
-#: src/application.rs:170
+#: src/application.rs:166
 #, no-c-format
 msgid "Open each location in its own window"
 msgstr "Відкривати кожне розташування в окремому вікні"
 
-#: src/application.rs:175
+#: src/application.rs:171
 #, no-c-format
 msgid "Select the given files in their folders"
 msgstr "Вибрати вказані файли в їхніх теках"
 
-#: src/application.rs:177
+#: src/application.rs:173
 #, no-c-format
 msgid "Close every window and quit"
 msgstr "Закрити всі вікна й вийти"
 
-#: src/application.rs:178
+#: src/application.rs:174
 #, no-c-format
 msgid "Print the version and exit"
 msgstr "Показати версію та вийти"
 
-#: src/application.rs:185
+#: src/application.rs:181
 #, no-c-format
 msgid "[FILE…]"
 msgstr "[ФАЙЛ…]"
 
 #. Translators: put your name here, one per line, optionally with an email address.
-#: src/application.rs:354
+#: src/application.rs:341
 #, no-c-format
 msgid "translator-credits"
 msgstr "sachesi"
@@ -680,7 +683,7 @@ msgstr ""
 msgid "Create Link"
 msgstr "Створити посилання"
 
-#: src/dialogs/preferences.rs:92 ui/shortcuts_dialog.ui:204
+#: src/dialogs/preferences.rs:92 ui/shortcuts_dialog.ui:216
 #, no-c-format
 msgid "Delete Permanently"
 msgstr "Вилучити остаточно"
@@ -747,7 +750,7 @@ msgstr "У PATH не знайдено емулятора термінала"
 msgid "Terminal"
 msgstr "Термінал"
 
-#: src/dialogs/properties.rs:81 ui/shortcuts_dialog.ui:210
+#: src/dialogs/properties.rs:81 ui/shortcuts_dialog.ui:222
 #, no-c-format
 msgid "Properties"
 msgstr "Властивості"
@@ -781,7 +784,7 @@ msgstr[1] "%d об’єкти"
 msgstr[2] "%d об’єктів"
 
 #: src/dialogs/properties.rs:243 src/file_utils.rs:151 src/file_utils.rs:167
-#: ui/window.ui:327
+#: ui/window.ui:341
 #, no-c-format
 msgid "Type"
 msgstr "Тип"
@@ -801,7 +804,7 @@ msgstr "Обчислення…"
 msgid "Size"
 msgstr "Розмір"
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:152 ui/window.ui:348
+#: src/dialogs/properties.rs:259 src/file_utils.rs:152 ui/window.ui:362
 #, no-c-format
 msgid "Modified"
 msgstr "Змінено"
@@ -816,7 +819,7 @@ msgstr "Останній доступ"
 msgid "Default Application"
 msgstr "Типовий застосунок"
 
-#: src/dialogs/properties.rs:296 ui/window.ui:334
+#: src/dialogs/properties.rs:296 ui/window.ui:348
 #, no-c-format
 msgid "Images"
 msgstr "Зображення"
@@ -1091,7 +1094,7 @@ msgid "_Create"
 msgstr "_Створити"
 
 #: src/naming.rs:266 src/portal/chooser_window.rs:174
-#: ui/shortcuts_dialog.ui:192
+#: ui/shortcuts_dialog.ui:204
 #, no-c-format
 msgid "New Folder"
 msgstr "Нова тека"
@@ -1697,20 +1700,20 @@ msgstr ""
 msgid "Do _Not Empty"
 msgstr "_Не спорожняти"
 
-#: src/portal/chooser_window.rs:118 ui/shortcuts_dialog.ui:74 ui/window.ui:233
-#: ui/window.ui:463
+#: src/portal/chooser_window.rs:118 ui/shortcuts_dialog.ui:74 ui/window.ui:239
+#: ui/window.ui:477
 #, no-c-format
 msgid "Back"
 msgstr "Назад"
 
-#: src/portal/chooser_window.rs:123 ui/shortcuts_dialog.ui:80 ui/window.ui:241
-#: ui/window.ui:471
+#: src/portal/chooser_window.rs:123 ui/shortcuts_dialog.ui:80 ui/window.ui:247
+#: ui/window.ui:485
 #, no-c-format
 msgid "Forward"
 msgstr "Вперед"
 
-#: src/portal/chooser_window.rs:148 src/window.rs:729 ui/window.ui:404
-#: ui/window.ui:480
+#: src/portal/chooser_window.rs:148 src/window.rs:934 ui/window.ui:418
+#: ui/window.ui:502
 #, no-c-format
 msgid "List View"
 msgstr "У вигляді списку"
@@ -1753,7 +1756,7 @@ msgstr ""
 msgid "Show File Operations"
 msgstr "Показати файлові операції"
 
-#: src/progress_indicator.rs:296 ui/window.ui:287
+#: src/progress_indicator.rs:296 ui/window.ui:301
 #, no-c-format
 msgid "Cancel"
 msgstr "Скасувати"
@@ -1763,12 +1766,12 @@ msgstr "Скасувати"
 msgid "No terminal emulator found"
 msgstr "Емулятор термінала не знайдено"
 
-#: src/window.rs:552 ui/shortcuts_dialog.ui:222
+#: src/window.rs:588 ui/shortcuts_dialog.ui:234
 #, no-c-format
 msgid "Undo"
 msgstr "Повернути"
 
-#: src/window.rs:731
+#: src/window.rs:936
 #, no-c-format
 msgid "Grid View"
 msgstr "У вигляді сітки"
@@ -1959,7 +1962,7 @@ msgstr "Вийти"
 msgid "Navigation"
 msgstr "Навігація"
 
-#: ui/shortcuts_dialog.ui:86
+#: ui/shortcuts_dialog.ui:86 ui/window.ui:255 ui/window.ui:493
 msgid "Parent Folder"
 msgstr "Батьківська тека"
 
@@ -1967,7 +1970,7 @@ msgstr "Батьківська тека"
 msgid "Home Folder"
 msgstr "Домашня тека"
 
-#: ui/shortcuts_dialog.ui:104 ui/window.ui:394
+#: ui/shortcuts_dialog.ui:104 ui/window.ui:408
 msgid "Search Current Folder"
 msgstr "Пошук у поточній теці"
 
@@ -1987,11 +1990,11 @@ msgstr "Перегляд"
 msgid "Switch Between Grid and List"
 msgstr "Перемкнути сітку та список"
 
-#: ui/shortcuts_dialog.ui:133 ui/window.ui:425 ui/window.ui:501
+#: ui/shortcuts_dialog.ui:133 ui/window.ui:439 ui/window.ui:523
 msgid "Zoom In"
 msgstr "Збільшити"
 
-#: ui/shortcuts_dialog.ui:139 ui/window.ui:415 ui/window.ui:491
+#: ui/shortcuts_dialog.ui:139 ui/window.ui:429 ui/window.ui:513
 msgid "Zoom Out"
 msgstr "Зменшити"
 
@@ -1999,43 +2002,51 @@ msgstr "Зменшити"
 msgid "Show Hidden Files"
 msgstr "Показувати приховані файли"
 
-#: ui/shortcuts_dialog.ui:151 ui/window.ui:223
+#: ui/shortcuts_dialog.ui:151 ui/window.ui:229
 msgid "Show Sidebar"
 msgstr "Показувати бічну панель"
 
-#: ui/shortcuts_dialog.ui:159 ui/window.ui:147 ui/window.ui:181
+#: ui/shortcuts_dialog.ui:157
+msgid "Split View"
+msgstr "Двопанельний режим"
+
+#: ui/shortcuts_dialog.ui:163
+msgid "Switch Pane"
+msgstr "Перемкнути панель"
+
+#: ui/shortcuts_dialog.ui:171 ui/window.ui:151 ui/window.ui:187
 msgid "Files"
 msgstr "Файли"
 
-#: ui/shortcuts_dialog.ui:162
+#: ui/shortcuts_dialog.ui:174
 msgid "Select All"
 msgstr "Вибрати все"
 
-#: ui/shortcuts_dialog.ui:168
+#: ui/shortcuts_dialog.ui:180
 msgid "Cut"
 msgstr "Вирізати"
 
-#: ui/shortcuts_dialog.ui:174
+#: ui/shortcuts_dialog.ui:186
 msgid "Copy"
 msgstr "Копіювати"
 
-#: ui/shortcuts_dialog.ui:180
+#: ui/shortcuts_dialog.ui:192
 msgid "Paste"
 msgstr "Вставити"
 
-#: ui/shortcuts_dialog.ui:186
+#: ui/shortcuts_dialog.ui:198
 msgid "Rename"
 msgstr "Перейменувати"
 
-#: ui/shortcuts_dialog.ui:198
+#: ui/shortcuts_dialog.ui:210
 msgid "Move to Trash"
 msgstr "Пересунути у смітник"
 
-#: ui/shortcuts_dialog.ui:216
+#: ui/shortcuts_dialog.ui:228
 msgid "Context Menu"
 msgstr "Контекстне меню"
 
-#: ui/shortcuts_dialog.ui:228
+#: ui/shortcuts_dialog.ui:240
 msgid "Redo"
 msgstr "Повторити"
 
@@ -2123,110 +2134,114 @@ msgstr "Показувати _приховані файли"
 msgid "Show _Sidebar"
 msgstr "Показувати _бічну панель"
 
-#: ui/window.ui:123
+#: ui/window.ui:119
+msgid "Spl_it View"
+msgstr "Дв_опанельний режим"
+
+#: ui/window.ui:127
 msgid "Move Tab _Left"
 msgstr "Перемістити вкладку _ліворуч"
 
-#: ui/window.ui:127
+#: ui/window.ui:131
 msgid "Move Tab _Right"
 msgstr "Перемістити вкладку _праворуч"
 
-#: ui/window.ui:131
+#: ui/window.ui:135
 msgid "Move Tab to New _Window"
 msgstr "Перемістити вкладку в нове _вікно"
 
-#: ui/window.ui:137
+#: ui/window.ui:141
 msgid "Close _Other Tabs"
 msgstr "Закрити _інші вкладки"
 
-#: ui/window.ui:141
+#: ui/window.ui:145
 msgid "_Close Tab"
 msgstr "_Закрити вкладку"
 
-#: ui/window.ui:189
+#: ui/window.ui:195
 msgid "Main Menu"
 msgstr "Головне меню"
 
-#: ui/window.ui:306
+#: ui/window.ui:320
 msgid "Search"
 msgstr "Пошук"
 
-#: ui/window.ui:314
+#: ui/window.ui:328
 msgid "Search Filters"
 msgstr "Фільтри пошуку"
 
-#: ui/window.ui:331
+#: ui/window.ui:345
 msgid "Anything"
 msgstr "Будь-який"
 
-#: ui/window.ui:332
+#: ui/window.ui:346
 msgid "Folders"
 msgstr "Теки"
 
-#: ui/window.ui:333
+#: ui/window.ui:347
 msgid "Documents"
 msgstr "Документи"
 
-#: ui/window.ui:335
+#: ui/window.ui:349
 msgid "Audio"
 msgstr "Звук"
 
-#: ui/window.ui:336
+#: ui/window.ui:350
 msgid "Videos"
 msgstr "Відео"
 
-#: ui/window.ui:337
+#: ui/window.ui:351
 msgid "PDF"
 msgstr "PDF"
 
-#: ui/window.ui:338
+#: ui/window.ui:352
 msgid "Text"
 msgstr "Текст"
 
-#: ui/window.ui:339
+#: ui/window.ui:353
 msgid "Spreadsheets"
 msgstr "Електронні таблиці"
 
-#: ui/window.ui:352
+#: ui/window.ui:366
 msgid "Any Time"
 msgstr "Будь-коли"
 
-#: ui/window.ui:353
+#: ui/window.ui:367
 msgid "Today"
 msgstr "Сьогодні"
 
-#: ui/window.ui:354
+#: ui/window.ui:368
 msgid "Yesterday"
 msgstr "Учора"
 
-#: ui/window.ui:355
+#: ui/window.ui:369
 msgid "Past Week"
 msgstr "За останній тиждень"
 
-#: ui/window.ui:356
+#: ui/window.ui:370
 msgid "Past Month"
 msgstr "За останній місяць"
 
-#: ui/window.ui:357
+#: ui/window.ui:371
 msgid "Past Year"
 msgstr "За останній рік"
 
-#: ui/window.ui:366
+#: ui/window.ui:380
 msgid "Match"
 msgstr "Відповідність"
 
-#: ui/window.ui:370
+#: ui/window.ui:384
 msgid "Only Filename"
 msgstr "Лише назва файла"
 
-#: ui/window.ui:371
+#: ui/window.ui:385
 msgid "Content & Filename"
 msgstr "Вміст і назва файла"
 
-#: ui/window.ui:372
+#: ui/window.ui:386
 msgid "Only Contents"
 msgstr "Лише вміст"
 
-#: ui/window.ui:405 ui/window.ui:481
+#: ui/window.ui:419 ui/window.ui:503
 msgid "View Options"
 msgstr "Параметри перегляду"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.4.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-06 21:57+0300\n"
+"POT-Creation-Date: 2026-09-06 23:49+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,7 +28,7 @@ msgid "File Manager"
 msgstr ""
 
 #: data/io.github.sachesi.spiral.desktop:4
-#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:352
+#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:339
 #, no-c-format
 msgid "Browse and manage your files"
 msgstr ""
@@ -163,6 +163,10 @@ msgstr ""
 msgid "Show places sidebar"
 msgstr ""
 
+#: data/io.github.sachesi.spiral.gschema.xml:143
+msgid "Show two folder panes side by side"
+msgstr ""
+
 #: data/io.github.sachesi.spiral.metainfo.xml:9
 msgid ""
 "Spiral is a GTK4 and libadwaita file manager for Wayland desktops that come "
@@ -233,33 +237,33 @@ msgstr ""
 msgid "First release."
 msgstr ""
 
-#: src/application.rs:170
+#: src/application.rs:166
 #, no-c-format
 msgid "Open each location in its own window"
 msgstr ""
 
-#: src/application.rs:175
+#: src/application.rs:171
 #, no-c-format
 msgid "Select the given files in their folders"
 msgstr ""
 
-#: src/application.rs:177
+#: src/application.rs:173
 #, no-c-format
 msgid "Close every window and quit"
 msgstr ""
 
-#: src/application.rs:178
+#: src/application.rs:174
 #, no-c-format
 msgid "Print the version and exit"
 msgstr ""
 
-#: src/application.rs:185
+#: src/application.rs:181
 #, no-c-format
 msgid "[FILE…]"
 msgstr ""
 
 #. Translators: put your name here, one per line, optionally with an email address.
-#: src/application.rs:354
+#: src/application.rs:341
 #, no-c-format
 msgid "translator-credits"
 msgstr ""
@@ -634,7 +638,7 @@ msgstr ""
 msgid "Create Link"
 msgstr ""
 
-#: src/dialogs/preferences.rs:92 ui/shortcuts_dialog.ui:204
+#: src/dialogs/preferences.rs:92 ui/shortcuts_dialog.ui:216
 #, no-c-format
 msgid "Delete Permanently"
 msgstr ""
@@ -699,7 +703,7 @@ msgstr ""
 msgid "Terminal"
 msgstr ""
 
-#: src/dialogs/properties.rs:81 ui/shortcuts_dialog.ui:210
+#: src/dialogs/properties.rs:81 ui/shortcuts_dialog.ui:222
 #, no-c-format
 msgid "Properties"
 msgstr ""
@@ -732,7 +736,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/dialogs/properties.rs:243 src/file_utils.rs:151 src/file_utils.rs:167
-#: ui/window.ui:327
+#: ui/window.ui:341
 #, no-c-format
 msgid "Type"
 msgstr ""
@@ -752,7 +756,7 @@ msgstr ""
 msgid "Size"
 msgstr ""
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:152 ui/window.ui:348
+#: src/dialogs/properties.rs:259 src/file_utils.rs:152 ui/window.ui:362
 #, no-c-format
 msgid "Modified"
 msgstr ""
@@ -767,7 +771,7 @@ msgstr ""
 msgid "Default Application"
 msgstr ""
 
-#: src/dialogs/properties.rs:296 ui/window.ui:334
+#: src/dialogs/properties.rs:296 ui/window.ui:348
 #, no-c-format
 msgid "Images"
 msgstr ""
@@ -1036,7 +1040,7 @@ msgid "_Create"
 msgstr ""
 
 #: src/naming.rs:266 src/portal/chooser_window.rs:174
-#: ui/shortcuts_dialog.ui:192
+#: ui/shortcuts_dialog.ui:204
 #, no-c-format
 msgid "New Folder"
 msgstr ""
@@ -1617,20 +1621,20 @@ msgstr ""
 msgid "Do _Not Empty"
 msgstr ""
 
-#: src/portal/chooser_window.rs:118 ui/shortcuts_dialog.ui:74 ui/window.ui:233
-#: ui/window.ui:463
+#: src/portal/chooser_window.rs:118 ui/shortcuts_dialog.ui:74 ui/window.ui:239
+#: ui/window.ui:477
 #, no-c-format
 msgid "Back"
 msgstr ""
 
-#: src/portal/chooser_window.rs:123 ui/shortcuts_dialog.ui:80 ui/window.ui:241
-#: ui/window.ui:471
+#: src/portal/chooser_window.rs:123 ui/shortcuts_dialog.ui:80 ui/window.ui:247
+#: ui/window.ui:485
 #, no-c-format
 msgid "Forward"
 msgstr ""
 
-#: src/portal/chooser_window.rs:148 src/window.rs:729 ui/window.ui:404
-#: ui/window.ui:480
+#: src/portal/chooser_window.rs:148 src/window.rs:934 ui/window.ui:418
+#: ui/window.ui:502
 #, no-c-format
 msgid "List View"
 msgstr ""
@@ -1672,7 +1676,7 @@ msgstr ""
 msgid "Show File Operations"
 msgstr ""
 
-#: src/progress_indicator.rs:296 ui/window.ui:287
+#: src/progress_indicator.rs:296 ui/window.ui:301
 #, no-c-format
 msgid "Cancel"
 msgstr ""
@@ -1682,12 +1686,12 @@ msgstr ""
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:552 ui/shortcuts_dialog.ui:222
+#: src/window.rs:588 ui/shortcuts_dialog.ui:234
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:731
+#: src/window.rs:936
 #, no-c-format
 msgid "Grid View"
 msgstr ""
@@ -1878,7 +1882,7 @@ msgstr ""
 msgid "Navigation"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:86
+#: ui/shortcuts_dialog.ui:86 ui/window.ui:255 ui/window.ui:493
 msgid "Parent Folder"
 msgstr ""
 
@@ -1886,7 +1890,7 @@ msgstr ""
 msgid "Home Folder"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:104 ui/window.ui:394
+#: ui/shortcuts_dialog.ui:104 ui/window.ui:408
 msgid "Search Current Folder"
 msgstr ""
 
@@ -1906,11 +1910,11 @@ msgstr ""
 msgid "Switch Between Grid and List"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:133 ui/window.ui:425 ui/window.ui:501
+#: ui/shortcuts_dialog.ui:133 ui/window.ui:439 ui/window.ui:523
 msgid "Zoom In"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:139 ui/window.ui:415 ui/window.ui:491
+#: ui/shortcuts_dialog.ui:139 ui/window.ui:429 ui/window.ui:513
 msgid "Zoom Out"
 msgstr ""
 
@@ -1918,43 +1922,51 @@ msgstr ""
 msgid "Show Hidden Files"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:151 ui/window.ui:223
+#: ui/shortcuts_dialog.ui:151 ui/window.ui:229
 msgid "Show Sidebar"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:159 ui/window.ui:147 ui/window.ui:181
+#: ui/shortcuts_dialog.ui:157
+msgid "Split View"
+msgstr ""
+
+#: ui/shortcuts_dialog.ui:163
+msgid "Switch Pane"
+msgstr ""
+
+#: ui/shortcuts_dialog.ui:171 ui/window.ui:151 ui/window.ui:187
 msgid "Files"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:162
+#: ui/shortcuts_dialog.ui:174
 msgid "Select All"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:168
+#: ui/shortcuts_dialog.ui:180
 msgid "Cut"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:174
+#: ui/shortcuts_dialog.ui:186
 msgid "Copy"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:180
+#: ui/shortcuts_dialog.ui:192
 msgid "Paste"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:186
+#: ui/shortcuts_dialog.ui:198
 msgid "Rename"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:198
+#: ui/shortcuts_dialog.ui:210
 msgid "Move to Trash"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:216
+#: ui/shortcuts_dialog.ui:228
 msgid "Context Menu"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:228
+#: ui/shortcuts_dialog.ui:240
 msgid "Redo"
 msgstr ""
 
@@ -2042,110 +2054,114 @@ msgstr ""
 msgid "Show _Sidebar"
 msgstr ""
 
-#: ui/window.ui:123
-msgid "Move Tab _Left"
+#: ui/window.ui:119
+msgid "Spl_it View"
 msgstr ""
 
 #: ui/window.ui:127
-msgid "Move Tab _Right"
+msgid "Move Tab _Left"
 msgstr ""
 
 #: ui/window.ui:131
+msgid "Move Tab _Right"
+msgstr ""
+
+#: ui/window.ui:135
 msgid "Move Tab to New _Window"
 msgstr ""
 
-#: ui/window.ui:137
+#: ui/window.ui:141
 msgid "Close _Other Tabs"
 msgstr ""
 
-#: ui/window.ui:141
+#: ui/window.ui:145
 msgid "_Close Tab"
 msgstr ""
 
-#: ui/window.ui:189
+#: ui/window.ui:195
 msgid "Main Menu"
 msgstr ""
 
-#: ui/window.ui:306
+#: ui/window.ui:320
 msgid "Search"
 msgstr ""
 
-#: ui/window.ui:314
+#: ui/window.ui:328
 msgid "Search Filters"
 msgstr ""
 
-#: ui/window.ui:331
+#: ui/window.ui:345
 msgid "Anything"
 msgstr ""
 
-#: ui/window.ui:332
+#: ui/window.ui:346
 msgid "Folders"
 msgstr ""
 
-#: ui/window.ui:333
+#: ui/window.ui:347
 msgid "Documents"
 msgstr ""
 
-#: ui/window.ui:335
+#: ui/window.ui:349
 msgid "Audio"
 msgstr ""
 
-#: ui/window.ui:336
+#: ui/window.ui:350
 msgid "Videos"
 msgstr ""
 
-#: ui/window.ui:337
+#: ui/window.ui:351
 msgid "PDF"
 msgstr ""
 
-#: ui/window.ui:338
+#: ui/window.ui:352
 msgid "Text"
 msgstr ""
 
-#: ui/window.ui:339
+#: ui/window.ui:353
 msgid "Spreadsheets"
 msgstr ""
 
-#: ui/window.ui:352
+#: ui/window.ui:366
 msgid "Any Time"
 msgstr ""
 
-#: ui/window.ui:353
+#: ui/window.ui:367
 msgid "Today"
 msgstr ""
 
-#: ui/window.ui:354
+#: ui/window.ui:368
 msgid "Yesterday"
 msgstr ""
 
-#: ui/window.ui:355
+#: ui/window.ui:369
 msgid "Past Week"
 msgstr ""
 
-#: ui/window.ui:356
+#: ui/window.ui:370
 msgid "Past Month"
 msgstr ""
 
-#: ui/window.ui:357
+#: ui/window.ui:371
 msgid "Past Year"
 msgstr ""
 
-#: ui/window.ui:366
+#: ui/window.ui:380
 msgid "Match"
 msgstr ""
 
-#: ui/window.ui:370
+#: ui/window.ui:384
 msgid "Only Filename"
 msgstr ""
 
-#: ui/window.ui:371
+#: ui/window.ui:385
 msgid "Content & Filename"
 msgstr ""
 
-#: ui/window.ui:372
+#: ui/window.ui:386
 msgid "Only Contents"
 msgstr ""
 
-#: ui/window.ui:405 ui/window.ui:481
+#: ui/window.ui:419 ui/window.ui:503
 msgid "View Options"
 msgstr ""
