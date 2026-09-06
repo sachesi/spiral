@@ -507,6 +507,26 @@ fn remember_list_item(cell: &impl IsA<gtk::Widget>, item: &gtk::ListItem) {
     unsafe { cell.set_data("list-item", item.downgrade()) };
 }
 
+/// Visit every bound cell under `root`. Cells do not nest, so a match ends that branch.
+fn each_cell(root: &gtk::Widget, f: &mut impl FnMut(&gtk::Widget)) {
+    let mut child = root.first_child();
+    while let Some(c) = child {
+        if unsafe { c.data::<glib::WeakRef<gtk::ListItem>>("list-item") }.is_some() {
+            f(&c);
+        } else {
+            each_cell(&c, f);
+        }
+        child = c.next_sibling();
+    }
+}
+
+/// The lock emblem of a grid or list name cell: its last child, or the icon row's.
+fn cell_emblem(cell: &gtk::Widget) -> Option<gtk::Image> {
+    cell.last_child()
+        .and_downcast::<gtk::Image>()
+        .or_else(|| cell.first_child()?.last_child().and_downcast::<gtk::Image>())
+}
+
 pub(crate) fn cell_position(cell: &impl IsA<gtk::Widget>) -> Option<u32> {
     let weak = unsafe { cell.data::<glib::WeakRef<gtk::ListItem>>("list-item") }?;
     let pos = unsafe { weak.as_ref() }.upgrade()?.position();
@@ -1129,11 +1149,31 @@ impl BrowserView {
         true
     }
 
-    /// Rebind every row so cell state that lives outside the file info follows:
-    /// lock emblems, cut dimming, stars.
+    /// Re-apply the cell state that lives outside the file info: lock emblems, cut
+    /// dimming, stars. The rows keep their objects, so the factories never rebind them.
     pub(crate) fn refresh_cells(&self) {
-        let sel = self.model().selection();
-        sel.items_changed(0, sel.n_items(), sel.n_items());
+        let imp = self.imp();
+        let writable = imp.can_write.get();
+        let roots: [gtk::Widget; 2] = [
+            imp.grid_view.clone().upcast(),
+            imp.column_view.clone().upcast(),
+        ];
+        for root in roots {
+            each_cell(&root, &mut |cell| {
+                let Some(info) = cell_position(cell).and_then(|p| self.model().info_at(p)) else {
+                    return;
+                };
+                set_cut(cell, &info);
+                if let Some(button) = cell.downcast_ref::<gtk::Button>() {
+                    set_star(
+                        button,
+                        crate::starred::is_starred(&file_utils::file_of(&info)),
+                    );
+                } else if let Some(emblem) = cell_emblem(cell) {
+                    set_emblem(&emblem, file_utils::is_locked(&info, writable));
+                }
+            });
+        }
     }
 
     pub fn grab_view_focus(&self) {
@@ -1474,6 +1514,7 @@ impl BrowserView {
                 }
             ));
             item.set_child(Some(&button));
+            remember_list_item(&button, item);
         });
         factory.connect_bind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
@@ -1481,6 +1522,7 @@ impl BrowserView {
                 return;
             };
             let button = item.child().and_downcast::<gtk::Button>().unwrap();
+            set_cut(&button, &info);
             set_star(
                 &button,
                 crate::starred::is_starred(&file_utils::file_of(&info)),
