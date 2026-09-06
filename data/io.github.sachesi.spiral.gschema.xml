@@ -98,6 +98,11 @@
       <summary>Captions under icons in grid view</summary>
       <description>Up to three of: size, date_modified, permissions, type, mime_type, owner, group, none.</description>
     </key>
+    <key name="visible-columns" type="as">
+      <default>['size', 'type', 'modified', 'star']</default>
+      <summary>Columns shown in list view besides the name</summary>
+      <description>Any of: size, type, modified, accessed, created, owner, group, permissions, star.</description>
+    </key>
     <key name="grid-zoom" type="i">
       <range min="48" max="256"/>
       <default>96</default>

@@ -88,6 +88,18 @@ menu view_menu {
   }
   section {
     item {
+      label: _("_Visible Columns…");
+      action: "win.visible-columns";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("Ca_ptions…");
+      action: "win.captions";
+      hidden-when: "action-disabled";
+    }
+  }
+  section {
+    item {
       label: _("Show _Hidden Files");
       action: "win.show-hidden";
     }
