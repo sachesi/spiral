@@ -4,7 +4,7 @@ use gettextrs::gettext;
 
 use crate::adw::prelude::*;
 use crate::ops::archive::{Format, creatable_formats};
-use crate::{adw, glib, gtk};
+use crate::{adw, glib, gtk, prefs};
 
 /// Resolves to the archive file name (with extension), or None if cancelled.
 pub async fn compress_dialog(parent: &impl IsA<gtk::Widget>, default_name: &str) -> Option<String> {
@@ -32,6 +32,12 @@ pub async fn compress_dialog(parent: &impl IsA<gtk::Widget>, default_name: &str)
             }
         }
     });
+    // Start with the format used last time, if its tools are still around.
+    let settings = prefs::settings();
+    let last = settings.string("compression-format");
+    if let Some(i) = formats.iter().position(|f| f.extension[1..] == *last) {
+        format.set_selected(i as u32);
+    }
     let list = gtk::ListBox::builder()
         .selection_mode(gtk::SelectionMode::None)
         .css_classes(["boxed-list"])
@@ -71,6 +77,7 @@ pub async fn compress_dialog(parent: &impl IsA<gtk::Widget>, default_name: &str)
         return None;
     }
     let ext = formats[format.selected() as usize].extension;
+    let _ = settings.set_string("compression-format", &ext[1..]);
     let text = name.text();
     let text = text.trim();
     // A name typed with the extension already on it is left alone.
