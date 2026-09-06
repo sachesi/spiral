@@ -480,6 +480,20 @@ pub fn preferred_action(target: &gtk::DropTarget) -> gtk::gdk::DragAction {
 
 /// Cells keep a weak link to their `ListItem`: its position is live, unlike a cached
 /// number, when items are inserted above it.
+/// A filled star for a favourite, a hollow one otherwise.
+fn set_star(button: &gtk::Button, starred: bool) {
+    button.set_icon_name(if starred {
+        "starred-symbolic"
+    } else {
+        "non-starred-symbolic"
+    });
+    button.set_tooltip_text(Some(&if starred {
+        gettext("Remove from Starred")
+    } else {
+        gettext("Add to Starred")
+    }));
+}
+
 /// Files waiting on the clipboard as a cut are dimmed, the way Nautilus marks them.
 fn set_cut(cell: &impl IsA<gtk::Widget>, info: &gio::FileInfo) {
     if crate::clipboard::is_cut(&file_utils::file_of(info)) {
@@ -1307,6 +1321,8 @@ impl BrowserView {
                 let label = gtk::Label::builder()
                     .xalign(xalign)
                     .ellipsize(gtk::pango::EllipsizeMode::Middle)
+                    // Let the column width decide, not the longest value in it.
+                    .max_width_chars(1)
                     .css_classes(["spiral-view-cell", "dim-label"])
                     .build();
                 if xalign > 0.5 {
@@ -1338,9 +1354,19 @@ impl BrowserView {
                 _ => |i| file_utils::permissions_string(i).unwrap_or_default(),
             }
         };
+        // Widths that fit the usual values; the name column keeps the rest.
+        let width = |key: &str| match key {
+            "size" => 88,
+            "owner" | "group" => 104,
+            "permissions" => 112,
+            "type" => 136,
+            _ => 152,
+        };
         let mut columns: Vec<(&'static str, gtk::ColumnViewColumn)> = Vec::new();
         for (key, title) in file_utils::optional_columns() {
             let col = text_col(title, if key == "size" { 1.0 } else { 0.0 }, text(key));
+            col.set_fixed_width(width(key));
+            col.set_resizable(true);
             cv.append_column(&col);
             columns.push((key, col));
         }
@@ -1430,6 +1456,7 @@ impl BrowserView {
             let button = gtk::Button::builder()
                 .icon_name("non-starred-symbolic")
                 .valign(gtk::Align::Center)
+                .halign(gtk::Align::Center)
                 .css_classes(["flat", "circular", "spiral-star"])
                 .build();
             button.connect_clicked(glib::clone!(
@@ -1443,11 +1470,7 @@ impl BrowserView {
                     let file = file_utils::file_of(&info);
                     let starred = !crate::starred::is_starred(&file);
                     crate::starred::set_starred(&file, starred);
-                    button.set_icon_name(if starred {
-                        "starred-symbolic"
-                    } else {
-                        "non-starred-symbolic"
-                    });
+                    set_star(button, starred);
                 }
             ));
             item.set_child(Some(&button));
@@ -1458,12 +1481,10 @@ impl BrowserView {
                 return;
             };
             let button = item.child().and_downcast::<gtk::Button>().unwrap();
-            let starred = crate::starred::is_starred(&file_utils::file_of(&info));
-            button.set_icon_name(if starred {
-                "starred-symbolic"
-            } else {
-                "non-starred-symbolic"
-            });
+            set_star(
+                &button,
+                crate::starred::is_starred(&file_utils::file_of(&info)),
+            );
         });
         gtk::ColumnViewColumn::new(Some(&gettext("Star")), Some(factory))
     }
