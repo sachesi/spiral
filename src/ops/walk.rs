@@ -137,14 +137,15 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
         }
         JobKind::Extract { archives, dest } => {
             job.set_files_total(archives.len() as u64);
-            super::archive::extract(job, archives, dest).await?;
+            super::archive::extract(job, mgr, archives, dest).await?;
         }
         JobKind::Compress {
             files,
             dest,
             file_name,
+            password,
         } => {
-            super::archive::compress(job, files, dest, file_name).await?;
+            super::archive::compress(job, files, dest, file_name, password).await?;
         }
         JobKind::Link { files, dest } => {
             job.set_files_total(files.len() as u64);

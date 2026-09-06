@@ -1,4 +1,5 @@
-//! "Create Archive" dialog: name plus one of the formats the installed tools can produce.
+//! "Create Archive" dialog: name, one of the formats the installed tools can produce, and
+//! a password for the formats that take one.
 
 use gettextrs::gettext;
 
@@ -6,8 +7,12 @@ use crate::adw::prelude::*;
 use crate::ops::archive::{Format, creatable_formats};
 use crate::{adw, glib, gtk, prefs};
 
-/// Resolves to the archive file name (with extension), or None if cancelled.
-pub async fn compress_dialog(parent: &impl IsA<gtk::Widget>, default_name: &str) -> Option<String> {
+/// Resolves to the archive file name (with extension) and the password, if one was typed,
+/// or None if cancelled.
+pub async fn compress_dialog(
+    parent: &impl IsA<gtk::Widget>,
+    default_name: &str,
+) -> Option<(String, Option<String>)> {
     let formats: Vec<Format> = creatable_formats();
     if formats.is_empty() {
         return None;
@@ -24,11 +29,20 @@ pub async fn compress_dialog(parent: &impl IsA<gtk::Widget>, default_name: &str)
         .model(&gtk::StringList::new(&labels))
         .subtitle(&formats[0].description)
         .build();
+    // Only zip and 7z can be encrypted; the row is hidden for the others.
+    let encryptable = |ext: &str| matches!(ext, ".zip" | ".7z");
+    let password = adw::PasswordEntryRow::builder()
+        .title(gettext("_Password"))
+        .use_underline(true)
+        .visible(encryptable(formats[0].extension))
+        .build();
     format.connect_selected_notify({
         let formats = formats.clone();
+        let password = password.clone();
         move |row| {
             if let Some(f) = formats.get(row.selected() as usize) {
                 row.set_subtitle(&f.description);
+                password.set_visible(encryptable(f.extension));
             }
         }
     });
@@ -44,6 +58,7 @@ pub async fn compress_dialog(parent: &impl IsA<gtk::Widget>, default_name: &str)
         .build();
     list.append(&name);
     list.append(&format);
+    list.append(&password);
 
     let dialog = adw::AlertDialog::builder()
         .heading(gettext("Create Archive"))
@@ -81,9 +96,12 @@ pub async fn compress_dialog(parent: &impl IsA<gtk::Widget>, default_name: &str)
     let text = name.text();
     let text = text.trim();
     // A name typed with the extension already on it is left alone.
-    Some(if text.ends_with(ext) {
+    let file_name = if text.ends_with(ext) {
         text.to_string()
     } else {
         format!("{text}{ext}")
-    })
+    };
+    let pass = password.text();
+    let pass = (password.is_visible() && !pass.is_empty()).then(|| pass.to_string());
+    Some((file_name, pass))
 }

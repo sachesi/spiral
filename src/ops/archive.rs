@@ -1,7 +1,8 @@
 //! Extract and create archives with whatever command line tools are installed: 7-Zip,
 //! bsdtar, GNU tar, unzip/zip, unrar/unar. Nothing is linked; a missing tool only removes
 //! the formats it would have handled. Tools run inside the same bwrap sandbox as
-//! thumbnailers when it is available.
+//! thumbnailers when it is available. Passwords travel on the command line only and are
+//! never written down or logged.
 
 use std::collections::HashMap;
 use std::os::fd::OwnedFd;
@@ -9,11 +10,12 @@ use std::path::{Path, PathBuf};
 
 use gettextrs::gettext;
 
-use crate::gio::prelude::*;
+use crate::adw::prelude::*;
 use crate::gtk::subclass::prelude::ObjectSubclassIsExt;
-use crate::ops::job::{Job, name};
+use crate::ops::job::{Job, JobStatus, name};
+use crate::ops::manager::JobManager;
 use crate::ops::walk::Fail;
-use crate::{gio, glib};
+use crate::{adw, gio, glib, gtk};
 
 const PRIO: glib::Priority = glib::Priority::DEFAULT;
 
@@ -326,9 +328,61 @@ fn no_tool(file: &gio::File, tools: &[Tool]) -> Fail {
     )
 }
 
+/// Ask for the password of `archive`; None if cancelled.
+async fn ask_password(parent: &gtk::Window, archive: &gio::File) -> Option<String> {
+    let entry = adw::PasswordEntryRow::builder()
+        .title(gettext("_Password"))
+        .use_underline(true)
+        .build();
+    let list = gtk::ListBox::builder()
+        .selection_mode(gtk::SelectionMode::None)
+        .css_classes(["boxed-list"])
+        .build();
+    list.append(&entry);
+    let dialog = adw::AlertDialog::builder()
+        .heading(gettext("Enter Password"))
+        .body(gettext("“%s” is password protected").replace("%s", &name(archive)))
+        .extra_child(&list)
+        .close_response("cancel")
+        .default_response("extract")
+        .build();
+    dialog.add_responses(&[
+        ("cancel", &gettext("_Cancel")),
+        ("extract", &gettext("_Extract")),
+    ]);
+    dialog.set_response_appearance("extract", adw::ResponseAppearance::Suggested);
+    entry.connect_entry_activated(glib::clone!(
+        #[weak]
+        dialog,
+        move |_| {
+            dialog.emit_by_name::<()>("response", &[&"extract"]);
+            dialog.close();
+        }
+    ));
+    if dialog.choose_future(Some(parent)).await != "extract" {
+        return None;
+    }
+    Some(entry.text().to_string())
+}
+
+/// Whether a tool's output line says the archive wanted a password it did not get.
+fn wants_password(line: &str) -> bool {
+    let line = line.to_lowercase();
+    ["password", "passphrase", "encrypted"]
+        .iter()
+        .any(|w| line.contains(w))
+}
+
 /// Extract each archive into `dest`. A single top-level entry lands as itself, anything
 /// else inside a folder named after the archive; existing names are never overwritten.
-pub async fn extract(job: &Job, archives: Vec<gio::File>, dest: gio::File) -> Result<(), Fail> {
+/// An encrypted archive asks for its password and is retried until it opens or the user
+/// gives up.
+pub async fn extract(
+    job: &Job,
+    mgr: &JobManager,
+    archives: Vec<gio::File>,
+    dest: gio::File,
+) -> Result<(), Fail> {
     let Some(dest_path) = dest.path() else {
         return Err(Fail::Failed(gettext(
             "Archives can only be extracted to local folders",
@@ -374,43 +428,101 @@ pub async fn extract(job: &Job, archives: Vec<gio::File>, dest: gio::File) -> Re
             input.to_string_lossy().into_owned(),
             out.to_string_lossy().into_owned(),
         );
-        let argv: Vec<String> = match tool {
-            Tool::SevenZip => vec![
-                exe,
-                "x".into(),
-                "-y".into(),
-                "-bso0".into(),
-                "-bsp1".into(),
-                format!("-o{out_s}"),
-                input_s,
-            ],
-            Tool::Bsdtar | Tool::Tar => vec![exe, "-xf".into(), input_s, "-C".into(), out_s],
-            Tool::Unzip => vec![exe, "-o".into(), "-q".into(), input_s, "-d".into(), out_s],
-            Tool::Unrar => vec![
-                exe,
-                "x".into(),
-                "-o+".into(),
-                "-idq".into(),
-                input_s,
-                format!("{out_s}/"),
-            ],
-            Tool::Unar => vec![exe, "-q".into(), "-D".into(), "-o".into(), out_s, input_s],
-            Tool::Zip => unreachable!(),
+        // Every tool is told the password up front, an empty one on the first try, so an
+        // encrypted archive fails at once instead of waiting on a terminal that is not
+        // there. What it says on the way out is what triggers the prompt.
+        let argv = |password: Option<&str>| -> Vec<String> {
+            let pass = password.unwrap_or("");
+            match tool {
+                Tool::SevenZip => vec![
+                    exe.clone(),
+                    "x".into(),
+                    "-y".into(),
+                    "-bso0".into(),
+                    "-bsp1".into(),
+                    format!("-p{pass}"),
+                    format!("-o{out_s}"),
+                    input_s.clone(),
+                ],
+                Tool::Bsdtar | Tool::Tar => {
+                    let mut argv = vec![
+                        exe.clone(),
+                        "-xf".into(),
+                        input_s.clone(),
+                        "-C".into(),
+                        out_s.clone(),
+                    ];
+                    if let (Tool::Bsdtar, Some(pass)) = (tool, password) {
+                        argv.extend(["--passphrase".into(), pass.into()]);
+                    }
+                    argv
+                }
+                // Not -q: the "incorrect password" line is the one thing worth reading.
+                Tool::Unzip => vec![
+                    exe.clone(),
+                    "-o".into(),
+                    "-P".into(),
+                    pass.into(),
+                    input_s.clone(),
+                    "-d".into(),
+                    out_s.clone(),
+                ],
+                Tool::Unrar => vec![
+                    exe.clone(),
+                    "x".into(),
+                    "-o+".into(),
+                    "-idq".into(),
+                    password.map_or("-p-".into(), |p| format!("-p{p}")),
+                    input_s.clone(),
+                    format!("{out_s}/"),
+                ],
+                Tool::Unar => vec![
+                    exe.clone(),
+                    "-q".into(),
+                    "-D".into(),
+                    "-p".into(),
+                    pass.into(),
+                    "-o".into(),
+                    out_s.clone(),
+                    input_s.clone(),
+                ],
+                Tool::Zip => unreachable!(),
+            }
         };
-        let cmd = Command {
-            argv,
-            binds: vec![
-                (path.clone(), input, false),
-                (work.clone(), out.clone(), true),
-            ],
-            cwd: out,
-        };
-        let mut progress = |line: &str| {
-            percent(line)
-                .map(|p| job.set_fraction(((i as f64 + p / 100.0) / total).clamp(0.0, 1.0)))
-                .is_some()
-        };
-        run(cmd, &mut guard, &mut progress).await?;
+        let mut password: Option<String> = None;
+        loop {
+            let cmd = Command {
+                argv: argv(password.as_deref()),
+                binds: vec![
+                    (path.clone(), input.clone(), false),
+                    (work.clone(), out.clone(), true),
+                ],
+                cwd: out.clone(),
+            };
+            let mut encrypted = false;
+            let mut progress = |line: &str| {
+                encrypted |= wants_password(line);
+                percent(line)
+                    .map(|p| job.set_fraction(((i as f64 + p / 100.0) / total).clamp(0.0, 1.0)))
+                    .is_some()
+            };
+            match run(cmd, &mut guard, &mut progress).await {
+                Ok(()) => break,
+                Err(Fail::Failed(_)) if encrypted => {}
+                Err(e) => return Err(e),
+            }
+            guard.child = None;
+            // A wrong password can leave empty or garbled files behind.
+            std::fs::remove_dir_all(&work)
+                .and_then(|()| std::fs::create_dir(&work))
+                .map_err(|e| Fail::Failed(e.to_string()))?;
+            job.set_status(JobStatus::WaitingUser);
+            job.set_detail(gettext("Waiting for your answer"));
+            let answer = ask_password(&mgr.parent_window(), archive).await;
+            job.set_status(JobStatus::Running);
+            job.set_detail(gettext("Extracting “%s”").replace("%s", &name(archive)));
+            password = Some(answer.ok_or(Fail::Cancelled)?);
+        }
         guard.child = None;
 
         // Decide the final name from what came out.
@@ -464,12 +576,14 @@ fn sizes(path: &Path, rel: String, out: &mut HashMap<String, u64>) {
     }
 }
 
-/// Pack `files` (siblings in one folder) into `dest/<file_name>`.
+/// Pack `files` (siblings in one folder) into `dest/<file_name>`, encrypted with `password`
+/// if there is one.
 pub async fn compress(
     job: &Job,
     files: Vec<gio::File>,
     dest: gio::File,
     file_name: String,
+    password: Option<String>,
 ) -> Result<(), Fail> {
     let (Some(dest_path), Some(first)) = (dest.path(), files.first()) else {
         return Err(Fail::Failed(gettext(
@@ -484,9 +598,12 @@ pub async fn compress(
     let ext = &file_name[stem(&file_name).len()..];
     let seven = Tool::SevenZip.path();
     let (tool, exe) = match ext {
+        // With a password 7-Zip is preferred: it encrypts zips with AES, zip itself only
+        // knows the old PKWARE scheme.
         ".zip" => match (Tool::Zip.path(), &seven) {
-            (Some(p), _) => (Tool::Zip, p),
-            (None, Some(p)) => (Tool::SevenZip, p.clone()),
+            (Some(p), _) if password.is_none() => (Tool::Zip, p),
+            (_, Some(p)) => (Tool::SevenZip, p.clone()),
+            (Some(p), None) => (Tool::Zip, p),
             _ => {
                 return Err(Fail::Failed(gettext(
                     "Creating zip archives needs zip or 7-Zip",
@@ -549,18 +666,26 @@ pub async fn compress(
     let names: Vec<String> = files.iter().map(name).collect();
     let exe = exe.to_string_lossy().into_owned();
     let mut argv: Vec<String> = match (tool, ext) {
-        (Tool::Zip, _) => vec![exe, "-r".into(), "-y".into(), out],
+        (Tool::Zip, _) => vec![exe, "-r".into(), "-y".into()],
         (Tool::SevenZip, ".zip") => vec![
             exe,
             "a".into(),
             "-tzip".into(),
             "-bso0".into(),
             "-bsp1".into(),
-            out,
         ],
-        (Tool::SevenZip, _) => vec![exe, "a".into(), "-bso0".into(), "-bsp1".into(), out],
-        _ => vec![exe, "-cvaf".into(), out],
+        (Tool::SevenZip, _) => vec![exe, "a".into(), "-bso0".into(), "-bsp1".into()],
+        _ => vec![exe, "-cvaf".into()],
     };
+    match (&password, tool, ext) {
+        (Some(pass), Tool::Zip, _) => argv.extend(["-P".into(), pass.clone()]),
+        (Some(pass), Tool::SevenZip, ".zip") => {
+            argv.extend([format!("-p{pass}"), "-mem=AES256".into()]);
+        }
+        (Some(pass), Tool::SevenZip, _) => argv.push(format!("-p{pass}")),
+        _ => {}
+    }
+    argv.push(out);
     argv.extend(names.iter().cloned());
     let mut binds: Vec<(PathBuf, PathBuf, bool)> = files
         .iter()
