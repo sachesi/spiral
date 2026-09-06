@@ -1,5 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect x="8" y="24" width="112" height="88" rx="12" fill="#3584e4"/>
-  <path d="M8 36c0-6.6 5.4-12 12-12h28l10 12h62v12H8z" fill="#1c71d8"/>
-  <path d="M20 60h88v40a8 8 0 0 1-8 8H28a8 8 0 0 1-8-8z" fill="#99c1f1" opacity=".9"/>
+  <title>File Manager</title>
+  <desc>A blue folder with softly shaded curved edges, ivory file dividers, an orange index tab, and a recessed handle.</desc>
+  <defs>
+    <linearGradient id="edge" x1="12" y1="0" x2="116" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1c71d8"/>
+      <stop offset=".2" stop-color="#3584e4"/>
+      <stop offset=".8" stop-color="#3584e4"/>
+      <stop offset="1" stop-color="#1c71d8"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="52" x2="0" y2="70" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b6dcff"/>
+      <stop offset="1" stop-color="#78b8f4"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#edge)" d="M12 38a10 10 0 0 1 10-10h28a8 8 0 0 1 6 3l8 9h42a10 10 0 0 1 10 10v52a10 10 0 0 1-10 10H22a10 10 0 0 1-10-10Z"/>
+  <path fill="#3584e4" d="M12 34a10 10 0 0 1 10-10h28a8 8 0 0 1 6 3l8 9h42a10 10 0 0 1 10 10v52a10 10 0 0 1-10 10H22a10 10 0 0 1-10-10Z"/>
+  <path fill="#c64600" d="M80 34a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v28H80Z"/>
+  <path fill="#ffa348" d="M80 32a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v26H80Z"/>
+  <rect x="24" y="40" width="80" height="48" rx="4" fill="#deddda"/>
+  <rect x="24" y="40" width="80" height="4" rx="2" fill="#f6f5f4"/>
+  <rect x="20" y="48" width="80" height="44" rx="4" fill="#f6f5f4"/>
+  <path fill="url(#edge)" d="M12 64a10 10 0 0 1 10-10h28a10 10 0 0 1 6 2l6 4h44a10 10 0 0 1 10 10v32a10 10 0 0 1-10 10H22a10 10 0 0 1-10-10Z"/>
+  <path fill="#62a0ea" d="M12 62a10 10 0 0 1 10-10h28a10 10 0 0 1 6 2l6 4h44a10 10 0 0 1 10 10v30a10 10 0 0 1-10 10H22a10 10 0 0 1-10-10Z"/>
+  <path fill="url(#rim)" d="M22 52h28a10 10 0 0 1 6 2l6 4h44a10 10 0 0 1 10 10v2a10 10 0 0 0-10-10H62l-6-4a10 10 0 0 0-6-2H22a10 10 0 0 0-10 10v-2a10 10 0 0 1 10-10Z"/>
+  <rect x="46" y="76" width="36" height="12" rx="6" fill="url(#rim)"/>
+  <rect x="46" y="74" width="36" height="12" rx="6" fill="url(#edge)"/>
+  <path fill="#1a5fb4" d="M52 74h24a6 6 0 0 1 6 6v2a6 6 0 0 0-6-6H52a6 6 0 0 0-6 6v-2a6 6 0 0 1 6-6Z"/>
 </svg>
