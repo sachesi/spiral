@@ -7,6 +7,7 @@ Ctrl+? shows this list inside the application.
 | Ctrl+N | New window |
 | Ctrl+T | New tab |
 | Ctrl+W | Close tab |
+| Ctrl+Shift+T | Restore closed tab |
 | Ctrl+Shift+W | Close window |
 | Ctrl+Shift+O | Tab overview |
 | Ctrl+, | Preferences |
