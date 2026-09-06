@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-06 15:22+0300\n"
+"POT-Creation-Date: 2026-09-06 19:24+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -13,7 +13,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: data/io.github.sachesi.spiral.desktop:2
 #: data/io.github.sachesi.spiral.metainfo.xml:6
@@ -25,14 +26,16 @@ msgid "File Manager"
 msgstr "Файловый менеджер"
 
 #: data/io.github.sachesi.spiral.desktop:4
-#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:316
+#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:343
 #, no-c-format
 msgid "Browse and manage your files"
 msgstr "Просмотр и управление файлами"
 
 #: data/io.github.sachesi.spiral.desktop:12
 msgid "folder;manager;explore;disk;filesystem;"
-msgstr "папка;файлы;менеджер;проводник;диск;файловая система;folder;manager;explore;disk;filesystem;"
+msgstr ""
+"папка;файлы;менеджер;проводник;диск;файловая "
+"система;folder;manager;explore;disk;filesystem;"
 
 #: data/io.github.sachesi.spiral.gschema.xml:33
 msgid "Unit system for file sizes"
@@ -51,166 +54,264 @@ msgid "How dates are shown"
 msgstr "Формат отображения дат"
 
 #: data/io.github.sachesi.spiral.gschema.xml:49
+msgid "Show “Delete Permanently” in context menus"
+msgstr "Показывать «Удалить безвозвратно» в контекстных меню"
+
+#: data/io.github.sachesi.spiral.gschema.xml:53
+msgid "Show “Create Link” in context menus"
+msgstr "Показывать «Создать ссылку» в контекстных меню"
+
+#: data/io.github.sachesi.spiral.gschema.xml:57
+msgid "Expandable folders in list view"
+msgstr "Раскрывающиеся папки в виде списка"
+
+#: data/io.github.sachesi.spiral.gschema.xml:61
 msgid "Remember the view mode of each folder"
 msgstr "Запоминать режим просмотра для каждой папки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:53
+#: data/io.github.sachesi.spiral.gschema.xml:65
 msgid "Open folders that are mostly images and videos in grid view"
-msgstr "Открывать папки, состоящие в основном из изображений и видео, в виде сетки"
+msgstr ""
+"Открывать папки, состоящие в основном из изображений и видео, в виде сетки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:57
+#: data/io.github.sachesi.spiral.gschema.xml:69
 msgid "Terminal emulator for “Open in Terminal”"
 msgstr "Эмулятор терминала для «Открыть в терминале»"
 
-#: data/io.github.sachesi.spiral.gschema.xml:58
+#: data/io.github.sachesi.spiral.gschema.xml:70
 msgid "Executable name; empty picks the first installed one."
 msgstr "Имя исполняемого файла; пустое значение означает первый установленный."
 
-#: data/io.github.sachesi.spiral.gschema.xml:62
+#: data/io.github.sachesi.spiral.gschema.xml:74
 msgid "Which files get thumbnails"
 msgstr "Для каких файлов показывать миниатюры"
 
-#: data/io.github.sachesi.spiral.gschema.xml:66
+#: data/io.github.sachesi.spiral.gschema.xml:78
+msgid "Where searches look into subfolders"
+msgstr "Где искать во вложенных папках"
+
+#: data/io.github.sachesi.spiral.gschema.xml:82
 msgid "Which folders get their items counted"
 msgstr "Для каких папок подсчитывать число объектов"
 
-#: data/io.github.sachesi.spiral.gschema.xml:70
+#: data/io.github.sachesi.spiral.gschema.xml:86
 msgid "Default view mode"
 msgstr "Режим просмотра по умолчанию"
 
-#: data/io.github.sachesi.spiral.gschema.xml:74
+#: data/io.github.sachesi.spiral.gschema.xml:90
 msgid "View mode of file chooser dialogs"
 msgstr "Режим просмотра в диалогах выбора файлов"
 
-#: data/io.github.sachesi.spiral.gschema.xml:78
+#: data/io.github.sachesi.spiral.gschema.xml:94
 msgid "Sort key"
 msgstr "Ключ сортировки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:82
+#: data/io.github.sachesi.spiral.gschema.xml:98
 msgid "Reverse sort order"
 msgstr "Обратный порядок сортировки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:86
+#: data/io.github.sachesi.spiral.gschema.xml:102
+msgid "Format the Create Archive dialog starts with"
+msgstr "Формат, с которого начинается диалог создания архива"
+
+#: data/io.github.sachesi.spiral.gschema.xml:103
+msgid ""
+"Extension without the dot: zip, tar.xz, tar.zst, 7z or tar.gz; the last one "
+"used."
+msgstr ""
+"Расширение без точки: zip, tar.xz, tar.zst, 7z или tar.gz; последнее "
+"использованное."
+
+#: data/io.github.sachesi.spiral.gschema.xml:107
 msgid "Show hidden files"
 msgstr "Показывать скрытые файлы"
 
-#: data/io.github.sachesi.spiral.gschema.xml:90
+#: data/io.github.sachesi.spiral.gschema.xml:111
 msgid "Captions under icons in grid view"
 msgstr "Подписи под значками в виде сетки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:91
-msgid "Up to three of: size, date_modified, permissions, type, mime_type, owner, group, none."
-msgstr "До трёх значений из: size, date_modified, permissions, type, mime_type, owner, group, none."
+#: data/io.github.sachesi.spiral.gschema.xml:112
+msgid ""
+"Up to three of: size, date_modified, permissions, type, mime_type, owner, "
+"group, none."
+msgstr ""
+"До трёх значений из: size, date_modified, permissions, type, mime_type, "
+"owner, group, none."
 
-#: data/io.github.sachesi.spiral.gschema.xml:96
+#: data/io.github.sachesi.spiral.gschema.xml:116
+msgid "Columns shown in list view besides the name"
+msgstr "Столбцы, показываемые в виде списка помимо имени"
+
+#: data/io.github.sachesi.spiral.gschema.xml:117
+msgid ""
+"Any of: size, type, modified, accessed, created, owner, group, permissions, "
+"star."
+msgstr ""
+"Любые из: size, type, modified, accessed, created, owner, group, "
+"permissions, star."
+
+#: data/io.github.sachesi.spiral.gschema.xml:122
 msgid "Icon size in grid view"
 msgstr "Размер значков в виде сетки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:101
+#: data/io.github.sachesi.spiral.gschema.xml:127
 msgid "Icon size in list view"
 msgstr "Размер значков в виде списка"
 
-#: data/io.github.sachesi.spiral.gschema.xml:105
+#: data/io.github.sachesi.spiral.gschema.xml:131
 msgid "Window size"
 msgstr "Размер окна"
 
-#: data/io.github.sachesi.spiral.gschema.xml:109
+#: data/io.github.sachesi.spiral.gschema.xml:135
 msgid "Window maximized"
 msgstr "Окно развёрнуто"
 
-#: data/io.github.sachesi.spiral.gschema.xml:113
+#: data/io.github.sachesi.spiral.gschema.xml:139
 msgid "Show places sidebar"
 msgstr "Показывать боковую панель"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:9
-msgid "Spiral is a GTK4 and libadwaita file manager for Wayland desktops that come without one. It follows the layout and behaviour of GNOME Files and adds a file chooser portal backend, so applications that open and save files through the portal get the same picker."
-msgstr "Spiral — файловый менеджер на GTK4 и libadwaita для окружений Wayland, в которых его нет. Он повторяет компоновку и поведение Файлов GNOME и добавляет бэкенд портала выбора файлов, поэтому приложения, открывающие и сохраняющие файлы через портал, получают тот же диалог."
+msgid ""
+"Spiral is a GTK4 and libadwaita file manager for Wayland desktops that come "
+"without one. It follows the layout and behaviour of GNOME Files and adds a "
+"file chooser portal backend, so applications that open and save files "
+"through the portal get the same picker."
+msgstr ""
+"Spiral — файловый менеджер на GTK4 и libadwaita для окружений Wayland, в "
+"которых его нет. Он повторяет компоновку и поведение Файлов GNOME и "
+"добавляет бэкенд портала выбора файлов, поэтому приложения, открывающие и "
+"сохраняющие файлы через портал, получают тот же диалог."
 
 #: data/io.github.sachesi.spiral.metainfo.xml:11
-msgid "Grid and list views, tabs, and a places sidebar with devices, bookmarks and favorites"
-msgstr "Виды сетки и списка, вкладки и боковая панель с устройствами, закладками и избранным"
+msgid ""
+"Grid and list views, tabs, and a places sidebar with devices, bookmarks and "
+"favorites"
+msgstr ""
+"Виды сетки и списка, вкладки и боковая панель с устройствами, закладками и "
+"избранным"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:12
-msgid "Copy, move, trash, rename and duplicate with progress, conflict handling and undo"
-msgstr "Копирование, перемещение, удаление в корзину, переименование и дублирование с индикацией хода, разрешением конфликтов и отменой"
+msgid ""
+"Copy, move, trash, rename and duplicate with progress, conflict handling and "
+"undo"
+msgstr ""
+"Копирование, перемещение, удаление в корзину, переименование и дублирование "
+"с индикацией хода, разрешением конфликтов и отменой"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:13
 msgid "Archive extraction and creation with the tools installed on the system"
-msgstr "Распаковка и создание архивов с помощью установленных в системе инструментов"
+msgstr ""
+"Распаковка и создание архивов с помощью установленных в системе инструментов"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:14
 msgid "Sandboxed thumbnails, drag and drop, and \"Open in Terminal\""
-msgstr "Изолированное создание миниатюр, перетаскивание и «Открыть в терминале»"
+msgstr ""
+"Изолированное создание миниатюр, перетаскивание и «Открыть в терминале»"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:15
-msgid "The org.freedesktop.FileManager1 service, so browsers and chat apps can show a file in its folder"
-msgstr "Служба org.freedesktop.FileManager1, чтобы браузеры и мессенджеры могли показать файл в его папке"
+msgid ""
+"The org.freedesktop.FileManager1 service, so browsers and chat apps can show "
+"a file in its folder"
+msgstr ""
+"Служба org.freedesktop.FileManager1, чтобы браузеры и мессенджеры могли "
+"показать файл в его папке"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:22
 msgid "sachesi"
-msgstr ""
+msgstr "sachesi"
 
-#: data/io.github.sachesi.spiral.metainfo.xml:26
+#: data/io.github.sachesi.spiral.metainfo.xml:27
+msgid ""
+"Russian and Ukrainian translations. Sort order remembered per folder. A "
+"Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
+"calls no longer block the interface on slow mounts."
+msgstr ""
+"Русский и украинский переводы. Порядок сортировки запоминается для каждой "
+"папки. Командная строка в стиле Nautilus: новое окно на каждый вызов, -w, "
+"-s, -q. Обращения к файловой системе больше не блокируют интерфейс на "
+"медленных точках монтирования."
+
+#: data/io.github.sachesi.spiral.metainfo.xml:31
 msgid "First release."
 msgstr "Первый выпуск."
 
-#: src/application.rs:171
+#: src/application.rs:170
 #, no-c-format
 msgid "Open each location in its own window"
 msgstr "Открывать каждое расположение в отдельном окне"
 
-#: src/application.rs:176
+#: src/application.rs:175
 #, no-c-format
 msgid "Select the given files in their folders"
 msgstr "Выделить указанные файлы в их папках"
 
-#: src/application.rs:178
+#: src/application.rs:177
 #, no-c-format
 msgid "Close every window and quit"
 msgstr "Закрыть все окна и выйти"
 
-#: src/application.rs:179
+#: src/application.rs:178
 #, no-c-format
 msgid "Print the version and exit"
 msgstr "Показать версию и выйти"
 
-#: src/application.rs:186
+#: src/application.rs:185
 #, no-c-format
 msgid "[FILE…]"
 msgstr "[ФАЙЛ…]"
 
 #. Translators: put your name here, one per line, optionally with an email address.
-#: src/application.rs:318
+#: src/application.rs:345
 #, no-c-format
 msgid "translator-credits"
 msgstr "sachesi"
 
-#: src/browser_actions.rs:92
+#: src/browser_actions.rs:126
 #, no-c-format
 msgid "Untitled Document"
 msgstr "Безымянный документ"
 
-#: src/browser_actions.rs:263
+#: src/browser_actions.rs:375
 #, no-c-format
 msgid "Extract To"
 msgstr "Распаковать в"
 
-#: src/browser_actions.rs:264
+#: src/browser_actions.rs:376 src/ops/archive.rs:351
 #, no-c-format
 msgid "_Extract"
 msgstr "_Распаковать"
 
-#: src/browser_actions.rs:290
+#: src/browser_actions.rs:402
 #, no-c-format
 msgid "Archive"
 msgstr "Архив"
 
-#: src/browser_actions.rs:371
+#: src/browser_actions.rs:488
+#, no-c-format
+msgid "Move To"
+msgstr "Переместить в"
+
+#: src/browser_actions.rs:490
+#, no-c-format
+msgid "Copy To"
+msgstr "Копировать в"
+
+#: src/browser_actions.rs:493
+#, no-c-format
+msgid "_Move"
+msgstr "_Переместить"
+
+#: src/browser_actions.rs:495 ui/browser_view.ui:171
+#, no-c-format
+msgid "_Copy"
+msgstr "_Копировать"
+
+#: src/browser_actions.rs:592
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Безвозвратно удалить «%s»?"
 
-#: src/browser_actions.rs:373
+#: src/browser_actions.rs:594
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -218,40 +319,41 @@ msgstr[0] "Безвозвратно удалить %d объект?"
 msgstr[1] "Безвозвратно удалить %d объекта?"
 msgstr[2] "Безвозвратно удалить %d объектов?"
 
-#: src/browser_actions.rs:381
+#: src/browser_actions.rs:602
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Безвозвратно удалённые объекты нельзя восстановить."
 
-#: src/browser_actions.rs:386 src/browser_actions.rs:410
-#: src/dialogs/compress.rs:49 src/dialogs/open_with.rs:71
-#: src/ops/conflict.rs:62 src/ops/conflict.rs:313 src/ops/walk.rs:186
-#: src/places_sidebar.rs:606 src/portal/chooser_window.rs:654
+#: src/browser_actions.rs:607 src/browser_actions.rs:631
+#: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
+#: src/ops/archive.rs:350 src/ops/conflict.rs:63 src/ops/conflict.rs:314
+#: src/ops/walk.rs:206 src/places_sidebar.rs:606
+#: src/portal/chooser_window.rs:666
 #, no-c-format
 msgid "_Cancel"
 msgstr "_Отмена"
 
-#: src/browser_actions.rs:387
+#: src/browser_actions.rs:608
 #, no-c-format
 msgid "_Delete"
 msgstr "_Удалить"
 
-#: src/browser_actions.rs:403
+#: src/browser_actions.rs:624
 #, no-c-format
 msgid "Empty Trash?"
 msgstr "Очистить корзину?"
 
-#: src/browser_actions.rs:405
+#: src/browser_actions.rs:626
 #, no-c-format
 msgid "All items in the Trash will be permanently deleted."
 msgstr "Все объекты в корзине будут безвозвратно удалены."
 
-#: src/browser_actions.rs:411 src/places_sidebar.rs:608 ui/browser_view.ui:257
+#: src/browser_actions.rs:632 src/places_sidebar.rs:608 ui/browser_view.ui:296
 #, no-c-format
 msgid "_Empty Trash"
 msgstr "_Очистить корзину"
 
-#: src/browser_view.rs:356
+#: src/browser_view.rs:389
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
@@ -259,7 +361,7 @@ msgstr[0] "Выбрана %d папка"
 msgstr[1] "Выбраны %d папки"
 msgstr[2] "Выбрано %d папок"
 
-#: src/browser_view.rs:360
+#: src/browser_view.rs:393
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
@@ -267,29 +369,39 @@ msgstr[0] "Выбран %d объект"
 msgstr[1] "Выбрано %d объекта"
 msgstr[2] "Выбрано %d объектов"
 
-#: src/browser_view.rs:761 src/dialogs/open_with.rs:213
+#: src/browser_view.rs:782 src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не удалось открыть"
 
-#: src/browser_view.rs:764 src/dialogs/open_with.rs:216
-#: src/dialogs/properties.rs:298 src/dialogs/properties.rs:394
+#: src/browser_view.rs:785 src/dialogs/open_with.rs:204
+#: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:635
 #, no-c-format
 msgid "_OK"
 msgstr "_ОК"
 
-#: src/browser_view.rs:794
+#: src/browser_view.rs:798
+#, no-c-format
+msgid "No Results Found"
+msgstr "Ничего не найдено"
+
+#: src/browser_view.rs:800 ui/browser_view.ui:66
+#, no-c-format
+msgid "Folder is Empty"
+msgstr "Папка пуста"
+
+#: src/browser_view.rs:820
 #, no-c-format
 msgid "Loading…"
 msgstr "Загрузка…"
 
-#: src/browser_view.rs:810
+#: src/browser_view.rs:836
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Выбран объект «%s»"
 
-#: src/browser_view.rs:815
+#: src/browser_view.rs:841
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -298,47 +410,78 @@ msgstr[1] "%d других объекта выбрано"
 msgstr[2] "%d других объектов выбрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:821
+#: src/browser_view.rs:847
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1224
+#: src/browser_view.rs:1267
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:1253 src/dialogs/properties.rs:218
+#: src/browser_view.rs:1319 src/dialogs/properties.rs:256
+#: src/dialogs/properties.rs:273
 #, no-c-format
-msgid "Size"
-msgstr "Размер"
+msgid "Location"
+msgstr "Расположение"
 
-#: src/browser_view.rs:1254 src/dialogs/properties.rs:210
+#: src/browser_view.rs:1436 src/dialogs/columns.rs:31
 #, no-c-format
-msgid "Type"
-msgstr "Тип"
+msgid "Star"
+msgstr "Избранное"
 
-#: src/browser_view.rs:1255 src/dialogs/properties.rs:226
+#: src/dialogs/captions.rs:20
 #, no-c-format
-msgid "Modified"
-msgstr "Изменён"
+msgid "Captions are shown under file names in the grid view."
+msgstr "Подписи показываются под именами файлов в виде сетки."
 
-#: src/dialogs/compress.rs:16
+#: src/dialogs/captions.rs:27
+#, no-c-format
+msgid "First"
+msgstr "Первая"
+
+#: src/dialogs/captions.rs:27
+#, no-c-format
+msgid "Second"
+msgstr "Вторая"
+
+#: src/dialogs/captions.rs:27
+#, no-c-format
+msgid "Third"
+msgstr "Третья"
+
+#: src/dialogs/captions.rs:55
+#, no-c-format
+msgid "Captions"
+msgstr "Подписи"
+
+#: src/dialogs/columns.rs:47
+#, no-c-format
+msgid "Visible Columns"
+msgstr "Видимые столбцы"
+
+#: src/dialogs/compress.rs:21
 #, no-c-format
 msgid "Archive _Name"
 msgstr "_Имя архива"
 
-#: src/dialogs/compress.rs:22
+#: src/dialogs/compress.rs:27
 #, no-c-format
 msgid "_Format"
 msgstr "_Формат"
 
-#: src/dialogs/compress.rs:43
+#: src/dialogs/compress.rs:35 src/ops/archive.rs:334
+#, no-c-format
+msgid "_Password"
+msgstr "_Пароль"
+
+#: src/dialogs/compress.rs:64
 #, no-c-format
 msgid "Create Archive"
 msgstr "Создать архив"
 
-#: src/dialogs/compress.rs:50
+#: src/dialogs/compress.rs:71
 #, no-c-format
 msgid "C_reate"
 msgstr "С_оздать"
@@ -348,23 +491,23 @@ msgstr "С_оздать"
 msgid "Open With"
 msgstr "Открыть с помощью"
 
-#: src/dialogs/open_with.rs:81 src/portal/chooser_window.rs:191
+#: src/dialogs/open_with.rs:69 src/portal/chooser_window.rs:197
 #: ui/browser_view.ui:136 ui/places_sidebar.ui:12
 #, no-c-format
 msgid "_Open"
 msgstr "_Открыть"
 
-#: src/dialogs/open_with.rs:109
+#: src/dialogs/open_with.rs:97
 #, no-c-format
 msgid "Show All Applications"
 msgstr "Показать все приложения"
 
-#: src/dialogs/open_with.rs:117
+#: src/dialogs/open_with.rs:105
 #, no-c-format
 msgid "Always use for this file type"
 msgstr "Всегда использовать для этого типа файлов"
 
-#: src/dialogs/open_with.rs:187
+#: src/dialogs/open_with.rs:175
 #, no-c-format
 msgid "Default"
 msgstr "По умолчанию"
@@ -374,7 +517,7 @@ msgstr "По умолчанию"
 msgid "Preferences"
 msgstr "Параметры"
 
-#: src/dialogs/preferences.rs:17 src/dialogs/properties.rs:77
+#: src/dialogs/preferences.rs:17 src/dialogs/properties.rs:93
 #: ui/shortcuts_dialog.ui:12
 #, no-c-format
 msgid "General"
@@ -458,89 +601,125 @@ msgstr "Сетка для папок с медиафайлами"
 #: src/dialogs/preferences.rs:66
 #, no-c-format
 msgid "Folders that are mostly images and videos open in grid view"
-msgstr "Папки, состоящие в основном из изображений и видео, открываются в виде сетки"
+msgstr ""
+"Папки, состоящие в основном из изображений и видео, открываются в виде сетки"
 
-#: src/dialogs/preferences.rs:74
+#: src/dialogs/preferences.rs:72
+#, no-c-format
+msgid "Expandable Folders in List View"
+msgstr "Раскрывающиеся папки в виде списка"
+
+#: src/dialogs/preferences.rs:79
+#, no-c-format
+msgid "Optional Context Menu Actions"
+msgstr "Дополнительные действия контекстного меню"
+
+#: src/dialogs/preferences.rs:81
+#, no-c-format
+msgid ""
+"Shift+Delete deletes permanently either way, and links can always be pasted."
+msgstr ""
+"Shift+Delete в любом случае удаляет безвозвратно, а ссылки всегда можно "
+"вставить."
+
+#: src/dialogs/preferences.rs:85
+#, no-c-format
+msgid "Create Link"
+msgstr "Создать ссылку"
+
+#: src/dialogs/preferences.rs:92 ui/shortcuts_dialog.ui:198
+#, no-c-format
+msgid "Delete Permanently"
+msgstr "Удалить безвозвратно"
+
+#: src/dialogs/preferences.rs:101
 #, no-c-format
 msgid "Performance"
 msgstr "Производительность"
 
-#: src/dialogs/preferences.rs:76
+#: src/dialogs/preferences.rs:103
 #, no-c-format
 msgid "Reading every file on a network share or a slow disk can take a while."
-msgstr "Чтение всех файлов на сетевом ресурсе или медленном диске может занять много времени."
+msgstr ""
+"Чтение всех файлов на сетевом ресурсе или медленном диске может занять много "
+"времени."
 
-#: src/dialogs/preferences.rs:80
+#: src/dialogs/preferences.rs:107
 #, no-c-format
 msgid "Local Files Only"
 msgstr "Только локальные файлы"
 
-#: src/dialogs/preferences.rs:81
+#: src/dialogs/preferences.rs:108
 #, no-c-format
 msgid "All Files"
 msgstr "Все файлы"
 
-#: src/dialogs/preferences.rs:82
+#: src/dialogs/preferences.rs:109
 #, no-c-format
 msgid "Never"
 msgstr "Никогда"
 
-#: src/dialogs/preferences.rs:87
+#: src/dialogs/preferences.rs:114
 #, no-c-format
 msgid "Show Thumbnails"
 msgstr "Показывать миниатюры"
 
-#: src/dialogs/preferences.rs:94
+#: src/dialogs/preferences.rs:121
 #, no-c-format
 msgid "Count Items in Folders"
 msgstr "Подсчитывать объекты в папках"
 
-#: src/dialogs/preferences.rs:129
+#: src/dialogs/preferences.rs:128
+#, no-c-format
+msgid "Search in Subfolders"
+msgstr "Поиск во вложенных папках"
+
+#: src/dialogs/preferences.rs:163
 #, no-c-format
 msgid "Automatic"
 msgstr "Автоматически"
 
-#: src/dialogs/preferences.rs:137
+#: src/dialogs/preferences.rs:171
 #, no-c-format
 msgid "Automatic uses %s"
 msgstr "Автоматически: %s"
 
-#: src/dialogs/preferences.rs:138
+#: src/dialogs/preferences.rs:172
 #, no-c-format
 msgid "No terminal emulator found in PATH"
 msgstr "В PATH не найден эмулятор терминала"
 
-#: src/dialogs/preferences.rs:141
+#: src/dialogs/preferences.rs:175
 #, no-c-format
 msgid "Terminal"
 msgstr "Терминал"
 
-#: src/dialogs/properties.rs:51 ui/shortcuts_dialog.ui:204
+#: src/dialogs/properties.rs:81 ui/shortcuts_dialog.ui:204
 #, no-c-format
 msgid "Properties"
 msgstr "Свойства"
 
-#: src/dialogs/properties.rs:83
+#: src/dialogs/properties.rs:99 src/file_utils.rs:125 src/file_utils.rs:137
 #, no-c-format
 msgid "Permissions"
 msgstr "Права"
 
-#: src/dialogs/properties.rs:131
+#: src/dialogs/properties.rs:147
 #, no-c-format
 msgid "Change Icon…"
 msgstr "Сменить значок…"
 
-#: src/dialogs/properties.rs:135
+#: src/dialogs/properties.rs:151
 #, no-c-format
 msgid "Reset Icon"
 msgstr "Сбросить значок"
 
-#: src/dialogs/properties.rs:185
+#: src/dialogs/properties.rs:215
 #, no-c-format
 msgid "Could Not Reset Icon"
 msgstr "Не удалось сбросить значок"
 
-#: src/dialogs/properties.rs:199
+#: src/dialogs/properties.rs:232
 #, no-c-format
 msgid "%d Item"
 msgid_plural "%d Items"
@@ -548,117 +727,129 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/dialogs/properties.rs:214
+#: src/dialogs/properties.rs:243 src/file_utils.rs:119 src/file_utils.rs:135
+#: ui/window.ui:297
+#, no-c-format
+msgid "Type"
+msgstr "Тип"
+
+#: src/dialogs/properties.rs:247 src/file_utils.rs:136
 #, no-c-format
 msgid "MIME Type"
 msgstr "Тип MIME"
 
-#: src/dialogs/properties.rs:218
+#: src/dialogs/properties.rs:251
 #, no-c-format
 msgid "Calculating…"
 msgstr "Вычисление…"
 
-#: src/dialogs/properties.rs:223 src/dialogs/properties.rs:240
+#: src/dialogs/properties.rs:251 src/file_utils.rs:118 src/file_utils.rs:133
 #, no-c-format
-msgid "Location"
-msgstr "Расположение"
+msgid "Size"
+msgstr "Размер"
 
-#: src/dialogs/properties.rs:230
+#: src/dialogs/properties.rs:259 src/file_utils.rs:120 ui/window.ui:318
+#, no-c-format
+msgid "Modified"
+msgstr "Изменён"
+
+#: src/dialogs/properties.rs:263 src/file_utils.rs:121
 #, no-c-format
 msgid "Accessed"
 msgstr "Последний доступ"
 
-#: src/dialogs/properties.rs:237
+#: src/dialogs/properties.rs:270
 #, no-c-format
 msgid "Default Application"
 msgstr "Приложение по умолчанию"
 
-#: src/dialogs/properties.rs:263
+#: src/dialogs/properties.rs:296 ui/window.ui:304
 #, no-c-format
 msgid "Images"
 msgstr "Изображения"
 
-#: src/dialogs/properties.rs:268
+#: src/dialogs/properties.rs:301
 #, no-c-format
 msgid "Select Custom Icon"
 msgstr "Выбрать значок"
 
-#: src/dialogs/properties.rs:289
+#: src/dialogs/properties.rs:325
 #, no-c-format
 msgid "Could Not Change Icon"
 msgstr "Не удалось сменить значок"
 
-#: src/dialogs/properties.rs:355
+#: src/dialogs/properties.rs:391
 #, no-c-format
 msgid "You are not the owner, so you cannot change these permissions."
 msgstr "Вы не владелец, поэтому не можете изменить эти права."
 
-#: src/dialogs/properties.rs:360 src/dialogs/properties.rs:367
+#: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
+#: src/file_utils.rs:132
 #, no-c-format
 msgid "None"
 msgstr "Нет"
 
-#: src/dialogs/properties.rs:361
+#: src/dialogs/properties.rs:397
 #, no-c-format
 msgid "List Files Only"
 msgstr "Только просмотр списка"
 
-#: src/dialogs/properties.rs:362
+#: src/dialogs/properties.rs:398
 #, no-c-format
 msgid "Access Files"
 msgstr "Доступ к файлам"
 
-#: src/dialogs/properties.rs:363
+#: src/dialogs/properties.rs:399
 #, no-c-format
 msgid "Create and Delete Files"
 msgstr "Создание и удаление файлов"
 
-#: src/dialogs/properties.rs:368
+#: src/dialogs/properties.rs:404
 #, no-c-format
 msgid "Read-Only"
 msgstr "Только чтение"
 
-#: src/dialogs/properties.rs:369
+#: src/dialogs/properties.rs:405
 #, no-c-format
 msgid "Read and Write"
 msgstr "Чтение и запись"
 
-#: src/dialogs/properties.rs:391
+#: src/dialogs/properties.rs:439
 #, no-c-format
 msgid "Could Not Change Permissions"
 msgstr "Не удалось изменить права"
 
-#: src/dialogs/properties.rs:402
+#: src/dialogs/properties.rs:452 src/file_utils.rs:123 src/file_utils.rs:138
 #, no-c-format
 msgid "Owner"
 msgstr "Владелец"
 
-#: src/dialogs/properties.rs:403
+#: src/dialogs/properties.rs:453 src/file_utils.rs:124 src/file_utils.rs:139
 #, no-c-format
 msgid "Group"
 msgstr "Группа"
 
-#: src/dialogs/properties.rs:404
+#: src/dialogs/properties.rs:454
 #, no-c-format
 msgid "Others"
 msgstr "Остальные"
 
-#: src/dialogs/properties.rs:442
+#: src/dialogs/properties.rs:492
 #, no-c-format
 msgid "Executable"
 msgstr "Исполняемый"
 
-#: src/dialogs/properties.rs:443
+#: src/dialogs/properties.rs:493
 #, no-c-format
 msgid "Allow running as a program"
 msgstr "Разрешить выполнение как программы"
 
-#: src/dialogs/properties.rs:469
+#: src/dialogs/properties.rs:519
 #, no-c-format
 msgid "Security Context"
 msgstr "Контекст безопасности"
 
-#: src/dialogs/properties.rs:481
+#: src/dialogs/properties.rs:531
 #, no-c-format
 msgid "%s (%d item)"
 msgid_plural "%s (%d items)"
@@ -666,27 +857,37 @@ msgstr[0] "%s (%d объект)"
 msgstr[1] "%s (%d объекта)"
 msgstr[2] "%s (%d объектов)"
 
-#: src/dialogs/properties.rs:546 src/prefs.rs:45
+#: src/dialogs/properties.rs:596 src/prefs.rs:45
 #, no-c-format
 msgid "Unknown"
 msgstr "Неизвестно"
 
-#: src/file_utils.rs:57
+#: src/file_utils.rs:86
 #, no-c-format
 msgid "Folder"
 msgstr "Папка"
 
-#: src/file_utils.rs:92
+#: src/file_utils.rs:122
+#, no-c-format
+msgid "Created"
+msgstr "Создан"
+
+#: src/file_utils.rs:134
+#, no-c-format
+msgid "Date Modified"
+msgstr "Дата изменения"
+
+#: src/file_utils.rs:163
 #, no-c-format
 msgid "Today, %s"
 msgstr "Сегодня, %s"
 
-#: src/file_utils.rs:93
+#: src/file_utils.rs:164
 #, no-c-format
 msgid "Yesterday, %s"
 msgstr "Вчера, %s"
 
-#: src/file_utils.rs:94
+#: src/file_utils.rs:165
 #, no-c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
@@ -694,12 +895,12 @@ msgstr[0] "%d день назад"
 msgstr[1] "%d дня назад"
 msgstr[2] "%d дней назад"
 
-#: src/file_utils.rs:95
+#: src/file_utils.rs:166
 #, no-c-format
 msgid "Last week"
 msgstr "На прошлой неделе"
 
-#: src/file_utils.rs:97
+#: src/file_utils.rs:168
 #, no-c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
@@ -707,12 +908,12 @@ msgstr[0] "%d неделю назад"
 msgstr[1] "%d недели назад"
 msgstr[2] "%d недель назад"
 
-#: src/file_utils.rs:99
+#: src/file_utils.rs:170
 #, no-c-format
 msgid "Last month"
 msgstr "В прошлом месяце"
 
-#: src/file_utils.rs:102
+#: src/file_utils.rs:173
 #, no-c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
@@ -720,12 +921,12 @@ msgstr[0] "%d месяц назад"
 msgstr[1] "%d месяца назад"
 msgstr[2] "%d месяцев назад"
 
-#: src/file_utils.rs:104
+#: src/file_utils.rs:175
 #, no-c-format
 msgid "Last year"
 msgstr "В прошлом году"
 
-#: src/file_utils.rs:107
+#: src/file_utils.rs:178
 #, no-c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
@@ -733,12 +934,12 @@ msgstr[0] "%d год назад"
 msgstr[1] "%d года назад"
 msgstr[2] "%d лет назад"
 
-#: src/file_utils.rs:176
+#: src/file_utils.rs:247
 #, no-c-format
 msgid "Empty"
 msgstr "Пусто"
 
-#: src/file_utils.rs:177
+#: src/file_utils.rs:248
 #, no-c-format
 msgid "%d item"
 msgid_plural "%d items"
@@ -746,268 +947,291 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/file_utils.rs:186 src/path_bar.rs:233 src/places_sidebar.rs:382
+#: src/file_utils.rs:275 src/path_bar.rs:309 src/places_sidebar.rs:382
 #, no-c-format
 msgid "Home"
 msgstr "Домашняя папка"
 
-#: src/file_utils.rs:189 src/path_bar.rs:236 src/places_sidebar.rs:405
+#: src/file_utils.rs:278 src/path_bar.rs:312 src/places_sidebar.rs:405
 #, no-c-format
 msgid "Trash"
 msgstr "Корзина"
 
-#: src/file_utils.rs:192 src/path_bar.rs:239 src/places_sidebar.rs:399
+#: src/file_utils.rs:281 src/path_bar.rs:315 src/places_sidebar.rs:399
 #, no-c-format
 msgid "Favorites"
 msgstr "Избранное"
 
-#: src/file_utils.rs:197 src/path_bar.rs:244
+#: src/file_utils.rs:286 src/path_bar.rs:320
 #, no-c-format
 msgid "System"
 msgstr "Система"
 
-#: src/naming.rs:28
+#: src/naming.rs:25
 #, no-c-format
 msgid "Folder names cannot contain “/”."
 msgstr "Имена папок не могут содержать «/»."
 
-#: src/naming.rs:30
+#: src/naming.rs:27
 #, no-c-format
 msgid "File names cannot contain “/”."
 msgstr "Имена файлов не могут содержать «/»."
 
-#: src/naming.rs:35
+#: src/naming.rs:32
 #, no-c-format
 msgid "A folder cannot be called “%s”."
 msgstr "Папку нельзя назвать «%s»."
 
-#: src/naming.rs:37
+#: src/naming.rs:34
 #, no-c-format
 msgid "A file cannot be called “%s”."
 msgstr "Файл нельзя назвать «%s»."
 
-#: src/naming.rs:42
-#, no-c-format
-msgid "A folder with that name already exists."
-msgstr "Папка с таким именем уже существует."
-
-#: src/naming.rs:44
-#, no-c-format
-msgid "A file with that name already exists."
-msgstr "Файл с таким именем уже существует."
-
-#: src/naming.rs:49
+#: src/naming.rs:39
 #, no-c-format
 msgid "Folders with “.” at the beginning of their name are hidden."
 msgstr "Папки, имя которых начинается с «.», скрыты."
 
-#: src/naming.rs:51
+#: src/naming.rs:41
 #, no-c-format
 msgid "Files with “.” at the beginning of their name are hidden."
 msgstr "Файлы, имя которых начинается с «.», скрыты."
 
-#: src/naming.rs:109
+#: src/naming.rs:49
+#, no-c-format
+msgid "A folder with that name already exists."
+msgstr "Папка с таким именем уже существует."
+
+#: src/naming.rs:51
+#, no-c-format
+msgid "A file with that name already exists."
+msgstr "Файл с таким именем уже существует."
+
+#: src/naming.rs:138
 #, no-c-format
 msgid "Rename Folder"
 msgstr "Переименовать папку"
 
-#: src/naming.rs:111
+#: src/naming.rs:140
 #, no-c-format
 msgid "Rename File"
 msgstr "Переименовать файл"
 
-#: src/naming.rs:117
+#: src/naming.rs:146
 #, no-c-format
 msgid "New Filename"
 msgstr "Новое имя"
 
-#: src/naming.rs:126 src/ops/conflict.rs:70 src/places_sidebar.rs:725
+#: src/naming.rs:155 src/ops/conflict.rs:71 src/places_sidebar.rs:725
 #, no-c-format
 msgid "_Rename"
 msgstr "_Переименовать"
 
-#: src/naming.rs:208
+#: src/naming.rs:237
 #, no-c-format
 msgid "_Folder Name"
 msgstr "_Имя папки"
 
-#: src/naming.rs:221
+#: src/naming.rs:250
 #, no-c-format
 msgid "_Create"
 msgstr "_Создать"
 
-#: src/naming.rs:237 src/portal/chooser_window.rs:168
+#: src/naming.rs:266 src/portal/chooser_window.rs:174
 #: ui/shortcuts_dialog.ui:186
 #, no-c-format
 msgid "New Folder"
 msgstr "Новая папка"
 
-#: src/ops/archive.rs:135
+#: src/ops/archive.rs:137
 #, no-c-format
 msgid "Compatible with all operating systems"
 msgstr "Совместим со всеми операционными системами"
 
-#: src/ops/archive.rs:141
+#: src/ops/archive.rs:143
 #, no-c-format
 msgid "Smaller archives but Linux and Mac only"
 msgstr "Меньший размер, но только для Linux и Mac"
 
-#: src/ops/archive.rs:147
+#: src/ops/archive.rs:149
 #, no-c-format
 msgid "Fast to create and extract, Linux only"
 msgstr "Быстрое создание и распаковка, только для Linux"
 
-#: src/ops/archive.rs:153
+#: src/ops/archive.rs:155
 #, no-c-format
 msgid "Smaller archives but must be installed on Windows and Mac"
 msgstr "Меньший размер, но в Windows и Mac требуется установка"
 
-#: src/ops/archive.rs:159
+#: src/ops/archive.rs:161
 #, no-c-format
 msgid "Widely supported, larger archives"
 msgstr "Широкая поддержка, больший размер"
 
-#: src/ops/archive.rs:323
+#: src/ops/archive.rs:325
 #, no-c-format
 msgid "Cannot extract “%s”: install %t"
 msgstr "Не удалось распаковать «%s»: установите %t"
 
-#: src/ops/archive.rs:334
+#: src/ops/archive.rs:343
+#, no-c-format
+msgid "Enter Password"
+msgstr "Введите пароль"
+
+#: src/ops/archive.rs:344
+#, no-c-format
+msgid "“%s” is password protected"
+msgstr "«%s» защищён паролем"
+
+#: src/ops/archive.rs:388
 #, no-c-format
 msgid "Archives can only be extracted to local folders"
 msgstr "Архивы можно распаковывать только в локальные папки"
 
-#: src/ops/archive.rs:353 src/ops/job.rs:119
+#: src/ops/archive.rs:407 src/ops/archive.rs:523 src/ops/job.rs:125
 #, no-c-format
 msgid "Extracting “%s”"
 msgstr "Распаковка «%s»"
 
-#: src/ops/archive.rs:476
+#: src/ops/archive.rs:520 src/ops/walk.rs:457
+#, no-c-format
+msgid "Waiting for your answer"
+msgstr "Ожидание вашего ответа"
+
+#: src/ops/archive.rs:590
 #, no-c-format
 msgid "Archives can only be created in local folders"
 msgstr "Архивы можно создавать только в локальных папках"
 
-#: src/ops/archive.rs:481
+#: src/ops/archive.rs:595
 #, no-c-format
 msgid "Archives can only be created from local files"
 msgstr "Архивы можно создавать только из локальных файлов"
 
-#: src/ops/archive.rs:492
+#: src/ops/archive.rs:609
 #, no-c-format
 msgid "Creating zip archives needs zip or 7-Zip"
 msgstr "Для создания архивов zip нужен zip или 7-Zip"
 
-#: src/ops/archive.rs:500
+#: src/ops/archive.rs:617
 #, no-c-format
 msgid "7-Zip is required to create 7z archives"
 msgstr "Для создания архивов 7z нужен 7-Zip"
 
-#: src/ops/archive.rs:508
+#: src/ops/archive.rs:625
 #, no-c-format
 msgid "tar is required to create tar archives"
 msgstr "Для создания архивов tar нужен tar"
 
-#: src/ops/archive.rs:513
+#: src/ops/archive.rs:630
 #, no-c-format
 msgid "Compressing…"
 msgstr "Сжатие…"
 
-#: src/ops/conflict.rs:25
+#: src/ops/conflict.rs:26
 #, no-c-format
 msgid "Size: %s"
 msgstr "Размер: %s"
 
-#: src/ops/conflict.rs:31
+#: src/ops/conflict.rs:32
 #, no-c-format
 msgid "Last modified: %s"
 msgstr "Последнее изменение: %s"
 
-#: src/ops/conflict.rs:48
+#: src/ops/conflict.rs:49
 #, no-c-format
 msgid "Merge Folder “%s”?"
 msgstr "Объединить папку «%s»?"
 
-#: src/ops/conflict.rs:50
+#: src/ops/conflict.rs:51
 #, no-c-format
 msgid "Replace File “%s”?"
 msgstr "Заменить файл «%s»?"
 
-#: src/ops/conflict.rs:55
+#: src/ops/conflict.rs:56
 #, no-c-format
-msgid "Merging will ask for confirmation before replacing any files in the folder that conflict with the files being copied."
-msgstr "При объединении будет запрошено подтверждение перед заменой каждого файла в папке, конфликтующего с копируемыми файлами."
+msgid ""
+"Merging will ask for confirmation before replacing any files in the folder "
+"that conflict with the files being copied."
+msgstr ""
+"При объединении будет запрошено подтверждение перед заменой каждого файла в "
+"папке, конфликтующего с копируемыми файлами."
 
-#: src/ops/conflict.rs:58
+#: src/ops/conflict.rs:59
 #, no-c-format
-msgid "Another file with the same name already exists in “%s”. Replacing it will overwrite its content."
-msgstr "Файл с таким именем уже существует в «%s». При замене его содержимое будет перезаписано."
+msgid ""
+"Another file with the same name already exists in “%s”. Replacing it will "
+"overwrite its content."
+msgstr ""
+"Файл с таким именем уже существует в «%s». При замене его содержимое будет "
+"перезаписано."
 
-#: src/ops/conflict.rs:66 src/ops/conflict.rs:315
+#: src/ops/conflict.rs:67 src/ops/conflict.rs:316
 #, no-c-format
 msgid "_Skip"
 msgstr "_Пропустить"
 
-#: src/ops/conflict.rs:77
+#: src/ops/conflict.rs:78
 #, no-c-format
 msgid "_Merge"
 msgstr "_Объединить"
 
-#: src/ops/conflict.rs:79 src/portal/chooser_window.rs:655
+#: src/ops/conflict.rs:80 src/portal/chooser_window.rs:667
 #, no-c-format
 msgid "_Replace"
 msgstr "_Заменить"
 
-#: src/ops/conflict.rs:131
+#: src/ops/conflict.rs:132
 #, no-c-format
 msgid "Original folder"
 msgstr "Исходная папка"
 
-#: src/ops/conflict.rs:133
+#: src/ops/conflict.rs:134
 #, no-c-format
 msgid "Original file"
 msgstr "Исходный файл"
 
-#: src/ops/conflict.rs:139
+#: src/ops/conflict.rs:140
 #, no-c-format
 msgid "Merge with"
 msgstr "Объединить с"
 
-#: src/ops/conflict.rs:141
+#: src/ops/conflict.rs:142
 #, no-c-format
 msgid "Replace with"
 msgstr "Заменить на"
 
-#: src/ops/conflict.rs:165
+#: src/ops/conflict.rs:166
 #, no-c-format
 msgid "Re_set"
 msgstr "С_бросить"
 
-#: src/ops/conflict.rs:172
+#: src/ops/conflict.rs:173
 #, no-c-format
 msgid "Select a _new name for the destination"
 msgstr "Выбрать _новое имя для назначения"
 
-#: src/ops/conflict.rs:179
+#: src/ops/conflict.rs:180
 #, no-c-format
 msgid "Apply this action to all files and folders"
 msgstr "Применить это действие ко всем файлам и папкам"
 
-#: src/ops/conflict.rs:304
+#: src/ops/conflict.rs:305
 #, no-c-format
 msgid "Error While %v “%s”"
 msgstr "Ошибка при %v «%s»"
 
-#: src/ops/conflict.rs:314
+#: src/ops/conflict.rs:315
 #, no-c-format
 msgid "_Retry"
 msgstr "_Повторить"
 
-#: src/ops/job.rs:70
+#: src/ops/job.rs:76
 #, no-c-format
 msgid "Copying “%s” to “%t”"
 msgstr "Копирование «%s» в «%t»"
 
-#: src/ops/job.rs:72
+#: src/ops/job.rs:78
 #, no-c-format
 msgid "Copying %d file to “%t”"
 msgid_plural "Copying %d files to “%t”"
@@ -1015,12 +1239,12 @@ msgstr[0] "Копируется %d файл в «%t»"
 msgstr[1] "Копируются %d файла в «%t»"
 msgstr[2] "Копируются %d файлов в «%t»"
 
-#: src/ops/job.rs:83
+#: src/ops/job.rs:89
 #, no-c-format
 msgid "Moving “%s” to “%t”"
 msgstr "Перемещение «%s» в «%t»"
 
-#: src/ops/job.rs:85
+#: src/ops/job.rs:91
 #, no-c-format
 msgid "Moving %d file to “%t”"
 msgid_plural "Moving %d files to “%t”"
@@ -1028,12 +1252,12 @@ msgstr[0] "Перемещается %d файл в «%t»"
 msgstr[1] "Перемещаются %d файла в «%t»"
 msgstr[2] "Перемещаются %d файлов в «%t»"
 
-#: src/ops/job.rs:93
+#: src/ops/job.rs:99
 #, no-c-format
 msgid "Moving “%s” to trash"
 msgstr "Перемещение «%s» в корзину"
 
-#: src/ops/job.rs:95
+#: src/ops/job.rs:101
 #, no-c-format
 msgid "Moving %d file to trash"
 msgid_plural "Moving %d files to trash"
@@ -1041,12 +1265,12 @@ msgstr[0] "Перемещается %d файл в корзину"
 msgstr[1] "Перемещаются %d файла в корзину"
 msgstr[2] "Перемещаются %d файлов в корзину"
 
-#: src/ops/job.rs:102
+#: src/ops/job.rs:108
 #, no-c-format
 msgid "Deleting “%s”"
 msgstr "Удаление «%s»"
 
-#: src/ops/job.rs:103
+#: src/ops/job.rs:109
 #, no-c-format
 msgid "Deleting %d file"
 msgid_plural "Deleting %d files"
@@ -1054,27 +1278,27 @@ msgstr[0] "Удаляется %d файл"
 msgstr[1] "Удаляются %d файла"
 msgstr[2] "Удаляются %d файлов"
 
-#: src/ops/job.rs:106
+#: src/ops/job.rs:112
 #, no-c-format
 msgid "Renaming “%s” to “%t”"
 msgstr "Переименование «%s» в «%t»"
 
-#: src/ops/job.rs:110
+#: src/ops/job.rs:116
 #, no-c-format
 msgid "Creating folder “%s”"
 msgstr "Создание папки «%s»"
 
-#: src/ops/job.rs:112
+#: src/ops/job.rs:118
 #, no-c-format
 msgid "Creating “%s”"
 msgstr "Создание «%s»"
 
-#: src/ops/job.rs:114
+#: src/ops/job.rs:120
 #, no-c-format
 msgid "Restoring “%s”"
 msgstr "Восстановление «%s»"
 
-#: src/ops/job.rs:115
+#: src/ops/job.rs:121
 #, no-c-format
 msgid "Restoring %d file"
 msgid_plural "Restoring %d files"
@@ -1082,7 +1306,7 @@ msgstr[0] "Восстанавливается %d файл"
 msgstr[1] "Восстанавливаются %d файла"
 msgstr[2] "Восстанавливаются %d файлов"
 
-#: src/ops/job.rs:120
+#: src/ops/job.rs:126
 #, no-c-format
 msgid "Extracting %d archive"
 msgid_plural "Extracting %d archives"
@@ -1090,17 +1314,30 @@ msgstr[0] "Распаковывается %d архив"
 msgstr[1] "Распаковываются %d архива"
 msgstr[2] "Распаковываются %d архивов"
 
-#: src/ops/job.rs:124
+#: src/ops/job.rs:130
 #, no-c-format
 msgid "Compressing to “%s”"
 msgstr "Сжатие в «%s»"
 
-#: src/ops/job.rs:136
+#: src/ops/job.rs:133
+#, no-c-format
+msgid "Creating link to “%s”"
+msgstr "Создание ссылки на «%s»"
+
+#: src/ops/job.rs:134
+#, no-c-format
+msgid "Creating %d link"
+msgid_plural "Creating %d links"
+msgstr[0] "Создаётся %d ссылка"
+msgstr[1] "Создаются %d ссылки"
+msgstr[2] "Создаётся %d ссылок"
+
+#: src/ops/job.rs:147
 #, no-c-format
 msgid "Copied “%s”"
 msgstr "Скопировано: «%s»"
 
-#: src/ops/job.rs:137
+#: src/ops/job.rs:148
 #, no-c-format
 msgid "Copied %d file"
 msgid_plural "Copied %d files"
@@ -1108,12 +1345,12 @@ msgstr[0] "Скопирован %d файл"
 msgstr[1] "Скопировано %d файла"
 msgstr[2] "Скопировано %d файлов"
 
-#: src/ops/job.rs:144
+#: src/ops/job.rs:155
 #, no-c-format
 msgid "Moved “%s”"
 msgstr "Перемещено: «%s»"
 
-#: src/ops/job.rs:145
+#: src/ops/job.rs:156
 #, no-c-format
 msgid "Moved %d file"
 msgid_plural "Moved %d files"
@@ -1121,12 +1358,12 @@ msgstr[0] "Перемещён %d файл"
 msgstr[1] "Перемещено %d файла"
 msgstr[2] "Перемещено %d файлов"
 
-#: src/ops/job.rs:149
+#: src/ops/job.rs:160
 #, no-c-format
 msgid "Moved “%s” to trash"
 msgstr "В корзину перемещено: «%s»"
 
-#: src/ops/job.rs:151
+#: src/ops/job.rs:162
 #, no-c-format
 msgid "Moved %d file to trash"
 msgid_plural "Moved %d files to trash"
@@ -1134,12 +1371,12 @@ msgstr[0] "В корзину перемещён %d файл"
 msgstr[1] "В корзину перемещено %d файла"
 msgstr[2] "В корзину перемещено %d файлов"
 
-#: src/ops/job.rs:158
+#: src/ops/job.rs:169
 #, no-c-format
 msgid "Deleted “%s”"
 msgstr "Удалено: «%s»"
 
-#: src/ops/job.rs:159
+#: src/ops/job.rs:170
 #, no-c-format
 msgid "Deleted %d file"
 msgid_plural "Deleted %d files"
@@ -1147,27 +1384,27 @@ msgstr[0] "Удалён %d файл"
 msgstr[1] "Удалено %d файла"
 msgstr[2] "Удалено %d файлов"
 
-#: src/ops/job.rs:162
+#: src/ops/job.rs:173
 #, no-c-format
 msgid "Renamed to “%s”"
 msgstr "Переименовано в «%s»"
 
-#: src/ops/job.rs:164
+#: src/ops/job.rs:175
 #, no-c-format
 msgid "Created folder “%s”"
 msgstr "Создана папка «%s»"
 
-#: src/ops/job.rs:166 src/ops/job.rs:177
+#: src/ops/job.rs:177 src/ops/job.rs:188
 #, no-c-format
 msgid "Created “%s”"
 msgstr "Создано: «%s»"
 
-#: src/ops/job.rs:168
+#: src/ops/job.rs:179
 #, no-c-format
 msgid "Restored “%s”"
 msgstr "Восстановлено: «%s»"
 
-#: src/ops/job.rs:169
+#: src/ops/job.rs:180
 #, no-c-format
 msgid "Restored %d file"
 msgid_plural "Restored %d files"
@@ -1175,12 +1412,12 @@ msgstr[0] "Восстановлен %d файл"
 msgstr[1] "Восстановлено %d файла"
 msgstr[2] "Восстановлено %d файлов"
 
-#: src/ops/job.rs:173
+#: src/ops/job.rs:184
 #, no-c-format
 msgid "Extracted “%s”"
 msgstr "Распаковано: «%s»"
 
-#: src/ops/job.rs:174
+#: src/ops/job.rs:185
 #, no-c-format
 msgid "Extracted %d archive"
 msgid_plural "Extracted %d archives"
@@ -1188,7 +1425,20 @@ msgstr[0] "Распакован %d архив"
 msgstr[1] "Распаковано %d архива"
 msgstr[2] "Распаковано %d архивов"
 
-#: src/ops/job.rs:184
+#: src/ops/job.rs:190
+#, no-c-format
+msgid "Created link to “%s”"
+msgstr "Создана ссылка на «%s»"
+
+#: src/ops/job.rs:191
+#, no-c-format
+msgid "Created %d link"
+msgid_plural "Created %d links"
+msgstr[0] "Создана %d ссылка"
+msgstr[1] "Создано %d ссылки"
+msgstr[2] "Создано %d ссылок"
+
+#: src/ops/job.rs:200
 #, no-c-format
 msgid "%d second"
 msgid_plural "%d seconds"
@@ -1196,7 +1446,7 @@ msgstr[0] "%d секунда"
 msgstr[1] "%d секунды"
 msgstr[2] "%d секунд"
 
-#: src/ops/job.rs:187
+#: src/ops/job.rs:203
 #, no-c-format
 msgid "%d minute"
 msgid_plural "%d minutes"
@@ -1204,7 +1454,7 @@ msgstr[0] "%d минута"
 msgstr[1] "%d минуты"
 msgstr[2] "%d минут"
 
-#: src/ops/job.rs:191
+#: src/ops/job.rs:207
 #, no-c-format
 msgid "%d hour"
 msgid_plural "%d hours"
@@ -1212,7 +1462,7 @@ msgstr[0] "%d час"
 msgstr[1] "%d часа"
 msgstr[2] "%d часов"
 
-#: src/ops/job.rs:312
+#: src/ops/job.rs:328
 #, no-c-format
 msgid "Preparing… %d file"
 msgid_plural "Preparing… %d files"
@@ -1220,17 +1470,17 @@ msgstr[0] "Подготовка… %d файл"
 msgstr[1] "Подготовка… %d файла"
 msgstr[2] "Подготовка… %d файлов"
 
-#: src/ops/job.rs:340
+#: src/ops/job.rs:356
 #, no-c-format
 msgid "%a of %b"
 msgstr "%a из %b"
 
-#: src/ops/job.rs:347
+#: src/ops/job.rs:363
 #, no-c-format
 msgid "%a, %t left (%r/s)"
 msgstr "%a, осталось %t (%r/с)"
 
-#: src/ops/job.rs:355
+#: src/ops/job.rs:371
 #, no-c-format
 msgid "%a of %b file"
 msgid_plural "%a of %b files"
@@ -1269,51 +1519,57 @@ msgstr "Папка назначения находится внутри исхо
 msgid "Trashing"
 msgstr "удалении в корзину"
 
-#: src/ops/walk.rs:179
+#: src/ops/walk.rs:154
+#, no-c-format
+msgid "Links can only point at local files"
+msgstr "Ссылки могут указывать только на локальные файлы"
+
+#: src/ops/walk.rs:199
 #, no-c-format
 msgid "Cannot Move “%s” to Trash"
 msgstr "Не удалось переместить «%s» в корзину"
 
-#: src/ops/walk.rs:181
+#: src/ops/walk.rs:201
 #, no-c-format
 msgid "This location does not support trashing. Delete it permanently instead?"
 msgstr "Это расположение не поддерживает корзину. Удалить безвозвратно?"
 
-#: src/ops/walk.rs:187 ui/browser_view.ui:209
+#: src/ops/walk.rs:207
 #, no-c-format
 msgid "_Delete Permanently"
 msgstr "_Удалить безвозвратно"
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:268
+#: src/ops/walk.rs:288
 #, no-c-format
 msgid "Moving"
 msgstr "перемещении"
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:271
+#: src/ops/walk.rs:291
 #, no-c-format
 msgid "Copying"
 msgstr "копировании"
 
-#: src/ops/walk.rs:438
-#, no-c-format
-msgid "Waiting for your answer"
-msgstr "Ожидание вашего ответа"
-
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:469
+#: src/ops/walk.rs:488
 #, no-c-format
 msgid "Deleting"
 msgstr "удалении"
 
+#. Translators: name of a symbolic link, as in “Link to report.pdf”.
+#: src/ops/walk.rs:519
+#, no-c-format
+msgid "Link to %s"
+msgstr "Ссылка на %s"
+
 #. Translators: goes into duplicate names, as in “report (copy).pdf”.
-#: src/ops/walk.rs:488
+#: src/ops/walk.rs:545
 #, no-c-format
 msgid "copy"
 msgstr "копия"
 
-#: src/path_bar.rs:192 ui/shortcuts_dialog.ui:92
+#: src/path_bar.rs:268 ui/shortcuts_dialog.ui:92
 #, no-c-format
 msgid "Edit Location"
 msgstr "Изменить адрес"
@@ -1360,83 +1616,91 @@ msgstr "Очистить корзину перед отключением?"
 
 #: src/places_sidebar.rs:603
 #, no-c-format
-msgid "To regain the free space on this volume the trash must be emptied. All trashed items on the volume will be permanently lost."
-msgstr "Чтобы освободить место на этом томе, нужно очистить корзину. Все удалённые в корзину объекты на этом томе будут безвозвратно потеряны."
+msgid ""
+"To regain the free space on this volume the trash must be emptied. All "
+"trashed items on the volume will be permanently lost."
+msgstr ""
+"Чтобы освободить место на этом томе, нужно очистить корзину. Все удалённые в "
+"корзину объекты на этом томе будут безвозвратно потеряны."
 
 #: src/places_sidebar.rs:607
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr "_Не очищать"
 
-#: src/portal/chooser_window.rs:112 ui/shortcuts_dialog.ui:68 ui/window.ui:191
-#: ui/window.ui:336
+#: src/portal/chooser_window.rs:118 ui/shortcuts_dialog.ui:68 ui/window.ui:203
+#: ui/window.ui:429
 #, no-c-format
 msgid "Back"
 msgstr "Назад"
 
-#: src/portal/chooser_window.rs:117 ui/shortcuts_dialog.ui:74 ui/window.ui:199
-#: ui/window.ui:344
+#: src/portal/chooser_window.rs:123 ui/shortcuts_dialog.ui:74 ui/window.ui:211
+#: ui/window.ui:437
 #, no-c-format
 msgid "Forward"
 msgstr "Вперёд"
 
-#: src/portal/chooser_window.rs:142 src/window.rs:595 ui/window.ui:281
-#: ui/window.ui:353
+#: src/portal/chooser_window.rs:148 src/window.rs:624 ui/window.ui:374
+#: ui/window.ui:446
 #, no-c-format
 msgid "List View"
 msgstr "В виде списка"
 
-#: src/portal/chooser_window.rs:192
+#: src/portal/chooser_window.rs:198
 #, no-c-format
 msgid "_Save"
 msgstr "_Сохранить"
 
-#: src/portal/chooser_window.rs:206
+#: src/portal/chooser_window.rs:212
 #, no-c-format
 msgid "Visible Files Filter"
 msgstr "Фильтр отображаемых файлов"
 
-#: src/portal/chooser_window.rs:240
+#: src/portal/chooser_window.rs:246
 #, no-c-format
 msgid "File Name"
 msgstr "Имя файла"
 
-#: src/portal/chooser_window.rs:252
+#: src/portal/chooser_window.rs:258
 #, no-c-format
 msgid "Show Options"
 msgstr "Показать параметры"
 
-#: src/portal/chooser_window.rs:646
+#: src/portal/chooser_window.rs:658
 #, no-c-format
 msgid "Replace “%s”?"
 msgstr "Заменить «%s»?"
 
-#: src/portal/chooser_window.rs:648
+#: src/portal/chooser_window.rs:660
 #, no-c-format
-msgid "A file with that name already exists. Replacing it will overwrite its content."
-msgstr "Файл с таким именем уже существует. При замене его содержимое будет перезаписано."
+msgid ""
+"A file with that name already exists. Replacing it will overwrite its "
+"content."
+msgstr ""
+"Файл с таким именем уже существует. При замене его содержимое будет "
+"перезаписано."
 
 #: src/progress_indicator.rs:189
 #, no-c-format
 msgid "Show File Operations"
 msgstr "Показать файловые операции"
 
-#: src/progress_indicator.rs:296 ui/window.ui:245
+#: src/progress_indicator.rs:296 ui/window.ui:257
 #, no-c-format
 msgid "Cancel"
 msgstr "Отмена"
 
-#: src/terminal.rs:123
+#: src/terminal.rs:149
 #, no-c-format
 msgid "No terminal emulator found"
 msgstr "Эмулятор терминала не найден"
 
-#: src/window.rs:431 ui/shortcuts_dialog.ui:216
+#: src/window.rs:460 ui/shortcuts_dialog.ui:216
 #, no-c-format
 msgid "Undo"
 msgstr "Отменить"
 
-#: src/window.rs:597
+#: src/window.rs:626
 #, no-c-format
 msgid "Grid View"
 msgstr "В виде сетки"
@@ -1449,99 +1713,137 @@ msgstr "Выбор файлов Spiral"
 msgid "File chooser dialogs shown on behalf of other applications"
 msgstr "Диалоги выбора файлов, показываемые от имени других приложений"
 
-#: ui/browser_view.ui:66
-msgid "Folder is Empty"
-msgstr "Папка пуста"
-
 #: ui/browser_view.ui:77
 msgid "Could Not Open Folder"
 msgstr "Не удалось открыть папку"
 
-#: ui/browser_view.ui:140 ui/path_bar.ui:32 ui/places_sidebar.ui:16
+#: ui/browser_view.ui:140 ui/path_bar.ui:32 ui/path_bar.ui:63
+#: ui/places_sidebar.ui:16
 msgid "Open in New _Tab"
 msgstr "Открыть в новой _вкладке"
 
 #: ui/browser_view.ui:145
+msgid "Open Item _Location"
+msgstr "Открыть _расположение объекта"
+
+#: ui/browser_view.ui:150
 msgid "Open _With…"
 msgstr "Открыть с _помощью…"
 
-#: ui/browser_view.ui:150 ui/browser_view.ui:243
+#: ui/browser_view.ui:155
+msgid "_Run as a Program"
+msgstr "_Запустить как программу"
+
+#: ui/browser_view.ui:160 ui/browser_view.ui:282
 msgid "Open in _Terminal"
 msgstr "Открыть в _терминале"
 
-#: ui/browser_view.ui:157
+#: ui/browser_view.ui:167
 msgid "Cu_t"
 msgstr "_Вырезать"
 
-#: ui/browser_view.ui:161
-msgid "_Copy"
-msgstr "_Копировать"
+#: ui/browser_view.ui:175
+msgid "Copy to…"
+msgstr "Копировать в…"
 
-#: ui/browser_view.ui:165
+#: ui/browser_view.ui:179
+msgid "Move to…"
+msgstr "Переместить в…"
+
+#: ui/browser_view.ui:183
 msgid "_Paste Into Folder"
 msgstr "Вст_авить в папку"
 
-#: ui/browser_view.ui:172
+#: ui/browser_view.ui:188
+msgid "Create _Link"
+msgstr "Создать _ссылку"
+
+#: ui/browser_view.ui:195
 msgid "_Extract Here"
 msgstr "_Распаковать здесь"
 
-#: ui/browser_view.ui:177
+#: ui/browser_view.ui:200
 msgid "E_xtract To…"
 msgstr "Распаковать _в…"
 
-#: ui/browser_view.ui:182
+#: ui/browser_view.ui:205
 msgid "C_ompress…"
 msgstr "С_жать…"
 
-#: ui/browser_view.ui:189
+#: ui/browser_view.ui:212
 msgid "Add to _Favorites"
 msgstr "Добавить в _избранное"
 
-#: ui/browser_view.ui:194
+#: ui/browser_view.ui:217
 msgid "Remove from _Favorites"
 msgstr "Удалить из _избранного"
 
-#: ui/browser_view.ui:201 ui/places_sidebar.ui:23
+#: ui/browser_view.ui:224
+msgid "_Restore From Trash"
+msgstr "Восстановить и_з корзины"
+
+#: ui/browser_view.ui:229 ui/places_sidebar.ui:23
 msgid "Rena_me…"
 msgstr "Пере_именовать…"
 
-#: ui/browser_view.ui:205
+#: ui/browser_view.ui:233
 msgid "Move to _Trash"
 msgstr "Удалить в _корзину"
 
-#: ui/browser_view.ui:215 ui/browser_view.ui:262 ui/path_bar.ui:47
+#: ui/browser_view.ui:237
+msgid "_Delete Permanently…"
+msgstr "_Удалить безвозвратно…"
+
+#: ui/browser_view.ui:242
+msgid "_Delete From Trash…"
+msgstr "_Удалить из корзины…"
+
+#: ui/browser_view.ui:249 ui/browser_view.ui:301 ui/path_bar.ui:55
+#: ui/path_bar.ui:83
 msgid "P_roperties"
 msgstr "С_войства"
 
-#: ui/browser_view.ui:223 ui/path_bar.ui:12
+#: ui/browser_view.ui:257 ui/path_bar.ui:12
 msgid "New _Folder…"
 msgstr "Создать _папку…"
 
-#: ui/browser_view.ui:227 ui/path_bar.ui:16
+#: ui/browser_view.ui:261 ui/path_bar.ui:16
 msgid "New _Document"
 msgstr "Создать _документ"
 
-#: ui/browser_view.ui:233 ui/path_bar.ui:22
+#: ui/browser_view.ui:267 ui/path_bar.ui:22
 msgid "_Paste"
 msgstr "Вст_авить"
 
-#: ui/browser_view.ui:237 ui/path_bar.ui:26
+#: ui/browser_view.ui:271
+msgid "Paste as _Link"
+msgstr "Вставить как _ссылку"
+
+#: ui/browser_view.ui:276 ui/path_bar.ui:26
 msgid "Select _All"
 msgstr "Выделить _всё"
 
-#: ui/browser_view.ui:250
+#: ui/browser_view.ui:289 ui/path_bar.ui:73
 msgid "Add to _Bookmarks"
 msgstr "Добавить в _закладки"
 
-#: ui/path_bar.ui:36
+#: ui/path_bar.ui:36 ui/path_bar.ui:67
+msgid "Open in New _Window"
+msgstr "Открыть в новом ок_не"
+
+#: ui/path_bar.ui:40
 msgid "R_eload"
 msgstr "О_бновить"
 
-#: ui/path_bar.ui:40
+#: ui/path_bar.ui:44
 msgid "_Empty Trash…"
 msgstr "_Очистить корзину…"
 
-#: ui/path_bar.ui:72
+#: ui/path_bar.ui:51 ui/path_bar.ui:77
+msgid "_Copy Location"
+msgstr "_Копировать расположение"
+
+#: ui/path_bar.ui:108
 msgid "Current Folder Menu"
 msgstr "Меню текущей папки"
 
@@ -1593,7 +1895,7 @@ msgstr "Родительская папка"
 msgid "Home Folder"
 msgstr "Домашняя папка"
 
-#: ui/shortcuts_dialog.ui:98 ui/window.ui:271
+#: ui/shortcuts_dialog.ui:98 ui/window.ui:364
 msgid "Search Current Folder"
 msgstr "Поиск в текущей папке"
 
@@ -1613,11 +1915,11 @@ msgstr "Вид"
 msgid "Switch Between Grid and List"
 msgstr "Переключить сетку и список"
 
-#: ui/shortcuts_dialog.ui:127 ui/window.ui:302 ui/window.ui:374
+#: ui/shortcuts_dialog.ui:127 ui/window.ui:395 ui/window.ui:467
 msgid "Zoom In"
 msgstr "Увеличить"
 
-#: ui/shortcuts_dialog.ui:133 ui/window.ui:292 ui/window.ui:364
+#: ui/shortcuts_dialog.ui:133 ui/window.ui:385 ui/window.ui:457
 msgid "Zoom Out"
 msgstr "Уменьшить"
 
@@ -1625,11 +1927,11 @@ msgstr "Уменьшить"
 msgid "Show Hidden Files"
 msgstr "Показывать скрытые файлы"
 
-#: ui/shortcuts_dialog.ui:145 ui/window.ui:181
+#: ui/shortcuts_dialog.ui:145 ui/window.ui:193
 msgid "Show Sidebar"
 msgstr "Показывать боковую панель"
 
-#: ui/shortcuts_dialog.ui:153 ui/window.ui:105 ui/window.ui:139
+#: ui/shortcuts_dialog.ui:153 ui/window.ui:117 ui/window.ui:151
 msgid "Files"
 msgstr "Файлы"
 
@@ -1656,10 +1958,6 @@ msgstr "Переименовать"
 #: ui/shortcuts_dialog.ui:192
 msgid "Move to Trash"
 msgstr "Удалить в корзину"
-
-#: ui/shortcuts_dialog.ui:198
-msgid "Delete Permanently"
-msgstr "Удалить безвозвратно"
 
 #: ui/shortcuts_dialog.ui:210
 msgid "Context Menu"
@@ -1734,21 +2032,105 @@ msgid "_Type"
 msgstr "По _типу"
 
 #: ui/window.ui:95
+msgid "_Visible Columns…"
+msgstr "_Видимые столбцы…"
+
+#: ui/window.ui:100
+msgid "Ca_ptions…"
+msgstr "По_дписи…"
+
+#: ui/window.ui:107
 msgid "Show _Hidden Files"
 msgstr "Показывать _скрытые файлы"
 
-#: ui/window.ui:99
+#: ui/window.ui:111
 msgid "Show _Sidebar"
 msgstr "Показывать _боковую панель"
 
-#: ui/window.ui:147
+#: ui/window.ui:159
 msgid "Main Menu"
 msgstr "Главное меню"
 
-#: ui/window.ui:259
-msgid "Search current folder"
-msgstr "Поиск в текущей папке"
+#: ui/window.ui:276
+msgid "Search"
+msgstr "Поиск"
 
-#: ui/window.ui:282 ui/window.ui:354
+#: ui/window.ui:284
+msgid "Search Filters"
+msgstr "Фильтры поиска"
+
+#: ui/window.ui:301
+msgid "Anything"
+msgstr "Любой"
+
+#: ui/window.ui:302
+msgid "Folders"
+msgstr "Папки"
+
+#: ui/window.ui:303
+msgid "Documents"
+msgstr "Документы"
+
+#: ui/window.ui:305
+msgid "Audio"
+msgstr "Аудио"
+
+#: ui/window.ui:306
+msgid "Videos"
+msgstr "Видео"
+
+#: ui/window.ui:307
+msgid "PDF"
+msgstr "PDF"
+
+#: ui/window.ui:308
+msgid "Text"
+msgstr "Текст"
+
+#: ui/window.ui:309
+msgid "Spreadsheets"
+msgstr "Электронные таблицы"
+
+#: ui/window.ui:322
+msgid "Any Time"
+msgstr "Любое время"
+
+#: ui/window.ui:323
+msgid "Today"
+msgstr "Сегодня"
+
+#: ui/window.ui:324
+msgid "Yesterday"
+msgstr "Вчера"
+
+#: ui/window.ui:325
+msgid "Past Week"
+msgstr "За последнюю неделю"
+
+#: ui/window.ui:326
+msgid "Past Month"
+msgstr "За последний месяц"
+
+#: ui/window.ui:327
+msgid "Past Year"
+msgstr "За последний год"
+
+#: ui/window.ui:336
+msgid "Match"
+msgstr "Совпадение"
+
+#: ui/window.ui:340
+msgid "Only Filename"
+msgstr "Только имя файла"
+
+#: ui/window.ui:341
+msgid "Content & Filename"
+msgstr "Содержимое и имя файла"
+
+#: ui/window.ui:342
+msgid "Only Contents"
+msgstr "Только содержимое"
+
+#: ui/window.ui:375 ui/window.ui:447
 msgid "View Options"
 msgstr "Параметры просмотра"
