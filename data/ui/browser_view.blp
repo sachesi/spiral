@@ -108,8 +108,18 @@ menu item_menu {
       hidden-when: "action-disabled";
     }
     item {
+      label: _("Open Item _Location");
+      action: "view.open-item-location";
+      hidden-when: "action-disabled";
+    }
+    item {
       label: _("Open _With…");
       action: "view.open-with";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("_Run as a Program");
+      action: "view.run";
       hidden-when: "action-disabled";
     }
     item {
@@ -128,8 +138,21 @@ menu item_menu {
       action: "view.copy";
     }
     item {
+      label: _("Copy to…");
+      action: "view.copy-to";
+    }
+    item {
+      label: _("Move to…");
+      action: "view.move-to";
+    }
+    item {
       label: _("_Paste Into Folder");
       action: "view.paste-into";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("Create _Link");
+      action: "view.create-link";
       hidden-when: "action-disabled";
     }
   }
@@ -164,6 +187,11 @@ menu item_menu {
   }
   section {
     item {
+      label: _("_Restore From Trash");
+      action: "view.restore";
+      hidden-when: "action-disabled";
+    }
+    item {
       label: _("Rena_me…");
       action: "view.rename";
     }
@@ -172,8 +200,14 @@ menu item_menu {
       action: "view.trash";
     }
     item {
-      label: _("_Delete Permanently");
-      action: "view.delete";
+      label: _("_Delete Permanently…");
+      action: "view.delete-permanently";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("_Delete From Trash…");
+      action: "view.delete-from-trash";
+      hidden-when: "action-disabled";
     }
   }
   section {
@@ -199,6 +233,11 @@ menu background_menu {
     item {
       label: _("_Paste");
       action: "view.paste";
+    }
+    item {
+      label: _("Paste as _Link");
+      action: "view.paste-link";
+      hidden-when: "action-disabled";
     }
     item {
       label: _("Select _All");

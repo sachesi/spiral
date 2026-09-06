@@ -44,6 +44,14 @@
       <default>'relative'</default>
       <summary>How dates are shown</summary>
     </key>
+    <key name="show-delete-permanently" type="b">
+      <default>false</default>
+      <summary>Show “Delete Permanently” in context menus</summary>
+    </key>
+    <key name="show-create-link" type="b">
+      <default>false</default>
+      <summary>Show “Create Link” in context menus</summary>
+    </key>
     <key name="remember-view" type="b">
       <default>true</default>
       <summary>Remember the view mode of each folder</summary>

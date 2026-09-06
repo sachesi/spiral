@@ -13,6 +13,8 @@ Changes apply immediately to open windows.
 | `size-units` | `decimal`, `binary` | `decimal` | Size Units |
 | `click-policy` | `double`, `single` | `double` | Open Items With |
 | `folders-first` | bool | true | Sort Folders Before Files |
+| `show-create-link` | bool | false | Create Link in context menus |
+| `show-delete-permanently` | bool | false | Delete Permanently in context menus |
 | `date-format` | `relative`, `full` | `relative` | Date Format |
 | `terminal` | executable name or empty | empty | Terminal (see [terminal.md](terminal.md)) |
 | `remember-view` | bool | true | Remember View per Folder |

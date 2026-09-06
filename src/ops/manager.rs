@@ -235,6 +235,7 @@ fn undo_for(job: &Job) -> Option<JobKind> {
         | JobKind::CreateFolder { .. }
         | JobKind::CreateFile { .. }
         | JobKind::Extract { .. }
+        | JobKind::Link { .. }
         | JobKind::Compress { .. } => (!out.created.is_empty()).then(|| JobKind::Delete {
             files: out.created.clone(),
         }),
@@ -292,6 +293,7 @@ fn redo_for(undo_kind: &JobKind) -> Option<JobKind> {
         | JobKind::CreateFolder { .. }
         | JobKind::CreateFile { .. }
         | JobKind::Extract { .. }
+        | JobKind::Link { .. }
         | JobKind::Compress { .. } => None,
     }
 }

@@ -146,6 +146,22 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
         } => {
             super::archive::compress(job, files, dest, file_name).await?;
         }
+        JobKind::Link { files, dest } => {
+            job.set_files_total(files.len() as u64);
+            for f in files {
+                let Some(target) = f.path() else {
+                    return Err(Fail::Failed(gettext("Links can only point at local files")));
+                };
+                let link = dest.child(&unique_link_name(&dest, &f).await);
+                let target = target.to_string_lossy().into_owned();
+                match link.make_symbolic_link_future(&target, PRIO).await {
+                    Ok(()) => job.imp().outcome.borrow_mut().created.push(link),
+                    Err(e) => return Err(Fail::Failed(e.message().to_string())),
+                }
+                job.set_files_done(job.files_done() + 1);
+                job.report(true);
+            }
+        }
         JobKind::Restore { pairs } => {
             job.set_files_total(pairs.len() as u64);
             for (item, original) in pairs {
@@ -492,6 +508,30 @@ async fn exists(file: &gio::File) -> bool {
     file.query_info_future("standard::type", NOFOLLOW, PRIO)
         .await
         .is_ok()
+}
+
+/// Name for a link to `file` in `dir`: the file's own name elsewhere, "Link to x" beside
+/// it, then numbered until one is free.
+async fn unique_link_name(dir: &gio::File, file: &gio::File) -> String {
+    let base = name(file);
+    // Translators: name of a symbolic link, as in “Link to report.pdf”.
+    let link_to = gettext("Link to %s").replace("%s", &base);
+    let beside = file.parent().is_some_and(|p| p.equal(dir));
+    if !beside && !exists(&dir.child(&base)).await {
+        return base;
+    }
+    let mut n = 1;
+    loop {
+        let candidate = if n == 1 {
+            link_to.clone()
+        } else {
+            format!("{link_to} ({n})")
+        };
+        if !exists(&dir.child(&candidate)).await {
+            return candidate;
+        }
+        n += 1;
+    }
 }
 
 /// "x.txt" -> "x (copy).txt", "x (copy 2).txt", ... first one not present in `dir`.
