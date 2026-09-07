@@ -593,7 +593,7 @@ pub(crate) fn remember_list_item(cell: &impl IsA<gtk::Widget>, item: &gtk::ListI
 }
 
 /// A bound cell of the row under a point, whichever part of the row the point hits.
-fn cell_at(root: &gtk::Widget, x: f64, y: f64) -> Option<gtk::Widget> {
+pub(crate) fn cell_at(root: &gtk::Widget, x: f64, y: f64) -> Option<gtk::Widget> {
     let row = row_widget(&root.pick(x, y, gtk::PickFlags::DEFAULT)?)?;
     let mut found: Option<gtk::Widget> = None;
     each_cell(&row, &mut |cell| {
