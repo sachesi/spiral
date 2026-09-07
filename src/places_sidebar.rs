@@ -20,6 +20,8 @@ mod imp {
         #[template_child]
         pub row_menu: TemplateChild<gio::MenuModel>,
         pub monitor: gio::VolumeMonitor,
+        /// Handlers on the monitor, which is shared by every window and outlives them.
+        pub monitor_handlers: RefCell<Vec<glib::SignalHandlerId>>,
         pub bookmarks_monitor: RefCell<Option<gio::FileMonitor>>,
         pub current: RefCell<Option<gio::File>>,
         pub actions: gio::SimpleActionGroup,
@@ -34,6 +36,7 @@ mod imp {
                 list: Default::default(),
                 row_menu: Default::default(),
                 monitor: gio::VolumeMonitor::get(),
+                monitor_handlers: Default::default(),
                 bookmarks_monitor: Default::default(),
                 current: Default::default(),
                 actions: gio::SimpleActionGroup::new(),
@@ -60,6 +63,12 @@ mod imp {
     }
 
     impl ObjectImpl for PlacesSidebar {
+        fn dispose(&self) {
+            for id in self.monitor_handlers.take() {
+                self.monitor.disconnect(id);
+            }
+        }
+
         fn signals() -> &'static [glib::subclass::Signal] {
             static SIGNALS: std::sync::OnceLock<Vec<glib::subclass::Signal>> =
                 std::sync::OnceLock::new();
@@ -91,46 +100,49 @@ mod imp {
                 move || obj.rebuild()
             );
             let m = &self.monitor;
-            m.connect_mount_added(glib::clone!(
-                #[strong]
-                rebuild,
-                move |_, _| rebuild()
-            ));
-            m.connect_mount_removed(glib::clone!(
-                #[strong]
-                rebuild,
-                move |_, _| rebuild()
-            ));
-            m.connect_mount_changed(glib::clone!(
-                #[strong]
-                rebuild,
-                move |_, _| rebuild()
-            ));
-            m.connect_volume_added(glib::clone!(
-                #[strong]
-                rebuild,
-                move |_, _| rebuild()
-            ));
-            m.connect_volume_removed(glib::clone!(
-                #[strong]
-                rebuild,
-                move |_, _| rebuild()
-            ));
-            m.connect_volume_changed(glib::clone!(
-                #[strong]
-                rebuild,
-                move |_, _| rebuild()
-            ));
-            m.connect_drive_connected(glib::clone!(
-                #[strong]
-                rebuild,
-                move |_, _| rebuild()
-            ));
-            m.connect_drive_disconnected(glib::clone!(
-                #[strong]
-                rebuild,
-                move |_, _| rebuild()
-            ));
+            let handlers = [
+                m.connect_mount_added(glib::clone!(
+                    #[strong]
+                    rebuild,
+                    move |_, _| rebuild()
+                )),
+                m.connect_mount_removed(glib::clone!(
+                    #[strong]
+                    rebuild,
+                    move |_, _| rebuild()
+                )),
+                m.connect_mount_changed(glib::clone!(
+                    #[strong]
+                    rebuild,
+                    move |_, _| rebuild()
+                )),
+                m.connect_volume_added(glib::clone!(
+                    #[strong]
+                    rebuild,
+                    move |_, _| rebuild()
+                )),
+                m.connect_volume_removed(glib::clone!(
+                    #[strong]
+                    rebuild,
+                    move |_, _| rebuild()
+                )),
+                m.connect_volume_changed(glib::clone!(
+                    #[strong]
+                    rebuild,
+                    move |_, _| rebuild()
+                )),
+                m.connect_drive_connected(glib::clone!(
+                    #[strong]
+                    rebuild,
+                    move |_, _| rebuild()
+                )),
+                m.connect_drive_disconnected(glib::clone!(
+                    #[strong]
+                    rebuild,
+                    move |_, _| rebuild()
+                )),
+            ];
+            self.monitor_handlers.replace(handlers.into());
 
             // The GTK file chooser and Nautilus edit the same bookmarks file.
             let bookmarks = gio::File::for_path(crate::bookmarks::path());

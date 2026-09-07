@@ -211,7 +211,7 @@ impl SpiralApplication {
         );
     }
 
-    /// An empty window, for `app.new-window` and for tabs dragged out of their window.
+    /// An empty window, for tabs dragged out of their window.
     pub fn new_window(&self) -> SpiralWindow {
         let win = SpiralWindow::new(self);
         win.present();
@@ -284,7 +284,7 @@ impl SpiralApplication {
             .build();
         let new_window = gio::ActionEntry::builder("new-window")
             .activate(|app: &Self, _, _| {
-                app.new_window();
+                app.open_window(&[]);
             })
             .build();
         let about = gio::ActionEntry::builder("about")

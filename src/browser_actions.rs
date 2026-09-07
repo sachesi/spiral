@@ -211,7 +211,7 @@ impl BrowserView {
                 ));
             }
         ));
-        self.clipboard().connect_changed(glib::clone!(
+        let clipboard_handler = self.clipboard().connect_changed(glib::clone!(
             #[strong]
             update,
             #[weak(rename_to = view)]
@@ -227,6 +227,7 @@ impl BrowserView {
                 });
             }
         ));
+        imp.clipboard_handler.replace(Some(clipboard_handler));
         for key in ["show-delete-permanently", "show-create-link"] {
             imp.settings.connect_changed(
                 Some(key),

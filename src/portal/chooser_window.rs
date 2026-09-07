@@ -373,11 +373,16 @@ async fn run(
         Rc::new(RefCell::new(None));
     let (done_tx, done_rx) = futures_channel::oneshot::channel::<()>();
     let done_tx = Rc::new(RefCell::new(Some(done_tx)));
-    let finish = {
-        let result = result.clone();
-        let done_tx = done_tx.clone();
-        let window = window.clone();
-        Rc::new(move |r: Result<SelectedFiles, PortalError>| {
+    // Weak, because the window's own close request and buttons hold these closures: a
+    // strong reference from there would keep the window and its view alive for good.
+    let finish = Rc::new(glib::clone!(
+        #[strong]
+        result,
+        #[strong]
+        done_tx,
+        #[weak]
+        window,
+        move |r: Result<SelectedFiles, PortalError>| {
             if result.borrow().is_none() {
                 result.replace(Some(r));
                 if let Some(tx) = done_tx.borrow_mut().take() {
@@ -385,8 +390,8 @@ async fn run(
                 }
                 window.close();
             }
-        })
-    };
+        }
+    ));
 
     let collect_choices = {
         let choice_widgets = choice_widgets.clone();
@@ -420,13 +425,19 @@ async fn run(
         }
     };
 
-    let on_accept: Rc<dyn Fn()> = {
-        let finish = finish.clone();
-        let view = view.clone();
-        let name_entry = name_entry.clone();
-        let window = window.clone();
-        let mode = Rc::new(mode);
-        Rc::new(move || {
+    let mode = Rc::new(mode);
+    let on_accept: Rc<dyn Fn()> = Rc::new(glib::clone!(
+        #[strong]
+        finish,
+        #[weak]
+        view,
+        #[weak]
+        name_entry,
+        #[weak]
+        window,
+        #[strong]
+        mode,
+        move || {
             let Some(location) = view.location() else {
                 return;
             };
@@ -505,8 +516,8 @@ async fn run(
                     finish(Ok(collect_choices(sel)));
                 }
             }
-        })
-    };
+        }
+    ));
     accept.connect_clicked(glib::clone!(
         #[strong]
         on_accept,
