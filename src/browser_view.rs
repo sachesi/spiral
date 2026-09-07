@@ -63,6 +63,10 @@ mod imp {
         /// Until when the strip puts itself back at the folder being viewed, on the
         /// monotonic clock.
         pub scroll_until: Cell<i64>,
+        /// Where a drag is hovering over the strip, and the frame callback that pushes
+        /// the strip along and marks the column the drop would land in.
+        pub drag_at: Cell<(f64, f64)>,
+        pub drag_tick: RefCell<Option<gtk::TickCallbackId>>,
 
         #[property(get)]
         pub model: FolderModel,
@@ -143,6 +147,8 @@ mod imp {
                 preview_gen: Default::default(),
                 columns_pending: Default::default(),
                 scroll_until: Default::default(),
+                drag_at: Default::default(),
+                drag_tick: Default::default(),
                 error_page: Default::default(),
                 empty_page: Default::default(),
                 floating_bar: Default::default(),
@@ -1291,6 +1297,8 @@ impl BrowserView {
         x: f64,
         y: f64,
     ) -> bool {
+        // The drag is over, whatever comes of it.
+        self.end_strip_drag();
         let Ok(list) = value.get::<gtk::gdk::FileList>() else {
             return false;
         };

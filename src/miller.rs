@@ -27,11 +27,40 @@ const PREVIEW_DELAY: Duration = Duration::from_millis(60);
 const MARK_TRIES: u32 = 40;
 /// How long the strip keeps putting itself back at the far right after a change.
 const SCROLL_WINDOW: Duration = Duration::from_millis(250);
+/// How far from an end of the strip a drag starts pushing it along, and how fast a drag
+/// held right at the end pushes, in pixels a frame.
+const DRAG_EDGE: f64 = 48.0;
+const DRAG_SPEED: f64 = 20.0;
+/// What a touchpad's own units are worth, as `GtkScrolledWindow` weighs them.
+const SURFACE_SCROLL_FACTOR: f64 = 2.5;
 
 /// A column that is not the folder being viewed: its own listing of `dir`.
 pub struct SideColumn {
     model: FolderModel,
     root: gtk::ScrolledWindow,
+}
+
+/// The column widget at a point in `root`'s own coordinates.
+fn column_at(root: &impl IsA<gtk::Widget>, x: f64, y: f64) -> Option<gtk::Widget> {
+    let mut widget = root.as_ref().pick(x, y, gtk::PickFlags::DEFAULT);
+    while let Some(w) = widget {
+        if w.has_css_class("spiral-miller-column") {
+            return Some(w);
+        }
+        widget = w.parent();
+    }
+    None
+}
+
+/// Every column of the strip beside the one being viewed.
+fn side_roots(view: &BrowserView) -> Vec<gtk::ScrolledWindow> {
+    let imp = view.imp();
+    let columns = imp.side_columns.borrow();
+    columns
+        .iter()
+        .chain(imp.preview_column.borrow().iter())
+        .map(|column| column.root.clone())
+        .collect()
 }
 
 /// Select `file` once the column showing it has listed enough to hold it.
@@ -98,6 +127,121 @@ impl BrowserView {
             );
         }
         self.setup_miller_keys();
+        self.setup_strip_input();
+    }
+
+    /// Shift and the wheel move the strip sideways, and a drag held near either end
+    /// pushes it along, so a column that is off screen can still be reached.
+    fn setup_strip_input(&self) {
+        // GTK swaps the axes for a shifted scroll on its own, but the column under the
+        // pointer takes the event and answers "handled" for something it did nothing
+        // with: it scrolls up and down, and only the strip scrolls sideways.
+        let scroll = gtk::EventControllerScroll::new(gtk::EventControllerScrollFlags::VERTICAL);
+        scroll.set_propagation_phase(gtk::PropagationPhase::Capture);
+        scroll.connect_scroll(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            #[upgrade_or]
+            glib::Propagation::Proceed,
+            move |controller, _, dy| {
+                if !controller
+                    .current_event_state()
+                    .contains(gdk::ModifierType::SHIFT_MASK)
+                {
+                    return glib::Propagation::Proceed;
+                }
+                let adjustment = view.imp().columns_scroll.hadjustment();
+                // The step GTK gives a wheel detent, so the strip moves like the rest.
+                let step = match controller.unit() {
+                    gdk::ScrollUnit::Wheel => adjustment.page_size().powf(2.0 / 3.0),
+                    _ => SURFACE_SCROLL_FACTOR,
+                };
+                adjustment.set_value(adjustment.value() + dy * step);
+                glib::Propagation::Stop
+            }
+        ));
+        self.imp().columns_scroll.add_controller(scroll);
+
+        let drag = gtk::DropControllerMotion::new();
+        let at = glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |_: &gtk::DropControllerMotion, x: f64, y: f64| view.push_strip(Some((x, y)))
+        );
+        drag.connect_enter(at.clone());
+        drag.connect_motion(at);
+        drag.connect_leave(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |_| view.push_strip(None)
+        ));
+        self.imp().columns_scroll.add_controller(drag);
+    }
+
+    /// Follow a drag over the strip: mark the column it would land in, and push the
+    /// strip along while it hovers near either end.
+    fn push_strip(&self, at: Option<(f64, f64)>) {
+        let imp = self.imp();
+        let Some((x, y)) = at else {
+            self.end_strip_drag();
+            return;
+        };
+        imp.drag_at.set((x, y));
+        self.mark_drop_column(column_at(&*imp.columns_scroll, x, y).as_ref());
+        if imp.drag_tick.borrow().is_some() || self.strip_push(x) == 0.0 {
+            return;
+        }
+        let tick = imp.columns_scroll.add_tick_callback(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            #[upgrade_or]
+            glib::ControlFlow::Break,
+            move |scroll, _| {
+                let (x, y) = view.imp().drag_at.get();
+                let adjustment = scroll.hadjustment();
+                let was = adjustment.value();
+                adjustment.set_value(was + view.strip_push(x));
+                // Nothing left to push. A drag that ends over the strip says nothing
+                // about it, so this is also what stops the pushing after a drop.
+                if adjustment.value() == was {
+                    view.imp().drag_tick.take();
+                    return glib::ControlFlow::Break;
+                }
+                // The column under the pointer changes as the strip slides past it, and
+                // GTK only looks again when the pointer itself moves.
+                view.mark_drop_column(column_at(scroll, x, y).as_ref());
+                glib::ControlFlow::Continue
+            }
+        ));
+        imp.drag_tick.replace(Some(tick));
+    }
+
+    /// How fast a drag hovering at `x` pushes the strip, in pixels a frame.
+    fn strip_push(&self, x: f64) -> f64 {
+        let width = self.imp().columns_scroll.width() as f64;
+        let past_start = (DRAG_EDGE - x).clamp(0.0, DRAG_EDGE);
+        let past_end = (x - (width - DRAG_EDGE)).clamp(0.0, DRAG_EDGE);
+        (past_end - past_start) / DRAG_EDGE * DRAG_SPEED
+    }
+
+    /// The drag is over: stop pushing and take the mark off.
+    pub(crate) fn end_strip_drag(&self) {
+        if let Some(tick) = self.imp().drag_tick.take() {
+            tick.remove();
+        }
+        self.mark_drop_column(None);
+    }
+
+    /// Show which column a drop would land in. GTK's own `:drop(active)` is a frame or
+    /// more behind while the strip is moving, and it would point at the wrong folder.
+    fn mark_drop_column(&self, target: Option<&gtk::Widget>) {
+        for root in side_roots(self) {
+            if Some(root.upcast_ref::<gtk::Widget>()) == target {
+                root.add_css_class("spiral-drop-column");
+            } else {
+                root.remove_css_class("spiral-drop-column");
+            }
+        }
     }
 
     /// Rebuild after the current change has been dealt with: navigating from a column
@@ -299,17 +443,9 @@ impl BrowserView {
     /// Whether a point in the stack falls in a column other than the current folder's.
     /// The gestures the views share act on `model()`, which those columns do not show.
     pub(crate) fn in_side_column(&self, x: f64, y: f64) -> bool {
-        if self.imp().view_mode.get() != ViewMode::Columns {
-            return false;
-        }
-        let mut widget = self.imp().stack.pick(x, y, gtk::PickFlags::DEFAULT);
-        while let Some(w) = widget {
-            if w.has_css_class("spiral-miller-column") {
-                return !w.has_css_class("spiral-miller-current");
-            }
-            widget = w.parent();
-        }
-        false
+        self.imp().view_mode.get() == ViewMode::Columns
+            && column_at(&*self.imp().stack, x, y)
+                .is_some_and(|w| !w.has_css_class("spiral-miller-current"))
     }
 
     /// Icon, name and lock emblem. Only the current folder's column carries the position
