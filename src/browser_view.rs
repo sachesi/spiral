@@ -170,6 +170,7 @@ mod imp {
             let obj = self.obj();
             obj.setup_actions();
             obj.setup_drag_source();
+            obj.setup_background_click();
 
             // Dropping on empty space copies/moves into the folder being viewed.
             if !obj.chooser_mode() {
@@ -1119,6 +1120,35 @@ impl BrowserView {
                 let empty = cell_at(&stack, x, y).is_none();
                 imp.grid_view.set_enable_rubberband(empty);
                 imp.column_view.set_enable_rubberband(empty);
+            }
+        ));
+        self.imp().stack.add_controller(click);
+    }
+
+    /// A press on empty space takes the focus and drops the selection. GTK hands the focus
+    /// to list items only, so without this the keys bound to the view -- Ctrl+A, Delete,
+    /// F2 -- stay dead until a file is clicked.
+    fn setup_background_click(&self) {
+        let click = gtk::GestureClick::builder()
+            .button(0)
+            .propagation_phase(gtk::PropagationPhase::Capture)
+            .build();
+        click.connect_pressed(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |gesture, _, x, y| {
+                let stack = view.imp().stack.clone().upcast::<gtk::Widget>();
+                if cell_at(&stack, x, y).is_some() {
+                    return;
+                }
+                view.grab_view_focus();
+                let held = gesture.current_event_state();
+                let selecting = held.contains(gdk::ModifierType::CONTROL_MASK)
+                    || held.contains(gdk::ModifierType::SHIFT_MASK);
+                // A right click keeps the selection; the menu it opens acts on the folder.
+                if !selecting && gesture.current_button() != gdk::BUTTON_SECONDARY {
+                    view.model().selection().unselect_all();
+                }
             }
         ));
         self.imp().stack.add_controller(click);
