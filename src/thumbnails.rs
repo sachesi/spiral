@@ -20,7 +20,10 @@ const SIZE: i32 = 256;
 const MAX_PARALLEL: usize = 4;
 const CACHE_CAP: usize = 512;
 
-type Key = (String, u64);
+/// URI, modification time and size. The size belongs in the key because a file being
+/// written is seen empty first, and a verdict of "no thumbnail" taken from that snapshot
+/// would otherwise outlive the write whenever both land in the same second.
+type Key = (String, u64, u64);
 
 thread_local! {
     static CACHE: RefCell<HashMap<Key, Option<gdk::Texture>>> = RefCell::new(HashMap::new());
@@ -53,7 +56,7 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
         .modification_date_time()
         .map(|d| d.to_unix() as u64)
         .unwrap_or(0);
-    let key = (uri.clone(), mtime);
+    let key = (uri.clone(), mtime, info.size().max(0) as u64);
     if let Some(cached) = CACHE.with(|c| c.borrow().get(&key).cloned()) {
         return cached;
     }
