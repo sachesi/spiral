@@ -60,9 +60,6 @@ mod imp {
         pub preview_gen: Cell<u64>,
         /// Set while a rebuild of the strip is waiting for the current change to end.
         pub columns_pending: Cell<bool>,
-        /// Until when the strip puts itself back at the folder being viewed, on the
-        /// monotonic clock.
-        pub scroll_until: Cell<i64>,
         /// Where a drag is hovering over the strip, and the frame callback that pushes
         /// the strip along and marks the column the drop would land in.
         pub drag_at: Cell<(f64, f64)>,
@@ -146,7 +143,6 @@ mod imp {
                 preview_column: Default::default(),
                 preview_gen: Default::default(),
                 columns_pending: Default::default(),
-                scroll_until: Default::default(),
                 drag_at: Default::default(),
                 drag_tick: Default::default(),
                 error_page: Default::default(),
@@ -270,7 +266,7 @@ mod imp {
                         obj,
                         move |_, _| {
                             obj.model().reload();
-                            obj.rebuild_columns();
+                            obj.refresh_columns();
                         }
                     ),
                 );
