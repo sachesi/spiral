@@ -256,6 +256,27 @@ impl BrowserView {
         ));
         imp.stack.add_controller(click);
 
+        // Middle click on a folder opens it in a new tab, as it does in the sidebar.
+        let middle = gtk::GestureClick::builder().button(2).build();
+        middle.connect_pressed(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |gesture, _, x, y| {
+                let stack = view.imp().stack.clone().upcast::<gtk::Widget>();
+                let folder = crate::browser_view::cell_at(&stack, x, y)
+                    .and_then(|cell| first_cell_position(&cell, 0))
+                    .and_then(|pos| view.model().info_at(pos))
+                    .filter(file_utils::is_dir);
+                if let Some(info) = folder
+                    && !view.in_side_column(x, y)
+                {
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
+                    view.emit_by_name::<()>("open-in-new-tab", &[&file_utils::file_of(&info)]);
+                }
+            }
+        ));
+        imp.stack.add_controller(middle);
+
         // Space previews the selection. Captured, because the window's search entry takes
         // typing before the view is asked; a text entry inside the view keeps its spaces.
         let keys = gtk::EventControllerKey::new();
