@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 16:17+0300\n"
+"POT-Creation-Date: 2026-09-07 16:31+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -819,51 +819,51 @@ msgstr "У PATH не знайдено емулятора термінала"
 msgid "Terminal"
 msgstr "Термінал"
 
-#: src/dialogs/preview.rs:104 ui/shortcuts_dialog.ui:234
+#: src/dialogs/preview.rs:107 ui/shortcuts_dialog.ui:234
 #, no-c-format
 msgid "Preview"
 msgstr "Перегляд"
 
-#: src/dialogs/preview.rs:318
+#: src/dialogs/preview.rs:320
 #, no-c-format
 msgid "Previous Page"
 msgstr "Попередня сторінка"
 
-#: src/dialogs/preview.rs:320
+#: src/dialogs/preview.rs:322
 #, no-c-format
 msgid "Next Page"
 msgstr "Наступна сторінка"
 
-#: src/dialogs/preview.rs:393 src/dialogs/preview.rs:431
+#: src/dialogs/preview.rs:395 src/dialogs/preview.rs:434
 #, no-c-format
 msgid "Fit"
 msgstr "Вмістити"
 
-#: src/dialogs/preview.rs:395 ui/shortcuts_dialog.ui:151 ui/window.ui:446
+#: src/dialogs/preview.rs:397 ui/shortcuts_dialog.ui:151 ui/window.ui:446
 #: ui/window.ui:530
 #, no-c-format
 msgid "Zoom Out"
 msgstr "Зменшити"
 
-#: src/dialogs/preview.rs:396
+#: src/dialogs/preview.rs:398
 #, no-c-format
 msgid "Fit to Window"
 msgstr "Вмістити у вікно"
 
-#: src/dialogs/preview.rs:397 ui/shortcuts_dialog.ui:145 ui/window.ui:456
+#: src/dialogs/preview.rs:399 ui/shortcuts_dialog.ui:145 ui/window.ui:456
 #: ui/window.ui:540
 #, no-c-format
 msgid "Zoom In"
 msgstr "Збільшити"
 
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:561
+#: src/dialogs/preview.rs:622
 #, no-c-format
 msgid "%t, %s"
 msgstr "%t, %s"
 
 #. Translators: %p is the page being shown, %n the number of pages in the document.
-#: src/dialogs/preview.rs:566
+#: src/dialogs/preview.rs:627
 #, no-c-format
 msgid "%p of %n"
 msgstr "%p з %n"
