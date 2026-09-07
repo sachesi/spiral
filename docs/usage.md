@@ -154,8 +154,9 @@ PDF, and Return hands the file to its application. The preview has no close butt
 a preview, and the keys that opened it close it again.
 
 The preview takes the proportions of what it holds, and takes them before it opens, so it
-does not resize itself in front of you: a picture keeps its own, read from the file header;
-a PDF opens upright and a video at the proportions of its stream once it reports them; text
+does not resize itself in front of you. It is as large as the window it opens over allows: a picture keeps its own, read from the file header;
+a PDF opens at the size of its page, upright when the file keeps that size to itself, and a
+video at the proportions of its stream once it reports them; text
 gets a page to read on and the sound player is no larger than its controls. Ctrl with + and
 -, Ctrl and the wheel, which zooms around the pointer, or the buttons in the bar over the
 picture zoom a picture or a page;

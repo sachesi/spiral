@@ -38,7 +38,9 @@ const SOUND_ICON_SIZE: i32 = 96;
 const LOAD_DELAY: Duration = Duration::from_millis(120);
 /// What the header takes before it has been measured.
 const HEADER_HEIGHT: i32 = 46;
-/// Bounds the dialog shapes itself within, whatever proportions the content has.
+/// How much of the window the preview may take, and the bounds it keeps until it is told
+/// how large that window is.
+const WINDOW_SHARE: f64 = 0.82;
 const MAX_WIDTH: i32 = 900;
 const MAX_HEIGHT: i32 = 620;
 const MIN_SIDE: i32 = 180;
@@ -51,8 +53,8 @@ const TEXT_SHAPE: (i32, i32) = (760, 514);
 /// stream reported anything, so nothing has to move.
 const VIDEO_BOX: (i32, i32) = (720, 405);
 const IMAGE_SHAPE: (i32, i32) = (720, 494);
-/// A4 upright, which is what most PDFs turn out to be.
-const PAGE_SHAPE: (i32, i32) = (438, 620);
+/// A4 upright in points, which is what most PDFs turn out to be.
+const PAGE_POINTS: (f64, f64) = (595.28, 841.89);
 const SOUND_SHAPE: (i32, i32) = (420, 234);
 /// With a cover to show, the player is worth a little more room.
 const SOUND_COVER_SIZE: i32 = 200;
@@ -85,6 +87,8 @@ mod imp {
         /// The content size last asked for, to tell a shape that has to change from one
         /// that would only flinch.
         pub shaped: Cell<(i32, i32)>,
+        /// The largest content the dialog may take, from the window it opens over.
+        pub bounds: Cell<(i32, i32)>,
         /// What is playing, stopped when it is replaced and when the dialog closes.
         pub media: RefCell<Option<gtk::MediaStream>>,
         /// Moves the selection the preview follows, by -1 or 1.
@@ -104,7 +108,12 @@ mod imp {
         type ParentType = adw::Dialog;
     }
 
-    impl ObjectImpl for PreviewDialog {}
+    impl ObjectImpl for PreviewDialog {
+        fn constructed(&self) {
+            self.parent_constructed();
+            self.bounds.set((MAX_WIDTH, MAX_HEIGHT));
+        }
+    }
     impl WidgetImpl for PreviewDialog {}
     impl AdwDialogImpl for PreviewDialog {
         fn closed(&self) {
@@ -228,6 +237,17 @@ impl PreviewDialog {
         self.add_controller(keys);
     }
 
+    /// The room the preview has: a share of the window it opens over, so a page or a
+    /// picture is shown as large as that window can hold rather than at a fixed size.
+    pub fn set_bounds(&self, width: i32, height: i32) {
+        if width > 0 && height > 0 {
+            self.imp().bounds.set((
+                ((width as f64 * WINDOW_SHARE) as i32).max(MIN_SIDE),
+                ((height as f64 * WINDOW_SHARE) as i32).max(MIN_SIDE),
+            ));
+        }
+    }
+
     /// Called with -1 or 1 when the arrows ask for the file before or after this one.
     pub fn connect_step(&self, f: impl Fn(i32) + 'static) {
         self.imp().step.replace(Some(Box::new(f)));
@@ -293,9 +313,9 @@ impl PreviewDialog {
             return self.video(&file);
         }
         if content_type.starts_with("audio/") {
-            // The cover, where a thumbnailer has pulled one out of the file already.
-            let cover = crate::thumbnails::load(info).await;
-            return self.sound(info, &file, cover);
+            // Only a cover that is already there: one made now would arrive after the
+            // dialog had opened at the size of a player without one.
+            return self.sound(info, &file, thumbnail_texture(info));
         }
         if gio::content_type_is_a(&content_type, "text/plain")
             && let Some(text) = load_text(&file).await
@@ -366,7 +386,6 @@ impl PreviewDialog {
                 art.add_css_class("spiral-preview-cover");
                 // The rounded corners of the class only show where the picture is clipped.
                 art.set_overflow(gtk::Overflow::Hidden);
-                self.shape(SOUND_COVER_SHAPE.0, SOUND_COVER_SHAPE.1);
                 art.upcast()
             }
             None => {
@@ -680,20 +699,25 @@ impl PreviewDialog {
             let (width, height) = thumbnail_size(info).unwrap_or((16.0, 9.0));
             return self.shape_boxed(width, height, VIDEO_BOX);
         } else if content_type.starts_with("audio/") {
-            SOUND_SHAPE
+            if thumbnail_size(info).is_some() {
+                SOUND_COVER_SHAPE
+            } else {
+                SOUND_SHAPE
+            }
         } else if gio::content_type_is_a(&content_type, "text/plain") {
             TEXT_SHAPE
         } else if content_type == "application/pdf" && can_render_pdf() {
             // A thumbnail of the first page has the proportions of the page; failing that,
             // the page dictionary usually says so itself.
-            let size = thumbnail_size(info).or_else(|| {
-                let page = pdf_page_size(&file_utils::file_of(info).path()?)?;
-                Some(page_pixels(page))
-            });
-            match size {
-                Some((width, height)) => return self.shape_fitted(width, height),
-                None => PAGE_SHAPE,
-            }
+            let size = thumbnail_size(info)
+                .or_else(|| {
+                    let page = pdf_page_size(&file_utils::file_of(info).path()?)?;
+                    Some(page_pixels(page))
+                })
+                // Upright, the proportions most pages have, and as large as there is room
+                // for: a page whose size is locked away in the file is still a page.
+                .unwrap_or_else(|| page_pixels(PAGE_POINTS));
+            return self.shape_fitted(size.0, size.1);
         } else {
             INFO_SHAPE
         };
@@ -710,9 +734,10 @@ impl PreviewDialog {
             .measure(gtk::Orientation::Vertical, -1)
             .0
             .max(HEADER_HEIGHT);
+        let (most_width, most_height) = self.imp().bounds.get();
         let (width, height) = (
-            width.clamp(MIN_SIDE, MAX_WIDTH),
-            height.clamp(MIN_SIDE, MAX_HEIGHT),
+            width.clamp(MIN_SIDE, most_width),
+            height.clamp(MIN_SIDE, most_height),
         );
         self.imp().shaped.set((width, height));
         self.set_content_width(width);
@@ -730,6 +755,8 @@ impl PreviewDialog {
     /// `width` by `height` scaled to fill `box_`, up as well as down: what is shown at a
     /// size of its own choosing keeps its proportions but not its pixel count.
     fn shape_boxed(&self, width: f64, height: f64, box_: (i32, i32)) {
+        let bounds = self.imp().bounds.get();
+        let box_ = (box_.0.min(bounds.0), box_.1.min(bounds.1));
         if width <= 0.0 || height <= 0.0 {
             return;
         }
@@ -743,8 +770,9 @@ impl PreviewDialog {
         if width <= 0.0 || height <= 0.0 {
             return;
         }
-        let scale = (MAX_WIDTH as f64 / width)
-            .min(MAX_HEIGHT as f64 / height)
+        let (most_width, most_height) = self.imp().bounds.get();
+        let scale = (most_width as f64 / width)
+            .min(most_height as f64 / height)
             .min(1.0);
         self.shape((width * scale) as i32, (height * scale) as i32);
     }
@@ -855,6 +883,13 @@ fn pdf_page_size(path: &Path) -> Option<(f64, f64)> {
     (width > 1.0 && height > 1.0).then_some((width, height))
 }
 
+/// The thumbnail the listing already holds, read straight from the cache: no thumbnailer
+/// is started for it, so the answer is there before the preview is drawn.
+fn thumbnail_texture(info: &gio::FileInfo) -> Option<gdk::Texture> {
+    let path = info.attribute_byte_string("thumbnail::path")?;
+    gdk::Texture::from_filename(path.as_str()).ok()
+}
+
 /// The size of the thumbnail the listing already holds, which has the proportions of the
 /// file itself. Reading its header is a few bytes and no decode.
 fn thumbnail_size(info: &gio::FileInfo) -> Option<(f64, f64)> {
@@ -961,7 +996,7 @@ async fn pdf_info(path: PathBuf) -> Option<(u32, (f64, f64))> {
                             height.parse::<f64>().ok()?,
                         ))
                     })
-                    .unwrap_or((PAGE_SHAPE.0 as f64, PAGE_SHAPE.1 as f64));
+                    .unwrap_or(PAGE_POINTS);
                 // "Page rot:        90": the page is drawn turned, so it is shown turned.
                 let turned = text
                     .lines()
