@@ -283,6 +283,10 @@ impl BrowserView {
         let infos = self.model().selected_infos();
         let Some(info) = infos.first() else { return };
         let dialog = crate::dialogs::PreviewDialog::new();
+        // The preview is shaped to what it holds, within what the window can hold.
+        if let Some(window) = self.root().and_downcast::<gtk::Window>() {
+            dialog.set_bounds(window.width(), window.height());
+        }
         dialog.show_info(info);
         dialog.connect_step(glib::clone!(
             #[weak(rename_to = view)]
