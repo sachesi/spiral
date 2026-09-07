@@ -287,7 +287,6 @@ impl BrowserView {
         if let Some(window) = self.root().and_downcast::<gtk::Window>() {
             dialog.set_bounds(window.width(), window.height());
         }
-        dialog.show_info(info);
         dialog.connect_step(glib::clone!(
             #[weak(rename_to = view)]
             self,
@@ -312,7 +311,8 @@ impl BrowserView {
             self,
             move |_, _, _| {
                 if let Some(info) = view.model().selected_infos().first() {
-                    dialog.show_info(info);
+                    let (dialog, info) = (dialog.clone(), info.clone());
+                    glib::spawn_future_local(async move { dialog.show_info(&info).await });
                 }
             }
         ));
@@ -338,8 +338,8 @@ impl BrowserView {
                 ));
             }
         ));
-        // A PDF that will not say how large its pages are is asked before the dialog is
-        // shown, so it opens at the shape it keeps.
+        // The file is shaped before the dialog is shown, so it opens at the shape it keeps;
+        // a PDF that will not say how large its pages are is asked as well.
         let info = info.clone();
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
@@ -348,6 +348,7 @@ impl BrowserView {
             #[strong]
             dialog,
             async move {
+                dialog.show_info(&info).await;
                 dialog.shape_ahead(&info).await;
                 dialog.present(Some(&view));
             }

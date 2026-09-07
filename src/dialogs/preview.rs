@@ -242,16 +242,6 @@ impl PreviewDialog {
         self.add_controller(keys);
     }
 
-    /// What shape the first page of `info` is, as far as can be told without rendering it.
-    fn pdf_proportions(&self, info: &gio::FileInfo) -> (f64, f64) {
-        if let Some(known) = self.imp().page_size.get() {
-            return known;
-        }
-        thumbnail_size(info)
-            .or_else(|| pdf_page_size(&file_utils::file_of(info).path()?))
-            .unwrap_or(PAGE_POINTS)
-    }
-
     /// The room the preview has: a share of the window it opens over, so a page or a
     /// picture is shown as large as that window can hold rather than at a fixed size.
     pub fn set_bounds(&self, width: i32, height: i32) {
@@ -277,21 +267,22 @@ impl PreviewDialog {
     /// that keep it inside a compressed object stream where nothing else can read it.
     /// Without this the dialog would open upright and turn itself over a moment later.
     pub async fn shape_ahead(&self, info: &gio::FileInfo) {
-        let file = file_utils::file_of(info);
-        let is_pdf = info
-            .content_type()
-            .is_some_and(|content_type| content_type == "application/pdf");
-        if !is_pdf || !can_render_pdf() || thumbnail_size(info).is_some() {
-            return;
-        }
-        let Some(path) = file.path() else { return };
-        if pdf_page_size(&path).is_some() {
+        let probe = Probe::of(info);
+        if probe.content_type != "application/pdf" {
             return;
         }
         let generation = self.imp().generation.get();
-        let Some((pages, size)) = pdf_info(path).await else {
-            return;
-        };
+        let facts = gio::spawn_blocking(move || {
+            let path = probe.path.as_deref()?;
+            let known = probe.thumbnail_size().is_some() || pdf_page_size(path).is_some();
+            (can_render_pdf() && !known)
+                .then(|| pdf_facts(path))
+                .flatten()
+        })
+        .await
+        .ok()
+        .flatten();
+        let Some((pages, size)) = facts else { return };
         // The selection may have moved on while the tool ran.
         if self.imp().generation.get() != generation {
             return;
@@ -302,7 +293,7 @@ impl PreviewDialog {
     }
 
     /// Show `info`: the header at once, the content when it has loaded.
-    pub fn show_info(&self, info: &gio::FileInfo) {
+    pub async fn show_info(&self, info: &gio::FileInfo) {
         let imp = self.imp();
         let generation = imp.generation.get() + 1;
         imp.generation.set(generation);
@@ -313,7 +304,16 @@ impl PreviewDialog {
         imp.page_count.set(None);
         imp.title.set_title(&file_utils::display_name(info));
         imp.title.set_subtitle(&subtitle(info));
-        self.shape_for_kind(info);
+        // The shape comes from headers on disk, read off the main thread. Until it is
+        // known the page on screen stays, so nothing is drawn in a shape it will not keep.
+        let probe = Probe::of(info);
+        let shape = gio::spawn_blocking(move || probe.shape())
+            .await
+            .unwrap_or(Shape::Fixed(INFO_SHAPE));
+        if imp.generation.get() != generation {
+            return;
+        }
+        self.apply_shape(shape);
         self.show_child(&spinner());
         let info = info.clone();
         glib::spawn_future_local(glib::clone!(
@@ -349,7 +349,6 @@ impl PreviewDialog {
         }
         if content_type.starts_with("image/")
             && info.size() <= IMAGE_LIMIT
-            && image_size(&file).is_none_or(|(w, h)| w as i64 * h as i64 <= IMAGE_PIXELS)
             && let Some(texture) = load_texture(&file).await
         {
             self.shape_to(&texture);
@@ -729,44 +728,15 @@ impl PreviewDialog {
         icon.upcast()
     }
 
-    /// The shape the file will want, from what the listing already knows and, for a local
-    /// image, from its header alone. Done before the content is loaded so that the dialog
-    /// opens at its size instead of growing into it a moment later.
-    fn shape_for_kind(&self, info: &gio::FileInfo) {
-        if file_utils::is_dir(info) {
-            return self.shape(INFO_SHAPE.0, INFO_SHAPE.1);
+    /// Give the dialog the shape a probe found for the file, before its content is loaded,
+    /// so that it opens at its size instead of growing into it a moment later.
+    fn apply_shape(&self, shape: Shape) {
+        match shape {
+            Shape::Fitted(width, height) => self.shape_fitted(width, height),
+            Shape::Page(width, height) => self.shape_boxed(width, height, self.imp().bounds.get()),
+            Shape::Video(width, height) => self.shape_boxed(width, height, VIDEO_BOX),
+            Shape::Fixed((width, height)) => self.shape(width, height),
         }
-        let content_type = info.content_type().unwrap_or_default().to_string();
-        let (width, height) = if content_type.starts_with("image/") {
-            // Reading the header of an image is a few bytes, not a decode.
-            match image_size(&file_utils::file_of(info)) {
-                Some((width, height)) => return self.shape_fitted(width as f64, height as f64),
-                None => IMAGE_SHAPE,
-            }
-        } else if content_type.starts_with("video/") {
-            // The thumbnail, when there is one, has the proportions of the video itself.
-            let (width, height) = thumbnail_size(info).unwrap_or((16.0, 9.0));
-            return self.shape_boxed(width, height, VIDEO_BOX);
-        } else if content_type.starts_with("audio/") {
-            SOUND_SHAPE
-        } else if gio::content_type_is_a(&content_type, "text/plain") {
-            TEXT_SHAPE
-        } else if content_type == "application/pdf" && can_render_pdf() {
-            // A thumbnail of the first page has the proportions of the page; failing that,
-            // the page dictionary usually says so itself.
-            // The proportions come from the thumbnail, from the page dictionary, or from
-            // A4, which is what most pages are; the size comes from the room there is. A
-            // thumbnail is 256 pixels tall and a page dictionary is in points, so neither
-            // is a size to show a page at.
-            let (width, height) = self.pdf_proportions(info);
-            return self.shape_boxed(width, height, self.imp().bounds.get());
-        } else if let Some((width, height)) = thumbnail_size(info) {
-            // What will be shown is the thumbnail, at its own size.
-            return self.shape_fitted(width, height);
-        } else {
-            INFO_SHAPE
-        };
-        self.shape(width, height);
     }
 
     /// Give the dialog the proportions of what it holds, within the bounds it may take.
@@ -909,13 +879,12 @@ fn head_of(path: &Path, most: usize) -> Option<Vec<u8>> {
 
 /// Width and height of a local image from its header alone, turned the way its EXIF tag
 /// says, which is the way it will be drawn.
-fn image_size(file: &gio::File) -> Option<(i32, i32)> {
-    let path = file.path()?;
-    let (format, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(&path)?;
+fn image_size(path: &Path) -> Option<(i32, i32)> {
+    let (format, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(path)?;
     if width <= 0 || height <= 0 {
         return None;
     }
-    let turned = format.name().as_deref() == Some("jpeg") && exif_turned(&path);
+    let turned = format.name().as_deref() == Some("jpeg") && exif_turned(path);
     Some(if turned {
         (height, width)
     } else {
@@ -983,12 +952,84 @@ fn media_box(text: &str) -> Option<(f64, f64)> {
     (width > 1.0 && height > 1.0).then_some((width, height))
 }
 
-/// The size of the thumbnail the listing already holds, which has the proportions of the
-/// file itself. Reading its header is a few bytes and no decode.
-fn thumbnail_size(info: &gio::FileInfo) -> Option<(f64, f64)> {
-    let path = info.attribute_byte_string("thumbnail::path")?;
-    let (_, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(path.as_str())?;
-    (width > 0 && height > 0).then_some((width as f64, height as f64))
+/// What is known about a file before its preview is shaped, gathered on the main thread
+/// from the listing and read on another, since it means reading headers on disk and
+/// looking for the PDF tool.
+struct Probe {
+    is_dir: bool,
+    content_type: String,
+    path: Option<PathBuf>,
+    /// The thumbnail the listing already holds, which has the proportions of the file.
+    thumbnail: Option<String>,
+}
+
+/// The shape a file wants: at its own size, never enlarged; as proportions to fill the
+/// room there is, or the video box, with; or one of the fixed shapes for content whose
+/// proportions are not known until it is loaded.
+enum Shape {
+    Fitted(f64, f64),
+    Page(f64, f64),
+    Video(f64, f64),
+    Fixed((i32, i32)),
+}
+
+impl Probe {
+    fn of(info: &gio::FileInfo) -> Self {
+        Self {
+            is_dir: file_utils::is_dir(info),
+            content_type: info.content_type().unwrap_or_default().to_string(),
+            path: file_utils::file_of(info).path(),
+            thumbnail: info
+                .attribute_byte_string("thumbnail::path")
+                .map(|path| path.to_string()),
+        }
+    }
+
+    fn shape(&self) -> Shape {
+        let content_type = self.content_type.as_str();
+        if self.is_dir {
+            return Shape::Fixed(INFO_SHAPE);
+        }
+        if content_type.starts_with("image/") {
+            // Reading the header of an image is a few bytes, not a decode.
+            return match self.path.as_deref().and_then(image_size) {
+                Some((width, height)) => Shape::Fitted(width as f64, height as f64),
+                None => Shape::Fixed(IMAGE_SHAPE),
+            };
+        }
+        if content_type.starts_with("video/") {
+            let (width, height) = self.thumbnail_size().unwrap_or((16.0, 9.0));
+            return Shape::Video(width, height);
+        }
+        if content_type.starts_with("audio/") {
+            return Shape::Fixed(SOUND_SHAPE);
+        }
+        if gio::content_type_is_a(content_type, "text/plain") {
+            return Shape::Fixed(TEXT_SHAPE);
+        }
+        if content_type == "application/pdf" && can_render_pdf() {
+            // The proportions come from the thumbnail, from the page dictionary, or from
+            // A4, which is what most pages are; the size comes from the room there is. A
+            // thumbnail is 256 pixels tall and a page dictionary is in points, so neither
+            // is a size to show a page at.
+            let (width, height) = self
+                .thumbnail_size()
+                .or_else(|| pdf_page_size(self.path.as_deref()?))
+                .unwrap_or(PAGE_POINTS);
+            return Shape::Page(width, height);
+        }
+        match self.thumbnail_size() {
+            // What will be shown is the thumbnail, at its own size.
+            Some((width, height)) => Shape::Fitted(width, height),
+            None => Shape::Fixed(INFO_SHAPE),
+        }
+    }
+
+    /// Reading the header of the thumbnail is a few bytes and no decode.
+    fn thumbnail_size(&self) -> Option<(f64, f64)> {
+        let (_, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(self.thumbnail.as_ref()?)?;
+        (width > 0 && height > 0).then_some((width as f64, height as f64))
+    }
 }
 
 /// Whether a PDF page can be drawn at all: without the tool, a PDF is shaped like the icon
@@ -1035,6 +1076,9 @@ fn text_view(text: &str) -> gtk::Widget {
 async fn load_texture(file: &gio::File) -> Option<gdk::Texture> {
     match file.path() {
         Some(path) => gio::spawn_blocking(move || {
+            if image_size(&path).is_some_and(|(w, h)| w as i64 * h as i64 > IMAGE_PIXELS) {
+                return None;
+            }
             // GTK's own loaders leave a photograph the way the camera held it; the EXIF
             // tag that says to turn it is honoured by the pixbuf loader alone.
             if exif_turned(&path) {
@@ -1088,48 +1132,50 @@ async fn load_text(file: &gio::File) -> Option<String> {
 
 /// How many pages the document has and how large one is, in points.
 async fn pdf_info(path: PathBuf) -> Option<(u32, (f64, f64))> {
-    gio::spawn_blocking(move || {
-        run_tool(
-            "pdfinfo",
-            &path,
-            |input, _| vec![input.as_os_str().to_owned()],
-            |out, _| {
-                let text = String::from_utf8_lossy(out);
-                let pages: u32 = text
-                    .lines()
-                    .find_map(|line| line.strip_prefix("Pages:"))
-                    .and_then(|count| count.trim().parse().ok())?;
-                // "Page size:       595.2 x 841.92 pts (A4)"
-                let (width, height) = text
-                    .lines()
-                    .find_map(|line| line.strip_prefix("Page size:"))
-                    .and_then(|size| size.trim().split_once(" x "))
-                    .and_then(|(width, height)| {
-                        let height = height.split_whitespace().next()?;
-                        Some((
-                            width.trim().parse::<f64>().ok()?,
-                            height.parse::<f64>().ok()?,
-                        ))
-                    })
-                    .unwrap_or(PAGE_POINTS);
-                // "Page rot:        90": the page is drawn turned, so it is shown turned.
-                let turned = text
-                    .lines()
-                    .find_map(|line| line.strip_prefix("Page rot:"))
-                    .and_then(|rot| rot.trim().parse::<i32>().ok())
-                    .is_some_and(|rot| rot.rem_euclid(180) == 90);
-                let size = if turned {
-                    (height, width)
-                } else {
-                    (width, height)
-                };
-                Some((pages, size))
-            },
-        )
-    })
-    .await
-    .ok()
-    .flatten()
+    gio::spawn_blocking(move || pdf_facts(&path))
+        .await
+        .ok()
+        .flatten()
+}
+
+fn pdf_facts(path: &Path) -> Option<(u32, (f64, f64))> {
+    run_tool(
+        "pdfinfo",
+        path,
+        |input, _| vec![input.as_os_str().to_owned()],
+        |out, _| {
+            let text = String::from_utf8_lossy(out);
+            let pages: u32 = text
+                .lines()
+                .find_map(|line| line.strip_prefix("Pages:"))
+                .and_then(|count| count.trim().parse().ok())?;
+            // "Page size:       595.2 x 841.92 pts (A4)"
+            let (width, height) = text
+                .lines()
+                .find_map(|line| line.strip_prefix("Page size:"))
+                .and_then(|size| size.trim().split_once(" x "))
+                .and_then(|(width, height)| {
+                    let height = height.split_whitespace().next()?;
+                    Some((
+                        width.trim().parse::<f64>().ok()?,
+                        height.parse::<f64>().ok()?,
+                    ))
+                })
+                .unwrap_or(PAGE_POINTS);
+            // "Page rot:        90": the page is drawn turned, so it is shown turned.
+            let turned = text
+                .lines()
+                .find_map(|line| line.strip_prefix("Page rot:"))
+                .and_then(|rot| rot.trim().parse::<i32>().ok())
+                .is_some_and(|rot| rot.rem_euclid(180) == 90);
+            let size = if turned {
+                (height, width)
+            } else {
+                (width, height)
+            };
+            Some((pages, size))
+        },
+    )
 }
 
 async fn pdf_page(path: PathBuf, page: u32) -> Option<gdk::Texture> {
