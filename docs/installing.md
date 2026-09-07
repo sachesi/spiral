@@ -8,12 +8,18 @@ libadwaita-devel libseccomp-devel gstreamer1-devel blueprint-compiler just`; on 
 `libgtk-4-dev libadwaita-1-dev libseccomp-dev libgstreamer1.0-dev blueprint-compiler
 just`. `just check` also wants `desktop-file-validate` and `appstreamcli`.
 
-To run: GTK 4.22, libadwaita 1.9, GStreamer, a session bus, and xdg-desktop-portal if you
-want the file chooser. Everything else is optional and picked up from `PATH` when present:
-`bwrap` for sandboxing, archive tools, a terminal emulator. Playing video and sound in the
-preview needs the GTK 4 sink from gst-plugins-rs (`gstreamer1-plugin-gtk4` on Fedora,
-`gstreamer1.0-gtk4` on Debian, `gst-plugin-gtk4` on Arch) and the plugins for the
-formats; without the sink, media files show their icon.
+To run: GTK 4.22, libadwaita 1.9, a session bus, and xdg-desktop-portal if you want the
+file chooser. The preview plays video and sound through GStreamer, which needs its base
+plugins and the GTK 4 sink from gst-plugins-rs: on Fedora `gstreamer1-plugins-base
+gstreamer1-plugin-gtk4`, on Debian `libgstreamer-plugins-base1.0-0 gstreamer1.0-gtk4`, on
+Arch `gst-plugins-base gst-plugin-gtk4`. The plugins for the formats themselves come from
+`gstreamer1-plugins-good` and its siblings; a file whose format has no plugin shows its
+icon instead. Everything else is optional and picked up from `PATH` when present: `bwrap`
+for sandboxing, archive tools, a terminal emulator.
+
+Installing the sink after Spiral has run once may leave a stale GStreamer plugin registry
+behind, and the preview then reports the sink missing until the registry is rebuilt:
+`rm -f ~/.cache/gstreamer-1.0/registry.*.bin`.
 
 ## Build
 

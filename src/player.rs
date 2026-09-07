@@ -27,12 +27,18 @@ const START_LIMIT: Duration = Duration::from_secs(5);
 
 thread_local! {
     static PLAYER: RefCell<Option<Player>> = const { RefCell::new(None) };
+    /// Set when the pipeline could not be built at all, so that a missing plugin is
+    /// looked for once and complained about once rather than at every media file.
+    static UNAVAILABLE: Cell<bool> = const { Cell::new(false) };
 }
 
 /// The one player, made on first use. `None` where GStreamer or the paintable sink is
 /// missing, in which case there is no playback to offer. A `gtk::MediaStream` that has
 /// failed once stays failed, so a player that has is replaced.
 pub fn player() -> Option<Player> {
+    if UNAVAILABLE.get() {
+        return None;
+    }
     PLAYER.with(|slot| {
         let mut slot = slot.borrow_mut();
         if slot.as_ref().is_some_and(|player| player.error().is_some()) {
@@ -40,6 +46,7 @@ pub fn player() -> Option<Player> {
         }
         if slot.is_none() {
             *slot = Player::new();
+            UNAVAILABLE.set(slot.is_none());
         }
         slot.clone()
     })
