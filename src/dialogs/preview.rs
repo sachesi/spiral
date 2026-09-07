@@ -25,6 +25,9 @@ const IMAGE_LIMIT: i64 = 128 * 1024 * 1024;
 const PDF_DPI: u32 = 150;
 /// Size of the icon shown for files nothing can preview.
 const ICON_SIZE: i32 = 128;
+/// The sound player has only its icon and its controls to show, so it stays small.
+const SOUND_ICON_SIZE: i32 = 48;
+const SOUND_WIDTH: i32 = 160;
 
 /// Keeps the working directories of two tools running at once apart.
 static SEQ: AtomicU64 = AtomicU64::new(0);
@@ -90,23 +93,6 @@ impl PreviewDialog {
             .show_end_title_buttons(false)
             .build();
         header.set_title_widget(Some(&imp.title));
-        let open = gtk::Button::builder()
-            .label(gettext("_Open"))
-            .use_underline(true)
-            .css_classes(["suggested-action"])
-            .build();
-        open.connect_clicked(glib::clone!(
-            #[weak]
-            dialog,
-            move |_| {
-                if let Some(open) = dialog.imp().open.borrow().as_ref() {
-                    open(());
-                }
-                dialog.close();
-            }
-        ));
-        header.pack_end(&open);
-        dialog.set_default_widget(Some(&open));
 
         imp.content.set_vexpand(true);
         let toolbar = adw::ToolbarView::new();
@@ -117,9 +103,10 @@ impl PreviewDialog {
         dialog
     }
 
-    /// Space closes the preview the way it opened it, the arrows walk the folder, and
-    /// Page Up and Page Down turn the pages of a PDF. Captured, because the text view and
-    /// the media controls below would otherwise keep the keys to themselves.
+    /// Space closes the preview the way it opened it, Return hands the file to its
+    /// application, the arrows walk the folder and Page Up and Page Down turn the pages of
+    /// a PDF. Captured, because the text view and the media controls below would otherwise
+    /// keep the keys to themselves.
     fn setup_keys(&self) {
         use gdk::{Key, ModifierType as M};
         let keys = gtk::EventControllerKey::new();
@@ -143,6 +130,13 @@ impl PreviewDialog {
                 let imp = dialog.imp();
                 match key {
                     Key::space => {
+                        dialog.close();
+                        glib::Propagation::Stop
+                    }
+                    Key::Return | Key::KP_Enter => {
+                        if let Some(open) = imp.open.borrow().as_ref() {
+                            open(());
+                        }
                         dialog.close();
                         glib::Propagation::Stop
                     }
@@ -239,14 +233,14 @@ impl PreviewDialog {
         let controls = gtk::MediaControls::builder()
             .media_stream(&stream)
             .halign(gtk::Align::Center)
-            .width_request(400)
+            .width_request(SOUND_WIDTH)
             .build();
         self.imp().media.replace(Some(stream.upcast()));
         let icon = gtk::Image::from_gicon(&file_utils::icon_of(info));
-        icon.set_pixel_size(ICON_SIZE);
+        icon.set_pixel_size(SOUND_ICON_SIZE);
         let column = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
-            .spacing(18)
+            .spacing(7)
             .valign(gtk::Align::Center)
             .vexpand(true)
             .build();

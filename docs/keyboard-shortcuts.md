@@ -38,4 +38,4 @@ Ctrl+? shows this list inside the application.
 Tab switching (Ctrl+Page Up/Down, Alt+1 to 9) is libadwaita's. In the location entry,
 Tab accepts the completion and Esc cancels. Typing with the view focused starts a search.
 In the preview, Left and Right move to the next file, Page Up and Page Down turn the pages
-of a PDF, and Space or Esc closes it.
+of a PDF, Return opens the file in its application, and Space or Esc closes the preview.
