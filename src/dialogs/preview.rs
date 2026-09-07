@@ -20,8 +20,12 @@ use crate::{adw, file_utils, gdk, gio, glib, gtk};
 const PRIO: glib::Priority = glib::Priority::DEFAULT;
 /// How much of a text file is read; a log of any size still opens at once.
 const TEXT_LIMIT: usize = 256 * 1024;
-/// Images past this size are left to their thumbnail rather than decoded whole.
+/// Images past this size on disk, or past this many pixels, are left to their thumbnail
+/// rather than decoded whole: a panorama decodes to four bytes a pixel.
 const IMAGE_LIMIT: i64 = 128 * 1024 * 1024;
+const IMAGE_PIXELS: i64 = 80_000_000;
+/// How much of an image is read looking for the EXIF tag that says which way up it is.
+const EXIF_SCAN: usize = 64 * 1024;
 /// Resolution PDF pages are rendered at.
 const PDF_DPI: u32 = 150;
 /// How far the proportions of what arrives may differ from the ones the dialog opened
@@ -284,9 +288,14 @@ impl PreviewDialog {
         if pdf_page_size(&path).is_some() {
             return;
         }
+        let generation = self.imp().generation.get();
         let Some((pages, size)) = pdf_info(path).await else {
             return;
         };
+        // The selection may have moved on while the tool ran.
+        if self.imp().generation.get() != generation {
+            return;
+        }
         self.imp().page_size.set(Some(size));
         self.imp().page_count.set(Some(pages));
         self.shape_boxed(size.0, size.1, self.imp().bounds.get());
@@ -340,6 +349,7 @@ impl PreviewDialog {
         }
         if content_type.starts_with("image/")
             && info.size() <= IMAGE_LIMIT
+            && image_size(&file).is_none_or(|(w, h)| w as i64 * h as i64 <= IMAGE_PIXELS)
             && let Some(texture) = load_texture(&file).await
         {
             self.shape_to(&texture);
@@ -469,16 +479,17 @@ impl PreviewDialog {
         let next = flat_button("go-next-symbolic", &gettext("Next Page"));
         next.set_sensitive(pages > 1);
 
+        // Weak, because the buttons hold this closure.
         let flip = glib::clone!(
             #[strong]
             page,
-            #[strong]
+            #[weak]
             picture,
-            #[strong]
+            #[weak]
             label,
-            #[strong]
+            #[weak]
             previous,
-            #[strong]
+            #[weak]
             next,
             move |delta: i32| {
                 let target = (page.get() as i32 + delta).clamp(1, pages as i32) as u32;
@@ -560,14 +571,16 @@ impl PreviewDialog {
         ));
         scroll.add_controller(motion);
 
+        // Weak, because the wheel and the drag on `scroll` hold this closure: a strong
+        // reference from there would keep the widget alive after the page is gone.
         let zoom = glib::clone!(
             #[strong]
             level,
-            #[strong]
+            #[weak]
             picture,
-            #[strong]
+            #[weak]
             scroll,
-            #[strong]
+            #[weak]
             label,
             move |step: f64, at: Option<(f64, f64)>| {
                 let fit = fit_scale(&picture, &scroll);
@@ -648,7 +661,7 @@ impl PreviewDialog {
         let drag = gtk::GestureDrag::new();
         let from = Rc::new(Cell::new((0.0, 0.0)));
         drag.connect_drag_begin(glib::clone!(
-            #[strong]
+            #[weak]
             scroll,
             #[strong]
             from,
@@ -658,7 +671,7 @@ impl PreviewDialog {
             }
         ));
         drag.connect_drag_update(glib::clone!(
-            #[strong]
+            #[weak]
             scroll,
             #[strong]
             from,
@@ -669,7 +682,7 @@ impl PreviewDialog {
             }
         ));
         drag.connect_drag_end(glib::clone!(
-            #[strong]
+            #[weak]
             scroll,
             #[strong]
             level,
@@ -726,14 +739,9 @@ impl PreviewDialog {
         let content_type = info.content_type().unwrap_or_default().to_string();
         let (width, height) = if content_type.starts_with("image/") {
             // Reading the header of an image is a few bytes, not a decode.
-            match file_utils::file_of(info)
-                .path()
-                .and_then(gtk::gdk_pixbuf::Pixbuf::file_info)
-            {
-                Some((_, width, height)) if width > 0 && height > 0 => {
-                    return self.shape_fitted(width as f64, height as f64);
-                }
-                _ => IMAGE_SHAPE,
+            match image_size(&file_utils::file_of(info)) {
+                Some((width, height)) => return self.shape_fitted(width as f64, height as f64),
+                None => IMAGE_SHAPE,
             }
         } else if content_type.starts_with("video/") {
             // The thumbnail, when there is one, has the proportions of the video itself.
@@ -752,6 +760,9 @@ impl PreviewDialog {
             // is a size to show a page at.
             let (width, height) = self.pdf_proportions(info);
             return self.shape_boxed(width, height, self.imp().bounds.get());
+        } else if let Some((width, height)) = thumbnail_size(info) {
+            // What will be shown is the thumbnail, at its own size.
+            return self.shape_fitted(width, height);
         } else {
             INFO_SHAPE
         };
@@ -887,14 +898,75 @@ fn fit_scale(picture: &gtk::Picture, scroll: &gtk::ScrolledWindow) -> f64 {
         .min(1.0)
 }
 
+/// The first `most` bytes of the file at `path`.
+fn head_of(path: &Path, most: usize) -> Option<Vec<u8>> {
+    use std::io::Read;
+    let mut head = vec![0u8; most];
+    let read = std::fs::File::open(path).ok()?.read(&mut head).ok()?;
+    head.truncate(read);
+    Some(head)
+}
+
+/// Width and height of a local image from its header alone, turned the way its EXIF tag
+/// says, which is the way it will be drawn.
+fn image_size(file: &gio::File) -> Option<(i32, i32)> {
+    let path = file.path()?;
+    let (format, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(&path)?;
+    if width <= 0 || height <= 0 {
+        return None;
+    }
+    let turned = format.name().as_deref() == Some("jpeg") && exif_turned(&path);
+    Some(if turned {
+        (height, width)
+    } else {
+        (width, height)
+    })
+}
+
+/// Whether the EXIF tag of the image at `path` turns it on its side.
+fn exif_turned(path: &Path) -> bool {
+    head_of(path, EXIF_SCAN).is_some_and(|head| matches!(exif_orientation(&head), 5..=8))
+}
+
+/// The EXIF orientation in `head`, 1 (upright) where there is none: the APP1 segment
+/// holds a TIFF header, and the first directory of that holds the tag.
+fn exif_orientation(head: &[u8]) -> u16 {
+    fn read(head: &[u8], at: usize, big: bool, len: usize) -> Option<u32> {
+        let bytes = head.get(at..at + len)?;
+        let value = bytes.iter().fold(0u32, |n, &b| (n << 8) | u32::from(b));
+        Some(if big {
+            value
+        } else {
+            value.swap_bytes() >> (32 - 8 * len as u32)
+        })
+    }
+    let orientation = || {
+        let tiff = head.windows(6).position(|w| w == b"Exif\0\0")? + 6;
+        let big = match head.get(tiff..tiff + 2)? {
+            b"MM" => true,
+            b"II" => false,
+            _ => return None,
+        };
+        let directory = tiff + read(head, tiff + 4, big, 4)? as usize;
+        let entries = read(head, directory, big, 2)?;
+        (0..entries as usize)
+            .map(|n| directory + 2 + n * 12)
+            .find(|&entry| read(head, entry, big, 2) == Some(0x0112))
+            .and_then(|entry| read(head, entry + 8, big, 2))
+            .map(|value| value as u16)
+    };
+    orientation().unwrap_or(1)
+}
+
 /// The size of the first page in points, read out of the file: no tool to start and no
 /// page to render, so the dialog has the shape before it opens. `None` when the page
 /// dictionary is compressed out of reach, which is what `pdfinfo` answers later.
 fn pdf_page_size(path: &Path) -> Option<(f64, f64)> {
-    use std::io::Read;
-    let mut head = vec![0u8; PDF_SCAN];
-    let read = std::fs::File::open(path).ok()?.read(&mut head).ok()?;
-    let text = String::from_utf8_lossy(&head[..read]);
+    media_box(&String::from_utf8_lossy(&head_of(path, PDF_SCAN)?))
+}
+
+/// The first `/MediaBox` in `text`, as a width and a height.
+fn media_box(text: &str) -> Option<(f64, f64)> {
     let box_ = text.find("/MediaBox")?;
     let open = text[box_..].find('[')? + box_ + 1;
     let close = text[open..].find(']')? + open;
@@ -962,10 +1034,32 @@ fn text_view(text: &str) -> gtk::Widget {
 /// otherwise freeze the window; anything else is small enough to read whole.
 async fn load_texture(file: &gio::File) -> Option<gdk::Texture> {
     match file.path() {
-        Some(path) => gio::spawn_blocking(move || gdk::Texture::from_filename(path).ok())
-            .await
-            .ok()
-            .flatten(),
+        Some(path) => gio::spawn_blocking(move || {
+            // GTK's own loaders leave a photograph the way the camera held it; the EXIF
+            // tag that says to turn it is honoured by the pixbuf loader alone.
+            if exif_turned(&path) {
+                let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file(&path)
+                    .ok()?
+                    .apply_embedded_orientation()?;
+                let format = if pixbuf.has_alpha() {
+                    gdk::MemoryFormat::R8g8b8a8
+                } else {
+                    gdk::MemoryFormat::R8g8b8
+                };
+                let texture = gdk::MemoryTexture::new(
+                    pixbuf.width(),
+                    pixbuf.height(),
+                    format,
+                    &pixbuf.read_pixel_bytes(),
+                    pixbuf.rowstride() as usize,
+                );
+                return Some(texture.upcast());
+            }
+            gdk::Texture::from_filename(path).ok()
+        })
+        .await
+        .ok()
+        .flatten(),
         None => {
             let (data, _) = file.load_bytes_future().await.ok()?;
             gdk::Texture::from_bytes(&data).ok()
@@ -1136,4 +1230,66 @@ fn run_tool<T>(
     };
     let _ = std::fs::remove_dir_all(&work);
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A JPEG header with one EXIF directory holding the orientation tag.
+    fn jpeg_with_orientation(big: bool, orientation: u16) -> Vec<u8> {
+        let word = |n: u16| {
+            if big {
+                n.to_be_bytes()
+            } else {
+                n.to_le_bytes()
+            }
+        };
+        let long = |n: u32| {
+            if big {
+                n.to_be_bytes()
+            } else {
+                n.to_le_bytes()
+            }
+        };
+        let mut tiff = Vec::new();
+        tiff.extend(if big { b"MM" } else { b"II" });
+        tiff.extend(word(42));
+        tiff.extend(long(8));
+        tiff.extend(word(1));
+        tiff.extend(word(0x0112));
+        tiff.extend(word(3));
+        tiff.extend(long(1));
+        tiff.extend(word(orientation));
+        tiff.extend(word(0));
+        tiff.extend(long(0));
+        let mut head = vec![0xff, 0xd8, 0xff, 0xe1];
+        head.extend(((tiff.len() + 8) as u16).to_be_bytes());
+        head.extend(b"Exif\0\0");
+        head.extend(tiff);
+        head
+    }
+
+    #[test]
+    fn exif_orientation_is_read_either_way_round() {
+        assert_eq!(exif_orientation(&jpeg_with_orientation(false, 6)), 6);
+        assert_eq!(exif_orientation(&jpeg_with_orientation(true, 8)), 8);
+        assert_eq!(exif_orientation(&jpeg_with_orientation(true, 1)), 1);
+        assert_eq!(exif_orientation(b"\xff\xd8no exif here"), 1);
+        assert_eq!(exif_orientation(b"Exif\0\0MM"), 1);
+    }
+
+    #[test]
+    fn media_box_is_the_size_of_the_page() {
+        assert_eq!(
+            media_box("<< /Type /Page /MediaBox [0 0 612 792] >>"),
+            Some((612.0, 792.0))
+        );
+        assert_eq!(
+            media_box("/MediaBox [ 0.0 0.0 595.28 841.89 ]"),
+            Some((595.28, 841.89))
+        );
+        assert_eq!(media_box("/MediaBox [0 0 0 0]"), None);
+        assert_eq!(media_box("%PDF-1.5 nothing readable"), None);
+    }
 }
