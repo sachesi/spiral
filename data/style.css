@@ -149,6 +149,9 @@
   border-right: none;
 }
 .spiral-miller-column:drop(active) {
+  box-shadow: none;
+}
+.spiral-miller-column.spiral-drop-column {
   background-color: color-mix(in srgb, var(--accent-bg-color) 12%, transparent);
 }
 .spiral-miller-column listview {

@@ -94,7 +94,9 @@ The column view draws the path as a strip of lists, one folder per column, the w
 Finder does. The last column is the folder you are in; the columns before it are the
 folders that lead there, with the one you came through picked out, and a column appears
 past the last one whenever a single folder is selected, showing what it holds. The strip
-scrolls sideways and keeps the last column in sight.
+scrolls sideways and keeps the last column in sight; Shift and the wheel move it by hand,
+and a drag held near either end pushes it along, so a column that is off the screen can
+still be dropped on.
 
 One click in any column before the last goes there: a folder becomes the folder you are
 in, a file makes its folder the one you are in and picks the file out. Left and Right step
