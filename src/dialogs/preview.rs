@@ -27,8 +27,7 @@ const PDF_DPI: u32 = 150;
 /// Size of the icon shown for files nothing can preview.
 const ICON_SIZE: i32 = 128;
 /// The sound player has only its icon and its controls to show, so it stays small.
-const SOUND_ICON_SIZE: i32 = 48;
-const SOUND_WIDTH: i32 = 160;
+const SOUND_ICON_SIZE: i32 = 96;
 /// How long a file has to stay selected before it is loaded, so that running through a
 /// folder with the arrows does not start a decoder for every file passed over.
 const LOAD_DELAY: Duration = Duration::from_millis(120);
@@ -36,12 +35,16 @@ const LOAD_DELAY: Duration = Duration::from_millis(120);
 const MAX_WIDTH: i32 = 900;
 const MAX_HEIGHT: i32 = 620;
 const MIN_SIDE: i32 = 280;
-/// Shapes for content that has no proportions of its own: text to read, video before the
-/// stream says how big it is, the sound player, and the page for everything else.
+/// Shapes for content whose proportions are not known before it is loaded: text to read,
+/// video before its stream says how big it is, an image whose header could not be read, a
+/// page before it is rendered, the sound player, and the icon for everything else.
 const TEXT_SHAPE: (i32, i32) = (760, 560);
 const VIDEO_SHAPE: (i32, i32) = (720, 405);
-const SOUND_SHAPE: (i32, i32) = (340, 200);
-const INFO_SHAPE: (i32, i32) = (420, 320);
+const IMAGE_SHAPE: (i32, i32) = (720, 540);
+/// A4 upright, which is what most PDFs turn out to be.
+const PAGE_SHAPE: (i32, i32) = (438, 620);
+const SOUND_SHAPE: (i32, i32) = (420, 190);
+const INFO_SHAPE: (i32, i32) = (340, 260);
 /// Zoom: one step of the buttons or the wheel, and how far it goes either way.
 const ZOOM_STEP: f64 = 1.25;
 const ZOOM_MIN: f64 = 0.05;
@@ -202,6 +205,7 @@ impl PreviewDialog {
         imp.zoom.take();
         imp.title.set_title(&file_utils::display_name(info));
         imp.title.set_subtitle(&subtitle(info));
+        self.shape_for_kind(info);
         imp.content.set_child(Some(&spinner()));
         let info = info.clone();
         glib::spawn_future_local(glib::clone!(
@@ -243,7 +247,6 @@ impl PreviewDialog {
         if gio::content_type_is_a(&content_type, "text/plain")
             && let Some(text) = load_text(&file).await
         {
-            self.shape(TEXT_SHAPE.0, TEXT_SHAPE.1);
             return text_view(&text);
         }
         if content_type == "application/pdf"
@@ -264,7 +267,6 @@ impl PreviewDialog {
     /// Video keeps its own proportions once the stream knows them; until then the dialog
     /// holds the shape most video has.
     fn video(&self, file: &gio::File) -> gtk::Widget {
-        self.shape(VIDEO_SHAPE.0, VIDEO_SHAPE.1);
         let video = gtk::Video::for_file(Some(file));
         video.set_autoplay(true);
         if let Some(stream) = video.media_stream() {
@@ -285,13 +287,13 @@ impl PreviewDialog {
 
     /// Sound has nothing to draw: the file's own icon over the transport controls.
     fn sound(&self, info: &gio::FileInfo, file: &gio::File) -> gtk::Widget {
-        self.shape(SOUND_SHAPE.0, SOUND_SHAPE.1);
         let stream = gtk::MediaFile::for_file(file);
         stream.play();
         let controls = gtk::MediaControls::builder()
             .media_stream(&stream)
-            .halign(gtk::Align::Center)
-            .width_request(SOUND_WIDTH)
+            .hexpand(true)
+            .margin_start(12)
+            .margin_end(12)
             .build();
         self.imp().media.replace(Some(stream.upcast()));
         let icon = gtk::Image::from_gicon(&file_utils::icon_of(info));
@@ -425,13 +427,14 @@ impl PreviewDialog {
                 let Some(paintable) = picture.paintable() else {
                     return;
                 };
+                scroll.set_cursor_from_name(pan_cursor(next));
                 if next <= 0.0 {
                     scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never);
                     picture.set_size_request(-1, -1);
                     label.set_label(&gettext("Fit"));
                     return;
                 }
-                scroll.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+                scroll.set_policy(gtk::PolicyType::External, gtk::PolicyType::External);
                 picture.set_size_request(
                     (paintable.intrinsic_width() as f64 * next) as i32,
                     (paintable.intrinsic_height() as f64 * next) as i32,
@@ -465,6 +468,38 @@ impl PreviewDialog {
             }
         ));
         scroll.add_controller(wheel);
+        // Zoomed in, the picture is moved by dragging it: there are no scrollbars to grab.
+        let drag = gtk::GestureDrag::new();
+        let from = Rc::new(Cell::new((0.0, 0.0)));
+        drag.connect_drag_begin(glib::clone!(
+            #[strong]
+            scroll,
+            #[strong]
+            from,
+            move |_, _, _| {
+                from.set((scroll.hadjustment().value(), scroll.vadjustment().value()));
+                scroll.set_cursor_from_name(Some("grabbing"));
+            }
+        ));
+        drag.connect_drag_update(glib::clone!(
+            #[strong]
+            scroll,
+            #[strong]
+            from,
+            move |_, x, y| {
+                let (left, top) = from.get();
+                scroll.hadjustment().set_value(left - x);
+                scroll.vadjustment().set_value(top - y);
+            }
+        ));
+        drag.connect_drag_end(glib::clone!(
+            #[strong]
+            scroll,
+            #[strong]
+            level,
+            move |_, _, _| scroll.set_cursor_from_name(pan_cursor(level.get()))
+        ));
+        scroll.add_controller(drag);
         self.imp().zoom.replace(Some(Box::new(zoom)));
 
         let bar = gtk::Box::builder()
@@ -487,22 +522,48 @@ impl PreviewDialog {
         overlay.upcast()
     }
 
-    /// Files nothing can draw: their icon, their name and what little is known about them.
+    /// Files nothing can draw: their icon alone, since the header already carries the name
+    /// and the type.
     fn info_page(&self, info: &gio::FileInfo) -> gtk::Widget {
-        self.shape(INFO_SHAPE.0, INFO_SHAPE.1);
-        let paintable = gtk::IconTheme::for_display(&self.display()).lookup_by_gicon(
-            &file_utils::icon_of(info),
-            ICON_SIZE,
-            self.scale_factor(),
-            self.direction(),
-            gtk::IconLookupFlags::empty(),
-        );
-        adw::StatusPage::builder()
-            .paintable(&paintable)
-            .title(file_utils::display_name(info))
-            .description(subtitle(info))
-            .build()
-            .upcast()
+        let icon = gtk::Image::from_gicon(&file_utils::icon_of(info));
+        icon.set_pixel_size(ICON_SIZE);
+        icon.set_halign(gtk::Align::Center);
+        icon.set_valign(gtk::Align::Center);
+        icon.set_vexpand(true);
+        icon.upcast()
+    }
+
+    /// The shape the file will want, from what the listing already knows and, for a local
+    /// image, from its header alone. Done before the content is loaded so that the dialog
+    /// opens at its size instead of growing into it a moment later.
+    fn shape_for_kind(&self, info: &gio::FileInfo) {
+        if file_utils::is_dir(info) {
+            return self.shape(INFO_SHAPE.0, INFO_SHAPE.1);
+        }
+        let content_type = info.content_type().unwrap_or_default().to_string();
+        let (width, height) = if content_type.starts_with("image/") {
+            // Reading the header of an image is a few bytes, not a decode.
+            match file_utils::file_of(info)
+                .path()
+                .and_then(gtk::gdk_pixbuf::Pixbuf::file_info)
+            {
+                Some((_, width, height)) if width > 0 && height > 0 => {
+                    return self.shape_fitted(width as f64, height as f64);
+                }
+                _ => IMAGE_SHAPE,
+            }
+        } else if content_type.starts_with("video/") {
+            VIDEO_SHAPE
+        } else if content_type.starts_with("audio/") {
+            SOUND_SHAPE
+        } else if gio::content_type_is_a(&content_type, "text/plain") {
+            TEXT_SHAPE
+        } else if content_type == "application/pdf" {
+            PAGE_SHAPE
+        } else {
+            INFO_SHAPE
+        };
+        self.shape(width, height);
     }
 
     /// Give the dialog the proportions of what it holds, within the bounds it may take.
@@ -603,6 +664,11 @@ fn drawn_scale(picture: &gtk::Picture) -> f64 {
     (picture.width() as f64 / width).min(picture.height() as f64 / height)
 }
 
+/// The hand that says a zoomed picture can be dragged, and nothing while it fits.
+fn pan_cursor(level: f64) -> Option<&'static str> {
+    (level > 0.0).then_some("grab")
+}
+
 fn flat_button(icon: &str, tooltip: &str) -> gtk::Button {
     let button = gtk::Button::from_icon_name(icon);
     button.set_tooltip_text(Some(tooltip));
@@ -621,12 +687,14 @@ fn text_view(text: &str) -> gtk::Widget {
         .right_margin(12)
         .build();
     view.buffer().set_text(text);
-    gtk::ScrolledWindow::builder()
+    let scroll = gtk::ScrolledWindow::builder()
         .child(&view)
         .hexpand(true)
         .vexpand(true)
-        .build()
-        .upcast()
+        .build();
+    // No scrollbars anywhere in the preview; the wheel and the keys still scroll.
+    scroll.set_policy(gtk::PolicyType::External, gtk::PolicyType::External);
+    scroll.upcast()
 }
 
 /// Decoding happens off the main loop for local files, where a large photograph would
