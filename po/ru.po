@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 16:07+0300\n"
+"POT-Creation-Date: 2026-09-07 16:17+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -818,29 +818,51 @@ msgstr "В PATH не найден эмулятор терминала"
 msgid "Terminal"
 msgstr "Терминал"
 
-#: src/dialogs/preview.rs:84 ui/shortcuts_dialog.ui:234
+#: src/dialogs/preview.rs:104 ui/shortcuts_dialog.ui:234
 #, no-c-format
 msgid "Preview"
 msgstr "Просмотр"
 
-#: src/dialogs/preview.rs:263
+#: src/dialogs/preview.rs:318
 #, no-c-format
 msgid "Previous Page"
 msgstr "Предыдущая страница"
 
-#: src/dialogs/preview.rs:266
+#: src/dialogs/preview.rs:320
 #, no-c-format
 msgid "Next Page"
 msgstr "Следующая страница"
 
+#: src/dialogs/preview.rs:393 src/dialogs/preview.rs:431
+#, no-c-format
+msgid "Fit"
+msgstr "Вписать"
+
+#: src/dialogs/preview.rs:395 ui/shortcuts_dialog.ui:151 ui/window.ui:446
+#: ui/window.ui:530
+#, no-c-format
+msgid "Zoom Out"
+msgstr "Уменьшить"
+
+#: src/dialogs/preview.rs:396
+#, no-c-format
+msgid "Fit to Window"
+msgstr "Вписать в окно"
+
+#: src/dialogs/preview.rs:397 ui/shortcuts_dialog.ui:145 ui/window.ui:456
+#: ui/window.ui:540
+#, no-c-format
+msgid "Zoom In"
+msgstr "Увеличить"
+
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:372
+#: src/dialogs/preview.rs:561
 #, no-c-format
 msgid "%t, %s"
 msgstr "%t, %s"
 
 #. Translators: %p is the page being shown, %n the number of pages in the document.
-#: src/dialogs/preview.rs:377
+#: src/dialogs/preview.rs:566
 #, no-c-format
 msgid "%p of %n"
 msgstr "%p из %n"
@@ -2102,14 +2124,6 @@ msgstr "Добавить закладку"
 #: ui/shortcuts_dialog.ui:124
 msgid "View"
 msgstr "Вид"
-
-#: ui/shortcuts_dialog.ui:145 ui/window.ui:456 ui/window.ui:540
-msgid "Zoom In"
-msgstr "Увеличить"
-
-#: ui/shortcuts_dialog.ui:151 ui/window.ui:446 ui/window.ui:530
-msgid "Zoom Out"
-msgstr "Уменьшить"
 
 #: ui/shortcuts_dialog.ui:157
 msgid "Show Hidden Files"

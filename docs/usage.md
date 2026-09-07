@@ -153,10 +153,16 @@ through the folder without leaving the preview, Page Up and Page Down turn the p
 PDF, and Return hands the file to its application. The preview has no close button: it is
 a preview, and the keys that opened it close it again.
 
+The preview takes the proportions of what it holds: a picture or a page keeps its own, a
+video the ones its stream reports, text gets a page to read on, and the sound player is no
+larger than its controls. Ctrl with + and -, Ctrl and the wheel, or the buttons in the bar
+over the picture zoom a picture or a page; Ctrl+0 fits it back into the window.
+
 Anything else falls back to the file's thumbnail, or to its icon, type and size. Video and
 sound need the GStreamer plugins for the format installed, PDFs need `pdftoppm` from
 poppler-utils, which runs in the same bubblewrap sandbox as the thumbnailers. Text files
-are shown up to 256 kB.
+are shown up to 256 kB. A file is only loaded once it has been selected for a moment, so
+holding an arrow down runs through a folder without starting a decoder per file.
 
 ## Favorites
 

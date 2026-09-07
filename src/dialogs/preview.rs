@@ -9,6 +9,7 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 use gettextrs::gettext;
 
@@ -28,6 +29,23 @@ const ICON_SIZE: i32 = 128;
 /// The sound player has only its icon and its controls to show, so it stays small.
 const SOUND_ICON_SIZE: i32 = 48;
 const SOUND_WIDTH: i32 = 160;
+/// How long a file has to stay selected before it is loaded, so that running through a
+/// folder with the arrows does not start a decoder for every file passed over.
+const LOAD_DELAY: Duration = Duration::from_millis(120);
+/// Bounds the dialog shapes itself within, whatever proportions the content has.
+const MAX_WIDTH: i32 = 900;
+const MAX_HEIGHT: i32 = 620;
+const MIN_SIDE: i32 = 280;
+/// Shapes for content that has no proportions of its own: text to read, video before the
+/// stream says how big it is, the sound player, and the page for everything else.
+const TEXT_SHAPE: (i32, i32) = (760, 560);
+const VIDEO_SHAPE: (i32, i32) = (720, 405);
+const SOUND_SHAPE: (i32, i32) = (340, 200);
+const INFO_SHAPE: (i32, i32) = (420, 320);
+/// Zoom: one step of the buttons or the wheel, and how far it goes either way.
+const ZOOM_STEP: f64 = 1.25;
+const ZOOM_MIN: f64 = 0.05;
+const ZOOM_MAX: f64 = 8.0;
 
 /// Keeps the working directories of two tools running at once apart.
 static SEQ: AtomicU64 = AtomicU64::new(0);
@@ -53,6 +71,8 @@ mod imp {
         pub open: Slot<()>,
         /// Turns the page of the PDF on screen, by -1 or 1.
         pub flip: Slot<i32>,
+        /// Zooms the picture on screen: 1 in, -1 out, 0 back to fitting the dialog.
+        pub zoom: Slot<i32>,
     }
 
     #[glib::object_subclass]
@@ -104,9 +124,9 @@ impl PreviewDialog {
     }
 
     /// Space closes the preview the way it opened it, Return hands the file to its
-    /// application, the arrows walk the folder and Page Up and Page Down turn the pages of
-    /// a PDF. Captured, because the text view and the media controls below would otherwise
-    /// keep the keys to themselves.
+    /// application, the arrows walk the folder, Page Up and Page Down turn the pages of a
+    /// PDF and Ctrl with +, - or 0 zooms. Captured, because the text view and the media
+    /// controls below would otherwise keep the keys to themselves.
     fn setup_keys(&self) {
         use gdk::{Key, ModifierType as M};
         let keys = gtk::EventControllerKey::new();
@@ -117,9 +137,10 @@ impl PreviewDialog {
             #[upgrade_or]
             glib::Propagation::Proceed,
             move |_, key, _, state| {
-                if state.intersects(M::CONTROL_MASK | M::ALT_MASK | M::SHIFT_MASK | M::SUPER_MASK) {
+                if state.intersects(M::ALT_MASK | M::SUPER_MASK) {
                     return glib::Propagation::Proceed;
                 }
+                let imp = dialog.imp();
                 let call = |slot: &Slot<i32>, delta: i32| match slot.borrow().as_ref() {
                     Some(f) => {
                         f(delta);
@@ -127,7 +148,17 @@ impl PreviewDialog {
                     }
                     None => glib::Propagation::Proceed,
                 };
-                let imp = dialog.imp();
+                if state.contains(M::CONTROL_MASK) {
+                    return match key {
+                        Key::plus | Key::equal | Key::KP_Add => call(&imp.zoom, 1),
+                        Key::minus | Key::KP_Subtract => call(&imp.zoom, -1),
+                        Key::_0 | Key::KP_0 => call(&imp.zoom, 0),
+                        _ => glib::Propagation::Proceed,
+                    };
+                }
+                if state.contains(M::SHIFT_MASK) {
+                    return glib::Propagation::Proceed;
+                }
                 match key {
                     Key::space => {
                         dialog.close();
@@ -168,6 +199,7 @@ impl PreviewDialog {
         imp.generation.set(generation);
         self.stop_media();
         imp.flip.take();
+        imp.zoom.take();
         imp.title.set_title(&file_utils::display_name(info));
         imp.title.set_subtitle(&subtitle(info));
         imp.content.set_child(Some(&spinner()));
@@ -176,6 +208,11 @@ impl PreviewDialog {
             #[weak(rename_to = dialog)]
             self,
             async move {
+                // Nothing is decoded for a file the arrows only passed over.
+                glib::timeout_future(LOAD_DELAY).await;
+                if dialog.imp().generation.get() != generation {
+                    return;
+                }
                 let child = dialog.build_content(&info).await;
                 if dialog.imp().generation.get() == generation {
                     dialog.imp().content.set_child(Some(&child));
@@ -194,7 +231,8 @@ impl PreviewDialog {
             && info.size() <= IMAGE_LIMIT
             && let Some(texture) = load_texture(&file).await
         {
-            return picture(&texture);
+            self.shape_to(&texture);
+            return self.zoomable(&picture(&texture), &[]);
         }
         if content_type.starts_with("video/") {
             return self.video(&file);
@@ -205,6 +243,7 @@ impl PreviewDialog {
         if gio::content_type_is_a(&content_type, "text/plain")
             && let Some(text) = load_text(&file).await
         {
+            self.shape(TEXT_SHAPE.0, TEXT_SHAPE.1);
             return text_view(&text);
         }
         if content_type == "application/pdf"
@@ -214,20 +253,39 @@ impl PreviewDialog {
             return widget;
         }
         match crate::thumbnails::load(info).await {
-            Some(texture) => picture(&texture),
+            Some(texture) => {
+                self.shape_to(&texture);
+                picture(&texture).upcast()
+            }
             None => self.info_page(info),
         }
     }
 
+    /// Video keeps its own proportions once the stream knows them; until then the dialog
+    /// holds the shape most video has.
     fn video(&self, file: &gio::File) -> gtk::Widget {
+        self.shape(VIDEO_SHAPE.0, VIDEO_SHAPE.1);
         let video = gtk::Video::for_file(Some(file));
         video.set_autoplay(true);
-        self.imp().media.replace(video.media_stream());
+        if let Some(stream) = video.media_stream() {
+            stream.connect_prepared_notify(glib::clone!(
+                #[weak(rename_to = dialog)]
+                self,
+                move |stream| {
+                    let (w, h) = (stream.intrinsic_width(), stream.intrinsic_height());
+                    if stream.is_prepared() && w > 0 && h > 0 {
+                        dialog.shape_fitted(w as f64, h as f64);
+                    }
+                }
+            ));
+            self.imp().media.replace(Some(stream));
+        }
         video.upcast()
     }
 
     /// Sound has nothing to draw: the file's own icon over the transport controls.
     fn sound(&self, info: &gio::FileInfo, file: &gio::File) -> gtk::Widget {
+        self.shape(SOUND_SHAPE.0, SOUND_SHAPE.1);
         let stream = gtk::MediaFile::for_file(file);
         stream.play();
         let controls = gtk::MediaControls::builder()
@@ -252,18 +310,14 @@ impl PreviewDialog {
     /// One PDF page with the buttons that turn it, or nothing when `pdftoppm` is missing.
     async fn pdf(&self, path: PathBuf) -> Option<gtk::Widget> {
         let pages = pdf_pages(path.clone()).await?;
+        let first = pdf_page(path.clone(), 1).await?;
+        self.shape_to(&first);
         let page = Rc::new(Cell::new(1u32));
-        let picture = gtk::Picture::builder()
-            .paintable(&pdf_page(path.clone(), 1).await?)
-            .hexpand(true)
-            .vexpand(true)
-            .build();
+        let picture = picture(&first);
         let label = gtk::Label::new(Some(&page_text(1, pages)));
-        let previous = gtk::Button::from_icon_name("go-previous-symbolic");
-        previous.set_tooltip_text(Some(&gettext("Previous Page")));
+        let previous = flat_button("go-previous-symbolic", &gettext("Previous Page"));
         previous.set_sensitive(false);
-        let next = gtk::Button::from_icon_name("go-next-symbolic");
-        next.set_tooltip_text(Some(&gettext("Next Page")));
+        let next = flat_button("go-next-symbolic", &gettext("Next Page"));
         next.set_sensitive(pages > 1);
 
         let flip = glib::clone!(
@@ -315,24 +369,127 @@ impl PreviewDialog {
             move |_| flip(1)
         ));
         self.imp().flip.replace(Some(Box::new(flip)));
+        let extras: Vec<gtk::Widget> = vec![
+            previous.upcast(),
+            label.upcast(),
+            next.upcast(),
+            gtk::Separator::new(gtk::Orientation::Vertical).upcast(),
+        ];
+        Some(self.zoomable(&picture, &extras))
+    }
+
+    /// A picture that fits the dialog until the buttons, Ctrl with + and -, or Ctrl and
+    /// the wheel say otherwise. `extras` share the floating bar, for the PDF page buttons.
+    fn zoomable(&self, picture: &gtk::Picture, extras: &[gtk::Widget]) -> gtk::Widget {
+        let scroll = gtk::ScrolledWindow::builder()
+            .child(picture)
+            .hexpand(true)
+            .vexpand(true)
+            .build();
+        // Scrolling off while the picture is fitted: the policy is what makes the viewport
+        // hold the picture to its own size instead of the picture's natural one.
+        scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never);
+        let level = Rc::new(Cell::new(0.0f64));
+        let label = gtk::Label::new(Some(&gettext("Fit")));
+        label.set_width_chars(5);
+        let out = flat_button("zoom-out-symbolic", &gettext("Zoom Out"));
+        let fit = flat_button("zoom-fit-best-symbolic", &gettext("Fit to Window"));
+        let in_ = flat_button("zoom-in-symbolic", &gettext("Zoom In"));
+
+        let zoom = glib::clone!(
+            #[strong]
+            level,
+            #[strong]
+            picture,
+            #[strong]
+            scroll,
+            #[strong]
+            label,
+            move |delta: i32| {
+                let next = if delta == 0 {
+                    0.0
+                } else {
+                    let from = if level.get() > 0.0 {
+                        level.get()
+                    } else {
+                        drawn_scale(&picture)
+                    };
+                    let step = if delta > 0 {
+                        ZOOM_STEP
+                    } else {
+                        1.0 / ZOOM_STEP
+                    };
+                    (from * step).clamp(ZOOM_MIN, ZOOM_MAX)
+                };
+                level.set(next);
+                let Some(paintable) = picture.paintable() else {
+                    return;
+                };
+                if next <= 0.0 {
+                    scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never);
+                    picture.set_size_request(-1, -1);
+                    label.set_label(&gettext("Fit"));
+                    return;
+                }
+                scroll.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+                picture.set_size_request(
+                    (paintable.intrinsic_width() as f64 * next) as i32,
+                    (paintable.intrinsic_height() as f64 * next) as i32,
+                );
+                label.set_label(&format!("{}%", (next * 100.0).round()));
+            }
+        );
+        for (button, delta) in [(&out, -1), (&fit, 0), (&in_, 1)] {
+            button.connect_clicked(glib::clone!(
+                #[strong]
+                zoom,
+                move |_| zoom(delta)
+            ));
+        }
+        // Ctrl and the wheel, as everywhere else that zooms.
+        let wheel = gtk::EventControllerScroll::new(gtk::EventControllerScrollFlags::VERTICAL);
+        wheel.set_propagation_phase(gtk::PropagationPhase::Capture);
+        wheel.connect_scroll(glib::clone!(
+            #[strong]
+            zoom,
+            move |controller, _, dy| {
+                if !controller
+                    .current_event_state()
+                    .contains(gdk::ModifierType::CONTROL_MASK)
+                    || dy == 0.0
+                {
+                    return glib::Propagation::Proceed;
+                }
+                zoom(if dy < 0.0 { 1 } else { -1 });
+                glib::Propagation::Stop
+            }
+        ));
+        scroll.add_controller(wheel);
+        self.imp().zoom.replace(Some(Box::new(zoom)));
 
         let bar = gtk::Box::builder()
             .spacing(6)
             .halign(gtk::Align::Center)
-            .margin_top(6)
-            .margin_bottom(6)
+            .valign(gtk::Align::End)
+            .margin_bottom(12)
+            .css_classes(["floating-bar"])
             .build();
-        bar.append(&previous);
+        for extra in extras {
+            bar.append(extra);
+        }
+        bar.append(&out);
         bar.append(&label);
-        bar.append(&next);
-        let column = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        column.append(&picture);
-        column.append(&bar);
-        Some(column.upcast())
+        bar.append(&in_);
+        bar.append(&fit);
+        let overlay = gtk::Overlay::new();
+        overlay.set_child(Some(&scroll));
+        overlay.add_overlay(&bar);
+        overlay.upcast()
     }
 
     /// Files nothing can draw: their icon, their name and what little is known about them.
     fn info_page(&self, info: &gio::FileInfo) -> gtk::Widget {
+        self.shape(INFO_SHAPE.0, INFO_SHAPE.1);
         let paintable = gtk::IconTheme::for_display(&self.display()).lookup_by_gicon(
             &file_utils::icon_of(info),
             ICON_SIZE,
@@ -348,9 +505,41 @@ impl PreviewDialog {
             .upcast()
     }
 
+    /// Give the dialog the proportions of what it holds, within the bounds it may take.
+    fn shape(&self, width: i32, height: i32) {
+        self.set_content_width(width.clamp(MIN_SIDE, MAX_WIDTH));
+        self.set_content_height(height.clamp(MIN_SIDE, MAX_HEIGHT));
+    }
+
+    fn shape_to(&self, paintable: &impl IsA<gdk::Paintable>) {
+        let paintable = paintable.as_ref();
+        self.shape_fitted(
+            paintable.intrinsic_width() as f64,
+            paintable.intrinsic_height() as f64,
+        );
+    }
+
+    /// A `width` by `height` picture scaled into the largest shape allowed, never blown up
+    /// past its own size: a thumbnail should not open a window the size of a wall.
+    fn shape_fitted(&self, width: f64, height: f64) {
+        if width <= 0.0 || height <= 0.0 {
+            return;
+        }
+        let scale = (MAX_WIDTH as f64 / width)
+            .min(MAX_HEIGHT as f64 / height)
+            .min(1.0);
+        self.shape((width * scale) as i32, (height * scale) as i32);
+    }
+
     fn stop_media(&self) {
-        if let Some(stream) = self.imp().media.take() {
-            stream.pause();
+        let Some(stream) = self.imp().media.take() else {
+            return;
+        };
+        stream.pause();
+        // Tearing the pipeline down through `clear` rather than leaving it to the last
+        // reference: a decoder disposed of mid-start takes the process with it.
+        if let Some(file) = stream.downcast_ref::<gtk::MediaFile>() {
+            file.clear();
         }
     }
 }
@@ -390,14 +579,35 @@ fn spinner() -> gtk::Widget {
         .upcast()
 }
 
-fn picture(paintable: &impl IsA<gdk::Paintable>) -> gtk::Widget {
+fn picture(paintable: &impl IsA<gdk::Paintable>) -> gtk::Picture {
     gtk::Picture::builder()
         .paintable(paintable)
         .can_shrink(true)
         .hexpand(true)
         .vexpand(true)
         .build()
-        .upcast()
+}
+
+/// What a fitted picture is drawn at right now, the scale zooming starts from.
+fn drawn_scale(picture: &gtk::Picture) -> f64 {
+    let Some(paintable) = picture.paintable() else {
+        return 1.0;
+    };
+    let (width, height) = (
+        paintable.intrinsic_width() as f64,
+        paintable.intrinsic_height() as f64,
+    );
+    if width <= 0.0 || height <= 0.0 {
+        return 1.0;
+    }
+    (picture.width() as f64 / width).min(picture.height() as f64 / height)
+}
+
+fn flat_button(icon: &str, tooltip: &str) -> gtk::Button {
+    let button = gtk::Button::from_icon_name(icon);
+    button.set_tooltip_text(Some(tooltip));
+    button.add_css_class("flat");
+    button
 }
 
 fn text_view(text: &str) -> gtk::Widget {
