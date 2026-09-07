@@ -60,6 +60,10 @@ mod imp {
         pub starred_store: gio::ListStore,
         pub starred_gen: Cell<u64>,
         starred_handler: RefCell<Option<glib::SignalHandlerId>>,
+        /// Both handlers sit on objects that outlive the model -- the starred list and the
+        /// settings -- and a column view makes and drops models as it walks, so they have
+        /// to come off again.
+        tree_handler: RefCell<Option<glib::SignalHandlerId>>,
         /// Root of the pipeline while searching; filled by `search::run`.
         pub search_store: gio::ListStore,
         pub search_gen: Cell<u64>,
@@ -134,6 +138,7 @@ mod imp {
                 starred_store: gio::ListStore::new::<gio::FileInfo>(),
                 starred_gen: Default::default(),
                 starred_handler: Default::default(),
+                tree_handler: Default::default(),
                 search_store: gio::ListStore::new::<gio::FileInfo>(),
                 search_gen: Default::default(),
                 hidden_filter,
@@ -156,6 +161,9 @@ mod imp {
         fn dispose(&self) {
             if let Some(id) = self.starred_handler.take() {
                 crate::starred::list().disconnect(id);
+            }
+            if let Some(id) = self.tree_handler.take() {
+                crate::prefs::settings().disconnect(id);
             }
         }
 
@@ -182,7 +190,7 @@ mod imp {
                 }
             ));
             self.starred_handler.replace(Some(id));
-            crate::prefs::settings().connect_changed(
+            let id = crate::prefs::settings().connect_changed(
                 Some("use-tree-view"),
                 glib::clone!(
                     #[weak]
@@ -200,6 +208,7 @@ mod imp {
                     }
                 ),
             );
+            self.tree_handler.replace(Some(id));
             self.dir_list.connect_error_notify(glib::clone!(
                 #[weak]
                 obj,

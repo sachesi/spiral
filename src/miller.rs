@@ -36,7 +36,9 @@ const SURFACE_SCROLL_FACTOR: f64 = 2.5;
 
 /// A column that is not the folder being viewed: its own listing of `dir`.
 pub struct SideColumn {
+    dir: gio::File,
     model: FolderModel,
+    list: gtk::ListView,
     root: gtk::ScrolledWindow,
 }
 
@@ -92,22 +94,6 @@ impl BrowserView {
         imp.miller_list
             .set_factory(Some(&self.miller_factory(true)));
         self.connect_location_notify(|view| view.schedule_columns());
-        imp.columns_scroll
-            .hadjustment()
-            .connect_changed(glib::clone!(
-                #[weak(rename_to = view)]
-                self,
-                move |adjustment| {
-                    if glib::monotonic_time() >= view.imp().scroll_until.get() {
-                        return;
-                    }
-                    // The strip is measured inside a layout pass, and moving it from there
-                    // leaves the frame that is already being drawn behind; an idle is late
-                    // enough for the move to be drawn.
-                    let adjustment = adjustment.clone();
-                    glib::idle_add_local_once(move || adjustment.set_value(adjustment.upper()));
-                }
-            ));
         imp.model
             .selection()
             .connect_selection_changed(glib::clone!(
@@ -264,14 +250,17 @@ impl BrowserView {
     /// folder being viewed, then whatever the selection points at.
     pub(crate) fn rebuild_columns(&self) {
         let imp = self.imp();
-        self.clear_side_columns();
         if imp.view_mode.get() != ViewMode::Columns {
+            self.clear_side_columns();
             return;
         }
         let Some(location) = self.location() else {
+            self.clear_side_columns();
             return;
         };
-        // Same chain the path bar draws, so the crumbs and the columns agree.
+        // The chain the path bar draws: from home, or from the root of the filesystem.
+        // A mount point is where the crumbs start but not the columns, since finding it
+        // means asking gvfs and the strip is drawn before an answer could arrive.
         let root = crate::path_bar::chain_root(&location, None);
         let mut chain = Vec::new();
         let mut current = location;
@@ -282,16 +271,42 @@ impl BrowserView {
             chain.push((parent.clone(), current));
             current = parent;
         }
-        let mut previous: Option<gtk::Widget> = None;
+        // Walking one folder along leaves most of the path where it was, so the columns
+        // whose folder has not changed are kept, listing and all; only the mark moves.
+        let mut old: std::collections::VecDeque<SideColumn> = imp.side_columns.take().into();
+        let mut columns: Vec<SideColumn> = Vec::new();
+        let mut reusing = true;
         for (dir, child) in chain.into_iter().rev() {
-            let column = self.side_column(&dir, Some(child));
-            imp.columns_box
-                .insert_child_after(&column.root, previous.as_ref());
-            previous = Some(column.root.clone().upcast());
-            imp.side_columns.borrow_mut().push(column);
+            reusing = reusing && old.front().is_some_and(|column| column.dir.equal(&dir));
+            match reusing.then(|| old.pop_front()).flatten() {
+                Some(column) => {
+                    mark_when_loaded(&column.model, &column.list, child);
+                    columns.push(column);
+                }
+                None => columns.push(self.side_column(&dir, Some(child))),
+            }
         }
+        for column in old {
+            imp.columns_box.remove(&column.root);
+        }
+        let mut previous: Option<gtk::Widget> = None;
+        for column in &columns {
+            if column.root.parent().is_none() {
+                imp.columns_box
+                    .insert_child_after(&column.root, previous.as_ref());
+            }
+            previous = Some(column.root.clone().upcast());
+        }
+        imp.side_columns.replace(columns);
         self.update_preview_column();
         self.scroll_columns_to_end();
+    }
+
+    /// Draw the columns from scratch, for the settings that change how a folder is
+    /// listed: the kept ones would otherwise hold the old order.
+    pub(crate) fn refresh_columns(&self) {
+        self.clear_side_columns();
+        self.rebuild_columns();
     }
 
     /// Whether the folder being viewed has a path to draw beside it.
@@ -418,7 +433,12 @@ impl BrowserView {
         if let Some(file) = mark {
             mark_when_loaded(&model, &list, file);
         }
-        SideColumn { model, root }
+        SideColumn {
+            dir: dir.clone(),
+            model,
+            list,
+            root,
+        }
     }
 
     fn sync_column_sort(&self) {
@@ -436,14 +456,21 @@ impl BrowserView {
     }
 
     /// The folder being viewed sits at the far right; keep it in sight. The strip is
-    /// measured a frame or two after the columns are in and can be measured more than
-    /// once, so the ask stands for a moment rather than for a single answer.
+    /// measured over the frames that follow, and the focus and the fresh listings pull it
+    /// about while that happens, so the ask is re-made every frame for a moment.
     fn scroll_columns_to_end(&self) {
-        let imp = self.imp();
-        imp.scroll_until
-            .set(glib::monotonic_time() + SCROLL_WINDOW.as_micros() as i64);
-        let adjustment = imp.columns_scroll.hadjustment();
-        adjustment.set_value(adjustment.upper());
+        let deadline = glib::monotonic_time() + SCROLL_WINDOW.as_micros() as i64;
+        self.imp()
+            .columns_scroll
+            .add_tick_callback(move |scroll, _| {
+                let adjustment = scroll.hadjustment();
+                adjustment.set_value(adjustment.upper());
+                if glib::monotonic_time() < deadline {
+                    glib::ControlFlow::Continue
+                } else {
+                    glib::ControlFlow::Break
+                }
+            });
     }
 
     /// Whether a point in the stack falls in a column other than the current folder's.
