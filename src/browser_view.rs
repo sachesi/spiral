@@ -25,6 +25,14 @@ mod imp {
         #[template_child]
         pub column_view: TemplateChild<gtk::ColumnView>,
         #[template_child]
+        pub columns_scroll: TemplateChild<gtk::ScrolledWindow>,
+        #[template_child]
+        pub columns_box: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub miller_scroll: TemplateChild<gtk::ScrolledWindow>,
+        #[template_child]
+        pub miller_list: TemplateChild<gtk::ListView>,
+        #[template_child]
         pub error_page: TemplateChild<adw::StatusPage>,
         #[template_child]
         pub empty_page: TemplateChild<adw::StatusPage>,
@@ -44,6 +52,17 @@ mod imp {
         pub drop_menu: TemplateChild<gio::MenuModel>,
         /// Files waiting for the drop menu to say what to do with them.
         pub pending_drop: RefCell<Option<(Vec<gio::File>, gio::File)>>,
+        /// The columns of the Miller view beside the folder being viewed: the path
+        /// that leads to it, then the folder the selection points at.
+        pub side_columns: RefCell<Vec<crate::miller::SideColumn>>,
+        pub preview_column: RefCell<Option<crate::miller::SideColumn>>,
+        /// Bumped per selection so only the last of a run of them lists a folder.
+        pub preview_gen: Cell<u64>,
+        /// Set while a rebuild of the strip is waiting for the current change to end.
+        pub columns_pending: Cell<bool>,
+        /// Until when the strip puts itself back at the folder being viewed, on the
+        /// monotonic clock.
+        pub scroll_until: Cell<i64>,
 
         #[property(get)]
         pub model: FolderModel,
@@ -115,6 +134,15 @@ mod imp {
                 stack: Default::default(),
                 grid_view: Default::default(),
                 column_view: Default::default(),
+                columns_scroll: Default::default(),
+                columns_box: Default::default(),
+                miller_scroll: Default::default(),
+                miller_list: Default::default(),
+                side_columns: Default::default(),
+                preview_column: Default::default(),
+                preview_gen: Default::default(),
+                columns_pending: Default::default(),
+                scroll_until: Default::default(),
                 error_page: Default::default(),
                 empty_page: Default::default(),
                 floating_bar: Default::default(),
@@ -180,16 +208,30 @@ mod imp {
                         | gtk::gdk::DragAction::MOVE
                         | gtk::gdk::DragAction::LINK,
                 );
-                target.connect_enter(|t, _, _| preferred_action(t));
-                target.connect_motion(|t, _, _| preferred_action(t));
+                let action = glib::clone!(
+                    #[weak]
+                    obj,
+                    #[upgrade_or]
+                    gtk::gdk::DragAction::empty(),
+                    move |t: &gtk::DropTarget, x: f64, y: f64| {
+                        if obj.in_side_column(x, y) {
+                            gtk::gdk::DragAction::empty()
+                        } else {
+                            preferred_action(t)
+                        }
+                    }
+                );
+                target.connect_enter(action.clone());
+                target.connect_motion(action);
                 target.connect_drop(glib::clone!(
                     #[weak]
                     obj,
                     #[upgrade_or]
                     false,
                     move |t, value, x, y| match obj.location() {
-                        Some(loc) => obj.drop_files(t, value, &loc, x, y),
-                        None => false,
+                        Some(loc) if !obj.in_side_column(x, y) =>
+                            obj.drop_files(t, value, &loc, x, y),
+                        _ => false,
                     }
                 ));
                 self.stack.add_controller(target);
@@ -220,7 +262,10 @@ mod imp {
                     glib::clone!(
                         #[weak]
                         obj,
-                        move |_, _| obj.model().reload()
+                        move |_, _| {
+                            obj.model().reload();
+                            obj.rebuild_columns();
+                        }
                     ),
                 );
             }
@@ -231,6 +276,7 @@ mod imp {
                     let single = crate::prefs::single_click();
                     imp.grid_view.set_single_click_activate(single);
                     imp.column_view.set_single_click_activate(single);
+                    imp.miller_list.set_single_click_activate(single);
                 }
             );
             apply_click(&self.settings, "click-policy");
@@ -298,6 +344,7 @@ mod imp {
             self.column_view.set_model(Some(&self.model.selection()));
             obj.setup_grid_factory();
             obj.setup_columns();
+            obj.setup_miller();
 
             self.grid_view.connect_activate(glib::clone!(
                 #[weak]
@@ -305,6 +352,11 @@ mod imp {
                 move |_, pos| obj.activate_position(pos)
             ));
             self.column_view.connect_activate(glib::clone!(
+                #[weak]
+                obj,
+                move |_, pos| obj.activate_position(pos)
+            ));
+            self.miller_list.connect_activate(glib::clone!(
                 #[weak]
                 obj,
                 move |_, pos| obj.activate_position(pos)
@@ -347,10 +399,12 @@ mod imp {
     impl BrowserView {
         fn set_view_mode(&self, mode: ViewMode) {
             self.view_mode.set(mode);
-            if mode == ViewMode::Grid {
+            // Only the list can show a folder's children in place.
+            if mode != ViewMode::List {
                 self.model.collapse_all();
             }
             self.obj().update_stack();
+            self.obj().rebuild_columns();
         }
     }
 }
@@ -370,10 +424,10 @@ fn unbind_captions(label: &gtk::Label) {
 }
 
 fn global_view_mode(settings: &gio::Settings, key: &str) -> ViewMode {
-    if settings.enum_(key) == ViewMode::List as i32 {
-        ViewMode::List
-    } else {
-        ViewMode::Grid
+    match settings.enum_(key) {
+        v if v == ViewMode::List as i32 => ViewMode::List,
+        v if v == ViewMode::Columns as i32 => ViewMode::Columns,
+        _ => ViewMode::Grid,
     }
 }
 
@@ -451,7 +505,7 @@ const EMBLEM_MARGIN: i32 = 18;
 
 /// Lock shown on files the user cannot read or change, dimmed like Nautilus emblems. It
 /// keeps its place when empty so icons line up across cells.
-fn emblem_image() -> gtk::Image {
+pub(crate) fn emblem_image() -> gtk::Image {
     gtk::Image::builder()
         .pixel_size(16)
         .css_classes(["dim-label"])
@@ -462,7 +516,7 @@ fn set_emblem(emblem: &gtk::Image, locked: bool) {
     emblem.set_icon_name(locked.then_some("changes-prevent-symbolic"));
 }
 
-fn unbind_icon(image: &gtk::Image) {
+pub(crate) fn unbind_icon(image: &gtk::Image) {
     if let Some(handle) =
         unsafe { image.steal_data::<futures_util::future::AbortHandle>("thumb-abort") }
     {
@@ -515,7 +569,7 @@ fn set_star(button: &gtk::Button, starred: bool) {
 }
 
 /// Files waiting on the clipboard as a cut are dimmed, the way Nautilus marks them.
-fn set_cut(cell: &impl IsA<gtk::Widget>, info: &gio::FileInfo) {
+pub(crate) fn set_cut(cell: &impl IsA<gtk::Widget>, info: &gio::FileInfo) {
     if crate::clipboard::is_cut(&file_utils::file_of(info)) {
         cell.add_css_class("spiral-cut");
     } else {
@@ -523,7 +577,7 @@ fn set_cut(cell: &impl IsA<gtk::Widget>, info: &gio::FileInfo) {
     }
 }
 
-fn remember_list_item(cell: &impl IsA<gtk::Widget>, item: &gtk::ListItem) {
+pub(crate) fn remember_list_item(cell: &impl IsA<gtk::Widget>, item: &gtk::ListItem) {
     unsafe { cell.set_data("list-item", item.downgrade()) };
 }
 
@@ -662,9 +716,15 @@ impl BrowserView {
             self.set_view_mode(global_view_mode(&imp.settings, "chooser-view-mode"));
             return;
         }
-        self.set_view_mode(global_view_mode(&imp.settings, "view-mode"));
+        // Columns belong to the pane, not to a folder: walking from one folder to the
+        // next is how they are read, and picking a view per folder would drop out of them
+        // at the first click. Leaving them is what the view button and Ctrl+1/2 are for.
+        let keep = self.view_mode() == ViewMode::Columns;
+        if !keep {
+            self.set_view_mode(global_view_mode(&imp.settings, "view-mode"));
+        }
         let remember = crate::prefs::remember_view();
-        let guess = crate::prefs::guess_view();
+        let guess = crate::prefs::guess_view() && !keep;
         if !remember && !guess {
             return;
         }
@@ -696,6 +756,7 @@ impl BrowserView {
                     if let Some(mode) = info
                         .attribute_string("metadata::spiral-view")
                         .and_then(|s| ViewMode::from_nick(&s))
+                        .filter(|_| !keep)
                     {
                         view.imp().folder_view.set(Some(mode));
                         view.set_view_mode(mode);
@@ -726,18 +787,16 @@ impl BrowserView {
         ));
     }
 
-    /// Flip between grid and list: for this folder only when views are remembered per
-    /// folder, otherwise as the new global default.
+    /// Step to the next view, in the order the view button shows.
     pub fn toggle_view_mode(&self) {
-        let next = match self.view_mode() {
-            ViewMode::Grid => ViewMode::List,
-            ViewMode::List => ViewMode::Grid,
-        };
+        self.choose_view_mode(self.view_mode().next());
+    }
+
+    /// Switch view: for this folder only when views are remembered per folder, otherwise
+    /// as the new global default.
+    pub fn choose_view_mode(&self, next: ViewMode) {
         self.set_view_mode(next);
-        let nick = match next {
-            ViewMode::Grid => "grid",
-            ViewMode::List => "list",
-        };
+        let nick = next.nick();
         match self.location() {
             _ if self.chooser_mode() => {
                 let _ = self.imp().settings.set_string("chooser-view-mode", nick);
@@ -789,6 +848,8 @@ impl BrowserView {
                 }
                 let imp = view.imp();
                 imp.grid_view.scroll_to(0, gtk::ListScrollFlags::NONE, None);
+                imp.miller_list
+                    .scroll_to(0, gtk::ListScrollFlags::NONE, None);
                 imp.column_view
                     .scroll_to(0, None, gtk::ListScrollFlags::NONE, None);
                 if let Some(id) = id2.borrow_mut().take() {
@@ -884,6 +945,10 @@ impl BrowserView {
                 imp.error_page.set_description(Some(&msg));
             }
             "error"
+        } else if imp.view_mode.get() == ViewMode::Columns && !imp.model.searching() {
+            // The strip keeps the path on screen even where the folder itself is empty,
+            // and a search reaches past the folder, which no column can draw.
+            "columns"
         } else if !imp.model.loading() && imp.model.n_items() == 0 {
             imp.empty_page.set_title(&if imp.model.searching() {
                 gettext("No Results Found")
@@ -894,7 +959,7 @@ impl BrowserView {
         } else {
             match imp.view_mode.get() {
                 ViewMode::Grid => "grid",
-                ViewMode::List => "list",
+                _ => "list",
             }
         };
         imp.stack.set_visible_child_name(name);
@@ -1007,7 +1072,7 @@ impl BrowserView {
 
     /// Icon now, thumbnail later (cancelled on unbind); the lock emblem for files that
     /// cannot be read or changed.
-    fn bind_icon(&self, image: &gtk::Image, emblem: &gtk::Image, info: &gio::FileInfo) {
+    pub(crate) fn bind_icon(&self, image: &gtk::Image, emblem: &gtk::Image, info: &gio::FileInfo) {
         unbind_icon(image);
         set_emblem(
             emblem,
@@ -1056,6 +1121,9 @@ impl BrowserView {
             if let Some(pos) = first {
                 view.imp()
                     .grid_view
+                    .scroll_to(pos, gtk::ListScrollFlags::FOCUS, None);
+                view.imp()
+                    .miller_list
                     .scroll_to(pos, gtk::ListScrollFlags::FOCUS, None);
                 view.imp()
                     .column_view
@@ -1138,7 +1206,7 @@ impl BrowserView {
             self,
             move |gesture, _, x, y| {
                 let stack = view.imp().stack.clone().upcast::<gtk::Widget>();
-                if cell_at(&stack, x, y).is_some() {
+                if cell_at(&stack, x, y).is_some() || view.in_side_column(x, y) {
                     return;
                 }
                 view.grab_view_focus();
@@ -1157,7 +1225,7 @@ impl BrowserView {
     /// Each cell is a drop target when it shows a folder; every cell of a row carries
     /// one, so the whole row accepts a drop. Dragging is handled view-wide instead,
     /// because the list's rubberband gesture outruns any drag source on a cell.
-    fn setup_cell_dnd(&self, cell: &impl IsA<gtk::Widget>) {
+    pub(crate) fn setup_cell_dnd(&self, cell: &impl IsA<gtk::Widget>) {
         if self.chooser_mode() {
             return;
         }
@@ -1319,9 +1387,10 @@ impl BrowserView {
     pub(crate) fn refresh_cells(&self) {
         let imp = self.imp();
         let writable = imp.can_write.get();
-        let roots: [gtk::Widget; 2] = [
+        let roots: [gtk::Widget; 3] = [
             imp.grid_view.clone().upcast(),
             imp.column_view.clone().upcast(),
+            imp.miller_list.clone().upcast(),
         ];
         for root in roots {
             each_cell(&root, &mut |cell| {
@@ -1343,9 +1412,10 @@ impl BrowserView {
 
     pub fn grab_view_focus(&self) {
         let imp = self.imp();
-        match imp.view_mode.get() {
-            ViewMode::Grid => imp.grid_view.grab_focus(),
-            ViewMode::List => imp.column_view.grab_focus(),
+        match imp.stack.visible_child_name().as_deref() {
+            Some("grid") => imp.grid_view.grab_focus(),
+            Some("columns") => imp.miller_list.grab_focus(),
+            _ => imp.column_view.grab_focus(),
         };
     }
 

@@ -8,7 +8,7 @@ applications that go through the portal for file dialogs, which is GTK 4 apps un
 portal, Flatpaks, Firefox, Chromium and Electron apps, Qt with the xdg platform theme,
 get Spiral's dialog.
 
-The dialog is a trimmed file manager window: sidebar, path bar, grid or list view, and a
+The dialog is a trimmed file manager window: sidebar, path bar, the same views, and a
 bottom bar with the filter dropdown, the name entry in save mode, a button for the
 application's extra options, and the accept button. It starts in the view from
 `chooser-view-mode` (list by default) and does not remember views per folder. Trash,

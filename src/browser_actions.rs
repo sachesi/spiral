@@ -237,7 +237,11 @@ impl BrowserView {
             self,
             move |g, _, x, y| {
                 g.set_state(gtk::EventSequenceState::Claimed);
-                view.popup_menu_at(x, y);
+                // The menus act on the folder being viewed, which the columns beside it
+                // are not; a click there picks that folder first.
+                if !view.in_side_column(x, y) {
+                    view.popup_menu_at(x, y);
+                }
             }
         ));
         imp.stack.add_controller(click);

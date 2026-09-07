@@ -153,12 +153,9 @@ async fn run(
             #[weak]
             view_button,
             move |v: &BrowserView| {
-                let grid = v.view_mode() == crate::enums::ViewMode::Grid;
-                view_button.set_icon_name(if grid {
-                    "view-list-symbolic"
-                } else {
-                    "view-grid-symbolic"
-                });
+                let next = v.view_mode().next();
+                view_button.set_icon_name(next.icon());
+                view_button.set_tooltip_text(Some(&next.label()));
             }
         );
         sync(&view);

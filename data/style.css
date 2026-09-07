@@ -137,6 +137,35 @@
   }
 }
 
+/* Miller columns */
+.spiral-columns-view,
+.spiral-columns-view > viewport {
+  background: none;
+}
+.spiral-miller-column {
+  border-right: 1px solid var(--border-color);
+}
+.spiral-miller-column:last-child {
+  border-right: none;
+}
+.spiral-miller-column:drop(active) {
+  background-color: color-mix(in srgb, var(--accent-bg-color) 12%, transparent);
+}
+.spiral-miller-column listview {
+  background: none;
+  padding: 6px;
+  border-spacing: 2px;
+}
+.spiral-miller-column listview > row {
+  border-radius: 9px;
+}
+.spiral-miller-column .spiral-view-cell {
+  padding: 6px;
+}
+.spiral-miller-column .spiral-view-cell:drop(active) {
+  box-shadow: none;
+}
+
 /* Both views */
 .spiral-list-view:drop(active),
 .spiral-grid-view:drop(active) {
@@ -161,7 +190,8 @@ rubberband {
 }
 /* Neutral selection colour in the file views, like Nautilus. */
 .spiral-list-view columnview > listview,
-.spiral-grid-view gridview {
+.spiral-grid-view gridview,
+.spiral-miller-column listview {
   --accent-bg-color: #959595;
   --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab));
 }

@@ -58,9 +58,10 @@ Location" on a result jumps to its folder.
 
 ## Views
 
-Grid or list, switched with the button in the header or Ctrl+1 / Ctrl+2. The dropdown
-next to it has zoom, sort order, hidden files and the sidebar toggle. Zoom steps are
-48, 64, 96, 168 and 256 px in the grid and 16 to 64 in the list; Ctrl+wheel works too.
+Grid, list or columns, picked from the dropdown in the header or with Ctrl+1, Ctrl+2 and
+Ctrl+3; the button beside it steps through the three. The dropdown also has zoom, sort
+order, hidden files and the sidebar toggle. Zoom steps are 48, 64, 96, 168 and 256 px in
+the grid and 16 to 64 in the list and the columns; Ctrl+wheel works too.
 
 Which view a folder opens in: the one it was last switched to, if "Remember View per
 Folder" is on (stored in the folder's `metadata::spiral-view` attribute, invisible to
@@ -86,6 +87,25 @@ always stays, and only name, size, type and modified sort. Type shows the extens
 "txt", "tar.gz", "Folder" — and falls back to the full description, on a tooltip, for
 names without one. Every column but the name and the star can be resized by dragging its
 header edge.
+
+### Columns
+
+The column view draws the path as a strip of lists, one folder per column, the way the
+Finder does. The last column is the folder you are in; the columns before it are the
+folders that lead there, with the one you came through picked out, and a column appears
+past the last one whenever a single folder is selected, showing what it holds. The strip
+scrolls sideways and keeps the last column in sight.
+
+One click in any column before the last goes there: a folder becomes the folder you are
+in, a file makes its folder the one you are in and picks the file out. Left and Right step
+out to the parent and into the selected folder. Everything else — the context menus,
+renaming, dragging files out, the keys — works in the last column, which is the folder the
+header and the file actions act on; dropping files on any other column puts them in the
+folder that column lists.
+
+Unlike the grid and the list, the columns stay put as you walk from folder to folder,
+since walking is what they are for; leave them with the view button or Ctrl+1 and Ctrl+2.
+A search reaches past the folder you are in, so it falls back to the list while it runs.
 
 ## Selecting, opening, moving things
 

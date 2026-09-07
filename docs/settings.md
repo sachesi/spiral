@@ -24,8 +24,8 @@ Changes apply immediately to open windows.
 | `guess-view` | bool | true | Grid View for Media Folders |
 | `thumbnails` | `local`, `always`, `never` | `local` | Show Thumbnails |
 | `item-counts` | `local`, `always`, `never` | `local` | Count Items in Folders |
-| `view-mode` | `grid`, `list` | `grid` | |
-| `chooser-view-mode` | `grid`, `list` | `list` | |
+| `view-mode` | `grid`, `list`, `columns` | `grid` | |
+| `chooser-view-mode` | `grid`, `list`, `columns` | `list` | |
 | `sort-key` | `name`, `size`, `type`, `modified` | `name` | Order for folders without a remembered one |
 | `sort-reversed` | bool | false | Direction, same scope |
 | `show-hidden` | bool | false | |

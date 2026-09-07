@@ -51,6 +51,7 @@ pub mod enums;
 pub mod file_utils;
 pub mod folder_model;
 pub mod location_entry;
+pub mod miller;
 pub mod naming;
 pub mod ops;
 pub mod path_bar;

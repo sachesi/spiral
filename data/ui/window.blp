@@ -48,6 +48,23 @@ menu primary_menu {
 
 menu view_menu {
   section {
+    item {
+      label: _("_Grid");
+      action: "win.view-mode";
+      target: "grid";
+    }
+    item {
+      label: _("_List");
+      action: "win.view-mode";
+      target: "list";
+    }
+    item {
+      label: _("_Columns");
+      action: "win.view-mode";
+      target: "columns";
+    }
+  }
+  section {
     label: _("Icon Size");
     display-hint: "inline-buttons";
     item {

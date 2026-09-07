@@ -59,6 +59,7 @@ mod imp {
         pub view_split_button_bottom: TemplateChild<adw::SplitButton>,
         pub settings: gio::Settings,
         pub sort_action: gio::SimpleAction,
+        pub view_mode_action: gio::SimpleAction,
         /// The pane the header and the shortcuts act on, when a tab has two.
         pub active_view: RefCell<Option<glib::WeakRef<BrowserView>>>,
         /// Set while the window is too narrow for a second pane.
@@ -97,6 +98,11 @@ mod imp {
                     "sort",
                     Some(glib::VariantTy::STRING),
                     &"name-asc".to_variant(),
+                ),
+                view_mode_action: gio::SimpleAction::new_stateful(
+                    "view-mode",
+                    Some(glib::VariantTy::STRING),
+                    &"grid".to_variant(),
                 ),
                 active_view: Default::default(),
                 narrow: Default::default(),
@@ -237,8 +243,21 @@ mod imp {
             klass.add_binding_action(Key::plus, M::CONTROL_MASK, "win.zoom-in");
             klass.add_binding_action(Key::equal, M::CONTROL_MASK, "win.zoom-in");
             klass.add_binding_action(Key::minus, M::CONTROL_MASK, "win.zoom-out");
-            klass.add_binding_action(Key::_1, M::CONTROL_MASK, "win.toggle-view-mode");
-            klass.add_binding_action(Key::_2, M::CONTROL_MASK, "win.toggle-view-mode");
+            for (key, mode) in [
+                (Key::_1, ViewMode::Grid),
+                (Key::_2, ViewMode::List),
+                (Key::_3, ViewMode::Columns),
+            ] {
+                // A named action takes its target from the shortcut, which the plain
+                // `add_binding_action` has no room for.
+                klass.add_shortcut(
+                    &gtk::Shortcut::builder()
+                        .trigger(&gtk::KeyvalTrigger::new(key, M::CONTROL_MASK))
+                        .action(&gtk::NamedAction::new("win.view-mode"))
+                        .arguments(&mode.nick().to_variant())
+                        .build(),
+                );
+            }
             // Also at window level so the clipboard keys work with the focus anywhere
             // outside a text entry: the sidebar, the path bar, the tab bar.
             klass.add_binding_action(Key::c, M::CONTROL_MASK, "view.copy");
@@ -304,6 +323,19 @@ mod imp {
                 }
             ));
             obj.add_action(&self.sort_action);
+            self.view_mode_action.connect_activate(glib::clone!(
+                #[weak(rename_to = win)]
+                obj,
+                move |_, v| {
+                    if let Some(mode) = v.and_then(|v| v.str()).and_then(ViewMode::from_nick)
+                        && let Some(view) = win.current_view()
+                    {
+                        view.choose_view_mode(mode);
+                        view.grab_view_focus();
+                    }
+                }
+            ));
+            obj.add_action(&self.view_mode_action);
             obj.action_set_enabled("win.restore-tab", false);
             obj.sync_view_button();
             obj.zoom(0);
@@ -950,22 +982,20 @@ impl SpiralWindow {
     /// The split button shows the view you switch *to*, like Nautilus.
     fn sync_view_button(&self) {
         let imp = self.imp();
-        let grid = self
+        let mode = self
             .current_view()
-            .is_none_or(|v| v.view_mode() == ViewMode::Grid);
-        imp.view_split_button.set_icon_name(if grid {
-            "view-list-symbolic"
-        } else {
-            "view-grid-symbolic"
-        });
-        imp.view_split_button.set_tooltip_text(Some(&if grid {
-            gettext("List View")
-        } else {
-            gettext("Grid View")
-        }));
-        // Each view has its own dialog: captions under the grid icons, columns of the list.
-        self.action_set_enabled("win.captions", grid);
-        self.action_set_enabled("win.visible-columns", !grid);
+            .map(|v| v.view_mode())
+            .unwrap_or_default();
+        let next = mode.next();
+        for button in [&imp.view_split_button, &imp.view_split_button_bottom] {
+            button.set_icon_name(next.icon());
+            button.set_tooltip_text(Some(&next.label()));
+        }
+        imp.view_mode_action.set_state(&mode.nick().to_variant());
+        // Each view has its own dialog: captions under the grid icons, columns of the
+        // list. The Miller columns show names only.
+        self.action_set_enabled("win.captions", mode == ViewMode::Grid);
+        self.action_set_enabled("win.visible-columns", mode == ViewMode::List);
     }
 
     /// Refresh header widgets from the selected tab.

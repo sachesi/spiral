@@ -3,6 +3,7 @@
   <enum id="io.github.sachesi.spiral.ViewMode">
     <value nick="grid" value="0"/>
     <value nick="list" value="1"/>
+    <value nick="columns" value="2"/>
   </enum>
   <enum id="io.github.sachesi.spiral.SortKey">
     <value nick="name" value="0"/>
