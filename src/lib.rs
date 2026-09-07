@@ -23,7 +23,8 @@ pub fn init_early() {
     glib::set_application_name("Spiral");
 }
 
-/// The stylesheet. Needs GTK started, so `AdwApplication` calls it from `startup`.
+/// The stylesheet and the bundled icons. Needs GTK started, so `AdwApplication` calls it
+/// from `startup`.
 pub fn init_style() {
     let css = gtk::CssProvider::new();
     css.load_from_resource(&format!("{}/style.css", config::RESOURCE_PATH));
@@ -33,6 +34,10 @@ pub fn init_style() {
             &css,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+        // `GtkApplication` does this for the file manager; the portal backend has no
+        // application object, and without it the icons we ship draw as broken images.
+        gtk::IconTheme::for_display(&display)
+            .add_resource_path(&format!("{}/icons", config::RESOURCE_PATH));
     }
 }
 
