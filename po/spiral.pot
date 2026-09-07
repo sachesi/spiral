@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: spiral 0.5.0\n"
+"Project-Id-Version: spiral 0.5.1\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 00:24+0300\n"
+"POT-Creation-Date: 2026-09-07 08:50+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -211,6 +211,16 @@ msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"A click on empty space in a folder takes the keyboard and clears the "
+"selection, so Ctrl+A and the other file keys no longer wait for a file to be "
+"clicked; the keyboard also comes back after a menu closes and after the "
+"navigation buttons. A right click on empty space keeps the selection, and "
+"the menu it opens acts on the folder. The search filters button has an icon "
+"again."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:32
+msgid ""
 "Two folder panes side by side, off by default and turned on with F3: F6 "
 "moves between them, the pane in charge is outlined, and everything outside "
 "the view acts on that one. Dropping files asks whether to copy, move or "
@@ -219,7 +229,7 @@ msgid ""
 "portal deadlock, and opens a window of its own with the file selected."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:32
+#: data/io.github.sachesi.spiral.metainfo.xml:37
 msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
@@ -229,7 +239,7 @@ msgid ""
 "as the file extension, and a star toggle that follows the favourites."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:37
+#: data/io.github.sachesi.spiral.metainfo.xml:42
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -240,14 +250,14 @@ msgid ""
 "pastes paths into terminals."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:42
+#: data/io.github.sachesi.spiral.metainfo.xml:47
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
 "calls no longer block the interface on slow mounts."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:46
+#: data/io.github.sachesi.spiral.metainfo.xml:51
 msgid "First release."
 msgstr ""
 
@@ -282,75 +292,75 @@ msgstr ""
 msgid "translator-credits"
 msgstr ""
 
-#: src/browser_actions.rs:129
+#: src/browser_actions.rs:130
 #, no-c-format
 msgid "Untitled Document"
 msgstr ""
 
-#: src/browser_actions.rs:391
+#: src/browser_actions.rs:410
 #, no-c-format
 msgid "Extract To"
 msgstr ""
 
-#: src/browser_actions.rs:392 src/ops/archive.rs:351
+#: src/browser_actions.rs:411 src/ops/archive.rs:351
 #, no-c-format
 msgid "_Extract"
 msgstr ""
 
-#: src/browser_actions.rs:418
+#: src/browser_actions.rs:437
 #, no-c-format
 msgid "Archive"
 msgstr ""
 
-#: src/browser_actions.rs:513
+#: src/browser_actions.rs:532
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr ""
 
-#: src/browser_actions.rs:527
+#: src/browser_actions.rs:546
 #, no-c-format
 msgid "Move To"
 msgstr ""
 
-#: src/browser_actions.rs:529
+#: src/browser_actions.rs:548
 #, no-c-format
 msgid "Copy To"
 msgstr ""
 
-#: src/browser_actions.rs:532
+#: src/browser_actions.rs:551
 #, no-c-format
 msgid "_Move"
 msgstr ""
 
-#: src/browser_actions.rs:534 ui/browser_view.ui:171
+#: src/browser_actions.rs:553 ui/browser_view.ui:171
 #, no-c-format
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:629 src/browser_view.rs:864
+#: src/browser_actions.rs:648 src/browser_view.rs:865
 #: src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
 
-#: src/browser_actions.rs:639
+#: src/browser_actions.rs:658
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr ""
 
-#: src/browser_actions.rs:641
+#: src/browser_actions.rs:660
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_actions.rs:649
+#: src/browser_actions.rs:668
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr ""
 
-#: src/browser_actions.rs:654 src/browser_actions.rs:678
+#: src/browser_actions.rs:673 src/browser_actions.rs:697
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
 #: src/ops/archive.rs:350 src/ops/conflict.rs:63 src/ops/conflict.rs:314
 #: src/ops/walk.rs:223 src/places_sidebar.rs:606
@@ -359,78 +369,78 @@ msgstr ""
 msgid "_Cancel"
 msgstr ""
 
-#: src/browser_actions.rs:655
+#: src/browser_actions.rs:674
 #, no-c-format
 msgid "_Delete"
 msgstr ""
 
-#: src/browser_actions.rs:671
+#: src/browser_actions.rs:690
 #, no-c-format
 msgid "Empty Trash?"
 msgstr ""
 
-#: src/browser_actions.rs:673
+#: src/browser_actions.rs:692
 #, no-c-format
 msgid "All items in the Trash will be permanently deleted."
 msgstr ""
 
-#: src/browser_actions.rs:679 src/places_sidebar.rs:608 ui/browser_view.ui:313
+#: src/browser_actions.rs:698 src/places_sidebar.rs:608 ui/browser_view.ui:313
 #, no-c-format
 msgid "_Empty Trash"
 msgstr ""
 
-#: src/browser_view.rs:398
+#: src/browser_view.rs:399
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:402
+#: src/browser_view.rs:403
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:510
+#: src/browser_view.rs:511
 #, no-c-format
 msgid "Remove from Starred"
 msgstr ""
 
-#: src/browser_view.rs:512
+#: src/browser_view.rs:513
 #, no-c-format
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view.rs:875 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:876 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:635
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view.rs:888
+#: src/browser_view.rs:889
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:890 ui/browser_view.ui:66
+#: src/browser_view.rs:891 ui/browser_view.ui:66
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:910
+#: src/browser_view.rs:911
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:926
+#: src/browser_view.rs:927
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:931
+#: src/browser_view.rs:932
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -438,23 +448,23 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:937
+#: src/browser_view.rs:938
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:1491
+#: src/browser_view.rs:1521
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:1571 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1601 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr ""
 
-#: src/browser_view.rs:1693 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1723 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr ""
@@ -1657,7 +1667,7 @@ msgstr ""
 msgid "Forward"
 msgstr ""
 
-#: src/portal/chooser_window.rs:148 src/window.rs:965 ui/window.ui:418
+#: src/portal/chooser_window.rs:148 src/window.rs:962 ui/window.ui:418
 #: ui/window.ui:502
 #, no-c-format
 msgid "List View"
@@ -1710,12 +1720,12 @@ msgstr ""
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:591 ui/shortcuts_dialog.ui:234
+#: src/window.rs:579 ui/shortcuts_dialog.ui:234
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:967
+#: src/window.rs:964
 #, no-c-format
 msgid "Grid View"
 msgstr ""

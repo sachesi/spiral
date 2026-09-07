@@ -22,6 +22,11 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.5.1" date="2026-09-07">
+      <description>
+        <p>A click on empty space in a folder takes the keyboard and clears the selection, so Ctrl+A and the other file keys no longer wait for a file to be clicked; the keyboard also comes back after a menu closes and after the navigation buttons. A right click on empty space keeps the selection, and the menu it opens acts on the folder. The search filters button has an icon again.</p>
+      </description>
+    </release>
     <release version="0.5.0" date="2026-09-07">
       <description>
         <p>Two folder panes side by side, off by default and turned on with F3: F6 moves between them, the pane in charge is outlined, and everything outside the view acts on that one. Dropping files asks whether to copy, move or link, which Preferences can turn off. An up button beside back and forward. "Show in folder" from a browser no longer waits twenty-five seconds on a portal deadlock, and opens a window of its own with the file selected.</p>
