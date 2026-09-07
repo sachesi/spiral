@@ -16,6 +16,11 @@ has to be in `PATH`. Images with no system thumbnailer go to the bundled
 (PNG, JPEG, GIF, BMP, TIFF, and WebP, AVIF, JPEG XL or SVG with their loader packages),
 scales to fit, and applies the EXIF orientation. Anything else gets no thumbnail.
 
+The in-memory cache is keyed by URI, modification time and size. The size is part of it
+because a file another program is still writing is seen empty first, and the verdict taken
+from that snapshot would otherwise stand until the next start whenever the empty file and
+the finished one share a modification second.
+
 At most four thumbnailers run at once, newest requests first, so the rows on screen win
 over the ones you scrolled past.
 
