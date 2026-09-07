@@ -38,3 +38,7 @@ libc = "0.2.189"
 
 [build-dependencies]
 glib-build-tools = "0.22"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
