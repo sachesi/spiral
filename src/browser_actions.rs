@@ -277,8 +277,10 @@ impl BrowserView {
         ));
         imp.stack.add_controller(middle);
 
-        // Space previews the selection. Captured, because the window's search entry takes
-        // typing before the view is asked; a text entry inside the view keeps its spaces.
+        // Space previews the selection, and the first arrow in a folder with nothing
+        // selected picks its first item, where GTK would only give it the focus and leave
+        // the press looking lost. Captured, because the window's search entry takes typing
+        // before the view is asked; a text entry inside the view keeps its keys.
         let keys = gtk::EventControllerKey::new();
         keys.set_propagation_phase(gtk::PropagationPhase::Capture);
         keys.connect_key_pressed(glib::clone!(
@@ -287,13 +289,28 @@ impl BrowserView {
             #[upgrade_or]
             glib::Propagation::Proceed,
             move |_, key, _, state| {
-                use gtk::gdk::ModifierType as M;
+                use gtk::gdk::{Key, ModifierType as M};
                 let held = M::CONTROL_MASK | M::ALT_MASK | M::SHIFT_MASK | M::SUPER_MASK;
-                if key != gtk::gdk::Key::space || state.intersects(held) || is_editing(&view) {
+                if state.intersects(held) || is_editing(&view) {
                     return glib::Propagation::Proceed;
                 }
-                let _ = view.activate_action("view.preview", None);
-                glib::Propagation::Stop
+                match key {
+                    Key::space => {
+                        let _ = view.activate_action("view.preview", None);
+                        glib::Propagation::Stop
+                    }
+                    Key::Up | Key::Down | Key::Left | Key::Right
+                        if view.model().n_items() > 0
+                            && view.model().selection().selection().is_empty() =>
+                    {
+                        view.reveal_position(
+                            0,
+                            gtk::ListScrollFlags::FOCUS | gtk::ListScrollFlags::SELECT,
+                        );
+                        glib::Propagation::Stop
+                    }
+                    _ => glib::Propagation::Proceed,
+                }
             }
         ));
         self.add_controller(keys);
