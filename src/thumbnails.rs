@@ -61,21 +61,31 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
         return cached;
     }
 
-    // Fast path: GIO already knows a valid cached thumbnail.
-    if info.boolean("thumbnail::is-valid")
-        && let Some(path) = info.attribute_byte_string("thumbnail::path")
-        && let Ok(t) = gdk::Texture::from_filename(path.as_str())
-    {
-        remember(key, Some(t.clone()));
-        return Some(t);
-    }
-    let content_type = info.content_type()?.to_string();
-    let path = file.path()?;
-    let thumbnailer = thumbnailer_for(&content_type);
-    if !content_type.starts_with("image/") && thumbnailer.is_none() {
-        remember(key, None);
-        return None;
-    }
+    // A thumbnail GIO already knows to be valid still has to be decoded, and that is
+    // done where a fresh one is: on a worker thread, a few at a time.
+    let cached = info
+        .boolean("thumbnail::is-valid")
+        .then(|| info.attribute_byte_string("thumbnail::path"))
+        .flatten()
+        .map(|path| PathBuf::from(path.as_str()));
+    let source = match cached {
+        Some(png) => Source::Cached(png),
+        None => {
+            let content_type = info.content_type()?.to_string();
+            let path = file.path()?;
+            let thumbnailer = thumbnailer_for(&content_type);
+            if !content_type.starts_with("image/") && thumbnailer.is_none() {
+                remember(key, None);
+                return None;
+            }
+            Source::Generate {
+                path,
+                uri,
+                mtime,
+                thumbnailer,
+            }
+        }
+    };
 
     // Every caller waits on a detached generation task, so a row being unbound mid-way
     // (scrolling) drops only its receiver and can never strand a concurrency slot.
@@ -94,18 +104,23 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
         }
     });
     if first {
-        glib::spawn_future_local(generate_task(key, path, uri, mtime, thumbnailer));
+        glib::spawn_future_local(generate_task(key, source));
     }
     rx.await.ok().flatten()
 }
 
-async fn generate_task(
-    key: Key,
-    path: PathBuf,
-    uri: String,
-    mtime: u64,
-    thumbnailer: Option<Box<Thumbnailer>>,
-) {
+/// Where a thumbnail comes from: the cache file GIO found valid, or a thumbnailer run.
+enum Source {
+    Cached(PathBuf),
+    Generate {
+        path: PathBuf,
+        uri: String,
+        mtime: u64,
+        thumbnailer: Option<Box<Thumbnailer>>,
+    },
+}
+
+async fn generate_task(key: Key, source: Source) {
     acquire().await;
     // Rows scrolled away meanwhile: skip the work, it will be requested again if needed.
     let wanted = PENDING.with(|p| {
@@ -114,26 +129,35 @@ async fn generate_task(
             .is_some_and(|w| w.iter().any(|tx| !tx.is_canceled()))
     });
     let texture = if wanted {
-        let out = cache_path(&uri);
-        let result = gio::spawn_blocking(move || {
-            generate(&path, &uri, mtime, &out, thumbnailer.as_deref()).then_some(out)
-        })
-        .await;
-        result
-            .ok()
-            .flatten()
-            .and_then(|p| match gdk::Texture::from_filename(&p) {
+        let uri = key.0.clone();
+        gio::spawn_blocking(move || {
+            let png = match source {
+                Source::Cached(png) => png,
+                Source::Generate {
+                    path,
+                    uri,
+                    mtime,
+                    thumbnailer,
+                } => {
+                    let out = cache_path(&uri);
+                    generate(&path, &uri, mtime, &out, thumbnailer.as_deref()).then_some(out)?
+                }
+            };
+            match gdk::Texture::from_filename(&png) {
                 Ok(t) => Some(t),
                 Err(e) => {
                     glib::g_debug!(
                         "spiral",
-                        "thumbnail {}: cannot load {}: {e}",
-                        key.0,
-                        p.display()
+                        "thumbnail {uri}: cannot load {}: {e}",
+                        png.display()
                     );
                     None
                 }
-            })
+            }
+        })
+        .await
+        .ok()
+        .flatten()
     } else {
         None
     };
