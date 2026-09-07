@@ -946,16 +946,21 @@ impl BrowserView {
 
     fn update_stack(&self) {
         let imp = self.imp();
+        let empty = !imp.model.loading() && imp.model.n_items() == 0;
         let name = if imp.model.error_message().is_some() {
             if let Some(msg) = imp.model.error_message() {
                 imp.error_page.set_description(Some(&msg));
             }
             "error"
-        } else if imp.view_mode.get() == ViewMode::Columns && !imp.model.searching() {
+        } else if imp.view_mode.get() == ViewMode::Columns
+            && !imp.model.searching()
+            && (!empty || self.shows_chain())
+        {
             // The strip keeps the path on screen even where the folder itself is empty,
-            // and a search reaches past the folder, which no column can draw.
+            // but an empty folder with no path to draw would be a blank window. A search
+            // reaches past the folder, which no column can draw either.
             "columns"
-        } else if !imp.model.loading() && imp.model.n_items() == 0 {
+        } else if empty {
             imp.empty_page.set_title(&if imp.model.searching() {
                 gettext("No Results Found")
             } else {
