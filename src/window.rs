@@ -963,7 +963,11 @@ impl SpiralWindow {
         let current = s.int(key);
         let idx = sizes.iter().position(|&z| z >= current).unwrap_or(2) as i32;
         let next = (idx + step).clamp(0, sizes.len() as i32 - 1);
-        let _ = s.set_int(key, sizes[next as usize]);
+        // Called with no step to light the buttons up, which must not write the setting:
+        // every window would store the size it just read.
+        if sizes[next as usize] != current {
+            let _ = s.set_int(key, sizes[next as usize]);
+        }
         self.action_set_enabled("win.zoom-in", next < sizes.len() as i32 - 1);
         self.action_set_enabled("win.zoom-out", next > 0);
     }

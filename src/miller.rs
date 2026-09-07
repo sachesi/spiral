@@ -377,6 +377,7 @@ impl BrowserView {
         self.imp()
             .settings
             .bind("show-hidden", &model, "show-hidden")
+            .flags(gio::SettingsBindFlags::GET)
             .build();
         let list = gtk::ListView::builder()
             .model(&model.selection())

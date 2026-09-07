@@ -293,9 +293,13 @@ mod imp {
             apply_click(&self.settings, "click-policy");
             self.settings
                 .connect_changed(Some("click-policy"), apply_click);
-            self.settings.bind("grid-zoom", &*obj, "icon-size").build();
+            self.settings
+                .bind("grid-zoom", &*obj, "icon-size")
+                .flags(gio::SettingsBindFlags::GET)
+                .build();
             self.settings
                 .bind("list-zoom", &*obj, "list-icon-size")
+                .flags(gio::SettingsBindFlags::GET)
                 .build();
 
             // Ctrl+wheel zooms; small touchpad deltas add up to whole steps.
@@ -349,6 +353,7 @@ mod imp {
             }
             self.settings
                 .bind("show-hidden", &self.model, "show-hidden")
+                .flags(gio::SettingsBindFlags::GET)
                 .build();
 
             self.grid_view.set_model(Some(&self.model.selection()));
