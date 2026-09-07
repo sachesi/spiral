@@ -163,8 +163,8 @@ picture zoom a picture or a page;
 Ctrl+0 fits it back into the window, zooming out stops there rather than counting below
 it, and a zoomed picture is moved by dragging it. Nothing in the preview shows scrollbars.
 
-A sound file is shown with its cover where a thumbnailer has pulled one out of it, and with
-its icon where it has not. Anything else falls back to the file's thumbnail, or to its
+A sound file is shown with its cover where a thumbnailer can pull one out of it, drawn at
+the size of the icon it stands in for, and with that icon where there is none. Anything else falls back to the file's thumbnail, or to its
 icon, with the name and the type left to the header. Video and
 sound need the GStreamer plugins for the format installed, PDFs need `pdftoppm` from
 poppler-utils, which runs in the same bubblewrap sandbox as the thumbnailers. Text files

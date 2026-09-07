@@ -322,7 +322,20 @@ impl BrowserView {
                 selection.disconnect(id);
             }
         });
-        dialog.present(Some(self));
+        // A PDF that will not say how large its pages are is asked before the dialog is
+        // shown, so it opens at the shape it keeps.
+        let info = info.clone();
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            // The dialog has no parent until it is presented, so the wait holds it.
+            #[strong]
+            dialog,
+            async move {
+                dialog.shape_ahead(&info).await;
+                dialog.present(Some(&view));
+            }
+        ));
     }
 
     fn set_enabled(&self, name: &str, enabled: bool) {
