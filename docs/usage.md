@@ -158,8 +158,8 @@ does not resize itself in front of you: a picture keeps its own, read from the f
 a PDF opens upright and a video at the proportions of its stream once it reports them; text
 gets a page to read on and the sound player is no larger than its controls. Ctrl with + and
 -, Ctrl and the wheel, or the buttons in the bar over the picture zoom a picture or a page;
-Ctrl+0 fits it back into the window, and a zoomed one is moved by dragging it. Nothing in
-the preview shows scrollbars.
+Ctrl+0 fits it back into the window, zooming out stops there rather than counting below
+it, and a zoomed picture is moved by dragging it. Nothing in the preview shows scrollbars.
 
 Anything else falls back to the file's thumbnail, or to its icon, with the name and the
 type left to the header. Video and

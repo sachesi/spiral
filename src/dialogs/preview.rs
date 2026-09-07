@@ -31,20 +31,25 @@ const SOUND_ICON_SIZE: i32 = 96;
 /// How long a file has to stay selected before it is loaded, so that running through a
 /// folder with the arrows does not start a decoder for every file passed over.
 const LOAD_DELAY: Duration = Duration::from_millis(120);
+/// What the header takes before it has been measured.
+const HEADER_HEIGHT: i32 = 46;
 /// Bounds the dialog shapes itself within, whatever proportions the content has.
 const MAX_WIDTH: i32 = 900;
 const MAX_HEIGHT: i32 = 620;
-const MIN_SIDE: i32 = 280;
+const MIN_SIDE: i32 = 180;
 /// Shapes for content whose proportions are not known before it is loaded: text to read,
 /// video before its stream says how big it is, an image whose header could not be read, a
 /// page before it is rendered, the sound player, and the icon for everything else.
-const TEXT_SHAPE: (i32, i32) = (760, 560);
-const VIDEO_SHAPE: (i32, i32) = (720, 405);
-const IMAGE_SHAPE: (i32, i32) = (720, 540);
+const TEXT_SHAPE: (i32, i32) = (760, 514);
+/// Video is shown at the size of its proportions, not of its pixel count: a small clip is
+/// worth a window one can watch, and the shape then matches the one guessed before the
+/// stream reported anything, so nothing has to move.
+const VIDEO_BOX: (i32, i32) = (720, 405);
+const IMAGE_SHAPE: (i32, i32) = (720, 494);
 /// A4 upright, which is what most PDFs turn out to be.
 const PAGE_SHAPE: (i32, i32) = (438, 620);
-const SOUND_SHAPE: (i32, i32) = (420, 190);
-const INFO_SHAPE: (i32, i32) = (340, 260);
+const SOUND_SHAPE: (i32, i32) = (420, 234);
+const INFO_SHAPE: (i32, i32) = (340, 214);
 /// How long one page of the preview takes to fade into the next.
 const CROSSFADE: Duration = Duration::from_millis(120);
 /// Zoom: one step of the buttons or the wheel, and how far it goes either way.
@@ -65,6 +70,7 @@ mod imp {
     #[derive(Default)]
     pub struct PreviewDialog {
         pub title: adw::WindowTitle,
+        pub header: adw::HeaderBar,
         pub content: gtk::Stack,
         /// Bumped per file, so a slow load cannot land after a newer one.
         pub generation: Cell<u64>,
@@ -113,10 +119,9 @@ impl PreviewDialog {
         let imp = dialog.imp();
 
         // No close button: Space closes the preview the way it opened it, Escape too.
-        let header = adw::HeaderBar::builder()
-            .show_start_title_buttons(false)
-            .show_end_title_buttons(false)
-            .build();
+        let header = &imp.header;
+        header.set_show_start_title_buttons(false);
+        header.set_show_end_title_buttons(false);
         header.set_title_widget(Some(&imp.title));
 
         // One page fades into the next, and the stack takes the size of the page on screen
@@ -146,7 +151,7 @@ impl PreviewDialog {
             }
         });
         let toolbar = adw::ToolbarView::new();
-        toolbar.add_top_bar(&header);
+        toolbar.add_top_bar(header);
         toolbar.set_content(Some(&imp.content));
         dialog.set_child(Some(&toolbar));
         dialog.setup_keys();
@@ -315,7 +320,7 @@ impl PreviewDialog {
                 move |stream| {
                     let (w, h) = (stream.intrinsic_width(), stream.intrinsic_height());
                     if stream.is_prepared() && w > 0 && h > 0 {
-                        dialog.shape_fitted(w as f64, h as f64);
+                        dialog.shape_boxed(w as f64, h as f64, VIDEO_BOX);
                     }
                 }
             ));
@@ -447,20 +452,20 @@ impl PreviewDialog {
             #[strong]
             label,
             move |delta: i32| {
+                let fit = fit_scale(&picture, &scroll);
                 let next = if delta == 0 {
                     0.0
                 } else {
-                    let from = if level.get() > 0.0 {
-                        level.get()
-                    } else {
-                        drawn_scale(&picture)
-                    };
+                    let from = if level.get() > 0.0 { level.get() } else { fit };
                     let step = if delta > 0 {
                         ZOOM_STEP
                     } else {
                         1.0 / ZOOM_STEP
                     };
-                    (from * step).clamp(ZOOM_MIN, ZOOM_MAX)
+                    let wanted = (from * step).clamp(ZOOM_MIN, ZOOM_MAX);
+                    // Zooming out stops at the fit instead of counting below it, where the
+                    // picture cannot follow the number any further.
+                    if wanted <= fit { 0.0 } else { wanted }
                 };
                 level.set(next);
                 let Some(paintable) = picture.paintable() else {
@@ -469,10 +474,13 @@ impl PreviewDialog {
                 scroll.set_cursor_from_name(pan_cursor(next));
                 if next <= 0.0 {
                     scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never);
+                    // Fitting never blows a small picture up; zooming is what does that.
+                    picture.set_content_fit(gtk::ContentFit::ScaleDown);
                     picture.set_size_request(-1, -1);
                     label.set_label(&gettext("Fit"));
                     return;
                 }
+                picture.set_content_fit(gtk::ContentFit::Contain);
                 scroll.set_policy(gtk::PolicyType::External, gtk::PolicyType::External);
                 picture.set_size_request(
                     (paintable.intrinsic_width() as f64 * next) as i32,
@@ -592,7 +600,9 @@ impl PreviewDialog {
                 _ => IMAGE_SHAPE,
             }
         } else if content_type.starts_with("video/") {
-            VIDEO_SHAPE
+            // The thumbnail, when there is one, has the proportions of the video itself.
+            let (width, height) = thumbnail_size(info).unwrap_or((16.0, 9.0));
+            return self.shape_boxed(width, height, VIDEO_BOX);
         } else if content_type.starts_with("audio/") {
             SOUND_SHAPE
         } else if gio::content_type_is_a(&content_type, "text/plain") {
@@ -606,9 +616,17 @@ impl PreviewDialog {
     }
 
     /// Give the dialog the proportions of what it holds, within the bounds it may take.
+    /// `width` and `height` are for the content itself; the header is added on top of them,
+    /// so a picture asked for in its own proportions is drawn in them and not letterboxed.
     fn shape(&self, width: i32, height: i32) {
+        let header = self
+            .imp()
+            .header
+            .measure(gtk::Orientation::Vertical, -1)
+            .0
+            .max(HEADER_HEIGHT);
         self.set_content_width(width.clamp(MIN_SIDE, MAX_WIDTH));
-        self.set_content_height(height.clamp(MIN_SIDE, MAX_HEIGHT));
+        self.set_content_height(height.clamp(MIN_SIDE, MAX_HEIGHT) + header);
     }
 
     fn shape_to(&self, paintable: &impl IsA<gdk::Paintable>) {
@@ -617,6 +635,16 @@ impl PreviewDialog {
             paintable.intrinsic_width() as f64,
             paintable.intrinsic_height() as f64,
         );
+    }
+
+    /// `width` by `height` scaled to fill `box_`, up as well as down: what is shown at a
+    /// size of its own choosing keeps its proportions but not its pixel count.
+    fn shape_boxed(&self, width: f64, height: f64, box_: (i32, i32)) {
+        if width <= 0.0 || height <= 0.0 {
+            return;
+        }
+        let scale = (box_.0 as f64 / width).min(box_.1 as f64 / height);
+        self.shape((width * scale) as i32, (height * scale) as i32);
     }
 
     /// A `width` by `height` picture scaled into the largest shape allowed, never blown up
@@ -683,13 +711,15 @@ fn picture(paintable: &impl IsA<gdk::Paintable>) -> gtk::Picture {
     gtk::Picture::builder()
         .paintable(paintable)
         .can_shrink(true)
+        .content_fit(gtk::ContentFit::ScaleDown)
         .hexpand(true)
         .vexpand(true)
         .build()
 }
 
-/// What a fitted picture is drawn at right now, the scale zooming starts from.
-fn drawn_scale(picture: &gtk::Picture) -> f64 {
+/// The scale a fitted picture is drawn at: where zooming starts and where zooming out
+/// ends. Never above 1, since fitting shows a small picture at its own size.
+fn fit_scale(picture: &gtk::Picture, scroll: &gtk::ScrolledWindow) -> f64 {
     let Some(paintable) = picture.paintable() else {
         return 1.0;
     };
@@ -700,7 +730,17 @@ fn drawn_scale(picture: &gtk::Picture) -> f64 {
     if width <= 0.0 || height <= 0.0 {
         return 1.0;
     }
-    (picture.width() as f64 / width).min(picture.height() as f64 / height)
+    (scroll.width() as f64 / width)
+        .min(scroll.height() as f64 / height)
+        .min(1.0)
+}
+
+/// The size of the thumbnail the listing already holds, which has the proportions of the
+/// file itself. Reading its header is a few bytes and no decode.
+fn thumbnail_size(info: &gio::FileInfo) -> Option<(f64, f64)> {
+    let path = info.attribute_byte_string("thumbnail::path")?;
+    let (_, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(path.as_str())?;
+    (width > 0 && height > 0).then_some((width as f64, height as f64))
 }
 
 /// Whether a PDF page can be drawn at all: without the tool, a PDF is shaped like the icon
