@@ -122,6 +122,11 @@ menu item_menu {
       action: "view.open";
     }
     item {
+      label: _("_Preview");
+      action: "view.preview";
+      hidden-when: "action-disabled";
+    }
+    item {
       label: _("Open in New _Tab");
       action: "view.open-new-tab";
       hidden-when: "action-disabled";

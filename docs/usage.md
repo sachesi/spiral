@@ -144,6 +144,19 @@ Executable files get "Run as a Program": scripts run in the terminal so their ou
 be read, binaries start on their own. In Favorites, "Open Item Location" jumps to the
 folder holding the item and selects it there.
 
+## Preview
+
+Space shows the selected file without opening an application, and closes the preview
+again; Escape closes it too. Images, video, sound and text files, source code among them,
+are drawn by Spiral itself, and PDFs a page at a time. The Left and Right arrows walk
+through the folder without leaving the preview, Page Up and Page Down turn the pages of a
+PDF, and the Open button hands the file to its application.
+
+Anything else falls back to the file's thumbnail, or to its icon, type and size. Video and
+sound need the GStreamer plugins for the format installed, PDFs need `pdftoppm` from
+poppler-utils, which runs in the same bubblewrap sandbox as the thumbnailers. Text files
+are shown up to 256 kB.
+
 ## Favorites
 
 "Add to Favorites" stars files and folders. They show up under Favorites in the sidebar,

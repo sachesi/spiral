@@ -28,6 +28,14 @@ fn first_cell_position(w: &gtk::Widget, depth: u32) -> Option<u32> {
     None
 }
 
+/// Whether the keyboard is in a text entry, where a space is a space and not a shortcut.
+fn is_editing(view: &BrowserView) -> bool {
+    view.root()
+        .and_downcast::<gtk::Window>()
+        .and_then(|w| gtk::prelude::GtkWindowExt::focus(&w))
+        .is_some_and(|w| w.is::<gtk::Editable>())
+}
+
 impl BrowserView {
     fn manager(&self) -> Option<JobManager> {
         self.root()
@@ -84,6 +92,7 @@ impl BrowserView {
         add("properties", |v| v.show_properties(false));
         add("folder-properties", |v| v.show_properties(true));
         add("open-with", |v| v.open_with());
+        add("preview", |v| v.show_preview());
         add("star", |v| v.set_selection_starred(true));
         add("unstar", |v| v.set_selection_starred(false));
         add("open-item-location", |v| v.open_item_location());
@@ -245,6 +254,71 @@ impl BrowserView {
             }
         ));
         imp.stack.add_controller(click);
+
+        // Space previews the selection. Captured, because the window's search entry takes
+        // typing before the view is asked; a text entry inside the view keeps its spaces.
+        let keys = gtk::EventControllerKey::new();
+        keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+        keys.connect_key_pressed(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            #[upgrade_or]
+            glib::Propagation::Proceed,
+            move |_, key, _, state| {
+                use gtk::gdk::ModifierType as M;
+                let held = M::CONTROL_MASK | M::ALT_MASK | M::SHIFT_MASK | M::SUPER_MASK;
+                if key != gtk::gdk::Key::space || state.intersects(held) || is_editing(&view) {
+                    return glib::Propagation::Proceed;
+                }
+                let _ = view.activate_action("view.preview", None);
+                glib::Propagation::Stop
+            }
+        ));
+        self.add_controller(keys);
+    }
+
+    /// The preview follows the selection while it is open, and its arrows move that
+    /// selection, so a folder can be walked through without closing it.
+    fn show_preview(&self) {
+        let infos = self.model().selected_infos();
+        let Some(info) = infos.first() else { return };
+        let dialog = crate::dialogs::PreviewDialog::new();
+        dialog.show_info(info);
+        dialog.connect_step(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |delta| view.step_selection(delta)
+        ));
+        dialog.connect_open(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move || {
+                if let Some(file) = view.selected().first()
+                    && let Some(pos) = view.model().position_of(file)
+                {
+                    view.activate_position(pos);
+                }
+            }
+        ));
+        let selection = self.model().selection();
+        let id = selection.connect_selection_changed(glib::clone!(
+            #[weak]
+            dialog,
+            #[weak(rename_to = view)]
+            self,
+            move |_, _, _| {
+                if let Some(info) = view.model().selected_infos().first() {
+                    dialog.show_info(info);
+                }
+            }
+        ));
+        let id = std::cell::RefCell::new(Some(id));
+        dialog.connect_closed(move |_| {
+            if let Some(id) = id.borrow_mut().take() {
+                selection.disconnect(id);
+            }
+        });
+        dialog.present(Some(self));
     }
 
     fn set_enabled(&self, name: &str, enabled: bool) {
@@ -282,6 +356,7 @@ impl BrowserView {
         );
         let dir_writable = single_dir && file_utils::allows(&infos[0], "access::can-write");
         self.set_enabled("open", n > 0);
+        self.set_enabled("preview", n > 0);
         self.set_enabled(
             "open-new-tab",
             n > 0 && infos.iter().all(file_utils::is_dir),
