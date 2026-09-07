@@ -294,6 +294,12 @@ impl BrowserView {
         self.scroll_columns_to_end();
     }
 
+    /// Whether the folder being viewed has a path to draw beside it.
+    pub(crate) fn shows_chain(&self) -> bool {
+        self.location()
+            .is_some_and(|location| !location.equal(&crate::path_bar::chain_root(&location, None)))
+    }
+
     fn clear_side_columns(&self) {
         let imp = self.imp();
         for column in imp.side_columns.take() {
