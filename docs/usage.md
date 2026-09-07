@@ -164,10 +164,12 @@ picture or a page; Ctrl+0 fits it back into the window, zooming out stops there 
 than counting below it, and a zoomed picture is moved by dragging it. Nothing in the
 preview shows scrollbars.
 
-A sound file is shown with its cover where a thumbnailer can pull one out of it, drawn at
-the size of the icon it stands in for, and with that icon where there is none. Anything
-else falls back to the file's thumbnail, or to its icon, with the name and the type left
-to the header. Video and sound need the GStreamer plugins for the format installed, PDFs
+A sound file is shown with the cover it carries, cut square and drawn at the size of the
+icon it stands in for, and with that icon until there is one. Anything else falls back to
+the file's thumbnail, or to its icon, with the name and the type left to the header. Video
+and sound play through one GStreamer pipeline that Spiral keeps for the whole session and
+points at one file after another; it needs the GTK 4 sink from gst-plugins-rs and the
+plugins for the format installed, and without the sink a media file shows its icon. PDFs
 need `pdftoppm` from poppler-utils, which runs in the same bubblewrap sandbox as the
 thumbnailers. Text files are shown up to 256 kB, images up to 128 MB and 80 megapixels. A
 file is only loaded once it has been selected for a moment, so holding an arrow down runs

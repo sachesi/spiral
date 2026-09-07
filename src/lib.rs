@@ -4,6 +4,7 @@ pub mod config;
 pub mod window;
 
 pub use adw::{gdk, gio, glib, gtk};
+pub use gstreamer as gst;
 pub use libadwaita as adw;
 
 /// Register resources, set up i18n and initialize libadwaita.
@@ -61,6 +62,7 @@ pub mod naming;
 pub mod ops;
 pub mod path_bar;
 pub mod places_sidebar;
+pub mod player;
 pub mod portal;
 pub mod prefs;
 pub mod progress_indicator;

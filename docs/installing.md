@@ -3,14 +3,17 @@
 ## What you need
 
 To build: Rust 1.88 or newer, `blueprint-compiler`, `just`, and the development packages
-of GTK 4.22, libadwaita 1.9 and libseccomp. On Fedora that is `gtk4-devel
-libadwaita-devel libseccomp-devel blueprint-compiler just`; on Debian `libgtk-4-dev
-libadwaita-1-dev libseccomp-dev blueprint-compiler just`. `just check` also wants
-`desktop-file-validate` and `appstreamcli`.
+of GTK 4.22, libadwaita 1.9, libseccomp and GStreamer. On Fedora that is `gtk4-devel
+libadwaita-devel libseccomp-devel gstreamer1-devel blueprint-compiler just`; on Debian
+`libgtk-4-dev libadwaita-1-dev libseccomp-dev libgstreamer1.0-dev blueprint-compiler
+just`. `just check` also wants `desktop-file-validate` and `appstreamcli`.
 
-To run: GTK 4.22, libadwaita 1.9, a session bus, and xdg-desktop-portal if you want the
-file chooser. Everything else is optional and picked up from `PATH` when present:
-`bwrap` for sandboxing, archive tools, a terminal emulator.
+To run: GTK 4.22, libadwaita 1.9, GStreamer, a session bus, and xdg-desktop-portal if you
+want the file chooser. Everything else is optional and picked up from `PATH` when present:
+`bwrap` for sandboxing, archive tools, a terminal emulator. Playing video and sound in the
+preview needs the GTK 4 sink from gst-plugins-rs (`gstreamer1-plugin-gtk4` on Fedora,
+`gstreamer1.0-gtk4` on Debian, `gst-plugin-gtk4` on Arch) and the plugins for the
+formats; without the sink, media files show their icon.
 
 ## Build
 
