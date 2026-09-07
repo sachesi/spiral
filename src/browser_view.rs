@@ -101,6 +101,8 @@ mod imp {
         pub history: RefCell<Vec<gio::File>>,
         pub history_pos: Cell<usize>,
         pub settings: gio::Settings,
+        /// The handler on the display's clipboard, which outlives the view.
+        pub clipboard_handler: RefCell<Option<glib::SignalHandlerId>>,
     }
 
     #[glib::object_subclass]
@@ -174,6 +176,7 @@ mod imp {
                 history: Default::default(),
                 history_pos: Default::default(),
                 settings: gio::Settings::new(crate::config::APP_ID),
+                clipboard_handler: Default::default(),
             }
         }
     }
@@ -193,6 +196,12 @@ mod imp {
                         .build(),
                 ]
             })
+        }
+
+        fn dispose(&self) {
+            if let Some(id) = self.clipboard_handler.take() {
+                self.obj().clipboard().disconnect(id);
+            }
         }
 
         fn constructed(&self) {
