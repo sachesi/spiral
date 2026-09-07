@@ -40,6 +40,15 @@ const SOUND_ICON_SIZE: i32 = 96;
 /// How long a file has to stay selected before it is loaded, so that running through a
 /// folder with the arrows does not start a decoder for every file passed over.
 const LOAD_DELAY: Duration = Duration::from_millis(120);
+/// How long a stream that never gets ready is kept before its pipeline is torn down anyway,
+/// and how often a preview waiting for that looks whether it has happened.
+const RETIRE_LIMIT: Duration = Duration::from_secs(5);
+const MEDIA_POLL: Duration = Duration::from_millis(30);
+
+thread_local! {
+    /// Media pipelines started and not yet torn down; there is meant to be at most one.
+    static LIVE: Cell<u32> = const { Cell::new(0) };
+}
 /// What the header takes before it has been measured.
 const HEADER_HEIGHT: i32 = 46;
 /// How much of the window the preview may take, and the bounds it keeps until it is told
@@ -325,7 +334,7 @@ impl PreviewDialog {
                 if dialog.imp().generation.get() != generation {
                     return;
                 }
-                let child = dialog.build_content(&info).await;
+                let child = dialog.build_content(&info, generation).await;
                 if dialog.imp().generation.get() == generation {
                     dialog.show_child(&child);
                 }
@@ -341,7 +350,7 @@ impl PreviewDialog {
         stack.set_visible_child(child);
     }
 
-    async fn build_content(&self, info: &gio::FileInfo) -> gtk::Widget {
+    async fn build_content(&self, info: &gio::FileInfo, generation: u64) -> gtk::Widget {
         let file = file_utils::file_of(info);
         let content_type = info.content_type().unwrap_or_default().to_string();
         if file_utils::is_dir(info) {
@@ -355,12 +364,19 @@ impl PreviewDialog {
             return self.zoomable(&picture(&texture), &[]);
         }
         if content_type.starts_with("video/") {
+            if !self.media_free(generation).await {
+                return spinner();
+            }
             return self.video(&file);
         }
         if content_type.starts_with("audio/") {
             // The cover takes the place of the icon and its size, so waiting for one to be
             // made costs nothing but the wait: the player is the same shape either way.
-            return self.sound(info, &file, crate::thumbnails::load(info).await);
+            let cover = crate::thumbnails::load(info).await;
+            if !self.media_free(generation).await {
+                return spinner();
+            }
+            return self.sound(info, &file, cover);
         }
         if gio::content_type_is_a(&content_type, "text/plain")
             && let Some(text) = load_text(&file).await
@@ -403,6 +419,7 @@ impl PreviewDialog {
                 }
             ));
             self.imp().media.replace(Some(stream));
+            LIVE.set(LIVE.get() + 1);
         }
         video.upcast()
     }
@@ -424,6 +441,7 @@ impl PreviewDialog {
             .margin_end(12)
             .build();
         self.imp().media.replace(Some(stream.upcast()));
+        LIVE.set(LIVE.get() + 1);
         let art: gtk::Widget = match cover {
             Some(cover) => {
                 // An image, not a picture: it draws the cover at the size asked for rather
@@ -792,17 +810,73 @@ impl PreviewDialog {
         self.shape((width * scale) as i32, (height * scale) as i32);
     }
 
+    /// Wait until no media pipeline is left, so that only one exists at a time: GTK gives
+    /// each its own thread, and several of them starting and stopping at once trip races
+    /// in their teardown that take the process down. False when the selection moved on
+    /// while waiting, in which case nothing should be started for it any more.
+    async fn media_free(&self, generation: u64) -> bool {
+        while LIVE.get() > 0 {
+            glib::timeout_future(MEDIA_POLL).await;
+            if self.imp().generation.get() != generation {
+                return false;
+            }
+        }
+        true
+    }
+
     fn stop_media(&self) {
         let Some(stream) = self.imp().media.take() else {
             return;
         };
         stream.pause();
-        // Tearing the pipeline down through `clear` rather than leaving it to the last
-        // reference: a decoder disposed of mid-start takes the process with it.
+        retire(stream);
+    }
+}
+
+/// Tear the pipeline of `stream` down once it has finished starting, and not before:
+/// GTK builds it on a thread of its own, and stopping it while it is still being built
+/// trips an assertion in decodebin3 that takes the whole process down. Paused already,
+/// the stream makes no sound while it waits; `RETIRE_LIMIT` bounds the wait for a file
+/// that never gets as far as being prepared.
+fn retire(stream: gtk::MediaStream) {
+    fn clear(stream: &gtk::MediaStream) {
         if let Some(file) = stream.downcast_ref::<gtk::MediaFile>() {
             file.clear();
         }
+        LIVE.set(LIVE.get() - 1);
     }
+    if stream.is_prepared() || stream.error().is_some() {
+        return clear(&stream);
+    }
+    // Cleared from an idle, not from inside the notification: the notification comes out
+    // of the very object being torn down. Paused again first, since a pause asked for
+    // before the stream was prepared was not one, and a stream still counted as playing
+    // is paused once more when the widget showing it is unrealized, on a pipeline that
+    // is gone by then.
+    let done = Rc::new(Cell::new(false));
+    let later = move |stream: &gtk::MediaStream| {
+        if !done.replace(true) {
+            glib::idle_add_local_once(glib::clone!(
+                #[strong]
+                stream,
+                move || {
+                    stream.pause();
+                    clear(&stream);
+                }
+            ));
+        }
+    };
+    stream.connect_prepared_notify(glib::clone!(
+        #[strong]
+        later,
+        move |stream| later(stream)
+    ));
+    stream.connect_error_notify(glib::clone!(
+        #[strong]
+        later,
+        move |stream| later(stream)
+    ));
+    glib::timeout_add_local_once(RETIRE_LIMIT, move || later(&stream));
 }
 
 impl Default for PreviewDialog {
