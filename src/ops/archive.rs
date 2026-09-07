@@ -408,7 +408,11 @@ pub async fn extract(
         job.set_fraction(i as f64 / total);
 
         let work = dest_path.join(format!(".spiral-extract-{}-{i}", std::process::id()));
-        std::fs::create_dir(&work).map_err(|e| Fail::Failed(e.to_string()))?;
+        on_disk({
+            let work = work.clone();
+            move || std::fs::create_dir(work)
+        })
+        .await?;
         let mut guard = Guard {
             child: None,
             work: work.clone(),
@@ -513,9 +517,11 @@ pub async fn extract(
             }
             guard.child = None;
             // A wrong password can leave empty or garbled files behind.
-            std::fs::remove_dir_all(&work)
-                .and_then(|()| std::fs::create_dir(&work))
-                .map_err(|e| Fail::Failed(e.to_string()))?;
+            on_disk({
+                let work = work.clone();
+                move || std::fs::remove_dir_all(&work).and_then(|()| std::fs::create_dir(&work))
+            })
+            .await?;
             job.set_status(JobStatus::WaitingUser);
             job.set_detail(gettext("Waiting for your answer"));
             let answer = ask_password(&mgr.parent_window(), archive).await;
@@ -525,29 +531,11 @@ pub async fn extract(
         }
         guard.child = None;
 
-        // Decide the final name from what came out.
-        let entries: Vec<PathBuf> = std::fs::read_dir(&work)
-            .map_err(|e| Fail::Failed(e.to_string()))?
-            .filter_map(|e| e.ok().map(|e| e.path()))
-            .collect();
-        let created = match entries.as_slice() {
-            [single] => {
-                let entry_name = single.file_name().unwrap().to_string_lossy().into_owned();
-                let (base, ext) = match entry_name.rfind('.').filter(|&i| i > 0 && single.is_file())
-                {
-                    Some(i) => (&entry_name[..i], &entry_name[i..]),
-                    None => (entry_name.as_str(), ""),
-                };
-                let target = dest_path.join(unique_name(&dest_path, base, ext));
-                std::fs::rename(single, &target).map_err(|e| Fail::Failed(e.to_string()))?;
-                target
-            }
-            _ => {
-                let target = dest_path.join(unique_name(&dest_path, stem(&file_name), ""));
-                std::fs::rename(&work, &target).map_err(|e| Fail::Failed(e.to_string()))?;
-                target
-            }
-        };
+        let created = on_disk({
+            let (work, dest_path) = (work.clone(), dest_path.clone());
+            move || place(&work, &dest_path, &file_name)
+        })
+        .await?;
         drop(guard);
         job.imp()
             .outcome
@@ -561,6 +549,43 @@ pub async fn extract(
 }
 
 /// Size of everything under `path`, keyed by the path a verbose tool prints for it.
+/// Move what an archive left in `work` to its final name in `dest`: a single entry
+/// keeps its own name, anything else is a folder named after the archive.
+fn place(work: &Path, dest: &Path, file_name: &str) -> std::io::Result<PathBuf> {
+    let entries: Vec<PathBuf> = std::fs::read_dir(work)?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .collect();
+    let target = match entries.as_slice() {
+        [single] => {
+            let entry_name = single.file_name().unwrap().to_string_lossy().into_owned();
+            let (base, ext) = match entry_name.rfind('.').filter(|&i| i > 0 && single.is_file()) {
+                Some(i) => (&entry_name[..i], &entry_name[i..]),
+                None => (entry_name.as_str(), ""),
+            };
+            let target = dest.join(unique_name(dest, base, ext));
+            std::fs::rename(single, &target)?;
+            target
+        }
+        _ => {
+            let target = dest.join(unique_name(dest, stem(file_name), ""));
+            std::fs::rename(work, &target)?;
+            target
+        }
+    };
+    Ok(target)
+}
+
+/// One step on the disk, off the main thread: the destination may be a network mount,
+/// where every call is a round trip the window should not wait on.
+async fn on_disk<T: Send + 'static>(
+    step: impl FnOnce() -> std::io::Result<T> + Send + 'static,
+) -> Result<T, Fail> {
+    gio::spawn_blocking(step)
+        .await
+        .unwrap_or_else(|_| Err(std::io::Error::other("interrupted")))
+        .map_err(|e| Fail::Failed(e.to_string()))
+}
+
 fn sizes(path: &Path, rel: String, out: &mut HashMap<String, u64>) {
     let Ok(meta) = std::fs::symlink_metadata(path) else {
         return;
@@ -650,13 +675,20 @@ pub async fn compress(
     job.start_clock();
 
     let work = dest_path.join(format!(".spiral-compress-{}", std::process::id()));
-    std::fs::create_dir(&work).map_err(|e| Fail::Failed(e.to_string()))?;
+    let final_name = on_disk({
+        let (work, dest_path, file_name) = (work.clone(), dest_path.clone(), file_name.clone());
+        move || {
+            std::fs::create_dir(&work)?;
+            let stem = stem(&file_name);
+            Ok(unique_name(&dest_path, stem, &file_name[stem.len()..]))
+        }
+    })
+    .await?;
     let mut guard = Guard {
         child: None,
         work: work.clone(),
     };
     let sandboxed = glib::find_program_in_path("bwrap").is_some();
-    let final_name = unique_name(&dest_path, stem(&file_name), ext);
     let (src_root, out_dir) = if sandboxed {
         (PathBuf::from("/tmp/src"), PathBuf::from("/tmp/out"))
     } else {
@@ -729,7 +761,11 @@ pub async fn compress(
     run(cmd, &mut guard, &mut progress).await?;
     guard.child = None;
     let target = dest_path.join(&final_name);
-    std::fs::rename(work.join(&final_name), &target).map_err(|e| Fail::Failed(e.to_string()))?;
+    on_disk({
+        let (from, target) = (work.join(&final_name), target.clone());
+        move || std::fs::rename(from, target)
+    })
+    .await?;
     drop(guard);
     job.imp()
         .outcome
