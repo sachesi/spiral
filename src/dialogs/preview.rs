@@ -56,9 +56,6 @@ const IMAGE_SHAPE: (i32, i32) = (720, 494);
 /// A4 upright in points, which is what most PDFs turn out to be.
 const PAGE_POINTS: (f64, f64) = (595.28, 841.89);
 const SOUND_SHAPE: (i32, i32) = (420, 234);
-/// With a cover to show, the player is worth a little more room.
-const SOUND_COVER_SIZE: i32 = 200;
-const SOUND_COVER_SHAPE: (i32, i32) = (420, 300);
 const INFO_SHAPE: (i32, i32) = (340, 214);
 /// How long one page of the preview takes to fade into the next.
 const CROSSFADE: Duration = Duration::from_millis(120);
@@ -89,6 +86,10 @@ mod imp {
         pub shaped: Cell<(i32, i32)>,
         /// The largest content the dialog may take, from the window it opens over.
         pub bounds: Cell<(i32, i32)>,
+        /// The page size of the PDF being shown, once anything has said what it is.
+        pub page_size: Cell<Option<(f64, f64)>>,
+        /// How many pages it has, so the tool is asked once and not twice.
+        pub page_count: Cell<Option<u32>>,
         /// What is playing, stopped when it is replaced and when the dialog closes.
         pub media: RefCell<Option<gtk::MediaStream>>,
         /// Moves the selection the preview follows, by -1 or 1.
@@ -237,6 +238,16 @@ impl PreviewDialog {
         self.add_controller(keys);
     }
 
+    /// What shape the first page of `info` is, as far as can be told without rendering it.
+    fn pdf_proportions(&self, info: &gio::FileInfo) -> (f64, f64) {
+        if let Some(known) = self.imp().page_size.get() {
+            return known;
+        }
+        thumbnail_size(info)
+            .or_else(|| pdf_page_size(&file_utils::file_of(info).path()?))
+            .unwrap_or(PAGE_POINTS)
+    }
+
     /// The room the preview has: a share of the window it opens over, so a page or a
     /// picture is shown as large as that window can hold rather than at a fixed size.
     pub fn set_bounds(&self, width: i32, height: i32) {
@@ -258,6 +269,29 @@ impl PreviewDialog {
         self.imp().open.replace(Some(Box::new(move |()| f())));
     }
 
+    /// Ask the PDF tool for the page size before the dialog is presented, for the files
+    /// that keep it inside a compressed object stream where nothing else can read it.
+    /// Without this the dialog would open upright and turn itself over a moment later.
+    pub async fn shape_ahead(&self, info: &gio::FileInfo) {
+        let file = file_utils::file_of(info);
+        let is_pdf = info
+            .content_type()
+            .is_some_and(|content_type| content_type == "application/pdf");
+        if !is_pdf || !can_render_pdf() || thumbnail_size(info).is_some() {
+            return;
+        }
+        let Some(path) = file.path() else { return };
+        if pdf_page_size(&path).is_some() {
+            return;
+        }
+        let Some((pages, size)) = pdf_info(path).await else {
+            return;
+        };
+        self.imp().page_size.set(Some(size));
+        self.imp().page_count.set(Some(pages));
+        self.shape_boxed(size.0, size.1, self.imp().bounds.get());
+    }
+
     /// Show `info`: the header at once, the content when it has loaded.
     pub fn show_info(&self, info: &gio::FileInfo) {
         let imp = self.imp();
@@ -266,6 +300,8 @@ impl PreviewDialog {
         self.stop_media();
         imp.flip.take();
         imp.zoom.take();
+        imp.page_size.set(None);
+        imp.page_count.set(None);
         imp.title.set_title(&file_utils::display_name(info));
         imp.title.set_subtitle(&subtitle(info));
         self.shape_for_kind(info);
@@ -313,9 +349,9 @@ impl PreviewDialog {
             return self.video(&file);
         }
         if content_type.starts_with("audio/") {
-            // Only a cover that is already there: one made now would arrive after the
-            // dialog had opened at the size of a player without one.
-            return self.sound(info, &file, thumbnail_texture(info));
+            // The cover takes the place of the icon and its size, so waiting for one to be
+            // made costs nothing but the wait: the player is the same shape either way.
+            return self.sound(info, &file, crate::thumbnails::load(info).await);
         }
         if gio::content_type_is_a(&content_type, "text/plain")
             && let Some(text) = load_text(&file).await
@@ -381,10 +417,12 @@ impl PreviewDialog {
         self.imp().media.replace(Some(stream.upcast()));
         let art: gtk::Widget = match cover {
             Some(cover) => {
-                let art = picture(&cover);
-                art.set_height_request(SOUND_COVER_SIZE);
+                // An image, not a picture: it draws the cover at the size asked for rather
+                // than at the size the cover happens to be.
+                let art = gtk::Image::from_paintable(Some(&cover));
+                art.set_pixel_size(SOUND_ICON_SIZE);
                 art.add_css_class("spiral-preview-cover");
-                // The rounded corners of the class only show where the picture is clipped.
+                // The rounded corners of the class only show where the cover is clipped.
                 art.set_overflow(gtk::Overflow::Hidden);
                 art.upcast()
             }
@@ -407,17 +445,20 @@ impl PreviewDialog {
 
     /// One PDF page with the buttons that turn it, or nothing when `pdftoppm` is missing.
     async fn pdf(&self, path: PathBuf) -> Option<gtk::Widget> {
-        let (pages, size) = pdf_info(path.clone()).await?;
+        let known = self.imp().page_count.get().zip(self.imp().page_size.get());
+        let (pages, size) = match known {
+            Some(facts) => facts,
+            None => pdf_info(path.clone()).await?,
+        };
         // The shape was decided before the dialog opened, from the thumbnail or from the
         // file itself; the page dictionary of a modern PDF is compressed and neither may
         // have found it. Rather than resize a window the reader is already looking at, the
         // page is drawn inside the shape there is, and only a page lying on its side —
         // which no margin can absorb — is worth moving the window for.
-        let (width, height) = page_pixels(size);
         let (shaped_width, shaped_height) = self.imp().shaped.get();
         let shaped = shaped_width as f64 / shaped_height as f64;
-        if ((width / height) / shaped - 1.0).abs() > SHAPE_SLACK {
-            self.shape_fitted(width, height);
+        if ((size.0 / size.1) / shaped - 1.0).abs() > SHAPE_SLACK {
+            self.shape_boxed(size.0, size.1, self.imp().bounds.get());
         }
         let first = pdf_page(path.clone(), 1).await?;
         let page = Rc::new(Cell::new(1u32));
@@ -699,25 +740,18 @@ impl PreviewDialog {
             let (width, height) = thumbnail_size(info).unwrap_or((16.0, 9.0));
             return self.shape_boxed(width, height, VIDEO_BOX);
         } else if content_type.starts_with("audio/") {
-            if thumbnail_size(info).is_some() {
-                SOUND_COVER_SHAPE
-            } else {
-                SOUND_SHAPE
-            }
+            SOUND_SHAPE
         } else if gio::content_type_is_a(&content_type, "text/plain") {
             TEXT_SHAPE
         } else if content_type == "application/pdf" && can_render_pdf() {
             // A thumbnail of the first page has the proportions of the page; failing that,
             // the page dictionary usually says so itself.
-            let size = thumbnail_size(info)
-                .or_else(|| {
-                    let page = pdf_page_size(&file_utils::file_of(info).path()?)?;
-                    Some(page_pixels(page))
-                })
-                // Upright, the proportions most pages have, and as large as there is room
-                // for: a page whose size is locked away in the file is still a page.
-                .unwrap_or_else(|| page_pixels(PAGE_POINTS));
-            return self.shape_fitted(size.0, size.1);
+            // The proportions come from the thumbnail, from the page dictionary, or from
+            // A4, which is what most pages are; the size comes from the room there is. A
+            // thumbnail is 256 pixels tall and a page dictionary is in points, so neither
+            // is a size to show a page at.
+            let (width, height) = self.pdf_proportions(info);
+            return self.shape_boxed(width, height, self.imp().bounds.get());
         } else {
             INFO_SHAPE
         };
@@ -853,12 +887,6 @@ fn fit_scale(picture: &gtk::Picture, scroll: &gtk::ScrolledWindow) -> f64 {
         .min(1.0)
 }
 
-/// A page of `width` by `height` points, in the pixels it is rendered to.
-fn page_pixels((width, height): (f64, f64)) -> (f64, f64) {
-    let scale = PDF_DPI as f64 / 72.0;
-    (width * scale, height * scale)
-}
-
 /// The size of the first page in points, read out of the file: no tool to start and no
 /// page to render, so the dialog has the shape before it opens. `None` when the page
 /// dictionary is compressed out of reach, which is what `pdfinfo` answers later.
@@ -881,13 +909,6 @@ fn pdf_page_size(path: &Path) -> Option<(f64, f64)> {
     );
     let (width, height) = ((right - left).abs(), (top - bottom).abs());
     (width > 1.0 && height > 1.0).then_some((width, height))
-}
-
-/// The thumbnail the listing already holds, read straight from the cache: no thumbnailer
-/// is started for it, so the answer is there before the preview is drawn.
-fn thumbnail_texture(info: &gio::FileInfo) -> Option<gdk::Texture> {
-    let path = info.attribute_byte_string("thumbnail::path")?;
-    gdk::Texture::from_filename(path.as_str()).ok()
 }
 
 /// The size of the thumbnail the listing already holds, which has the proportions of the
