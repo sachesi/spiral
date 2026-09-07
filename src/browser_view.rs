@@ -733,8 +733,8 @@ impl BrowserView {
             return;
         }
         // Columns belong to the pane, not to a folder: walking from one folder to the
-        // next is how they are read, and picking a view per folder would drop out of them
-        // at the first click. Leaving them is what the view button and Ctrl+1/2 are for.
+        // next is how they are read, so a move that has nothing else to say leaves them
+        // alone. Only a folder remembering a view of its own takes the pane out of them.
         let keep = self.view_mode() == ViewMode::Columns;
         if !keep {
             self.set_view_mode(global_view_mode(&imp.settings, "view-mode"));
@@ -772,7 +772,6 @@ impl BrowserView {
                     if let Some(mode) = info
                         .attribute_string("metadata::spiral-view")
                         .and_then(|s| ViewMode::from_nick(&s))
-                        .filter(|_| !keep)
                     {
                         view.imp().folder_view.set(Some(mode));
                         view.set_view_mode(mode);
