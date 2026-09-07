@@ -9,9 +9,10 @@ GTK 4.22 and libadwaita 1.9.
 
 Grid, list and column views, tabs, a places sidebar with devices and bookmarks, background file
 operations with progress, conflict handling and undo, archives through whatever tools are
-installed, thumbnails, drag and drop, "Open in Terminal", the `org.freedesktop.FileManager1`
-service for "Show in folder" and the portal backend. Thumbnailers and archive tools run under
-bubblewrap when it is installed.
+installed, thumbnails, a Space preview for images, video, sound, text and PDFs, drag and drop,
+"Open in Terminal", the `org.freedesktop.FileManager1` service for "Show in folder" and the
+portal backend. Thumbnailers, archive tools and the PDF previewer run under bubblewrap when
+it is installed.
 
 ## Building and installing
 

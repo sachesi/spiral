@@ -902,7 +902,7 @@ impl BrowserView {
     }
 
     /// Open the item at `pos`: descend into folders, launch files.
-    fn activate_position(&self, pos: u32) {
+    pub(crate) fn activate_position(&self, pos: u32) {
         let Some(info) = self.imp().model.info_at(pos) else {
             return;
         };
@@ -1126,17 +1126,31 @@ impl BrowserView {
                 }
             }
             if let Some(pos) = first {
-                view.imp()
-                    .grid_view
-                    .scroll_to(pos, gtk::ListScrollFlags::FOCUS, None);
-                view.imp()
-                    .miller_list
-                    .scroll_to(pos, gtk::ListScrollFlags::FOCUS, None);
-                view.imp()
-                    .column_view
-                    .scroll_to(pos, None, gtk::ListScrollFlags::FOCUS, None);
+                view.reveal_position(pos, gtk::ListScrollFlags::FOCUS);
             }
         });
+    }
+
+    /// Scroll to `pos` in whichever view is on screen; the others cost nothing.
+    fn reveal_position(&self, pos: u32, flags: gtk::ListScrollFlags) {
+        let imp = self.imp();
+        imp.grid_view.scroll_to(pos, flags, None);
+        imp.miller_list.scroll_to(pos, flags, None);
+        imp.column_view.scroll_to(pos, None, flags, None);
+    }
+
+    /// Select the item `delta` places along, for the preview's arrows. The focus stays
+    /// where it is, because it is in the preview.
+    pub(crate) fn step_selection(&self, delta: i32) {
+        let model = self.model();
+        let selected = model.selection().selection();
+        if selected.size() == 0 || model.n_items() == 0 {
+            return;
+        }
+        let last = model.n_items() as i32 - 1;
+        let pos = (selected.nth(0) as i32 + delta).clamp(0, last) as u32;
+        model.selection().select_item(pos, true);
+        self.reveal_position(pos, gtk::ListScrollFlags::NONE);
     }
 
     /// Drag the selection out of the view. The source sits above the list and captures

@@ -31,8 +31,11 @@ Ctrl+? shows this list inside the application.
 | Ctrl+Shift+N | New folder |
 | Delete | Move to trash |
 | Shift+Delete | Delete permanently |
+| Space | Preview the selection |
 | Alt+Return | Properties |
 | Menu, Shift+F10 | Context menu |
 
 Tab switching (Ctrl+Page Up/Down, Alt+1 to 9) is libadwaita's. In the location entry,
 Tab accepts the completion and Esc cancels. Typing with the view focused starts a search.
+In the preview, Left and Right move to the next file, Page Up and Page Down turn the pages
+of a PDF, and Space or Esc closes it.
