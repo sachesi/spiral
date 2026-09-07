@@ -55,8 +55,24 @@ pub fn tree_view() -> bool {
     SETTINGS.with(|s| s.boolean("use-tree-view"))
 }
 
+/// The view and sort order of a folder are kept as `metadata::` attributes, which exist
+/// only where gvfs runs its metadata backend. Without it nothing can be stored per folder,
+/// so the global default takes over instead of the choice quietly going nowhere.
+pub fn per_folder_available() -> bool {
+    thread_local! {
+        static AVAILABLE: std::cell::OnceCell<bool> = const { std::cell::OnceCell::new() };
+    }
+    AVAILABLE.with(|a| {
+        *a.get_or_init(|| {
+            gio::File::for_path(glib::home_dir())
+                .query_writable_namespaces(gio::Cancellable::NONE)
+                .is_ok_and(|list| list.lookup("metadata").is_some())
+        })
+    })
+}
+
 pub fn remember_view() -> bool {
-    SETTINGS.with(|s| s.boolean("remember-view"))
+    SETTINGS.with(|s| s.boolean("remember-view")) && per_folder_available()
 }
 
 pub fn guess_view() -> bool {

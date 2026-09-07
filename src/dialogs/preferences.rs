@@ -67,6 +67,7 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
         ))
         .build();
     settings.bind("remember-view", &remember, "active").build();
+    remember.set_sensitive(crate::prefs::per_folder_available());
     views.add(&remember);
     let guess = adw::SwitchRow::builder()
         .title(gettext("Grid View for Media Folders"))
