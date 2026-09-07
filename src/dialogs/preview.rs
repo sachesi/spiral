@@ -24,6 +24,9 @@ const TEXT_LIMIT: usize = 256 * 1024;
 const IMAGE_LIMIT: i64 = 128 * 1024 * 1024;
 /// Resolution PDF pages are rendered at.
 const PDF_DPI: u32 = 150;
+/// How far the proportions of what arrives may differ from the ones the dialog opened
+/// with before it is worth resizing the window under the reader.
+const SHAPE_SLACK: f64 = 0.2;
 /// How much of a PDF is read looking for the size of its first page.
 const PDF_SCAN: usize = 256 * 1024;
 /// Size of the icon shown for files nothing can preview.
@@ -51,6 +54,9 @@ const IMAGE_SHAPE: (i32, i32) = (720, 494);
 /// A4 upright, which is what most PDFs turn out to be.
 const PAGE_SHAPE: (i32, i32) = (438, 620);
 const SOUND_SHAPE: (i32, i32) = (420, 234);
+/// With a cover to show, the player is worth a little more room.
+const SOUND_COVER_SIZE: i32 = 200;
+const SOUND_COVER_SHAPE: (i32, i32) = (420, 300);
 const INFO_SHAPE: (i32, i32) = (340, 214);
 /// How long one page of the preview takes to fade into the next.
 const CROSSFADE: Duration = Duration::from_millis(120);
@@ -76,6 +82,9 @@ mod imp {
         pub content: gtk::Stack,
         /// Bumped per file, so a slow load cannot land after a newer one.
         pub generation: Cell<u64>,
+        /// The content size last asked for, to tell a shape that has to change from one
+        /// that would only flinch.
+        pub shaped: Cell<(i32, i32)>,
         /// What is playing, stopped when it is replaced and when the dialog closes.
         pub media: RefCell<Option<gtk::MediaStream>>,
         /// Moves the selection the preview follows, by -1 or 1.
@@ -284,7 +293,9 @@ impl PreviewDialog {
             return self.video(&file);
         }
         if content_type.starts_with("audio/") {
-            return self.sound(info, &file);
+            // The cover, where a thumbnailer has pulled one out of the file already.
+            let cover = crate::thumbnails::load(info).await;
+            return self.sound(info, &file, cover);
         }
         if gio::content_type_is_a(&content_type, "text/plain")
             && let Some(text) = load_text(&file).await
@@ -331,8 +342,14 @@ impl PreviewDialog {
         video.upcast()
     }
 
-    /// Sound has nothing to draw: the file's own icon over the transport controls.
-    fn sound(&self, info: &gio::FileInfo, file: &gio::File) -> gtk::Widget {
+    /// Sound has the cover to draw when the file carries one, and its icon when it does
+    /// not; either way the transport controls sit under it.
+    fn sound(
+        &self,
+        info: &gio::FileInfo,
+        file: &gio::File,
+        cover: Option<gdk::Texture>,
+    ) -> gtk::Widget {
         let stream = gtk::MediaFile::for_file(file);
         stream.play();
         let controls = gtk::MediaControls::builder()
@@ -342,15 +359,29 @@ impl PreviewDialog {
             .margin_end(12)
             .build();
         self.imp().media.replace(Some(stream.upcast()));
-        let icon = gtk::Image::from_gicon(&file_utils::icon_of(info));
-        icon.set_pixel_size(SOUND_ICON_SIZE);
+        let art: gtk::Widget = match cover {
+            Some(cover) => {
+                let art = picture(&cover);
+                art.set_height_request(SOUND_COVER_SIZE);
+                art.add_css_class("spiral-preview-cover");
+                // The rounded corners of the class only show where the picture is clipped.
+                art.set_overflow(gtk::Overflow::Hidden);
+                self.shape(SOUND_COVER_SHAPE.0, SOUND_COVER_SHAPE.1);
+                art.upcast()
+            }
+            None => {
+                let icon = gtk::Image::from_gicon(&file_utils::icon_of(info));
+                icon.set_pixel_size(SOUND_ICON_SIZE);
+                icon.upcast()
+            }
+        };
         let column = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
-            .spacing(7)
+            .spacing(12)
             .valign(gtk::Align::Center)
             .vexpand(true)
             .build();
-        column.append(&icon);
+        column.append(&art);
         column.append(&controls);
         column.upcast()
     }
@@ -358,10 +389,17 @@ impl PreviewDialog {
     /// One PDF page with the buttons that turn it, or nothing when `pdftoppm` is missing.
     async fn pdf(&self, path: PathBuf) -> Option<gtk::Widget> {
         let (pages, size) = pdf_info(path.clone()).await?;
-        // The tool's answer, which knows about rotation and about pages the scan of the
-        // file could not reach. Usually the shape the dialog already has.
+        // The shape was decided before the dialog opened, from the thumbnail or from the
+        // file itself; the page dictionary of a modern PDF is compressed and neither may
+        // have found it. Rather than resize a window the reader is already looking at, the
+        // page is drawn inside the shape there is, and only a page lying on its side —
+        // which no margin can absorb — is worth moving the window for.
         let (width, height) = page_pixels(size);
-        self.shape_fitted(width, height);
+        let (shaped_width, shaped_height) = self.imp().shaped.get();
+        let shaped = shaped_width as f64 / shaped_height as f64;
+        if ((width / height) / shaped - 1.0).abs() > SHAPE_SLACK {
+            self.shape_fitted(width, height);
+        }
         let first = pdf_page(path.clone(), 1).await?;
         let page = Rc::new(Cell::new(1u32));
         let picture = picture(&first);
@@ -471,17 +509,12 @@ impl PreviewDialog {
             scroll,
             #[strong]
             label,
-            move |delta: i32, at: Option<(f64, f64)>| {
+            move |step: f64, at: Option<(f64, f64)>| {
                 let fit = fit_scale(&picture, &scroll);
                 let before = if level.get() > 0.0 { level.get() } else { fit };
-                let next = if delta == 0 {
+                let next = if step <= 0.0 {
                     0.0
                 } else {
-                    let step = if delta > 0 {
-                        ZOOM_STEP
-                    } else {
-                        1.0 / ZOOM_STEP
-                    };
                     let wanted = (before * step).clamp(ZOOM_MIN, ZOOM_MAX);
                     // Zooming out stops at the fit instead of counting below it, where the
                     // picture cannot follow the number any further.
@@ -502,33 +535,30 @@ impl PreviewDialog {
                 }
                 picture.set_content_fit(gtk::ContentFit::Contain);
                 scroll.set_policy(gtk::PolicyType::External, gtk::PolicyType::External);
-                picture.set_size_request(
-                    (paintable.intrinsic_width() as f64 * next) as i32,
-                    (paintable.intrinsic_height() as f64 * next) as i32,
+                let (width, height) = (
+                    paintable.intrinsic_width() as f64 * next,
+                    paintable.intrinsic_height() as f64 * next,
                 );
+                picture.set_size_request(width as i32, height as i32);
                 label.set_label(&format!("{}%", (next * 100.0).round()));
-                // Hold the point the zoom happened around still. The size the picture asked
-                // for lands in the next layout, so the scrolling waits for it.
-                let (ax, ay) =
+                // Hold the point the zoom happened around still. The scrolled window only
+                // learns the new size in the next layout, so the room for it is made here
+                // and the offsets land in the same frame as the picture that needs them.
+                let (anchor_x, anchor_y) =
                     at.unwrap_or((scroll.width() as f64 / 2.0, scroll.height() as f64 / 2.0));
                 let ratio = next / before;
-                let left = (scroll.hadjustment().value() + ax) * ratio - ax;
-                let top = (scroll.vadjustment().value() + ay) * ratio - ay;
-                glib::idle_add_local_once(glib::clone!(
-                    #[strong]
-                    scroll,
-                    move || {
-                        scroll.hadjustment().set_value(left);
-                        scroll.vadjustment().set_value(top);
-                    }
-                ));
+                let (horizontal, vertical) = (scroll.hadjustment(), scroll.vadjustment());
+                horizontal.set_upper(width.max(scroll.width() as f64));
+                vertical.set_upper(height.max(scroll.height() as f64));
+                horizontal.set_value((horizontal.value() + anchor_x) * ratio - anchor_x);
+                vertical.set_value((vertical.value() + anchor_y) * ratio - anchor_y);
             }
         );
-        for (button, delta) in [(&out, -1), (&fit, 0), (&in_, 1)] {
+        for (button, step) in [(&out, 1.0 / ZOOM_STEP), (&fit, 0.0), (&in_, ZOOM_STEP)] {
             button.connect_clicked(glib::clone!(
                 #[strong]
                 zoom,
-                move |_| zoom(delta, None)
+                move |_| zoom(step, None)
             ));
         }
         // Ctrl and the wheel, as everywhere else that zooms.
@@ -547,7 +577,9 @@ impl PreviewDialog {
                 {
                     return glib::Propagation::Proceed;
                 }
-                zoom(if dy < 0.0 { 1 } else { -1 }, pointer.get());
+                // A wheel notch is a whole step; a touchpad sends fractions of one and
+                // zooms by fractions of a step, which is what makes it feel continuous.
+                zoom(ZOOM_STEP.powf(-dy), pointer.get());
                 glib::Propagation::Stop
             }
         ));
@@ -584,9 +616,14 @@ impl PreviewDialog {
             move |_, _, _| scroll.set_cursor_from_name(pan_cursor(level.get()))
         ));
         scroll.add_controller(drag);
-        self.imp()
-            .zoom
-            .replace(Some(Box::new(move |delta| zoom(delta, None))));
+        self.imp().zoom.replace(Some(Box::new(move |delta| {
+            let step = match delta {
+                1 => ZOOM_STEP,
+                -1 => 1.0 / ZOOM_STEP,
+                _ => 0.0,
+            };
+            zoom(step, None)
+        })));
 
         let bar = gtk::Box::builder()
             .spacing(6)
@@ -673,8 +710,13 @@ impl PreviewDialog {
             .measure(gtk::Orientation::Vertical, -1)
             .0
             .max(HEADER_HEIGHT);
-        self.set_content_width(width.clamp(MIN_SIDE, MAX_WIDTH));
-        self.set_content_height(height.clamp(MIN_SIDE, MAX_HEIGHT) + header);
+        let (width, height) = (
+            width.clamp(MIN_SIDE, MAX_WIDTH),
+            height.clamp(MIN_SIDE, MAX_HEIGHT),
+        );
+        self.imp().shaped.set((width, height));
+        self.set_content_width(width);
+        self.set_content_height(height + header);
     }
 
     fn shape_to(&self, paintable: &impl IsA<gdk::Paintable>) {

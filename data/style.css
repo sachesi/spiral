@@ -225,3 +225,8 @@ rubberband {
 .spiral-pane-active {
   box-shadow: inset 0 0 0 1px alpha(@accent_bg_color, 0.5);
 }
+
+/* Preview */
+.spiral-preview-cover {
+  border-radius: 8px;
+}
