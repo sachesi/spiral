@@ -157,7 +157,8 @@ The preview takes the proportions of what it holds, and takes them before it ope
 does not resize itself in front of you: a picture keeps its own, read from the file header;
 a PDF opens upright and a video at the proportions of its stream once it reports them; text
 gets a page to read on and the sound player is no larger than its controls. Ctrl with + and
--, Ctrl and the wheel, or the buttons in the bar over the picture zoom a picture or a page;
+-, Ctrl and the wheel, which zooms around the pointer, or the buttons in the bar over the
+picture zoom a picture or a page;
 Ctrl+0 fits it back into the window, zooming out stops there rather than counting below
 it, and a zoomed picture is moved by dragging it. Nothing in the preview shows scrollbars.
 

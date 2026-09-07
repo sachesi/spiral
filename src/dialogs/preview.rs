@@ -24,6 +24,8 @@ const TEXT_LIMIT: usize = 256 * 1024;
 const IMAGE_LIMIT: i64 = 128 * 1024 * 1024;
 /// Resolution PDF pages are rendered at.
 const PDF_DPI: u32 = 150;
+/// How much of a PDF is read looking for the size of its first page.
+const PDF_SCAN: usize = 256 * 1024;
 /// Size of the icon shown for files nothing can preview.
 const ICON_SIZE: i32 = 128;
 /// The sound player has only its icon and its controls to show, so it stays small.
@@ -355,9 +357,12 @@ impl PreviewDialog {
 
     /// One PDF page with the buttons that turn it, or nothing when `pdftoppm` is missing.
     async fn pdf(&self, path: PathBuf) -> Option<gtk::Widget> {
-        let pages = pdf_pages(path.clone()).await?;
+        let (pages, size) = pdf_info(path.clone()).await?;
+        // The tool's answer, which knows about rotation and about pages the scan of the
+        // file could not reach. Usually the shape the dialog already has.
+        let (width, height) = page_pixels(size);
+        self.shape_fitted(width, height);
         let first = pdf_page(path.clone(), 1).await?;
-        self.shape_to(&first);
         let page = Rc::new(Cell::new(1u32));
         let picture = picture(&first);
         let label = gtk::Label::new(Some(&page_text(1, pages)));
@@ -442,6 +447,21 @@ impl PreviewDialog {
         let fit = flat_button("zoom-fit-best-symbolic", &gettext("Fit to Window"));
         let in_ = flat_button("zoom-in-symbolic", &gettext("Zoom In"));
 
+        // Where the pointer is, so that the wheel zooms around what is under it.
+        let pointer = Rc::new(Cell::new(None::<(f64, f64)>));
+        let motion = gtk::EventControllerMotion::new();
+        motion.connect_motion(glib::clone!(
+            #[strong]
+            pointer,
+            move |_, x, y| pointer.set(Some((x, y)))
+        ));
+        motion.connect_leave(glib::clone!(
+            #[strong]
+            pointer,
+            move |_| pointer.set(None)
+        ));
+        scroll.add_controller(motion);
+
         let zoom = glib::clone!(
             #[strong]
             level,
@@ -451,18 +471,18 @@ impl PreviewDialog {
             scroll,
             #[strong]
             label,
-            move |delta: i32| {
+            move |delta: i32, at: Option<(f64, f64)>| {
                 let fit = fit_scale(&picture, &scroll);
+                let before = if level.get() > 0.0 { level.get() } else { fit };
                 let next = if delta == 0 {
                     0.0
                 } else {
-                    let from = if level.get() > 0.0 { level.get() } else { fit };
                     let step = if delta > 0 {
                         ZOOM_STEP
                     } else {
                         1.0 / ZOOM_STEP
                     };
-                    let wanted = (from * step).clamp(ZOOM_MIN, ZOOM_MAX);
+                    let wanted = (before * step).clamp(ZOOM_MIN, ZOOM_MAX);
                     // Zooming out stops at the fit instead of counting below it, where the
                     // picture cannot follow the number any further.
                     if wanted <= fit { 0.0 } else { wanted }
@@ -487,13 +507,28 @@ impl PreviewDialog {
                     (paintable.intrinsic_height() as f64 * next) as i32,
                 );
                 label.set_label(&format!("{}%", (next * 100.0).round()));
+                // Hold the point the zoom happened around still. The size the picture asked
+                // for lands in the next layout, so the scrolling waits for it.
+                let (ax, ay) =
+                    at.unwrap_or((scroll.width() as f64 / 2.0, scroll.height() as f64 / 2.0));
+                let ratio = next / before;
+                let left = (scroll.hadjustment().value() + ax) * ratio - ax;
+                let top = (scroll.vadjustment().value() + ay) * ratio - ay;
+                glib::idle_add_local_once(glib::clone!(
+                    #[strong]
+                    scroll,
+                    move || {
+                        scroll.hadjustment().set_value(left);
+                        scroll.vadjustment().set_value(top);
+                    }
+                ));
             }
         );
         for (button, delta) in [(&out, -1), (&fit, 0), (&in_, 1)] {
             button.connect_clicked(glib::clone!(
                 #[strong]
                 zoom,
-                move |_| zoom(delta)
+                move |_| zoom(delta, None)
             ));
         }
         // Ctrl and the wheel, as everywhere else that zooms.
@@ -502,6 +537,8 @@ impl PreviewDialog {
         wheel.connect_scroll(glib::clone!(
             #[strong]
             zoom,
+            #[strong]
+            pointer,
             move |controller, _, dy| {
                 if !controller
                     .current_event_state()
@@ -510,7 +547,7 @@ impl PreviewDialog {
                 {
                     return glib::Propagation::Proceed;
                 }
-                zoom(if dy < 0.0 { 1 } else { -1 });
+                zoom(if dy < 0.0 { 1 } else { -1 }, pointer.get());
                 glib::Propagation::Stop
             }
         ));
@@ -547,7 +584,9 @@ impl PreviewDialog {
             move |_, _, _| scroll.set_cursor_from_name(pan_cursor(level.get()))
         ));
         scroll.add_controller(drag);
-        self.imp().zoom.replace(Some(Box::new(zoom)));
+        self.imp()
+            .zoom
+            .replace(Some(Box::new(move |delta| zoom(delta, None))));
 
         let bar = gtk::Box::builder()
             .spacing(6)
@@ -608,7 +647,16 @@ impl PreviewDialog {
         } else if gio::content_type_is_a(&content_type, "text/plain") {
             TEXT_SHAPE
         } else if content_type == "application/pdf" && can_render_pdf() {
-            PAGE_SHAPE
+            // A thumbnail of the first page has the proportions of the page; failing that,
+            // the page dictionary usually says so itself.
+            let size = thumbnail_size(info).or_else(|| {
+                let page = pdf_page_size(&file_utils::file_of(info).path()?)?;
+                Some(page_pixels(page))
+            });
+            match size {
+                Some((width, height)) => return self.shape_fitted(width, height),
+                None => PAGE_SHAPE,
+            }
         } else {
             INFO_SHAPE
         };
@@ -735,6 +783,36 @@ fn fit_scale(picture: &gtk::Picture, scroll: &gtk::ScrolledWindow) -> f64 {
         .min(1.0)
 }
 
+/// A page of `width` by `height` points, in the pixels it is rendered to.
+fn page_pixels((width, height): (f64, f64)) -> (f64, f64) {
+    let scale = PDF_DPI as f64 / 72.0;
+    (width * scale, height * scale)
+}
+
+/// The size of the first page in points, read out of the file: no tool to start and no
+/// page to render, so the dialog has the shape before it opens. `None` when the page
+/// dictionary is compressed out of reach, which is what `pdfinfo` answers later.
+fn pdf_page_size(path: &Path) -> Option<(f64, f64)> {
+    use std::io::Read;
+    let mut head = vec![0u8; PDF_SCAN];
+    let read = std::fs::File::open(path).ok()?.read(&mut head).ok()?;
+    let text = String::from_utf8_lossy(&head[..read]);
+    let box_ = text.find("/MediaBox")?;
+    let open = text[box_..].find('[')? + box_ + 1;
+    let close = text[open..].find(']')? + open;
+    let mut corners = text[open..close]
+        .split_whitespace()
+        .filter_map(|number| number.parse::<f64>().ok());
+    let (left, bottom, right, top) = (
+        corners.next()?,
+        corners.next()?,
+        corners.next()?,
+        corners.next()?,
+    );
+    let (width, height) = ((right - left).abs(), (top - bottom).abs());
+    (width > 1.0 && height > 1.0).then_some((width, height))
+}
+
 /// The size of the thumbnail the listing already holds, which has the proportions of the
 /// file itself. Reading its header is a few bytes and no decode.
 fn thumbnail_size(info: &gio::FileInfo) -> Option<(f64, f64)> {
@@ -816,17 +894,44 @@ async fn load_text(file: &gio::File) -> Option<String> {
     Some(String::from_utf8_lossy(&data).into_owned())
 }
 
-async fn pdf_pages(path: PathBuf) -> Option<u32> {
+/// How many pages the document has and how large one is, in points.
+async fn pdf_info(path: PathBuf) -> Option<(u32, (f64, f64))> {
     gio::spawn_blocking(move || {
         run_tool(
             "pdfinfo",
             &path,
             |input, _| vec![input.as_os_str().to_owned()],
             |out, _| {
-                String::from_utf8_lossy(out)
+                let text = String::from_utf8_lossy(out);
+                let pages: u32 = text
                     .lines()
                     .find_map(|line| line.strip_prefix("Pages:"))
-                    .and_then(|count| count.trim().parse().ok())
+                    .and_then(|count| count.trim().parse().ok())?;
+                // "Page size:       595.2 x 841.92 pts (A4)"
+                let (width, height) = text
+                    .lines()
+                    .find_map(|line| line.strip_prefix("Page size:"))
+                    .and_then(|size| size.trim().split_once(" x "))
+                    .and_then(|(width, height)| {
+                        let height = height.split_whitespace().next()?;
+                        Some((
+                            width.trim().parse::<f64>().ok()?,
+                            height.parse::<f64>().ok()?,
+                        ))
+                    })
+                    .unwrap_or((PAGE_SHAPE.0 as f64, PAGE_SHAPE.1 as f64));
+                // "Page rot:        90": the page is drawn turned, so it is shown turned.
+                let turned = text
+                    .lines()
+                    .find_map(|line| line.strip_prefix("Page rot:"))
+                    .and_then(|rot| rot.trim().parse::<i32>().ok())
+                    .is_some_and(|rot| rot.rem_euclid(180) == 90);
+                let size = if turned {
+                    (height, width)
+                } else {
+                    (width, height)
+                };
+                Some((pages, size))
             },
         )
     })
