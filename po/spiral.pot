@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: spiral 0.5.1\n"
+"Project-Id-Version: spiral 0.6.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 10:35+0300\n"
+"POT-Creation-Date: 2026-09-07 15:00+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -181,8 +181,8 @@ msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:11
 msgid ""
-"Grid and list views, tabs, and a places sidebar with devices, bookmarks and "
-"favorites"
+"Grid, list and column views, tabs, and a places sidebar with devices, "
+"bookmarks and favorites"
 msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:12
@@ -211,6 +211,18 @@ msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"A column view, the third way to look at a folder: the path drawn as a strip "
+"of lists, one folder per column, with the folder you are in at the right and "
+"whatever the selection points at beside it. One click in any other column "
+"goes there. Ctrl+1, Ctrl+2 and Ctrl+3 now name a view instead of two keys "
+"toggling. Shift and the wheel move the strip sideways, and a drag held near "
+"either end pushes it along, so a column off the screen can still be dropped "
+"on. A file written after it is created, an image pasted from the clipboard "
+"say, gets its thumbnail without a restart."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:32
+msgid ""
 "A click on empty space in a folder takes the keyboard and clears the "
 "selection, so Ctrl+A and the other file keys no longer wait for a file to be "
 "clicked; the keyboard also comes back after a menu closes and after the "
@@ -219,7 +231,7 @@ msgid ""
 "again."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:32
+#: data/io.github.sachesi.spiral.metainfo.xml:37
 msgid ""
 "Two folder panes side by side, off by default and turned on with F3: F6 "
 "moves between them, the pane in charge is outlined, and everything outside "
@@ -229,7 +241,7 @@ msgid ""
 "portal deadlock, and opens a window of its own with the file selected."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:37
+#: data/io.github.sachesi.spiral.metainfo.xml:42
 msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
@@ -239,7 +251,7 @@ msgid ""
 "as the file extension, and a star toggle that follows the favourites."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:42
+#: data/io.github.sachesi.spiral.metainfo.xml:47
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -250,14 +262,14 @@ msgid ""
 "pastes paths into terminals."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:47
+#: data/io.github.sachesi.spiral.metainfo.xml:52
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
 "calls no longer block the interface on slow mounts."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:51
+#: data/io.github.sachesi.spiral.metainfo.xml:56
 msgid "First release."
 msgstr ""
 
@@ -337,7 +349,7 @@ msgstr ""
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:652 src/browser_view.rs:924
+#: src/browser_actions.rs:652 src/browser_view.rs:928
 #: src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
@@ -389,58 +401,58 @@ msgstr ""
 msgid "_Empty Trash"
 msgstr ""
 
-#: src/browser_view.rs:451
+#: src/browser_view.rs:455
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:455
+#: src/browser_view.rs:459
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:563
+#: src/browser_view.rs:567
 #, no-c-format
 msgid "Remove from Starred"
 msgstr ""
 
-#: src/browser_view.rs:565
+#: src/browser_view.rs:569
 #, no-c-format
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view.rs:935 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:939 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:635
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view.rs:952
+#: src/browser_view.rs:961
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:954 ui/browser_view.ui:98
+#: src/browser_view.rs:963 ui/browser_view.ui:98
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:974
+#: src/browser_view.rs:983
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:990
+#: src/browser_view.rs:999
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:995
+#: src/browser_view.rs:1004
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -448,23 +460,23 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1001
+#: src/browser_view.rs:1010
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:1589
+#: src/browser_view.rs:1600
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:1669 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1680 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr ""
 
-#: src/browser_view.rs:1791 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1802 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr ""
