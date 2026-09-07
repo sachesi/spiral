@@ -22,6 +22,11 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.7.0" date="2026-09-07">
+      <description>
+        <p>A quick preview on the Space key: images, PDFs a page at a time, video, sound and text with source code among it, drawn by Spiral itself in a window that takes the proportions of what it holds before it opens rather than resizing in front of you. The arrows walk the folder without leaving the preview, Page Up and Page Down turn the pages of a PDF, Return hands the file to its application, and Ctrl with the wheel zooms a picture around the pointer, which is then moved by dragging it. Video and sound play through one GStreamer pipeline kept for the whole session, and a sound file shows the cover it carries whether or not a thumbnailer ever saw it. A middle click opens a folder in a new tab, the first arrow key in a folder selects its first item, and a photograph is turned the way the camera held it. Windows, tabs and dialogs let go of everything they held when they close.</p>
+      </description>
+    </release>
     <release version="0.6.0" date="2026-09-07">
       <description>
         <p>A column view, the third way to look at a folder: the path drawn as a strip of lists, one folder per column, with the folder you are in at the right and whatever the selection points at beside it. One click in any other column goes there. Ctrl+1, Ctrl+2 and Ctrl+3 now name a view instead of two keys toggling. Shift and the wheel move the strip sideways, and a drag held near either end pushes it along, so a column off the screen can still be dropped on. A file written after it is created, an image pasted from the clipboard say, gets its thumbnail without a restart.</p>
