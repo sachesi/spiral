@@ -40,15 +40,6 @@ const SOUND_ICON_SIZE: i32 = 96;
 /// How long a file has to stay selected before it is loaded, so that running through a
 /// folder with the arrows does not start a decoder for every file passed over.
 const LOAD_DELAY: Duration = Duration::from_millis(120);
-/// How long a stream that never gets ready is kept before its pipeline is torn down anyway,
-/// and how often a preview waiting for that looks whether it has happened.
-const RETIRE_LIMIT: Duration = Duration::from_secs(5);
-const MEDIA_POLL: Duration = Duration::from_millis(30);
-
-thread_local! {
-    /// Media pipelines started and not yet torn down; there is meant to be at most one.
-    static LIVE: Cell<u32> = const { Cell::new(0) };
-}
 /// What the header takes before it has been measured.
 const HEADER_HEIGHT: i32 = 46;
 /// How much of the window the preview may take, and the bounds it keeps until it is told
@@ -103,8 +94,9 @@ mod imp {
         pub page_size: Cell<Option<(f64, f64)>>,
         /// How many pages it has, so the tool is asked once and not twice.
         pub page_count: Cell<Option<u32>>,
-        /// What is playing, stopped when it is replaced and when the dialog closes.
-        pub media: RefCell<Option<gtk::MediaStream>>,
+        /// What this dialog listens to on the player, undone when the file changes and
+        /// when the dialog closes: the player outlives both.
+        pub player_handlers: RefCell<Vec<glib::SignalHandlerId>>,
         /// Moves the selection the preview follows, by -1 or 1.
         pub step: Slot<i32>,
         /// Opens the file being previewed in its application.
@@ -334,7 +326,7 @@ impl PreviewDialog {
                 if dialog.imp().generation.get() != generation {
                     return;
                 }
-                let child = dialog.build_content(&info, generation).await;
+                let child = dialog.build_content(&info).await;
                 if dialog.imp().generation.get() == generation {
                     dialog.show_child(&child);
                 }
@@ -350,7 +342,7 @@ impl PreviewDialog {
         stack.set_visible_child(child);
     }
 
-    async fn build_content(&self, info: &gio::FileInfo, generation: u64) -> gtk::Widget {
+    async fn build_content(&self, info: &gio::FileInfo) -> gtk::Widget {
         let file = file_utils::file_of(info);
         let content_type = info.content_type().unwrap_or_default().to_string();
         if file_utils::is_dir(info) {
@@ -364,19 +356,12 @@ impl PreviewDialog {
             return self.zoomable(&picture(&texture), &[]);
         }
         if content_type.starts_with("video/") {
-            if !self.media_free(generation).await {
-                return spinner();
-            }
-            return self.video(&file);
+            return self.video(info, &file);
         }
         if content_type.starts_with("audio/") {
             // The cover takes the place of the icon and its size, so waiting for one to be
             // made costs nothing but the wait: the player is the same shape either way.
-            let cover = crate::thumbnails::load(info).await;
-            if !self.media_free(generation).await {
-                return spinner();
-            }
-            return self.sound(info, &file, cover);
+            return self.sound(info, &file);
         }
         if gio::content_type_is_a(&content_type, "text/plain")
             && let Some(text) = load_text(&file).await
@@ -402,63 +387,102 @@ impl PreviewDialog {
         }
     }
 
+    /// The one player, pointed at `file`, with this dialog listening to it until the next
+    /// file or the close takes it away again. `None` where there is no playback to offer.
+    fn player(&self, info: &gio::FileInfo, file: &gio::File) -> Option<crate::player::Player> {
+        let player = crate::player::player()?;
+        player.set_file(Some(file.clone()));
+        let generation = self.imp().generation.get();
+        let info = info.clone();
+        let failed = player.connect_error_notify(glib::clone!(
+            #[weak(rename_to = dialog)]
+            self,
+            move |player| {
+                // A file the pipeline cannot play shows what it would have shown anyway,
+                // in the shape the dialog already has.
+                if player.error().is_some() && dialog.imp().generation.get() == generation {
+                    dialog.show_child(&dialog.info_page(&info));
+                }
+            }
+        ));
+        self.imp().player_handlers.borrow_mut().push(failed);
+        Some(player)
+    }
+
     /// Video keeps its own proportions once the stream knows them; until then the dialog
     /// holds the shape most video has.
-    fn video(&self, file: &gio::File) -> gtk::Widget {
-        let video = gtk::Video::for_file(Some(file));
+    fn video(&self, info: &gio::FileInfo, file: &gio::File) -> gtk::Widget {
+        let Some(player) = self.player(info, file) else {
+            return self.info_page(info);
+        };
+        let video = gtk::Video::for_media_stream(Some(&player));
         video.set_autoplay(true);
-        if let Some(stream) = video.media_stream() {
-            stream.connect_prepared_notify(glib::clone!(
-                #[weak(rename_to = dialog)]
-                self,
-                move |stream| {
-                    let (w, h) = (stream.intrinsic_width(), stream.intrinsic_height());
-                    if stream.is_prepared() && w > 0 && h > 0 {
-                        dialog.shape_boxed(w as f64, h as f64, VIDEO_BOX);
-                    }
+        // The size comes with the first frame, which may be after the stream is prepared.
+        let reshape = glib::clone!(
+            #[weak(rename_to = dialog)]
+            self,
+            move |player: &crate::player::Player| {
+                let (w, h) = (player.intrinsic_width(), player.intrinsic_height());
+                if w > 0 && h > 0 {
+                    dialog.shape_boxed(w as f64, h as f64, VIDEO_BOX);
                 }
-            ));
-            self.imp().media.replace(Some(stream));
-            LIVE.set(LIVE.get() + 1);
-        }
+            }
+        );
+        let handlers = [
+            player.connect_prepared_notify(glib::clone!(
+                #[strong]
+                reshape,
+                move |player| reshape(player)
+            )),
+            player.connect_invalidate_size(glib::clone!(
+                #[strong]
+                reshape,
+                move |player| reshape(player)
+            )),
+        ];
+        self.imp().player_handlers.borrow_mut().extend(handlers);
         video.upcast()
     }
 
-    /// Sound has the cover to draw when the file carries one, and its icon when it does
-    /// not; either way the transport controls sit under it.
-    fn sound(
-        &self,
-        info: &gio::FileInfo,
-        file: &gio::File,
-        cover: Option<gdk::Texture>,
-    ) -> gtk::Widget {
-        let stream = gtk::MediaFile::for_file(file);
-        stream.play();
+    /// Sound has its icon to draw, and the cover in its place once the file has given one
+    /// up; either way the transport controls sit under it.
+    fn sound(&self, info: &gio::FileInfo, file: &gio::File) -> gtk::Widget {
+        let Some(player) = self.player(info, file) else {
+            return self.info_page(info);
+        };
+        player.play();
         let controls = gtk::MediaControls::builder()
-            .media_stream(&stream)
+            .media_stream(&player)
             .hexpand(true)
             .margin_start(12)
             .margin_end(12)
             .build();
-        self.imp().media.replace(Some(stream.upcast()));
-        LIVE.set(LIVE.get() + 1);
-        let art: gtk::Widget = match cover {
-            Some(cover) => {
-                // An image, not a picture: it draws the cover at the size asked for rather
-                // than at the size the cover happens to be.
-                let art = gtk::Image::from_paintable(Some(&cover));
-                art.set_pixel_size(SOUND_ICON_SIZE);
-                art.add_css_class("spiral-preview-cover");
-                // The rounded corners of the class only show where the cover is clipped.
-                art.set_overflow(gtk::Overflow::Hidden);
-                art.upcast()
+        let art = gtk::Image::from_gicon(&file_utils::icon_of(info));
+        art.set_pixel_size(SOUND_ICON_SIZE);
+        // The rounded corners of the cover come from clipping the widget, so the cover is
+        // made to fill it exactly: square, at the size of the icon it replaces, in a widget
+        // no wider than that rather than one stretched across the player.
+        art.set_halign(gtk::Align::Center);
+        art.set_overflow(gtk::Overflow::Hidden);
+        let side = SOUND_ICON_SIZE * self.scale_factor();
+        let cover = player.connect_cover(glib::clone!(
+            #[weak]
+            art,
+            move |player| {
+                let Some(bytes) = player.cover() else { return };
+                glib::spawn_future_local(glib::clone!(
+                    #[weak]
+                    art,
+                    async move {
+                        if let Some(texture) = cover_texture(bytes, side).await {
+                            art.set_paintable(Some(&texture));
+                            art.add_css_class("spiral-preview-cover");
+                        }
+                    }
+                ));
             }
-            None => {
-                let icon = gtk::Image::from_gicon(&file_utils::icon_of(info));
-                icon.set_pixel_size(SOUND_ICON_SIZE);
-                icon.upcast()
-            }
-        };
+        ));
+        self.imp().player_handlers.borrow_mut().push(cover);
         let column = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .spacing(12)
@@ -810,73 +834,18 @@ impl PreviewDialog {
         self.shape((width * scale) as i32, (height * scale) as i32);
     }
 
-    /// Wait until no media pipeline is left, so that only one exists at a time: GTK gives
-    /// each its own thread, and several of them starting and stopping at once trip races
-    /// in their teardown that take the process down. False when the selection moved on
-    /// while waiting, in which case nothing should be started for it any more.
-    async fn media_free(&self, generation: u64) -> bool {
-        while LIVE.get() > 0 {
-            glib::timeout_future(MEDIA_POLL).await;
-            if self.imp().generation.get() != generation {
-                return false;
-            }
-        }
-        true
-    }
-
+    /// Stop listening to the player and take its file away; the player itself stays for
+    /// the next preview.
     fn stop_media(&self) {
-        let Some(stream) = self.imp().media.take() else {
+        let handlers = self.imp().player_handlers.take();
+        let Some(player) = crate::player::current() else {
             return;
         };
-        stream.pause();
-        retire(stream);
-    }
-}
-
-/// Tear the pipeline of `stream` down once it has finished starting, and not before:
-/// GTK builds it on a thread of its own, and stopping it while it is still being built
-/// trips an assertion in decodebin3 that takes the whole process down. Paused already,
-/// the stream makes no sound while it waits; `RETIRE_LIMIT` bounds the wait for a file
-/// that never gets as far as being prepared.
-fn retire(stream: gtk::MediaStream) {
-    fn clear(stream: &gtk::MediaStream) {
-        if let Some(file) = stream.downcast_ref::<gtk::MediaFile>() {
-            file.clear();
+        for id in handlers {
+            player.disconnect(id);
         }
-        LIVE.set(LIVE.get() - 1);
+        player.set_file(None);
     }
-    if stream.is_prepared() || stream.error().is_some() {
-        return clear(&stream);
-    }
-    // Cleared from an idle, not from inside the notification: the notification comes out
-    // of the very object being torn down. Paused again first, since a pause asked for
-    // before the stream was prepared was not one, and a stream still counted as playing
-    // is paused once more when the widget showing it is unrealized, on a pipeline that
-    // is gone by then.
-    let done = Rc::new(Cell::new(false));
-    let later = move |stream: &gtk::MediaStream| {
-        if !done.replace(true) {
-            glib::idle_add_local_once(glib::clone!(
-                #[strong]
-                stream,
-                move || {
-                    stream.pause();
-                    clear(&stream);
-                }
-            ));
-        }
-    };
-    stream.connect_prepared_notify(glib::clone!(
-        #[strong]
-        later,
-        move |stream| later(stream)
-    ));
-    stream.connect_error_notify(glib::clone!(
-        #[strong]
-        later,
-        move |stream| later(stream)
-    ));
-    glib::timeout_add_local_once(RETIRE_LIMIT, move || later(&stream));
 }
 
 impl Default for PreviewDialog {
@@ -1159,19 +1128,7 @@ async fn load_texture(file: &gio::File) -> Option<gdk::Texture> {
                 let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file(&path)
                     .ok()?
                     .apply_embedded_orientation()?;
-                let format = if pixbuf.has_alpha() {
-                    gdk::MemoryFormat::R8g8b8a8
-                } else {
-                    gdk::MemoryFormat::R8g8b8
-                };
-                let texture = gdk::MemoryTexture::new(
-                    pixbuf.width(),
-                    pixbuf.height(),
-                    format,
-                    &pixbuf.read_pixel_bytes(),
-                    pixbuf.rowstride() as usize,
-                );
-                return Some(texture.upcast());
+                return Some(texture_of(&pixbuf));
             }
             gdk::Texture::from_filename(path).ok()
         })
@@ -1183,6 +1140,46 @@ async fn load_texture(file: &gio::File) -> Option<gdk::Texture> {
             gdk::Texture::from_bytes(&data).ok()
         }
     }
+}
+
+fn texture_of(pixbuf: &gtk::gdk_pixbuf::Pixbuf) -> gdk::Texture {
+    let format = if pixbuf.has_alpha() {
+        gdk::MemoryFormat::R8g8b8a8
+    } else {
+        gdk::MemoryFormat::R8g8b8
+    };
+    gdk::MemoryTexture::new(
+        pixbuf.width(),
+        pixbuf.height(),
+        format,
+        &pixbuf.read_pixel_bytes(),
+        pixbuf.rowstride() as usize,
+    )
+    .upcast()
+}
+
+/// The picture a sound file carries, cut to a square `side` pixels across: the middle of
+/// it, since a cover is nearly square and the corners are what gets rounded off.
+async fn cover_texture(bytes: glib::Bytes, side: i32) -> Option<gdk::Texture> {
+    gio::spawn_blocking(move || {
+        let loader = gtk::gdk_pixbuf::PixbufLoader::new();
+        loader.write(&bytes).ok()?;
+        loader.close().ok()?;
+        let pixbuf = loader.pixbuf()?;
+        let pixbuf = pixbuf.apply_embedded_orientation().unwrap_or(pixbuf);
+        let (width, height) = (pixbuf.width(), pixbuf.height());
+        let square = width.min(height);
+        if square <= 0 {
+            return None;
+        }
+        let middle =
+            pixbuf.new_subpixbuf((width - square) / 2, (height - square) / 2, square, square);
+        let scaled = middle.scale_simple(side, side, gtk::gdk_pixbuf::InterpType::Bilinear)?;
+        Some(texture_of(&scaled))
+    })
+    .await
+    .ok()
+    .flatten()
 }
 
 /// The first `TEXT_LIMIT` bytes of `file`. Bytes that are not UTF-8 are replaced rather
