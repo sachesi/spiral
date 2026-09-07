@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.6.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-07 16:02+0300\n"
+"POT-Creation-Date: 2026-09-07 16:07+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -541,9 +541,8 @@ msgstr ""
 msgid "Open With"
 msgstr ""
 
-#: src/dialogs/open_with.rs:69 src/dialogs/preview.rs:94
-#: src/portal/chooser_window.rs:194 ui/browser_view.ui:168
-#: ui/places_sidebar.ui:12
+#: src/dialogs/open_with.rs:69 src/portal/chooser_window.rs:194
+#: ui/browser_view.ui:168 ui/places_sidebar.ui:12
 #, no-c-format
 msgid "_Open"
 msgstr ""
@@ -750,29 +749,29 @@ msgstr ""
 msgid "Terminal"
 msgstr ""
 
-#: src/dialogs/preview.rs:81 ui/shortcuts_dialog.ui:234
+#: src/dialogs/preview.rs:84 ui/shortcuts_dialog.ui:234
 #, no-c-format
 msgid "Preview"
 msgstr ""
 
-#: src/dialogs/preview.rs:269
+#: src/dialogs/preview.rs:263
 #, no-c-format
 msgid "Previous Page"
 msgstr ""
 
-#: src/dialogs/preview.rs:272
+#: src/dialogs/preview.rs:266
 #, no-c-format
 msgid "Next Page"
 msgstr ""
 
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:378
+#: src/dialogs/preview.rs:372
 #, no-c-format
 msgid "%t, %s"
 msgstr ""
 
 #. Translators: %p is the page being shown, %n the number of pages in the document.
-#: src/dialogs/preview.rs:383
+#: src/dialogs/preview.rs:377
 #, no-c-format
 msgid "%p of %n"
 msgstr ""

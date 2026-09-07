@@ -150,7 +150,8 @@ Space shows the selected file without opening an application, and closes the pre
 again; Escape closes it too. Images, video, sound and text files, source code among them,
 are drawn by Spiral itself, and PDFs a page at a time. The Left and Right arrows walk
 through the folder without leaving the preview, Page Up and Page Down turn the pages of a
-PDF, and the Open button hands the file to its application.
+PDF, and Return hands the file to its application. The preview has no close button: it is
+a preview, and the keys that opened it close it again.
 
 Anything else falls back to the file's thumbnail, or to its icon, type and size. Video and
 sound need the GStreamer plugins for the format installed, PDFs need `pdftoppm` from
