@@ -173,29 +173,17 @@ mod imp {
                 );
             });
             klass.install_action("win.back", None, |win, _, _| {
-                if let Some(v) = win.current_view() {
-                    v.go_back()
-                }
+                win.navigate(BrowserView::go_back)
             });
             klass.install_action("win.forward", None, |win, _, _| {
-                if let Some(v) = win.current_view() {
-                    v.go_forward()
-                }
+                win.navigate(BrowserView::go_forward)
             });
-            klass.install_action("win.up", None, |win, _, _| {
-                if let Some(v) = win.current_view() {
-                    v.go_up()
-                }
-            });
+            klass.install_action("win.up", None, |win, _, _| win.navigate(BrowserView::go_up));
             klass.install_action("win.home", None, |win, _, _| {
-                if let Some(v) = win.current_view() {
-                    v.go_to(&gio::File::for_path(glib::home_dir()))
-                }
+                win.navigate(|v| v.go_to(&gio::File::for_path(glib::home_dir())))
             });
             klass.install_action("win.reload", None, |win, _, _| {
-                if let Some(v) = win.current_view() {
-                    v.reload()
-                }
+                win.navigate(BrowserView::reload)
             });
             klass.install_action("win.location-entry", None, |win, _, _| {
                 win.show_location_entry()
@@ -645,6 +633,15 @@ impl SpiralWindow {
         match active {
             Some(v) if v.is_ancestor(&paned) => Some(v),
             _ => paned.start_child().and_downcast(),
+        }
+    }
+
+    /// Navigate the pane in charge and hand it the focus: a toolbar button keeps the
+    /// focus otherwise, and the view keys only fire while a pane holds it.
+    fn navigate(&self, f: impl Fn(&BrowserView)) {
+        if let Some(v) = self.current_view() {
+            f(&v);
+            v.grab_view_focus();
         }
     }
 

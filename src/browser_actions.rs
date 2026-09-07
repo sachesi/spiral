@@ -860,6 +860,9 @@ impl BrowserView {
                     #[weak(rename_to = view)]
                     self,
                     move |_| {
+                        // The menu took the focus and hands it back to nothing in
+                        // particular, which would leave the view keys dead.
+                        view.grab_view_focus();
                         glib::idle_add_local_once(move || {
                             view.imp().pending_drop.replace(None);
                         });
