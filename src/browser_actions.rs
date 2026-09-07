@@ -81,7 +81,8 @@ impl BrowserView {
         add("drop-move", |v| v.finish_drop(gtk::gdk::DragAction::MOVE));
         add("drop-link", |v| v.finish_drop(gtk::gdk::DragAction::LINK));
         add("new-folder", |v| v.new_folder());
-        add("properties", |v| v.show_properties());
+        add("properties", |v| v.show_properties(false));
+        add("folder-properties", |v| v.show_properties(true));
         add("open-with", |v| v.open_with());
         add("star", |v| v.set_selection_starred(true));
         add("unstar", |v| v.set_selection_starred(false));
@@ -141,7 +142,8 @@ impl BrowserView {
             }),
             add("extract-to", |v| v.extract_to()),
             add("compress", |v| v.compress()),
-            add("open-terminal", |v| v.open_terminal()),
+            add("open-terminal", |v| v.open_terminal(false)),
+            add("folder-terminal", |v| v.open_terminal(true)),
         ];
         if chooser {
             for a in &destructive {
@@ -281,9 +283,14 @@ impl BrowserView {
             n > 0 && infos.iter().all(file_utils::is_dir),
         );
         self.set_enabled("open-with", n > 0 && !infos.iter().any(file_utils::is_dir));
+        let has_terminal = crate::terminal::chosen().is_some();
         self.set_enabled(
             "open-terminal",
-            self.terminal_dir().is_some() && crate::terminal::chosen().is_some(),
+            self.terminal_dir().is_some() && has_terminal,
+        );
+        self.set_enabled(
+            "folder-terminal",
+            self.folder_dir().is_some() && has_terminal,
         );
         self.set_enabled("cut", n > 0 && !in_trash && can_delete);
         self.set_enabled("copy", n > 0);
@@ -321,6 +328,7 @@ impl BrowserView {
         self.set_enabled("new-file", can_write && !in_trash);
         self.set_enabled("empty-trash", in_trash && self.model().n_items() > 0);
         self.set_enabled("properties", n > 0 || self.location().is_some());
+        self.set_enabled("folder-properties", self.location().is_some());
         let local = infos.iter().all(|i| file_utils::file_of(i).is_native());
         let local_dir = self.location().is_some_and(|l| l.is_native());
         self.set_enabled(
@@ -371,8 +379,19 @@ impl BrowserView {
         dir.path()
     }
 
-    fn open_terminal(&self) {
-        let Some(dir) = self.terminal_dir() else {
+    /// The folder on screen, local only.
+    fn folder_dir(&self) -> Option<std::path::PathBuf> {
+        self.location()?.path()
+    }
+
+    /// `folder` ignores the selection, for the menu opened over empty space.
+    fn open_terminal(&self, folder: bool) {
+        let dir = if folder {
+            self.folder_dir()
+        } else {
+            self.terminal_dir()
+        };
+        let Some(dir) = dir else {
             return;
         };
         if let Err(e) = crate::terminal::open(&dir)
@@ -767,9 +786,10 @@ impl BrowserView {
         ))
     }
 
-    fn show_properties(&self) {
+    /// `folder` ignores the selection, for the menu opened over empty space.
+    fn show_properties(&self, folder: bool) {
         let files = match self.selected() {
-            v if v.is_empty() => self.location().into_iter().collect(),
+            v if folder || v.is_empty() => self.location().into_iter().collect(),
             v => v,
         };
         if files.is_empty() {
@@ -827,10 +847,7 @@ impl BrowserView {
                 }
                 &imp.item_menu
             }
-            None => {
-                selection.unselect_all();
-                &imp.background_menu
-            }
+            None => &imp.background_menu,
         };
         self.update_action_state();
         let point = imp
