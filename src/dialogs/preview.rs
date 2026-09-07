@@ -45,6 +45,8 @@ const IMAGE_SHAPE: (i32, i32) = (720, 540);
 const PAGE_SHAPE: (i32, i32) = (438, 620);
 const SOUND_SHAPE: (i32, i32) = (420, 190);
 const INFO_SHAPE: (i32, i32) = (340, 260);
+/// How long one page of the preview takes to fade into the next.
+const CROSSFADE: Duration = Duration::from_millis(120);
 /// Zoom: one step of the buttons or the wheel, and how far it goes either way.
 const ZOOM_STEP: f64 = 1.25;
 const ZOOM_MIN: f64 = 0.05;
@@ -63,7 +65,7 @@ mod imp {
     #[derive(Default)]
     pub struct PreviewDialog {
         pub title: adw::WindowTitle,
-        pub content: adw::Bin,
+        pub content: gtk::Stack,
         /// Bumped per file, so a slow load cannot land after a newer one.
         pub generation: Cell<u64>,
         /// What is playing, stopped when it is replaced and when the dialog closes.
@@ -117,7 +119,32 @@ impl PreviewDialog {
             .build();
         header.set_title_widget(Some(&imp.title));
 
+        // One page fades into the next, and the stack takes the size of the page on screen
+        // rather than the largest one it has held.
         imp.content.set_vexpand(true);
+        imp.content
+            .set_transition_type(gtk::StackTransitionType::Crossfade);
+        imp.content
+            .set_transition_duration(CROSSFADE.as_millis() as u32);
+        imp.content.set_hhomogeneous(false);
+        imp.content.set_vhomogeneous(false);
+        imp.content.connect_transition_running_notify(|stack| {
+            if stack.is_transition_running() {
+                return;
+            }
+            let shown = stack.visible_child();
+            let mut pages: Vec<gtk::Widget> = Vec::new();
+            let mut child = stack.first_child();
+            while let Some(page) = child {
+                child = page.next_sibling();
+                if Some(&page) != shown.as_ref() {
+                    pages.push(page);
+                }
+            }
+            for page in pages {
+                stack.remove(&page);
+            }
+        });
         let toolbar = adw::ToolbarView::new();
         toolbar.add_top_bar(&header);
         toolbar.set_content(Some(&imp.content));
@@ -206,7 +233,7 @@ impl PreviewDialog {
         imp.title.set_title(&file_utils::display_name(info));
         imp.title.set_subtitle(&subtitle(info));
         self.shape_for_kind(info);
-        imp.content.set_child(Some(&spinner()));
+        self.show_child(&spinner());
         let info = info.clone();
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = dialog)]
@@ -219,10 +246,18 @@ impl PreviewDialog {
                 }
                 let child = dialog.build_content(&info).await;
                 if dialog.imp().generation.get() == generation {
-                    dialog.imp().content.set_child(Some(&child));
+                    dialog.show_child(&child);
                 }
             }
         ));
+    }
+
+    /// Fade `child` in over whatever is on screen. The page it replaces is dropped when
+    /// the fade is over, not while it is still being drawn.
+    fn show_child(&self, child: &impl IsA<gtk::Widget>) {
+        let stack = &self.imp().content;
+        stack.add_child(child);
+        stack.set_visible_child(child);
     }
 
     async fn build_content(&self, info: &gio::FileInfo) -> gtk::Widget {
@@ -260,7 +295,11 @@ impl PreviewDialog {
                 self.shape_to(&texture);
                 picture(&texture).upcast()
             }
-            None => self.info_page(info),
+            None => {
+                // The guessed shape was for content that turned out not to be drawable.
+                self.shape(INFO_SHAPE.0, INFO_SHAPE.1);
+                self.info_page(info)
+            }
         }
     }
 
@@ -558,7 +597,7 @@ impl PreviewDialog {
             SOUND_SHAPE
         } else if gio::content_type_is_a(&content_type, "text/plain") {
             TEXT_SHAPE
-        } else if content_type == "application/pdf" {
+        } else if content_type == "application/pdf" && can_render_pdf() {
             PAGE_SHAPE
         } else {
             INFO_SHAPE
@@ -662,6 +701,12 @@ fn drawn_scale(picture: &gtk::Picture) -> f64 {
         return 1.0;
     }
     (picture.width() as f64 / width).min(picture.height() as f64 / height)
+}
+
+/// Whether a PDF page can be drawn at all: without the tool, a PDF is shaped like the icon
+/// it will end up showing instead of shrinking into it once the attempt has failed.
+fn can_render_pdf() -> bool {
+    glib::find_program_in_path("pdftoppm").is_some()
 }
 
 /// The hand that says a zoomed picture can be dragged, and nothing while it fits.
