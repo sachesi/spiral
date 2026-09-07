@@ -285,7 +285,7 @@ mod imp {
 }
 
 /// Where the crumb chain starts for `file`.
-fn chain_root(file: &gio::File, mount: Option<&(gio::File, String)>) -> gio::File {
+pub(crate) fn chain_root(file: &gio::File, mount: Option<&(gio::File, String)>) -> gio::File {
     let home = gio::File::for_path(glib::home_dir());
     if file.equal(&home) || file.has_prefix(&home) {
         return home;

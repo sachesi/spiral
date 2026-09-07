@@ -40,6 +40,25 @@ template $SpiralBrowserView : Box {
       }
 
       StackPage {
+        name: "columns";
+        child: ScrolledWindow columns_scroll {
+          vscrollbar-policy: never;
+          styles ["spiral-columns-view"]
+          child: Box columns_box {
+            orientation: horizontal;
+
+            ScrolledWindow miller_scroll {
+              hscrollbar-policy: never;
+              styles ["spiral-miller-column", "spiral-miller-current"]
+              child: ListView miller_list {
+                enable-rubberband: true;
+              };
+            }
+          };
+        };
+      }
+
+      StackPage {
         name: "empty";
         child: Adw.StatusPage empty_page {
           icon-name: "folder-symbolic";

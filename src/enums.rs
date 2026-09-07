@@ -1,3 +1,5 @@
+use gettextrs::gettext;
+
 use crate::glib;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, glib::Enum)]
@@ -8,14 +10,50 @@ pub enum ViewMode {
     Grid = 0,
     #[enum_value(name = "List", nick = "list")]
     List = 1,
+    #[enum_value(name = "Columns", nick = "columns")]
+    Columns = 2,
 }
 
 impl ViewMode {
+    pub fn nick(self) -> &'static str {
+        match self {
+            Self::Grid => "grid",
+            Self::List => "list",
+            Self::Columns => "columns",
+        }
+    }
+
     pub fn from_nick(nick: &str) -> Option<Self> {
         match nick {
             "grid" => Some(Self::Grid),
             "list" => Some(Self::List),
+            "columns" => Some(Self::Columns),
             _ => None,
+        }
+    }
+
+    /// The view the view button switches to next.
+    pub fn next(self) -> Self {
+        match self {
+            Self::Grid => Self::List,
+            Self::List => Self::Columns,
+            Self::Columns => Self::Grid,
+        }
+    }
+
+    pub fn icon(self) -> &'static str {
+        match self {
+            Self::Grid => "view-grid-symbolic",
+            Self::List => "view-list-symbolic",
+            Self::Columns => "view-columns-symbolic",
+        }
+    }
+
+    pub fn label(self) -> String {
+        match self {
+            Self::Grid => gettext("Grid View"),
+            Self::List => gettext("List View"),
+            Self::Columns => gettext("Column View"),
         }
     }
 }

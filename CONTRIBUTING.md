@@ -10,6 +10,7 @@
     src/window.rs          tabs, header bar, location entry, win.* actions
     src/browser_view.rs    one tab: grid and list, selection, view mode, drag and drop
     src/browser_actions.rs view.* actions, context menus, rename and new-folder flows
+    src/miller.rs          column view: the folder chain as a strip of lists
     src/folder_model.rs    list model of a folder: monitoring, sorting, filtering
     src/places_sidebar.rs  sidebar, mounts, eject, bookmark drag and drop
     src/path_bar.rs        breadcrumbs
