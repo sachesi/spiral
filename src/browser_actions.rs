@@ -317,11 +317,27 @@ impl BrowserView {
             }
         ));
         let id = std::cell::RefCell::new(Some(id));
-        dialog.connect_closed(move |_| {
-            if let Some(id) = id.borrow_mut().take() {
-                selection.disconnect(id);
+        dialog.connect_closed(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |_| {
+                if let Some(id) = id.borrow_mut().take() {
+                    selection.disconnect(id);
+                }
+                // The dialog gives the keyboard back to the item it was taken from; the
+                // arrows may have moved the selection since, and the keyboard follows it.
+                glib::idle_add_local_once(glib::clone!(
+                    #[weak]
+                    view,
+                    move || {
+                        let selected = view.model().selection().selection();
+                        if !selected.is_empty() {
+                            view.reveal_position(selected.nth(0), gtk::ListScrollFlags::FOCUS);
+                        }
+                    }
+                ));
             }
-        });
+        ));
         // A PDF that will not say how large its pages are is asked before the dialog is
         // shown, so it opens at the shape it keeps.
         let info = info.clone();

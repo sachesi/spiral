@@ -1132,7 +1132,7 @@ impl BrowserView {
     }
 
     /// Scroll to `pos` in whichever view is on screen; the others cost nothing.
-    fn reveal_position(&self, pos: u32, flags: gtk::ListScrollFlags) {
+    pub(crate) fn reveal_position(&self, pos: u32, flags: gtk::ListScrollFlags) {
         let imp = self.imp();
         imp.grid_view.scroll_to(pos, flags, None);
         imp.miller_list.scroll_to(pos, flags, None);

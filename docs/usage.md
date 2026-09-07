@@ -154,22 +154,24 @@ PDF, and Return hands the file to its application. The preview has no close butt
 a preview, and the keys that opened it close it again.
 
 The preview takes the proportions of what it holds, and takes them before it opens, so it
-does not resize itself in front of you. It is as large as the window it opens over allows: a picture keeps its own, read from the file header;
-a PDF opens at the size of its page, upright when the file keeps that size to itself, and a
-video at the proportions of its stream once it reports them; text
-gets a page to read on and the sound player is no larger than its controls. Ctrl with + and
--, Ctrl and the wheel, which zooms around the pointer, or the buttons in the bar over the
-picture zoom a picture or a page;
-Ctrl+0 fits it back into the window, zooming out stops there rather than counting below
-it, and a zoomed picture is moved by dragging it. Nothing in the preview shows scrollbars.
+does not resize itself in front of you. It is as large as the window it opens over allows:
+a picture keeps its own, read from the file header and turned the way its EXIF tag says; a
+PDF opens at the size of its page, upright when the file keeps that size to itself, and a
+video at the proportions of its stream once it reports them; text gets a page to read on
+and the sound player is no larger than its controls. Ctrl with + and -, Ctrl and the
+wheel, which zooms around the pointer, or the buttons in the bar over the picture zoom a
+picture or a page; Ctrl+0 fits it back into the window, zooming out stops there rather
+than counting below it, and a zoomed picture is moved by dragging it. Nothing in the
+preview shows scrollbars.
 
 A sound file is shown with its cover where a thumbnailer can pull one out of it, drawn at
-the size of the icon it stands in for, and with that icon where there is none. Anything else falls back to the file's thumbnail, or to its
-icon, with the name and the type left to the header. Video and
-sound need the GStreamer plugins for the format installed, PDFs need `pdftoppm` from
-poppler-utils, which runs in the same bubblewrap sandbox as the thumbnailers. Text files
-are shown up to 256 kB. A file is only loaded once it has been selected for a moment, so
-holding an arrow down runs through a folder without starting a decoder per file.
+the size of the icon it stands in for, and with that icon where there is none. Anything
+else falls back to the file's thumbnail, or to its icon, with the name and the type left
+to the header. Video and sound need the GStreamer plugins for the format installed, PDFs
+need `pdftoppm` from poppler-utils, which runs in the same bubblewrap sandbox as the
+thumbnailers. Text files are shown up to 256 kB, images up to 128 MB and 80 megapixels. A
+file is only loaded once it has been selected for a moment, so holding an arrow down runs
+through a folder without starting a decoder per file.
 
 ## Favorites
 
