@@ -43,7 +43,10 @@ started: a machine busy with other decoders or a helper not installed yet say no
 the file, and it is asked about again on the next visit. For generation, the system `.thumbnailer` entries under
 `~/.local/share/thumbnailers` and `XDG_DATA_DIRS` are consulted first, as GNOME does; an
 entry matches if its MIME type equals or is a supertype of the file's, and its `TryExec`
-has to be in `PATH`. Images with no system thumbnailer go to the bundled
+has to be in `PATH`. Where several entries claim a type, the user's come before the
+system's and within a directory they are taken by file name, so the choice is the same on
+every machine; they are tried in that order, and one that fails or hangs on a file hands
+it to the next. Images with no system thumbnailer go to the bundled
 `spiral-thumbnailer`, a gdk-pixbuf loader that handles whatever loaders are installed
 (PNG, JPEG, GIF, BMP, TIFF, and WebP, AVIF, JPEG XL or SVG with their loader packages),
 scales to fit, and applies the EXIF orientation. Anything else gets no thumbnail. The

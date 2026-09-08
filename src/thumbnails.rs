@@ -130,7 +130,7 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
     let content_type = info.content_type().unwrap_or_default().to_string();
     let source = Source {
         path: file.path(),
-        thumbnailer: thumbnailer_for(&content_type),
+        thumbnailers: thumbnailers_for(&content_type),
         // Images with no thumbnailer of their own go to the bundled helper.
         own: content_type.starts_with("image/"),
         // Only pictures are weighed: a video thumbnailer reads a frame, not the file, so
@@ -139,7 +139,7 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         too_large: content_type.starts_with("image/")
             && info.size().max(0) as u64 > crate::prefs::thumbnail_limit(),
     };
-    if source.thumbnailer.is_none() && !source.own {
+    if source.thumbnailers.is_empty() && !source.own {
         glib::g_debug!(
             "spiral",
             "thumbnail {uri}: no thumbnailer claims {content_type}"
@@ -173,7 +173,8 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
 struct Source {
     /// Only a local file can be handed to a thumbnailer.
     path: Option<PathBuf>,
-    thumbnailer: Option<Box<Thumbnailer>>,
+    /// Every system entry claiming the type, in the order they are tried.
+    thumbnailers: Vec<Thumbnailer>,
     /// Whether the bundled helper would take it: images, which most thumbnailer entries
     /// leave alone.
     own: bool,
@@ -227,11 +228,11 @@ async fn generate_task(key: Key, source: Source, at: u32) {
                 Cached::Failed => return None,
                 Cached::Missing => {
                     let path = source.path?;
-                    if source.too_large || (source.thumbnailer.is_none() && !source.own) {
+                    if source.too_large || (source.thumbnailers.is_empty() && !source.own) {
                         return None;
                     }
                     let out = cache_path(&uri);
-                    match generate(&path, &uri, mtime, &out, source.thumbnailer.as_deref()) {
+                    match generate(&path, &uri, mtime, &out, &source.thumbnailers) {
                         Ok(()) => out,
                         Err(Failure::OfTheFile) => {
                             remember_failure(&uri, mtime);
@@ -457,7 +458,7 @@ fn generate(
     uri: &str,
     mtime: u64,
     out: &Path,
-    thumbnailer: Option<&Thumbnailer>,
+    thumbnailers: &[Thumbnailer],
 ) -> Result<(), Failure> {
     let Some(dir) = out.parent() else {
         return Err(Failure::OfTheMoment);
@@ -468,35 +469,48 @@ fn generate(
     // The bundled helper stands in for images no system thumbnailer claims. There is no
     // third way: decoding in this process would put an untrusted file in front of a loader
     // with the whole session behind it.
-    let exec = match thumbnailer {
-        Some(t) => t.exec.clone(),
-        None => match own_thumbnailer() {
-            Some(bin) => format!("{} %i %o %s", glib::shell_quote(bin).to_string_lossy()),
+    let execs: Vec<String> = if thumbnailers.is_empty() {
+        match own_thumbnailer() {
+            Some(bin) => vec![format!(
+                "{} %i %o %s",
+                glib::shell_quote(bin).to_string_lossy()
+            )],
             None => {
                 glib::g_debug!("spiral", "thumbnail {uri}: no thumbnailer for it");
                 return Err(Failure::OfTheMoment);
             }
-        },
+        }
+    } else {
+        thumbnailers.iter().map(|t| t.exec.clone()).collect()
     };
-    let started = std::time::Instant::now();
-    let run = run_thumbnailer(&exec, path, &tmp);
-    // GIO only accepts a cached thumbnail that names the file it was made from, so one
-    // that does not say so is written again with the words. Thumbnailers that follow the
-    // spec already say it, and are left alone rather than decoded and encoded once more.
-    if run.is_ok()
-        && (stamped_for(&tmp, mtime) || stamp(&tmp, uri, mtime))
-        && std::fs::rename(&tmp, out).is_ok()
-    {
-        glib::g_debug!(
-            "spiral",
-            "thumbnail {uri}: made in {} ms by {exec}",
-            started.elapsed().as_millis()
-        );
-        return Ok(());
+    // Where several entries claim a type they are tried in turn: one that lacks a codec
+    // the next one has, or hangs on a file, does not decide for the others.
+    let mut worst = Failure::OfTheFile;
+    for exec in execs {
+        let started = std::time::Instant::now();
+        let run = run_thumbnailer(&exec, path, &tmp);
+        // GIO only accepts a cached thumbnail that names the file it was made from, so
+        // one that does not say so is written again with the words. Thumbnailers that
+        // follow the spec already say it, and are left alone rather than decoded and
+        // encoded once more.
+        if run.is_ok()
+            && (stamped_for(&tmp, mtime) || stamp(&tmp, uri, mtime))
+            && std::fs::rename(&tmp, out).is_ok()
+        {
+            glib::g_debug!(
+                "spiral",
+                "thumbnail {uri}: made in {} ms by {exec}",
+                started.elapsed().as_millis()
+            );
+            return Ok(());
+        }
+        let _ = std::fs::remove_file(&tmp);
+        if matches!(run, Ok(()) | Err(Failure::OfTheMoment)) {
+            worst = Failure::OfTheMoment;
+        }
     }
     glib::g_debug!("spiral", "thumbnail {uri}: generation failed");
-    let _ = std::fs::remove_file(&tmp);
-    run.and(Err(Failure::OfTheMoment))
+    Err(worst)
 }
 
 /// Write the Thumb::URI and Thumb::MTime a thumbnailer's PNG was made for; without them a
@@ -936,24 +950,23 @@ fn drain(pipe: Option<impl std::io::Read + Send + 'static>) -> std::thread::Join
 }
 
 /// System thumbnailers win over gdk-pixbuf, matching GNOME (gdk-pixbuf ships one itself).
-fn thumbnailer_for(content_type: &str) -> Option<Box<Thumbnailer>> {
+fn thumbnailers_for(content_type: &str) -> Vec<Thumbnailer> {
     let all = THUMBNAILERS.with(|t| {
         t.borrow_mut()
             .get_or_insert_with(|| Rc::new(load_thumbnailers()))
             .clone()
     });
     all.iter()
-        .find(|t| {
+        .filter(|t| {
             t.mime_types.iter().any(|m| {
                 gio::content_type_equals(content_type, m) || gio::content_type_is_a(content_type, m)
             })
         })
-        .map(|t| {
-            Box::new(Thumbnailer {
-                exec: t.exec.clone(),
-                mime_types: Vec::new(),
-            })
+        .map(|t| Thumbnailer {
+            exec: t.exec.clone(),
+            mime_types: Vec::new(),
         })
+        .collect()
 }
 
 fn load_thumbnailers() -> Vec<Thumbnailer> {
@@ -968,12 +981,14 @@ fn load_thumbnailers() -> Vec<Thumbnailer> {
         let Ok(entries) = std::fs::read_dir(&dir) else {
             continue;
         };
-        for e in entries.flatten() {
+        // The order of a directory listing is whatever the filesystem makes it, and it
+        // decides which of two entries claiming a type is tried first; by name it is the
+        // same on every machine, and a user's own entries come before the system's.
+        let mut paths: Vec<PathBuf> = entries.flatten().map(|e| e.path()).collect();
+        paths.sort();
+        for path in paths {
             let kf = glib::KeyFile::new();
-            if kf
-                .load_from_file(e.path(), glib::KeyFileFlags::NONE)
-                .is_err()
-            {
+            if kf.load_from_file(&path, glib::KeyFileFlags::NONE).is_err() {
                 continue;
             }
             let Ok(exec) = kf.string("Thumbnailer Entry", "Exec") else {
