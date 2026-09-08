@@ -123,6 +123,11 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
         thumbnailer: thumbnailer_for(&content_type),
         // Images with no thumbnailer of their own go to the bundled helper.
         own: content_type.starts_with("image/"),
+        // Only pictures are weighed: a video thumbnailer reads a frame, not the file, so
+        // the size of the file says nothing about what it will cost. One already in the
+        // cache is shown whatever the size, which is why this only stops generation.
+        too_large: content_type.starts_with("image/")
+            && info.size().max(0) as u64 > crate::prefs::thumbnail_limit(),
     };
 
     // Every caller waits on a detached generation task, so a row being unbound mid-way
@@ -155,6 +160,8 @@ struct Source {
     /// Whether the bundled helper would take it: images, which most thumbnailer entries
     /// leave alone.
     own: bool,
+    /// Whether the file is too big to be worth decoding.
+    too_large: bool,
 }
 
 async fn generate_task(key: Key, source: Source) {
@@ -173,7 +180,7 @@ async fn generate_task(key: Key, source: Source) {
                 Cached::Failed => return None,
                 Cached::Missing => {
                     let path = source.path?;
-                    if source.thumbnailer.is_none() && !source.own {
+                    if source.too_large || (source.thumbnailer.is_none() && !source.own) {
                         return None;
                     }
                     let out = cache_path(&uri);

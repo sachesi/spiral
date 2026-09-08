@@ -140,6 +140,12 @@ pub fn counts_for(file: &gio::File) -> bool {
     scope_allows("item-counts", file)
 }
 
+/// Pictures past this many bytes are left with their icon. Reading a very large one costs
+/// time and memory out of proportion to the thumbnail it makes.
+pub fn thumbnail_limit() -> u64 {
+    SETTINGS.with(|s| s.uint64("thumbnail-limit")) * 1000 * 1000
+}
+
 pub fn recursive_search_for(file: &gio::File) -> bool {
     scope_allows("recursive-search", file)
 }

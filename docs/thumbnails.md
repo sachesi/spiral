@@ -14,6 +14,11 @@ twenty times as many files to a decoder as it displayed. The request waits for t
 be mapped and is dropped when the row is scrolled away or rebound, and it is carried at low
 priority, since the folder appearing matters more than the pictures in it.
 
+Pictures larger than `thumbnail-limit` (50 MB by default) are left with their icon: reading
+one costs time and memory out of proportion to a thumbnail. Video and sound are not weighed
+that way, because their thumbnailers read a frame rather than the whole file, and a
+thumbnail that already exists is shown whatever the size of the file.
+
 A file's thumbnail is looked up in this order: a small in-memory cache, the on-disk cache,
 then generation. The on-disk lookup hashes the file's URI, looks for that name under
 `large`, `normal` and the `fail` directory GIO shares with gnome-desktop, and accepts what
