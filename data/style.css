@@ -232,9 +232,14 @@ rubberband {
 }
 
 /* The previewed text keeps the window's own colours; the style scheme is left to colour
-   the words, not to repaint the page. */
+   the words, not to repaint the page. The line numbers sit on the same page: the scheme
+   would give their gutter a background of its own, which a theme with other colours is
+   not painting anywhere else. */
 .spiral-source-view,
 .spiral-source-view text {
   background-color: @view_bg_color;
   color: @view_fg_color;
+}
+.spiral-source-view border gutter {
+  background-color: @view_bg_color;
 }
