@@ -104,11 +104,15 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         return None;
     }
     let file = crate::file_utils::file_of(info);
+    let uri = file.uri().to_string();
     // Checked before the cache so a preference change takes effect on the next reload.
     if !crate::prefs::thumbnails_for(&file) {
+        glib::g_debug!(
+            "spiral",
+            "thumbnail {uri}: off by preference for this location"
+        );
         return None;
     }
-    let uri = file.uri().to_string();
     let mtime = info
         .modification_date_time()
         .map(|d| d.to_unix() as u64)
@@ -159,6 +163,7 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         }
     });
     if first {
+        glib::g_debug!("spiral", "thumbnail {uri}: asked for row {at}");
         glib::spawn_future_local(generate_task(key, source, at));
     }
     rx.await.ok().flatten()
@@ -202,10 +207,23 @@ async fn generate_task(key: Key, source: Source, at: u32) {
             .get(&key)
             .is_some_and(|w| w.iter().any(|tx| !tx.is_canceled()))
     });
+    if !wanted {
+        glib::g_debug!(
+            "spiral",
+            "thumbnail {uri}: nobody waiting any more, dropped"
+        );
+    }
     let texture = if wanted {
         gio::spawn_blocking(move || {
             let png = match found {
-                Cached::Png(png) => png,
+                Cached::Png(png) => {
+                    glib::g_debug!(
+                        "spiral",
+                        "thumbnail {uri}: in the cache as {}",
+                        png.display()
+                    );
+                    png
+                }
                 Cached::Failed => return None,
                 Cached::Missing => {
                     let path = source.path?;
