@@ -112,30 +112,15 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
         return cached;
     }
 
-    // A thumbnail GIO already knows to be valid still has to be decoded, and that is
-    // done where a fresh one is: on a worker thread, a few at a time.
-    let cached = info
-        .boolean("thumbnail::is-valid")
-        .then(|| info.attribute_byte_string("thumbnail::path"))
-        .flatten()
-        .map(|path| PathBuf::from(path.as_str()));
-    let source = match cached {
-        Some(png) => Source::Cached(png),
-        None => {
-            let content_type = info.content_type()?.to_string();
-            let path = file.path()?;
-            let thumbnailer = thumbnailer_for(&content_type);
-            if !content_type.starts_with("image/") && thumbnailer.is_none() {
-                remember(key, None);
-                return None;
-            }
-            Source::Generate {
-                path,
-                uri,
-                mtime,
-                thumbnailer,
-            }
-        }
+    // Which thumbnailer would make one is decided here, where the list of them lives;
+    // the cache the freedesktop directories already hold is looked at on the worker,
+    // where a thumbnail is decoded anyway.
+    let content_type = info.content_type()?.to_string();
+    let source = Source {
+        path: file.path()?,
+        thumbnailer: thumbnailer_for(&content_type),
+        // Images with no thumbnailer of their own go to the bundled helper.
+        own: content_type.starts_with("image/"),
     };
 
     // Every caller waits on a detached generation task, so a row being unbound mid-way
@@ -160,15 +145,13 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
     rx.await.ok().flatten()
 }
 
-/// Where a thumbnail comes from: the cache file GIO found valid, or a thumbnailer run.
-enum Source {
-    Cached(PathBuf),
-    Generate {
-        path: PathBuf,
-        uri: String,
-        mtime: u64,
-        thumbnailer: Option<Box<Thumbnailer>>,
-    },
+/// What a thumbnail would be made from, if the cache has none.
+struct Source {
+    path: PathBuf,
+    thumbnailer: Option<Box<Thumbnailer>>,
+    /// Whether the bundled helper would take it: images, which most thumbnailer entries
+    /// leave alone.
+    own: bool,
 }
 
 async fn generate_task(key: Key, source: Source) {
@@ -180,18 +163,24 @@ async fn generate_task(key: Key, source: Source) {
             .is_some_and(|w| w.iter().any(|tx| !tx.is_canceled()))
     });
     let texture = if wanted {
-        let uri = key.0.clone();
+        let (uri, mtime) = (key.0.clone(), key.1);
         gio::spawn_blocking(move || {
-            let png = match source {
-                Source::Cached(png) => png,
-                Source::Generate {
-                    path,
-                    uri,
-                    mtime,
-                    thumbnailer,
-                } => {
+            let png = match cached_thumbnail(&uri, mtime) {
+                Cached::Png(png) => png,
+                Cached::Failed => return None,
+                Cached::Missing => {
+                    if source.thumbnailer.is_none() && !source.own {
+                        return None;
+                    }
                     let out = cache_path(&uri);
-                    generate(&path, &uri, mtime, &out, thumbnailer.as_deref()).then_some(out)?
+                    generate(
+                        &source.path,
+                        &uri,
+                        mtime,
+                        &out,
+                        source.thumbnailer.as_deref(),
+                    )
+                    .then_some(out)?
                 }
             };
             match gdk::Texture::from_filename(&png) {
@@ -259,11 +248,95 @@ fn release() {
 }
 
 fn cache_path(uri: &str) -> PathBuf {
+    thumbnail_dir("large").join(cache_name(uri))
+}
+
+fn thumbnail_dir(size: &str) -> PathBuf {
+    glib::user_cache_dir().join("thumbnails").join(size)
+}
+
+fn cache_name(uri: &str) -> String {
     let md5 = glib::compute_checksum_for_string(glib::ChecksumType::Md5, uri).unwrap_or_default();
-    glib::user_cache_dir()
-        .join("thumbnails")
-        .join("large")
-        .join(format!("{md5}.png"))
+    format!("{md5}.png")
+}
+
+/// What the freedesktop cache holds for a file: a thumbnail made for this version of it,
+/// a note that making one failed, or nothing.
+enum Cached {
+    Png(PathBuf),
+    Failed,
+    Missing,
+}
+
+/// Look `uri` up in the freedesktop cache. GIO answers this as well, through the
+/// `thumbnail::` attributes, but only by hashing the name and looking in three directories
+/// for every file a folder holds, listed or not, which is two fifths of the time a large
+/// folder takes to appear. Here the question is asked for the rows actually shown.
+fn cached_thumbnail(uri: &str, mtime: u64) -> Cached {
+    let name = cache_name(uri);
+    // Where GIO looks for other programs' failures too, so a file that has already
+    // defeated a thumbnailer is not handed to one again on every start.
+    if stamped_for(
+        &thumbnail_dir("fail")
+            .join("gnome-thumbnail-factory")
+            .join(&name),
+        mtime,
+    ) {
+        return Cached::Failed;
+    }
+    for size in ["large", "normal"] {
+        let png = thumbnail_dir(size).join(&name);
+        if stamped_for(&png, mtime) {
+            return Cached::Png(png);
+        }
+    }
+    Cached::Missing
+}
+
+/// The thumbnail the cache holds for `uri`, for callers that only want the picture.
+pub(crate) fn cached_png(uri: &str, mtime: u64) -> Option<PathBuf> {
+    match cached_thumbnail(uri, mtime) {
+        Cached::Png(png) => Some(png),
+        _ => None,
+    }
+}
+
+/// Whether `png` is a thumbnail carrying the `Thumb::MTime` of a file last changed at
+/// `mtime`, which is what the spec calls valid. The text chunks sit at the head of the
+/// file, so this reads a few kilobytes and decodes nothing.
+fn stamped_for(png: &Path, mtime: u64) -> bool {
+    thumb_mtime(png) == Some(mtime)
+}
+
+fn thumb_mtime(png: &Path) -> Option<u64> {
+    let mut head = [0u8; 8192];
+    let mut file = std::fs::File::open(png).ok()?;
+    let read = std::io::Read::read(&mut file, &mut head).ok()?;
+    let head = &head[..read];
+    if !head.starts_with(b"\x89PNG\r\n\x1a\n") {
+        return None;
+    }
+    let mut at = 8;
+    while at + 8 <= head.len() {
+        let len = u32::from_be_bytes(head[at..at + 4].try_into().ok()?) as usize;
+        let kind = &head[at + 4..at + 8];
+        // Everything a thumbnail says about itself comes before the pixels.
+        if kind == b"IDAT" || kind == b"IEND" {
+            return None;
+        }
+        let start = at + 8;
+        let end = start.checked_add(len)?;
+        if end > head.len() {
+            return None;
+        }
+        if kind == b"tEXt"
+            && let Some(stamp) = head[start..end].strip_prefix(b"Thumb::MTime\0")
+        {
+            return std::str::from_utf8(stamp).ok()?.trim().parse().ok();
+        }
+        at = end + 4;
+    }
+    None
 }
 
 /// Runs on a worker thread. Writes a spec-compliant PNG (Thumb::URI / Thumb::MTime) atomically.

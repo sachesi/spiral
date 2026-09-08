@@ -9,9 +9,12 @@ use crate::gio::prelude::*;
 use crate::{gio, glib};
 
 /// Attributes requested from `gtk::DirectoryList` for every view.
+/// The `thumbnail::` attributes are deliberately not among them: GIO answers those by
+/// hashing the name of every file in the folder and looking for the hash in three
+/// directories, listed or not, and Spiral asks the same question itself for the rows it
+/// actually shows.
 pub const ATTRIBUTES: &str = "standard::*,time::modified,time::access,time::created,\
-thumbnail::path,thumbnail::is-valid,\
-thumbnail::failed,access::can-read,access::can-write,access::can-delete,access::can-trash,\
+access::can-read,access::can-write,access::can-delete,access::can-trash,\
 access::can-rename,access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,\
 metadata::custom-icon,metadata::custom-icon-name";
 

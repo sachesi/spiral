@@ -7,8 +7,14 @@ files, all files, or none.
 
 ## How one gets made
 
-A file's thumbnail is looked up in this order: a small in-memory cache, the on-disk cache
-as GIO sees it, then generation. For generation, the system `.thumbnailer` entries under
+A file's thumbnail is looked up in this order: a small in-memory cache, the on-disk cache,
+then generation. The on-disk lookup hashes the file's URI, looks for that name under
+`large`, `normal` and the `fail` directory GIO shares with gnome-desktop, and accepts what
+it finds if the PNG's `Thumb::MTime` text chunk names the time the file last changed. GIO
+answers the same question through its `thumbnail::` attributes, but only by asking it of
+every file in a folder as the folder is listed, which is two fifths of the time a folder of
+fifty thousand files takes to appear; asking it here means asking it for the rows that are
+actually shown. A file another program failed to thumbnail is left alone. For generation, the system `.thumbnailer` entries under
 `~/.local/share/thumbnailers` and `XDG_DATA_DIRS` are consulted first, as GNOME does; an
 entry matches if its MIME type equals or is a supertype of the file's, and its `TryExec`
 has to be in `PATH`. Images with no system thumbnailer go to the bundled
