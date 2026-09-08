@@ -8,12 +8,12 @@ files, all files, or none.
 ## How one gets made
 
 A thumbnail is only ever asked for once the cell holding it is on screen and the folder has
-finished listing. Waiting for the listing matters because a folder of more than a couple of
-thousand files is put in order only when the listing ends: a thumbnail asked for before that
-is for a file about to move somewhere else. Opening a folder of fifty thousand files spent
-every one of its first thirty-six requests that way, on files nowhere near the screen by the
-time they were made. A search is not waited for, since its results arrive for as long as it
-runs.
+finished listing. A folder too big for one batch of the listing is shown only when the
+listing is complete, sorted once; one that takes longer than a second is shown as it
+arrives, in the order it arrives, and put in order at the end. Waiting for the listing
+matters for that second case: a thumbnail asked for before the order lands is for a file
+about to move somewhere else. A search is not waited for, since its results arrive for as
+long as it runs.
 
 Waiting for the cell matters because the list widgets bind many more cells than they show —
 they keep a pool of them, and a view on a stack page that is not showing binds as well — so
