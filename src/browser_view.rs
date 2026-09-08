@@ -530,6 +530,43 @@ fn mostly_media(model: &FolderModel) -> bool {
     files >= 4 && media * 2 >= files
 }
 
+// Item counts already worked out, oldest first, keyed by the folder and the time it last
+// changed. Counting means enumerating the folder in full, and a caption is bound afresh
+// every time its row is scrolled back into view.
+thread_local! {
+    static COUNTS: RefCell<CountCache> = RefCell::new(CountCache::default());
+}
+
+#[derive(Default)]
+struct CountCache {
+    seen: std::collections::HashMap<(String, i64), u64>,
+    order: std::collections::VecDeque<(String, i64)>,
+}
+
+const COUNT_CACHE_ENTRIES: usize = 4096;
+
+/// Number of direct children of `dir` as of `stamp`, the time it last changed.
+async fn count_children_at(dir: &gio::File, stamp: i64) -> Option<u64> {
+    let key = (dir.uri().to_string(), stamp);
+    if let Some(n) = COUNTS.with(|c| c.borrow().seen.get(&key).copied()) {
+        return Some(n);
+    }
+    let n = count_children(dir).await?;
+    COUNTS.with(|c| {
+        let mut c = c.borrow_mut();
+        if c.seen.insert(key.clone(), n).is_none() {
+            c.order.push_back(key);
+        }
+        while c.order.len() > COUNT_CACHE_ENTRIES {
+            let Some(oldest) = c.order.pop_front() else {
+                break;
+            };
+            c.seen.remove(&oldest);
+        }
+    });
+    Some(n)
+}
+
 /// Number of direct children of `dir`, or None if it cannot be read.
 async fn count_children(dir: &gio::File) -> Option<u64> {
     let en = dir
@@ -1130,11 +1167,15 @@ impl BrowserView {
             && crate::prefs::counts_for(&file_utils::file_of(info))
         {
             let dir = file_utils::file_of(info);
+            let stamp = info
+                .modification_date_time()
+                .map(|d| d.to_unix())
+                .unwrap_or(0);
             let (fut, handle) = futures_util::future::abortable(glib::clone!(
                 #[weak]
                 label,
                 async move {
-                    let count = count_children(&dir).await;
+                    let count = count_children_at(&dir, stamp).await;
                     let mut lines = lines;
                     lines[idx] = count.map(file_utils::items_string);
                     label.set_text(
