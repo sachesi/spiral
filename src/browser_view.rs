@@ -726,11 +726,35 @@ fn set_star(button: &gtk::Button, starred: bool) {
     // Some icon themes draw the empty star as solidly as the full one, which leaves the
     // column saying nothing; faded, the two are told apart whatever the theme draws.
     button.set_opacity(if starred { 1.0 } else { 0.45 });
-    button.set_tooltip_text(Some(&if starred {
-        gettext("Remove from Starred")
-    } else {
-        gettext("Add to Starred")
-    }));
+}
+
+/// What the star button offers, read off the star it shows when the pointer asks.
+fn star_tooltip(button: &gtk::Button) {
+    button.set_has_tooltip(true);
+    button.connect_query_tooltip(|button, _, _, _, tooltip| {
+        let starred = button.icon_name().as_deref() == Some("starred-symbolic");
+        tooltip.set_text(Some(&if starred {
+            gettext("Remove from Starred")
+        } else {
+            gettext("Add to Starred")
+        }));
+        true
+    });
+}
+
+/// The whole name on hover, for a label that had to cut it. Decided when the pointer
+/// asks: setting a tooltip on a visible widget makes GTK look for the pointer through
+/// the widget tree, a style lookup per cell per bind, which a scrolling grid paid for
+/// every cell that came into view.
+pub(crate) fn name_tooltip(label: &gtk::Label) {
+    label.set_has_tooltip(true);
+    label.connect_query_tooltip(|label, _, _, _, tooltip| {
+        let cut = label.layout().is_ellipsized();
+        if cut {
+            tooltip.set_text(Some(&label.text()));
+        }
+        cut
+    });
 }
 
 /// Files waiting on the clipboard as a cut are dimmed, the way Nautilus marks them.
@@ -1713,6 +1737,7 @@ impl BrowserView {
                 .max_width_chars(1)
                 .justify(gtk::Justification::Center)
                 .build();
+            name_tooltip(&label);
             view.bind_property("icon-size", &label, "width-request")
                 .sync_create()
                 .build();
@@ -1772,9 +1797,6 @@ impl BrowserView {
             view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
-            // Whatever the column had to cut off, on hover.
-            label.set_tooltip_text(Some(&info.display_name()));
-            label.set_tooltip_text(Some(&info.display_name()));
             item.set_accessible_label(&info.display_name());
             view.bind_captions(&captions, &info);
         });
@@ -1818,12 +1840,12 @@ impl BrowserView {
                 .sync_create()
                 .build();
             bx.append(&image);
-            bx.append(
-                &gtk::Label::builder()
-                    .xalign(0.0)
-                    .ellipsize(gtk::pango::EllipsizeMode::Middle)
-                    .build(),
-            );
+            let label = gtk::Label::builder()
+                .xalign(0.0)
+                .ellipsize(gtk::pango::EllipsizeMode::Middle)
+                .build();
+            name_tooltip(&label);
+            bx.append(&label);
             bx.append(&emblem_image());
             // Folders unfold in place when the tree preference is on.
             let expander = gtk::TreeExpander::builder().child(&bx).build();
@@ -1848,8 +1870,6 @@ impl BrowserView {
             view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
-            // Whatever the column had to cut off, on hover.
-            label.set_tooltip_text(Some(&info.display_name()));
         });
         name_factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
@@ -1890,6 +1910,24 @@ impl BrowserView {
                 if xalign > 0.5 {
                     label.add_css_class("numeric");
                 }
+                if let Some(tip) = tip {
+                    label.set_has_tooltip(true);
+                    label.connect_query_tooltip(glib::clone!(
+                        #[weak]
+                        item,
+                        #[upgrade_or]
+                        false,
+                        move |_, _, _, _, tooltip| {
+                            let Some(info) =
+                                item.item().and_then(|o| crate::folder_model::info_of(&o))
+                            else {
+                                return false;
+                            };
+                            tooltip.set_text(Some(&tip(&info)));
+                            true
+                        }
+                    ));
+                }
                 item.set_child(Some(&label));
                 remember_list_item(&label, item);
                 view.setup_cell_dnd(&label);
@@ -1902,7 +1940,6 @@ impl BrowserView {
                 let label = item.child().and_downcast::<gtk::Label>().unwrap();
                 set_cut(&label, &info);
                 label.set_text(&f(&info));
-                label.set_tooltip_text(tip.map(|t| t(&info)).as_deref());
             });
             gtk::ColumnViewColumn::new(Some(&title), Some(factory))
         };
@@ -2094,6 +2131,7 @@ impl BrowserView {
                     set_star(button, starred);
                 }
             ));
+            star_tooltip(&button);
             item.set_child(Some(&button));
             remember_list_item(&button, item);
             view.setup_cell_dnd(&button);
