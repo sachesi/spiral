@@ -10,7 +10,6 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use std::os::fd::AsRawFd;
-use std::os::unix::process::CommandExt;
 
 use futures_channel::oneshot;
 use gtk::prelude::*;
@@ -677,19 +676,10 @@ pub(crate) fn run_bounded(
     cmd: &mut std::process::Command,
     limit: std::time::Duration,
 ) -> std::io::Result<Ran> {
-    // No single file a helper writes has any business being this large; a decoder made to
-    // run away cannot fill the disk in the time it is given.
-    const OUTPUT_LIMIT: u64 = 128 * 1024 * 1024;
-    unsafe {
-        cmd.pre_exec(|| {
-            let limit = libc::rlimit {
-                rlim_cur: OUTPUT_LIMIT,
-                rlim_max: OUTPUT_LIMIT,
-            };
-            libc::setrlimit(libc::RLIMIT_FSIZE, &limit);
-            Ok(())
-        });
-    }
+    // No rlimit is set on the child, tempting as one is: a pre-exec hook costs the
+    // process its posix_spawn fast path, and forking a window's worth of address space a
+    // thousand times over a folder of pictures costs more than the limit is worth. The
+    // time limit below is what keeps a helper from running away.
     let mut child = cmd
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
