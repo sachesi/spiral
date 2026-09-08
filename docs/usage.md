@@ -174,7 +174,7 @@ The preview takes the proportions of what it holds, and takes them before it ope
 does not resize itself in front of you. It is as large as the window it opens over allows:
 a picture keeps its own, read from the file header and turned the way its EXIF tag says; a
 PDF opens at the size of its page, upright when the file keeps that size to itself, and a
-video at the proportions of its stream once it reports them; text gets a page to read on
+video at the proportions its thumbnail or the header of its container gives, and only a file with neither opens in the shape most video has and moves once the stream reports; text gets a page to read on
 and the sound player is no larger than its controls. Ctrl with + and -, Ctrl and the
 wheel, which zooms around the pointer, or the buttons in the bar over the picture zoom a
 picture or a page; Ctrl+0 fits it back into the window, zooming out stops there rather
