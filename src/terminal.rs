@@ -177,7 +177,7 @@ pub fn launch_if_wanted(
     let Ok(argv) = glib::shell_parse_argv(line.as_os_str()) else {
         return Some(Err(glib::Error::new(
             gio::IOErrorEnum::Failed,
-            &gettext("The application's command line cannot be read"),
+            &gettext("The command line of the application cannot be read"),
         )));
     };
     // The desktop entry names where the files go with a field code; one that names none
