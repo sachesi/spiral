@@ -22,6 +22,11 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.9.0" date="2026-09-08">
+      <description>
+        <p>The sidebar gained Root, the top of the filesystem, and a switch in Preferences for it and for Favorites. The order folders open in can be chosen in Preferences instead of only by sorting one, and a folder that remembers an order of its own still keeps it. Caption lines chosen in the dialog appear at once. The selection is no longer lost when a file in the folder is written, so a pasted screenshot keeps the selection it was given. The star column is as narrow as the star it holds, whatever the word for it in the language of the moment, and an empty star is faded so it reads as empty under any icon theme.</p>
+      </description>
+    </release>
     <release version="0.8.0" date="2026-09-08">
       <description>
         <p>The column view is now optional and starts turned off: with it off the view button and the view menu offer the grid and the list alone. Pasted files, folders and screenshots are selected once they land in the folder. Source code in the preview is coloured, on the window's own background, and text files keep their lines unwrapped. The list drops the columns beside the name as a window narrows, so a name is never squeezed into an ellipsis, and shows the whole of one that had to be cut when the pointer rests on it. Preferences are grouped by what they change, and Tab in the location bar no longer takes the focus away from a half-typed path.</p>
