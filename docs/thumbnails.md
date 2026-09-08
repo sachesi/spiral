@@ -60,8 +60,9 @@ a bounded amount of memory, and scrolling back over the last screens still finds
 
 Thumbnailers write plain PNGs, but a cached thumbnail only counts as valid if the PNG
 carries `Thumb::URI` and `Thumb::MTime` text chunks. A thumbnailer that wrote them itself is
-left as it is; one that did not gets re-saved with them, otherwise every start would
-regenerate everything. Output goes to a
+left as it is; one that did not has them written into the file as text chunks, which is a
+read and a write rather than a decode and an encode. Otherwise every start would regenerate
+everything. Output goes to a
 temporary name and is renamed into place.
 
 `spiral-odf.thumbnailer`, installed with the rest, is an ordinary thumbnailer entry that

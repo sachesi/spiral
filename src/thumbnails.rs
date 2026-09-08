@@ -432,21 +432,77 @@ fn generate(
     false
 }
 
-/// Rewrite a thumbnailer's PNG with the Thumb::URI and Thumb::MTime it was made for; without
-/// them GIO reports the cached file as invalid and it is regenerated on every start.
+/// Write the Thumb::URI and Thumb::MTime a thumbnailer's PNG was made for; without them a
+/// cached thumbnail counts as invalid and everything is made again on the next start.
+///
+/// The words go straight into the file as PNG text chunks, which is a read and a write of a
+/// few tens of kilobytes. Decoding the picture and encoding it again, which is what asking
+/// gdk-pixbuf to save it with them costs, was a fifth of the work of making a thumbnail.
 fn stamp(png: &Path, uri: &str, mtime: u64) -> bool {
-    gtk::gdk_pixbuf::Pixbuf::from_file(png)
-        .and_then(|pb| {
-            pb.savev(
-                png,
-                "png",
-                &[
-                    ("tEXt::Thumb::URI", uri),
-                    ("tEXt::Thumb::MTime", &mtime.to_string()),
-                ],
-            )
-        })
-        .is_ok()
+    let Ok(bytes) = std::fs::read(png) else {
+        return false;
+    };
+    match with_text(&bytes, uri, mtime) {
+        Some(stamped) => std::fs::write(png, stamped).is_ok(),
+        // Not a PNG the chunks can be put into: fall back to saving it again as one.
+        None => gtk::gdk_pixbuf::Pixbuf::from_file(png)
+            .and_then(|pb| {
+                pb.savev(
+                    png,
+                    "png",
+                    &[
+                        ("tEXt::Thumb::URI", uri),
+                        ("tEXt::Thumb::MTime", &mtime.to_string()),
+                    ],
+                )
+            })
+            .is_ok(),
+    }
+}
+
+/// `bytes` with the two text chunks put in after the header, or None if it does not begin
+/// like a PNG whose header is where the format says it is.
+fn with_text(bytes: &[u8], uri: &str, mtime: u64) -> Option<Vec<u8>> {
+    // Signature, then IHDR: length, type, thirteen bytes of it, and the checksum.
+    const AFTER_HEADER: usize = 8 + 4 + 4 + 13 + 4;
+    if bytes.len() < AFTER_HEADER
+        || !bytes.starts_with(b"\x89PNG\r\n\x1a\n")
+        || &bytes[12..16] != b"IHDR"
+    {
+        return None;
+    }
+    let mut out = Vec::with_capacity(bytes.len() + 128);
+    out.extend_from_slice(&bytes[..AFTER_HEADER]);
+    for (key, value) in [("Thumb::URI", uri), ("Thumb::MTime", &mtime.to_string())] {
+        let mut data = Vec::with_capacity(key.len() + 1 + value.len());
+        data.extend_from_slice(key.as_bytes());
+        data.push(0);
+        data.extend_from_slice(value.as_bytes());
+        out.extend_from_slice(&(data.len() as u32).to_be_bytes());
+        out.extend_from_slice(b"tEXt");
+        out.extend_from_slice(&data);
+        let mut crc = b"tEXt".to_vec();
+        crc.extend_from_slice(&data);
+        out.extend_from_slice(&crc32(&crc).to_be_bytes());
+    }
+    out.extend_from_slice(&bytes[AFTER_HEADER..]);
+    Some(out)
+}
+
+/// The checksum PNG puts after every chunk.
+fn crc32(bytes: &[u8]) -> u32 {
+    let mut crc = 0xffff_ffffu32;
+    for byte in bytes {
+        crc ^= *byte as u32;
+        for _ in 0..8 {
+            crc = if crc & 1 != 0 {
+                (crc >> 1) ^ 0xedb8_8320
+            } else {
+                crc >> 1
+            };
+        }
+    }
+    !crc
 }
 
 /// A `bwrap` command line up to (not including) the caller's own binds and `--`, for running
@@ -778,7 +834,7 @@ pub(crate) fn run_bounded(
 /// Put a helper behind the interface for both processor and disk. Several decoders at once
 /// will otherwise take a machine over, and the window they are drawing into stops answering
 /// while they do. Both are set after the child has started, since a pre-exec hook would cost
-/// the fork-free spawn; the child passes them on to whatever it starts in turn.
+/// the fork-free spawn; the child inherits them for whatever it starts in turn.
 fn stand_aside(pid: u32) {
     unsafe {
         libc::setpriority(libc::PRIO_PROCESS, pid, 10);
@@ -865,4 +921,31 @@ fn load_thumbnailers() -> Vec<Thumbnailer> {
     }
     glib::g_debug!("spiral", "loaded {} thumbnailers", out.len());
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The words written into a PNG have to be the words read back out of it, or every
+    /// thumbnail is made again on the next start.
+    #[test]
+    fn a_stamped_png_says_when_its_file_was_written() {
+        let dir = std::path::PathBuf::from(
+            std::env::var("CARGO_TARGET_TMPDIR")
+                .unwrap_or_else(|_| std::env::temp_dir().to_string_lossy().into_owned()),
+        );
+        let png = dir.join(format!("spiral-stamp-{}.png", std::process::id()));
+        let pixbuf =
+            gtk::gdk_pixbuf::Pixbuf::new(gtk::gdk_pixbuf::Colorspace::Rgb, true, 8, 4, 4).unwrap();
+        pixbuf.fill(0x336699ff);
+        pixbuf.savev(&png, "png", &[]).unwrap();
+
+        assert_eq!(thumb_mtime(&png), None, "no words in it yet");
+        assert!(stamp(&png, "file:///x/y.png", 1_700_000_000));
+        assert_eq!(thumb_mtime(&png), Some(1_700_000_000));
+        // Still a picture afterwards.
+        assert!(gtk::gdk_pixbuf::Pixbuf::from_file(&png).is_ok());
+        let _ = std::fs::remove_file(&png);
+    }
 }
