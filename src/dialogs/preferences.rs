@@ -3,7 +3,7 @@
 use gettextrs::gettext;
 
 use crate::adw::prelude::*;
-use crate::{adw, gio, gtk, prefs};
+use crate::{adw, gio, glib, gtk, prefs};
 
 pub fn preferences_dialog() -> adw::PreferencesDialog {
     let dialog = adw::PreferencesDialog::builder()
@@ -95,6 +95,7 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
         .build();
     settings.bind("use-tree-view", &tree, "active").build();
     views.add(&tree);
+    views.add(&sort_row(&settings));
     page.add(&views);
 
     let sidebar = adw::PreferencesGroup::builder()
@@ -174,6 +175,67 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
 
     dialog.add(&page);
     dialog
+}
+
+/// The order folders open in, the same six the view menu offers. It is the default only:
+/// a folder with an order of its own keeps it, and with per-folder memory off, sorting from
+/// the menu writes this very setting.
+fn sort_row(settings: &gio::Settings) -> adw::ComboRow {
+    const ORDERS: [(&str, bool); 6] = [
+        ("name", false),
+        ("name", true),
+        ("modified", true),
+        ("modified", false),
+        ("size", true),
+        ("type", false),
+    ];
+    let labels = [
+        gettext("A-Z"),
+        gettext("Z-A"),
+        gettext("Last Modified"),
+        gettext("First Modified"),
+        gettext("Size"),
+        gettext("Type"),
+    ];
+    let current = |s: &gio::Settings| {
+        let key = s.string("sort-key");
+        let reversed = s.boolean("sort-reversed");
+        ORDERS
+            .iter()
+            .position(|(k, r)| *k == key.as_str() && *r == reversed)
+            .unwrap_or(0) as u32
+    };
+    let row = adw::ComboRow::builder()
+        .title(gettext("Sort Order"))
+        .subtitle(gettext(
+            "How folders without an order of their own are sorted",
+        ))
+        .model(&gtk::StringList::new(
+            &labels.iter().map(String::as_str).collect::<Vec<_>>(),
+        ))
+        .selected(current(settings))
+        .build();
+    row.connect_selected_notify(glib::clone!(
+        #[strong]
+        settings,
+        move |row| {
+            let (key, reversed) = ORDERS[row.selected() as usize];
+            let _ = settings.set_string("sort-key", key);
+            let _ = settings.set_boolean("sort-reversed", reversed);
+        }
+    ));
+    // Sorting from the menu writes the same keys when views are not remembered per folder.
+    for key in ["sort-key", "sort-reversed"] {
+        settings.connect_changed(
+            Some(key),
+            glib::clone!(
+                #[weak]
+                row,
+                move |s, _| row.set_selected(current(s))
+            ),
+        );
+    }
+    row
 }
 
 fn choice_row(

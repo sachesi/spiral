@@ -29,8 +29,8 @@ Changes apply immediately to open windows.
 | `item-counts` | `local`, `always`, `never` | `local` | Count Items in Folders |
 | `view-mode` | `grid`, `list`, `columns` | `grid` | |
 | `chooser-view-mode` | `grid`, `list`, `columns` | `list` | |
-| `sort-key` | `name`, `size`, `type`, `modified` | `name` | Order for folders without a remembered one |
-| `sort-reversed` | bool | false | Direction, same scope |
+| `sort-key` | `name`, `size`, `type`, `modified` | `name` | Sort Order |
+| `sort-reversed` | bool | false | Sort Order (the direction of it) |
 | `show-hidden` | bool | false | |
 | `compression-format` | `zip`, `tar.xz`, `tar.zst`, `7z`, `tar.gz` | `zip` | |
 | `captions` | three of `size`, `date_modified`, `permissions`, `type`, `mime_type`, `owner`, `group`, `none` | all `none` | |
@@ -52,6 +52,10 @@ which never remember per folder.
 `use-column-view` off, which is how it starts, leaves the view button and the view menu with
 the grid and the list alone, and Ctrl+3 does nothing; a folder or a default remembering the
 columns from when it was on opens in the list instead.
+
+`sort-key` and `sort-reversed` are what a folder without an order of its own opens with;
+"Sort Order" in Preferences offers the same six the view menu does. With `remember-view` off,
+sorting from the menu writes these two keys.
 
 `compression-format` is whatever Create Archive was last confirmed with; the dialog starts
 there next time, provided the tools for it are still installed.
