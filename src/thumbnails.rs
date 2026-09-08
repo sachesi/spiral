@@ -135,6 +135,12 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         too_large: content_type.starts_with("image/")
             && info.size().max(0) as u64 > crate::prefs::thumbnail_limit(),
     };
+    if source.thumbnailer.is_none() && !source.own {
+        glib::g_debug!(
+            "spiral",
+            "thumbnail {uri}: no thumbnailer claims {content_type}"
+        );
+    }
 
     // Every caller waits on a detached generation task, so a row being unbound mid-way
     // (scrolling) drops only its receiver and can never strand a concurrency slot.
