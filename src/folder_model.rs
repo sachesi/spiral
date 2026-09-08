@@ -553,9 +553,24 @@ impl FolderModel {
                     })
                     .find(|(_, info)| file_utils::file_of(info).equal(&file));
                 if let Some((pos, info)) = found {
+                    // Rewriting a row makes the sorted model rebuild, and the selection,
+                    // which it keeps by position, goes with it: one file being written is
+                    // enough to clear the lot. A pasted screenshot, written the moment
+                    // after it was created, would lose the selection it was just given.
+                    // Remember the files and select them again where they end up.
+                    let selected = model.selected_files();
                     fresh.set_attribute_object("standard::file", &file);
                     fresh.copy_into(&info);
                     dl.items_changed(pos, 1, 1);
+                    if !selected.is_empty() {
+                        let sel = model.selection();
+                        sel.unselect_all();
+                        for file in &selected {
+                            if let Some(p) = model.position_of(file) {
+                                sel.select_item(p, false);
+                            }
+                        }
+                    }
                 }
             }
         ));
