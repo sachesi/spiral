@@ -38,9 +38,10 @@ Answers are kept in memory until 2048 of them or 64 MB of decoded picture have g
 and then the oldest go. Walking through a folder of thousands of pictures therefore costs
 a bounded amount of memory, and scrolling back over the last screens still finds them.
 
-Thumbnailers write plain PNGs, but GIO only accepts a cached thumbnail as valid if the PNG
-carries `Thumb::URI` and `Thumb::MTime` text chunks. Spiral re-saves every generated
-thumbnail with those, otherwise every start would regenerate everything. Output goes to a
+Thumbnailers write plain PNGs, but a cached thumbnail only counts as valid if the PNG
+carries `Thumb::URI` and `Thumb::MTime` text chunks. A thumbnailer that wrote them itself is
+left as it is; one that did not gets re-saved with them, otherwise every start would
+regenerate everything. Output goes to a
 temporary name and is renamed into place.
 
 `spiral-odf.thumbnailer`, installed with the rest, is an ordinary thumbnailer entry that
