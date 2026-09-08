@@ -230,3 +230,11 @@ rubberband {
 .spiral-preview-cover {
   border-radius: 8px;
 }
+
+/* The previewed text keeps the window's own colours; the style scheme is left to colour
+   the words, not to repaint the page. */
+.spiral-source-view,
+.spiral-source-view text {
+  background-color: @view_bg_color;
+  color: @view_fg_color;
+}
