@@ -48,8 +48,11 @@ A thumbnailer runs behind the window in both queues: nice 10 for the processor a
 class for the disk. Eight decoders at once would otherwise take the machine over, and the
 window they are drawing into is the thing that stops answering.
 
-Thumbnailers run a few at a time, one fewer than the machine has cores and at most eight,
-newest requests first, so the rows on screen win over the ones you scrolled past. One that
+Thumbnailers run a few at a time, one fewer than the machine has cores and at most eight.
+Where several are waiting, the row nearest the top of the folder goes first, so a screenful
+fills the way it is read instead of in whatever order the rows happened to be bound; only
+rows that were on screen a moment ago are ever waiting, so that is the top of what is being
+looked at, and rows left behind by scrolling drop out without doing any work. One that
 takes longer than twenty seconds is killed, so a file that hangs a decoder costs one
 thumbnail rather than every thumbnail after it. The PDF previewer is bounded the same
 way.

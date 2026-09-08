@@ -529,7 +529,7 @@ impl BrowserView {
             let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
             let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
-            view.bind_icon(&image, &emblem, &info);
+            view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             label.set_tooltip_text(Some(&info.display_name()));

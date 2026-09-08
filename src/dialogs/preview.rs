@@ -377,7 +377,8 @@ impl PreviewDialog {
         {
             return widget;
         }
-        match crate::thumbnails::load(info).await {
+        // The file being looked at goes before any row waiting behind it.
+        match crate::thumbnails::load(info, 0).await {
             Some(texture) => {
                 self.shape_to(&texture);
                 picture(&texture).upcast()
