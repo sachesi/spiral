@@ -387,6 +387,14 @@ mod imp {
             obj.setup_grid_factory();
             obj.setup_columns();
             obj.setup_miller();
+            if let Some(hadj) = self.grid_view.hadjustment() {
+                hadj.connect_page_size_notify(glib::clone!(
+                    #[weak]
+                    obj,
+                    move |_| obj.fit_grid_columns()
+                ));
+            }
+            obj.connect_icon_size_notify(|obj| obj.fit_grid_columns());
 
             self.grid_view.connect_activate(glib::clone!(
                 #[weak]
@@ -600,6 +608,9 @@ async fn count_children(dir: &gio::File) -> Option<u64> {
 
 /// Width of the emblem margin beside a grid icon, as in Nautilus.
 const EMBLEM_MARGIN: i32 = 18;
+
+/// Columns the grid may have at most, whatever fits; the `max-columns` of the template.
+const GRID_MAX_COLUMNS: i32 = 20;
 
 /// What the name column is left with before the columns beside it start giving way.
 const NAME_MIN_WIDTH: i32 = 220;
@@ -1342,6 +1353,26 @@ impl BrowserView {
                 view.reveal_position(pos, gtk::ListScrollFlags::FOCUS);
             }
         });
+    }
+
+    /// Let the grid have as many columns as fit, and no more. It keeps thirty rows of
+    /// cells bound for as many columns as it may ever have, so left with the twenty a
+    /// wide window at the smallest zoom can hold, a window showing forty cells binds six
+    /// hundred every time the folder changes.
+    fn fit_grid_columns(&self) {
+        let imp = self.imp();
+        let Some(width) = imp.grid_view.hadjustment().map(|a| a.page_size() as i32) else {
+            return;
+        };
+        if width <= 0 {
+            return;
+        }
+        // A cell is taken to be the icon between its emblem margins, a little less than
+        // it is with its padding, so the count errs towards a column too many rather than
+        // one too few.
+        let cell = self.icon_size() + 2 * EMBLEM_MARGIN;
+        imp.grid_view
+            .set_max_columns((width / cell).clamp(1, GRID_MAX_COLUMNS) as u32);
     }
 
     /// Scroll to `pos` in whichever view is on screen; the others have no model to scroll.
