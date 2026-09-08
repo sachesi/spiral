@@ -64,6 +64,8 @@ mod imp {
         pub columns_pending: Cell<bool>,
         /// Set while the columns of the list are waiting to be fitted to a new width.
         pub fit_pending: Cell<bool>,
+        /// Set while the bar and the actions are waiting to be told the selection changed.
+        pub selection_pending: Cell<bool>,
         /// Where a drag is hovering over the strip, and the frame callback that pushes
         /// the strip along and marks the column the drop would land in.
         pub drag_at: Cell<(f64, f64)>,
@@ -151,6 +153,7 @@ mod imp {
                 preview_gen: Default::default(),
                 columns_pending: Default::default(),
                 fit_pending: Default::default(),
+                selection_pending: Default::default(),
                 drag_at: Default::default(),
                 drag_tick: Default::default(),
                 error_page: Default::default(),
@@ -415,7 +418,7 @@ mod imp {
                 obj,
                 move |_, _, _, _| {
                     obj.update_stack();
-                    obj.update_floating_bar();
+                    obj.queue_selection_update();
                 }
             ));
             self.model
@@ -423,12 +426,12 @@ mod imp {
                 .connect_selection_changed(glib::clone!(
                     #[weak]
                     obj,
-                    move |_, _, _| obj.update_floating_bar()
+                    move |_, _, _| obj.queue_selection_update()
                 ));
             self.model.connect_loading_notify(glib::clone!(
                 #[weak]
                 obj,
-                move |_| obj.update_floating_bar()
+                move |_| obj.queue_selection_update()
             ));
             obj.update_stack();
         }
@@ -1026,6 +1029,24 @@ impl BrowserView {
             }
         };
         imp.stack.set_visible_child_name(name);
+    }
+
+    /// A rubber band changes the selection with every motion event, and reading it out
+    /// walks the folder; a folder being listed changes it once per batch of files. Once
+    /// per turn of the main loop is as often as a status bar and a menu need telling.
+    pub(crate) fn queue_selection_update(&self) {
+        if self.imp().selection_pending.replace(true) {
+            return;
+        }
+        glib::idle_add_local_once(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move || {
+                view.imp().selection_pending.set(false);
+                view.update_floating_bar();
+                view.update_action_state();
+            }
+        ));
     }
 
     /// Bottom-right status: selection summary while something is selected, spinner while loading.
