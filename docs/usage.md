@@ -66,16 +66,16 @@ on Ctrl+3. The dropdown also has zoom, sort
 order, hidden files and the sidebar toggle. Zoom steps are 48, 64, 96, 168 and 256 px in
 the grid and 16 to 64 in the list and the columns; Ctrl+wheel works too.
 
-Which view a folder opens in: the one it was last switched to, if "Remember View per
-Folder" is on (stored in the folder's `metadata::spiral-view` attribute, invisible to
-other programs); otherwise the grid if the folder is mostly images and videos and "Grid
-View for Media Folders" is on; otherwise the global default. "Mostly" means at least four
-files, half or more of them media, looking at the first 2000 entries. The sort order
-follows the same preference: with it on, sorting from the menu or a column header applies
-to that folder and is kept in `metadata::spiral-sort`; with it off, it changes the default
-for every folder. Both attributes are gvfs's doing: where its metadata backend is not
-running there is nowhere to keep them, so the preference is greyed out and the switch
-changes the global default instead.
+Which view a folder opens in: the one it was last switched to, if "Remember View per Folder"
+is on (stored in the folder's `metadata::spiral-view` attribute, invisible to other
+programs); otherwise the grid if the folder is mostly images and videos and "Grid View for
+Media Folders" is on; otherwise the global default. "Mostly" means at least four files, half
+or more of them media, looking at the first 2000 entries. The sort order follows the same
+preference: with it on, sorting from the menu or a column header applies to that folder and
+is kept in `metadata::spiral-sort`; with it off, it changes the default for every folder.
+"Sort Order" in Preferences sets that default directly. Both attributes are gvfs's doing:
+where its metadata backend is not running there is nowhere to keep them, so the preference is
+greyed out and the switch changes the global default instead.
 
 Files and folders you cannot read or change carry a small lock, and the actions they do
 not allow (cut, rename, trash, delete) are greyed out. Folders you are looking at update
@@ -84,17 +84,16 @@ themselves when something else creates, deletes or rewrites a file in them.
 With "Expandable Folders in List View" on, every folder in the list gets an arrow that
 unfolds its contents in place, as deep as you like; the grid never shows children.
 
-The grid can show up to three lines under each name: size or item count, date,
-permissions, type, MIME type, owner, group; "Captions…" in the view menu picks them. In
-the list, "Visible Columns…" chooses among size, type, modified, accessed, created,
-owner, group, permissions and a star column that toggles favourites; the name column
-always stays, and only name, size, type and modified sort. The name column takes whatever
-the others leave, so as a window narrows the columns are dropped from the right, one after
-another, rather than the name being squeezed into an ellipsis; they come back as it widens.
-A name too long for the column it has is cut in the middle and shown whole on hover. Type shows the extension —
-"txt", "tar.gz", "Folder" — and falls back to the full description, on a tooltip, for
-names without one. Every column but the name and the star can be resized by dragging its
-header edge.
+The grid can show up to three lines under each name: size or item count, date, permissions,
+type, MIME type, owner, group; "Captions…" in the view menu picks them. In the list, "Visible
+Columns…" chooses among size, type, modified, accessed, created, owner, group, permissions
+and a star column that toggles favourites; the name column always stays, and only name, size,
+type and modified sort. The name column takes whatever the others leave, so as a window
+narrows the columns are dropped from the right, one after another, rather than the name being
+squeezed into an ellipsis; they come back as it widens. A name too long for the column it has
+is cut in the middle and shown whole on hover. Type shows the extension — "txt", "tar.gz",
+"Folder" — and falls back to the full description, on a tooltip, for names without one. Every
+column but the name and the star can be resized by dragging its header edge.
 
 ### Columns
 
