@@ -338,8 +338,8 @@ pub fn compare(a: &gio::FileInfo, b: &gio::FileInfo, key: SortKey, reversed: boo
     let ord = match key {
         SortKey::Name => by_name(),
         SortKey::Size => a.size().cmp(&b.size()).then_with(by_name),
-        SortKey::Type => short_type_string(a)
-            .cmp(&short_type_string(b))
+        SortKey::Type => sort_key(a, TYPE_KEY, short_type_string)
+            .cmp(&sort_key(b, TYPE_KEY, short_type_string))
             .then_with(by_name),
         SortKey::Modified => a
             .modification_date_time()
@@ -349,14 +349,86 @@ pub fn compare(a: &gio::FileInfo, b: &gio::FileInfo, key: SortKey, reversed: boo
     if reversed { ord.reverse() } else { ord }
 }
 
+/// Attributes Spiral keeps on the infos it is handed, holding what a sort would otherwise
+/// work out again for every comparison it makes. They are not asked of the filesystem, so
+/// nothing but Spiral ever writes them.
+const COLLATE_KEY: &str = "spiral::collate";
+const TYPE_KEY: &str = "spiral::type";
+
+/// The value `make` gives for this info, computed the first time it is wanted and kept on
+/// the info after that: sorting a folder of a hundred thousand files asks for it well over
+/// a million times, and collating a name is not cheap.
+fn sort_key(
+    info: &gio::FileInfo,
+    attribute: &str,
+    make: impl Fn(&gio::FileInfo) -> String,
+) -> glib::GString {
+    if let Some(key) = info.attribute_string(attribute) {
+        return key;
+    }
+    let key = make(info);
+    info.set_attribute_string(attribute, &key);
+    key.into()
+}
+
+/// Drop the cached sort keys, for an info whose attributes are being replaced in place.
+pub fn forget_sort_keys(info: &gio::FileInfo) {
+    info.remove_attribute(COLLATE_KEY);
+    info.remove_attribute(TYPE_KEY);
+}
+
 fn name_cmp(a: &gio::FileInfo, b: &gio::FileInfo) -> Ordering {
-    let ka = glib::FilenameCollationKey::from(a.display_name());
-    let kb = glib::FilenameCollationKey::from(b.display_name());
-    ka.cmp(&kb)
+    sort_key(a, COLLATE_KEY, collate).cmp(&sort_key(b, COLLATE_KEY, collate))
+}
+
+/// `g_utf8_collate_key_for_filename` as a plain string: the keys it makes compare byte by
+/// byte, which is what `glib::FilenameCollationKey` does behind a type that cannot be kept.
+fn collate(info: &gio::FileInfo) -> String {
+    let name = info.display_name();
+    unsafe {
+        let key = glib::ffi::g_utf8_collate_key_for_filename(
+            name.as_ptr() as *const libc::c_char,
+            name.len() as isize,
+        );
+        glib::translate::from_glib_full::<_, glib::GString>(key).into()
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    fn named(name: &str) -> gio::FileInfo {
+        let info = gio::FileInfo::new();
+        info.set_display_name(name);
+        info
+    }
+
+    /// The cached key has to order names the way `FilenameCollationKey` does, and has to
+    /// go on ordering them that way once it has been stored on the info.
+    #[test]
+    fn collation_keys_match_glib() {
+        let names = [
+            "b.txt",
+            "A.txt",
+            "a.txt",
+            "10.txt",
+            "9.txt",
+            "\u{e4}.txt",
+            "z",
+        ];
+        for a in names {
+            for b in names {
+                let want =
+                    glib::FilenameCollationKey::from(a).cmp(&glib::FilenameCollationKey::from(b));
+                let (ia, ib) = (named(a), named(b));
+                assert_eq!(name_cmp(&ia, &ib), want, "{a} vs {b}");
+                // Again, now that both infos carry the key.
+                assert_eq!(name_cmp(&ia, &ib), want, "{a} vs {b}, cached");
+            }
+        }
+    }
+
     #[test]
     fn extensions() {
         for (name, want) in [

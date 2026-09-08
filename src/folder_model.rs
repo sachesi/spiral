@@ -561,6 +561,8 @@ impl FolderModel {
                     let selected = model.selected_files();
                     fresh.set_attribute_object("standard::file", &file);
                     fresh.copy_into(&info);
+                    // The keys cached on it describe the name it had a moment ago.
+                    file_utils::forget_sort_keys(&info);
                     dl.items_changed(pos, 1, 1);
                     if !selected.is_empty() {
                         let sel = model.selection();
