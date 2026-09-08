@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-08 12:33+0300\n"
+"POT-Creation-Date: 2026-09-08 12:44+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -249,6 +249,32 @@ msgstr "sachesi"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"Bubblewrap is now required. Thumbnailers, the PDF previewer and the archive "
+"tools are decoders fed files nobody here wrote, and all three used to run "
+"unconfined where bubblewrap was missing, while images with no thumbnailer of "
+"their own were decoded inside the window itself. None of that happens any "
+"more: without the sandbox they are not run, and Spiral tries it once at "
+"startup and says what is wrong with it rather than showing nothing. A "
+"thumbnailer or a PDF tool that stops answering is killed after twenty "
+"seconds instead of holding a slot for the rest of the session."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:28
+msgid ""
+"Big folders open in about half the processor time they took. A folder is put "
+"in order once, when its listing ends, instead of after each batch of files "
+"arrives; names are collated once each instead of once per comparison; a "
+"thumbnail is looked for when a row is shown instead of for every file in the "
+"folder, listed or not; a burst of changes in a folder is answered in one "
+"pass; and the selection is read out once a frame rather than on every motion "
+"of a rubber band. Item counts under grid icons are remembered, and searching "
+"file contents no longer does its reading and matching on the thread drawing "
+"the window. The thumbnail cache keeps to a size instead of emptying itself, "
+"and generation uses the cores there are."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:33
+msgid ""
 "The sidebar gained Root, the top of the filesystem, and a switch in "
 "Preferences for it and for Favorites. The order folders open in can be "
 "chosen in Preferences instead of only by sorting one, and a folder that "
@@ -260,7 +286,7 @@ msgid ""
 "empty under any icon theme."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:32
+#: data/io.github.sachesi.spiral.metainfo.xml:38
 msgid ""
 "The column view is now optional and starts turned off: with it off the view "
 "button and the view menu offer the grid and the list alone. Pasted files, "
@@ -273,7 +299,7 @@ msgid ""
 "longer takes the focus away from a half-typed path."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:37
+#: data/io.github.sachesi.spiral.metainfo.xml:43
 msgid ""
 "Column view no longer decides the view of every folder after it: a folder "
 "that remembers a view of its own gets it back, while columns still survive a "
@@ -284,7 +310,7 @@ msgid ""
 "is half the size it was."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:42
+#: data/io.github.sachesi.spiral.metainfo.xml:48
 msgid ""
 "A quick preview on the Space key: images, PDFs a page at a time, video, "
 "sound and text with source code among it, drawn by Spiral itself in a window "
@@ -300,7 +326,7 @@ msgid ""
 "Windows, tabs and dialogs let go of everything they held when they close."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:47
+#: data/io.github.sachesi.spiral.metainfo.xml:53
 msgid ""
 "A column view, the third way to look at a folder: the path drawn as a strip "
 "of lists, one folder per column, with the folder you are in at the right and "
@@ -320,7 +346,7 @@ msgstr ""
 "записывают после создания, например вставленный из буфера снимок экрана, "
 "получает миниатюру без перезапуска."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:52
+#: data/io.github.sachesi.spiral.metainfo.xml:58
 msgid ""
 "A click on empty space in a folder takes the keyboard and clears the "
 "selection, so Ctrl+A and the other file keys no longer wait for a file to be "
@@ -336,7 +362,7 @@ msgstr ""
 "открытое им меню действует на папку. У кнопки фильтров поиска снова есть "
 "значок."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:57
+#: data/io.github.sachesi.spiral.metainfo.xml:63
 msgid ""
 "Two folder panes side by side, off by default and turned on with F3: F6 "
 "moves between them, the pane in charge is outlined, and everything outside "
@@ -353,7 +379,7 @@ msgstr ""
 "папке» из браузера больше не ждёт двадцать пять секунд из-за взаимной "
 "блокировки портала и открывает отдельное окно с выделенным файлом."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:62
+#: data/io.github.sachesi.spiral.metainfo.xml:68
 msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
@@ -370,7 +396,7 @@ msgstr ""
 "столбцы списка с изменяемой шириной, тип показан как расширение файла, "
 "переключатель звёздочки следует за избранным."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:67
+#: data/io.github.sachesi.spiral.metainfo.xml:73
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -388,7 +414,7 @@ msgstr ""
 "паролем. Эмблемы замка и недоступные действия для файлов только для чтения, "
 "папки следят за изменениями извне, а буфер обмена вставляет пути в терминалы."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:72
+#: data/io.github.sachesi.spiral.metainfo.xml:78
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
@@ -399,7 +425,7 @@ msgstr ""
 "-s, -q. Обращения к файловой системе больше не блокируют интерфейс на "
 "медленных точках монтирования."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:76
+#: data/io.github.sachesi.spiral.metainfo.xml:82
 msgid "First release."
 msgstr "Первый выпуск."
 
@@ -1397,7 +1423,9 @@ msgstr "Широкая поддержка, больший размер"
 #: src/ops/archive.rs:241
 #, no-c-format
 msgid "bubblewrap is not installed, so archive tools cannot be run safely"
-msgstr "bubblewrap не установлен, поэтому инструменты для архивов нельзя запустить безопасно"
+msgstr ""
+"bubblewrap не установлен, поэтому инструменты для архивов нельзя запустить "
+"безопасно"
 
 #: src/ops/archive.rs:326
 #, no-c-format
