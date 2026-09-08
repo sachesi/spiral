@@ -71,6 +71,16 @@ pub fn per_folder_available() -> bool {
     })
 }
 
+/// Sidebar places that not everyone wants: the top of the filesystem, and the starred
+/// files for those who never star anything.
+pub fn show_root() -> bool {
+    SETTINGS.with(|s| s.boolean("show-root"))
+}
+
+pub fn show_favorites() -> bool {
+    SETTINGS.with(|s| s.boolean("show-favorites"))
+}
+
 /// The column view is off unless it is asked for: it is a third way of reading a folder,
 /// not one everybody wants in the view button.
 pub fn column_view() -> bool {

@@ -97,6 +97,25 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     views.add(&tree);
     page.add(&views);
 
+    let sidebar = adw::PreferencesGroup::builder()
+        .title(gettext("Sidebar"))
+        .build();
+    let root = adw::SwitchRow::builder()
+        .title(gettext("Root"))
+        .subtitle(gettext("The top of the filesystem, above the bookmarks"))
+        .build();
+    settings.bind("show-root", &root, "active").build();
+    sidebar.add(&root);
+    let favorites = adw::SwitchRow::builder()
+        .title(gettext("Favorites"))
+        .subtitle(gettext("The starred files and folders"))
+        .build();
+    settings
+        .bind("show-favorites", &favorites, "active")
+        .build();
+    sidebar.add(&favorites);
+    page.add(&sidebar);
+
     let optional = adw::PreferencesGroup::builder()
         .title(gettext("Optional Context Menu Actions"))
         .description(gettext(

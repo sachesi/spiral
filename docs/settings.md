@@ -15,6 +15,8 @@ Changes apply immediately to open windows.
 | `folders-first` | bool | true | Sort Folders Before Files |
 | `use-tree-view` | bool | false | Expandable Folders in List View |
 | `use-column-view` | bool | false | Column View |
+| `show-root` | bool | true | Root (sidebar) |
+| `show-favorites` | bool | true | Favorites (sidebar) |
 | `recursive-search` | `local`, `always`, `never` | `local` | Search in Subfolders |
 | `visible-columns` | list of `size`, `type`, `modified`, `accessed`, `created`, `owner`, `group`, `permissions`, `star` | size, type, modified, star | List view columns (Visible Columns…) |
 | `show-create-link` | bool | false | Create Link in context menus |
