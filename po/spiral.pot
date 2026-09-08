@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.10.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-08 13:41+0300\n"
+"POT-Creation-Date: 2026-09-08 14:32+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -458,8 +458,8 @@ msgstr ""
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:813 src/browser_view.rs:1049
-#: src/dialogs/open_with.rs:201
+#: src/browser_actions.rs:813 src/browser_view.rs:1067 src/browser_view.rs:1074
+#: src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
@@ -524,44 +524,44 @@ msgid_plural "%d items selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:686
+#: src/browser_view.rs:699
 #, no-c-format
 msgid "Remove from Starred"
 msgstr ""
 
-#: src/browser_view.rs:688
+#: src/browser_view.rs:701
 #, no-c-format
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view.rs:1060 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:1085 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:669
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view.rs:1082
+#: src/browser_view.rs:1107
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:1084 ui/browser_view.ui:100
+#: src/browser_view.rs:1109 ui/browser_view.ui:100
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:1122
+#: src/browser_view.rs:1147
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:1138
+#: src/browser_view.rs:1163
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:1143
+#: src/browser_view.rs:1168
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -569,17 +569,17 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1149
+#: src/browser_view.rs:1174
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:1770
+#: src/browser_view.rs:1795
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:1850 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1875 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -1963,7 +1963,12 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: src/terminal.rs:149
+#: src/terminal.rs:180
+#, no-c-format
+msgid "The command line of the application cannot be read"
+msgstr ""
+
+#: src/terminal.rs:221
 #, no-c-format
 msgid "No terminal emulator found"
 msgstr ""

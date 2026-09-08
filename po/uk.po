@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-08 13:41+0300\n"
+"POT-Creation-Date: 2026-09-08 14:32+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -127,10 +127,11 @@ msgid ""
 "not limited, since their thumbnailers read a frame rather than the whole "
 "file."
 msgstr ""
-"ÐÑÐ»ÑÑÑ Ð·Ð° ÑÐµ Ð·Ð¾Ð±ÑÐ°Ð¶ÐµÐ½Ð½Ñ Ð¿Ð¾ÐºÐ°Ð·ÑÑÑÑÑÑ Ð·Ñ ÑÐ²Ð¾ÑÑ Ð¿ÑÐºÑÐ¾Ð³ÑÐ°Ð¼Ð¾Ñ: ÑÐ¾Ð·ÐºÐ¾Ð´ÑÐ²Ð°ÑÐ¸ ÑÐ°ÐºÐµ "
-"ÐºÐ¾ÑÑÑÑ ÑÐ°ÑÑ Ð¹ Ð¿Ð°Ð¼’ÑÑÑ Ð½ÐµÐ¿ÑÐ¾Ð¿Ð¾ÑÑÑÐ¹Ð½Ð¾ Ð´Ð¾ Ð¼ÑÐ½ÑÐ°ÑÑÑÐ¸. ÐÐ°ÑÐ²Ð½Ð° Ð¼ÑÐ½ÑÐ°ÑÑÑÐ° "
-"Ð¿Ð¾ÐºÐ°Ð·ÑÑÑÑÑÑ Ð½ÐµÐ·Ð°Ð»ÐµÐ¶Ð½Ð¾ Ð²ÑÐ´ ÑÐ¾Ð·Ð¼ÑÑÑ ÑÐ°Ð¹Ð»Ð°. ÐÑÐ´ÐµÐ¾ ÑÐ° Ð·Ð²ÑÐº Ð½Ðµ Ð¾Ð±Ð¼ÐµÐ¶ÑÑÑÑÑÑ, Ð±Ð¾ "
-"ÑÑÐ½Ñ ÑÑÐ²Ð¾ÑÑÐ²Ð°ÑÑ Ð¼ÑÐ½ÑÐ°ÑÑÑ ÑÐ¸ÑÐ°ÑÑÑ ÐºÐ°Ð´Ñ, Ð° Ð½Ðµ Ð²ÐµÑÑ ÑÐ°Ð¹Ð»."
+"ÐÑÐ»ÑÑÑ Ð·Ð° ÑÐµ Ð·Ð¾Ð±ÑÐ°Ð¶ÐµÐ½Ð½Ñ Ð¿Ð¾ÐºÐ°Ð·ÑÑÑÑÑÑ Ð·Ñ ÑÐ²Ð¾ÑÑ "
+"Ð¿ÑÐºÑÐ¾Ð³ÑÐ°Ð¼Ð¾Ñ: ÑÐ¾Ð·ÐºÐ¾Ð´ÑÐ²Ð°ÑÐ¸ ÑÐ°ÐºÐµ ÐºÐ¾ÑÑÑÑ ÑÐ°ÑÑ Ð¹ Ð¿Ð°Ð¼’ÑÑÑ "
+"Ð½ÐµÐ¿ÑÐ¾Ð¿Ð¾ÑÑÑÐ¹Ð½Ð¾ Ð´Ð¾ Ð¼ÑÐ½ÑÐ°ÑÑÑÐ¸. ÐÐ°ÑÐ²Ð½Ð° Ð¼ÑÐ½ÑÐ°ÑÑÑÐ° "
+"Ð¿Ð¾ÐºÐ°Ð·ÑÑÑÑÑÑ Ð½ÐµÐ·Ð°Ð»ÐµÐ¶Ð½Ð¾ Ð²ÑÐ´ ÑÐ¾Ð·Ð¼ÑÑÑ ÑÐ°Ð¹Ð»Ð°. ÐÑÐ´ÐµÐ¾ ÑÐ° "
+"Ð·Ð²ÑÐº Ð½Ðµ Ð¾Ð±Ð¼ÐµÐ¶ÑÑÑÑÑÑ, Ð±Ð¾ ÑÑÐ½Ñ ÑÑÐ²Ð¾ÑÑÐ²Ð°ÑÑ Ð¼ÑÐ½ÑÐ°ÑÑÑ ÑÐ¸ÑÐ°ÑÑÑ ÐºÐ°Ð´Ñ, Ð° Ð½Ðµ Ð²ÐµÑÑ ÑÐ°Ð¹Ð»."
 
 #: data/io.github.sachesi.spiral.gschema.xml:105
 msgid "Default view mode"
@@ -522,8 +523,8 @@ msgstr "_Пересунути"
 msgid "_Copy"
 msgstr "_Копіювати"
 
-#: src/browser_actions.rs:813 src/browser_view.rs:1049
-#: src/dialogs/open_with.rs:201
+#: src/browser_actions.rs:813 src/browser_view.rs:1067 src/browser_view.rs:1074
+#: src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не вдалося відкрити"
@@ -591,44 +592,44 @@ msgstr[0] "Вибрано %d об’єкт"
 msgstr[1] "Вибрано %d об’єкти"
 msgstr[2] "Вибрано %d об’єктів"
 
-#: src/browser_view.rs:686
+#: src/browser_view.rs:699
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Вилучити з вибраного"
 
-#: src/browser_view.rs:688
+#: src/browser_view.rs:701
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Додати до вибраного"
 
-#: src/browser_view.rs:1060 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:1085 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:669
 #, no-c-format
 msgid "_OK"
 msgstr "_Гаразд"
 
-#: src/browser_view.rs:1082
+#: src/browser_view.rs:1107
 #, no-c-format
 msgid "No Results Found"
 msgstr "Нічого не знайдено"
 
-#: src/browser_view.rs:1084 ui/browser_view.ui:100
+#: src/browser_view.rs:1109 ui/browser_view.ui:100
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Тека порожня"
 
-#: src/browser_view.rs:1122
+#: src/browser_view.rs:1147
 #, no-c-format
 msgid "Loading…"
 msgstr "Завантаження…"
 
-#: src/browser_view.rs:1138
+#: src/browser_view.rs:1163
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Вибрано «%s»"
 
-#: src/browser_view.rs:1143
+#: src/browser_view.rs:1168
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -637,17 +638,17 @@ msgstr[1] "%d інші об’єкти вибрано"
 msgstr[2] "%d інших об’єктів вибрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1149
+#: src/browser_view.rs:1174
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1770
+#: src/browser_view.rs:1795
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:1850 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1875 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -2076,7 +2077,12 @@ msgstr "Показати файлові операції"
 msgid "Cancel"
 msgstr "Скасувати"
 
-#: src/terminal.rs:149
+#: src/terminal.rs:180
+#, no-c-format
+msgid "The command line of the application cannot be read"
+msgstr "Не вдалося прочитати командний рядок програми"
+
+#: src/terminal.rs:221
 #, no-c-format
 msgid "No terminal emulator found"
 msgstr "Емулятор термінала не знайдено"
