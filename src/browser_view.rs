@@ -1535,6 +1535,8 @@ impl BrowserView {
             view.bind_icon(&image, &emblem, &info);
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
+            // Whatever the column had to cut off, on hover.
+            label.set_tooltip_text(Some(&info.display_name()));
             label.set_tooltip_text(Some(&info.display_name()));
             item.set_accessible_label(&info.display_name());
             view.bind_captions(&captions, &info);
@@ -1583,6 +1585,10 @@ impl BrowserView {
                 &gtk::Label::builder()
                     .xalign(0.0)
                     .ellipsize(gtk::pango::EllipsizeMode::Middle)
+                    // A floor under the name: squeezed against the other columns it
+                    // would otherwise shrink to an ellipsis and say nothing at all.
+                    // Below it the list scrolls sideways instead.
+                    .width_chars(14)
                     .build(),
             );
             bx.append(&emblem_image());
