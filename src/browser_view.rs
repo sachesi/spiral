@@ -384,8 +384,6 @@ mod imp {
                 .flags(gio::SettingsBindFlags::GET)
                 .build();
 
-            self.grid_view.set_model(Some(&self.model.selection()));
-            self.column_view.set_model(Some(&self.model.selection()));
             obj.setup_grid_factory();
             obj.setup_columns();
             obj.setup_miller();
@@ -1004,12 +1002,7 @@ impl BrowserView {
                 if added == 0 {
                     return;
                 }
-                let imp = view.imp();
-                imp.grid_view.scroll_to(0, gtk::ListScrollFlags::NONE, None);
-                imp.miller_list
-                    .scroll_to(0, gtk::ListScrollFlags::NONE, None);
-                imp.column_view
-                    .scroll_to(0, None, gtk::ListScrollFlags::NONE, None);
+                view.reveal_position(0, gtk::ListScrollFlags::NONE);
                 if let Some(id) = id2.borrow_mut().take() {
                     sel.disconnect(id);
                 }
@@ -1138,6 +1131,19 @@ impl BrowserView {
             }
         };
         imp.stack.set_visible_child_name(name);
+        // Only the view on screen holds the model. A list keeps two hundred rows bound
+        // and a grid thirty rows of cells, drawn or not, so the views on the other pages
+        // would otherwise bind every row the folder changes, for nobody to look at. The
+        // pages that are not views leave the model where it is: a folder emptying for a
+        // moment, as one does when a search starts, must not take it off the view and
+        // hand it back.
+        if matches!(name, "grid" | "list" | "columns") {
+            let sel = imp.model.selection();
+            imp.grid_view.set_model((name == "grid").then_some(&sel));
+            imp.column_view.set_model((name == "list").then_some(&sel));
+            imp.miller_list
+                .set_model((name == "columns").then_some(&sel));
+        }
     }
 
     /// A rubber band changes the selection with every motion event, and reading it out
@@ -1338,12 +1344,18 @@ impl BrowserView {
         });
     }
 
-    /// Scroll to `pos` in whichever view is on screen; the others cost nothing.
+    /// Scroll to `pos` in whichever view is on screen; the others have no model to scroll.
     pub(crate) fn reveal_position(&self, pos: u32, flags: gtk::ListScrollFlags) {
         let imp = self.imp();
-        imp.grid_view.scroll_to(pos, flags, None);
-        imp.miller_list.scroll_to(pos, flags, None);
-        imp.column_view.scroll_to(pos, None, flags, None);
+        if imp.grid_view.model().is_some() {
+            imp.grid_view.scroll_to(pos, flags, None);
+        }
+        if imp.miller_list.model().is_some() {
+            imp.miller_list.scroll_to(pos, flags, None);
+        }
+        if imp.column_view.model().is_some() {
+            imp.column_view.scroll_to(pos, None, flags, None);
+        }
     }
 
     /// Select the item `delta` places along, for the preview's arrows. The focus stays
