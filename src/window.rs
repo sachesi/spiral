@@ -352,8 +352,10 @@ mod imp {
                     if k == gtk::gdk::Key::Escape {
                         win.imp().on_location_entry_cancel(&gtk::Button::new());
                         glib::Propagation::Stop
-                    } else if k == gtk::gdk::Key::Tab && entry.selection_bounds().is_some() {
-                        // Accept the inline completion.
+                    } else if matches!(k, gtk::gdk::Key::Tab | gtk::gdk::Key::ISO_Left_Tab) {
+                        // Accept the inline completion. Tab never moves the focus on:
+                        // leaving the entry puts the crumbs back, which loses the path
+                        // half typed whenever the completion had nothing to add yet.
                         entry.set_position(-1);
                         glib::Propagation::Stop
                     } else {
