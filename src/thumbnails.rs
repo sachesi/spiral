@@ -46,7 +46,9 @@ thread_local! {
     /// Loads in progress; later requests for the same key wait for the first one.
     static PENDING: RefCell<HashMap<Key, Vec<oneshot::Sender<Option<gdk::Texture>>>>> = RefCell::new(HashMap::new());
     static RUNNING: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-    static WAITERS: RefCell<std::collections::VecDeque<oneshot::Sender<()>>> = RefCell::new(Default::default());
+    /// Requests waiting for a slot, with the row each is for. Never more than a screen or
+    /// two of them, so the one to serve next is found by looking at all of them.
+    static WAITERS: RefCell<Vec<(u32, oneshot::Sender<()>)>> = const { RefCell::new(Vec::new()) };
     static THUMBNAILERS: RefCell<Option<Rc<Vec<Thumbnailer>>>> = const { RefCell::new(None) };
 }
 
@@ -93,7 +95,11 @@ struct Thumbnailer {
 }
 
 /// Thumbnail for `info`, or `None` if the type has no thumbnailer or generation failed.
-pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
+/// Thumbnail for `info`. `at` is the row it is for, counted from the top of the folder:
+/// where several are waiting, the one nearest the top of what is on screen is made first,
+/// so a screenful fills in the order it is read rather than in the order the rows happened
+/// to be bound.
+pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
     if info.file_type() == gio::FileType::Directory {
         return None;
     }
@@ -147,7 +153,7 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
         }
     });
     if first {
-        glib::spawn_future_local(generate_task(key, source));
+        glib::spawn_future_local(generate_task(key, source, at));
     }
     rx.await.ok().flatten()
 }
@@ -164,7 +170,7 @@ struct Source {
     too_large: bool,
 }
 
-async fn generate_task(key: Key, source: Source) {
+async fn generate_task(key: Key, source: Source, at: u32) {
     let (uri, mtime) = (key.0.clone(), key.1);
     // Asking the cache is a handful of stats, so it is asked before queueing for a
     // generation slot: a thumbnail that is already on disk must not wait behind a video
@@ -179,7 +185,7 @@ async fn generate_task(key: Key, source: Source) {
         finish(key, None);
         return;
     }
-    acquire().await;
+    acquire(at).await;
     // Rows scrolled away meanwhile: skip the work, it will be requested again if needed.
     let wanted = PENDING.with(|p| {
         p.borrow()
@@ -242,7 +248,7 @@ fn remember(key: Key, texture: Option<gdk::Texture>) {
     CACHE.with(|c| c.borrow_mut().insert(key, texture));
 }
 
-async fn acquire() {
+async fn acquire(at: u32) {
     thread_local! {
         static LIMIT: usize = max_parallel();
     }
@@ -259,16 +265,27 @@ async fn acquire() {
             return;
         }
         let (tx, rx) = oneshot::channel();
-        WAITERS.with(|w| w.borrow_mut().push_back(tx));
+        WAITERS.with(|w| w.borrow_mut().push((at, tx)));
         let _ = rx.await;
     }
 }
 
 fn release() {
     RUNNING.with(|r| r.set(r.get() - 1));
-    // Newest request first: rows just scrolled into view beat ones scrolled past, and
-    // stale entries are skipped by the `wanted` check when their turn comes.
-    if let Some(tx) = WAITERS.with(|w| w.borrow_mut().pop_back()) {
+    // The row nearest the top of the folder goes next, so a screenful fills the way it is
+    // read. Only rows that were on screen a moment ago are ever in here, so the lowest of
+    // them is the top of what is being looked at now; rows left behind by scrolling are
+    // still woken, and drop out at the `wanted` check without doing any work.
+    let next = WAITERS.with(|w| {
+        let mut waiters = w.borrow_mut();
+        let first = waiters
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, (at, _))| *at)
+            .map(|(i, _)| i)?;
+        Some(waiters.swap_remove(first).1)
+    });
+    if let Some(tx) = next {
         let _ = tx.send(());
     }
 }

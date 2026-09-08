@@ -1247,7 +1247,13 @@ impl BrowserView {
 
     /// Icon now, thumbnail later (cancelled on unbind); the lock emblem for files that
     /// cannot be read or changed.
-    pub(crate) fn bind_icon(&self, image: &gtk::Image, emblem: &gtk::Image, info: &gio::FileInfo) {
+    pub(crate) fn bind_icon(
+        &self,
+        image: &gtk::Image,
+        emblem: &gtk::Image,
+        info: &gio::FileInfo,
+        at: u32,
+    ) {
         unbind_icon(image);
         set_emblem(
             emblem,
@@ -1265,7 +1271,7 @@ impl BrowserView {
             image,
             async move {
                 on_screen(&image).await;
-                if let Some(texture) = crate::thumbnails::load(&info).await {
+                if let Some(texture) = crate::thumbnails::load(&info, at).await {
                     image.set_paintable(Some(&texture));
                     image.add_css_class("file-thumbnail");
                 }
@@ -1696,7 +1702,7 @@ impl BrowserView {
             let labels = bx.last_child().unwrap();
             let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
             let captions = labels.last_child().and_downcast::<gtk::Label>().unwrap();
-            view.bind_icon(&image, &emblem, &info);
+            view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             // Whatever the column had to cut off, on hover.
@@ -1772,7 +1778,7 @@ impl BrowserView {
             let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
             let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
-            view.bind_icon(&image, &emblem, &info);
+            view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             // Whatever the column had to cut off, on hover.
