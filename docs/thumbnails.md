@@ -7,6 +7,13 @@ files, all files, or none.
 
 ## How one gets made
 
+A thumbnail is only ever asked for once the cell holding it is on screen. The list widgets
+bind many more cells than they show — they keep a pool of them, and a view on a stack page
+that is not showing binds as well — so a folder of a few thousand pictures used to hand
+twenty times as many files to a decoder as it displayed. The request waits for the cell to
+be mapped and is dropped when the row is scrolled away or rebound, and it is carried at low
+priority, since the folder appearing matters more than the pictures in it.
+
 A file's thumbnail is looked up in this order: a small in-memory cache, the on-disk cache,
 then generation. The on-disk lookup hashes the file's URI, looks for that name under
 `large`, `normal` and the `fail` directory GIO shares with gnome-desktop, and accepts what

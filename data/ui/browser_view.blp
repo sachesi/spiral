@@ -14,6 +14,11 @@ template $SpiralBrowserView : Box {
       hexpand: true;
       vexpand: true;
       transition-type: none;
+      // Measuring every page means every view builds and binds rows for a folder only one
+      // of them is showing. The pages all fill whatever room the stack is given, so there
+      // is nothing to make homogeneous.
+      hhomogeneous: false;
+      vhomogeneous: false;
 
       StackPage {
         name: "grid";

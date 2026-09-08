@@ -615,7 +615,32 @@ pub(crate) fn unbind_icon(image: &gtk::Image) {
     {
         handle.abort();
     }
+    if let Some(id) = unsafe { image.steal_data::<glib::SignalHandlerId>("thumb-map") } {
+        image.disconnect(id);
+    }
     image.remove_css_class("file-thumbnail");
+}
+
+/// Wait until `image` is on screen. The list widgets bind far more cells than they show:
+/// they keep a pool of them, and the views on the stack pages that are not showing bind as
+/// well, so binding a cell says nothing about anyone ever looking at it. A folder of a few
+/// thousand pictures was handing twenty times as many files to a decoder as it displayed.
+async fn on_screen(image: &gtk::Image) {
+    if image.is_mapped() {
+        return;
+    }
+    let (tx, rx) = futures_channel::oneshot::channel();
+    let tx = RefCell::new(Some(tx));
+    let id = image.connect_map(move |_| {
+        if let Some(tx) = tx.borrow_mut().take() {
+            let _ = tx.send(());
+        }
+    });
+    unsafe { image.set_data("thumb-map", id) };
+    let _ = rx.await;
+    if let Some(id) = unsafe { image.steal_data::<glib::SignalHandlerId>("thumb-map") } {
+        image.disconnect(id);
+    }
 }
 
 /// One offered action means the modifier already chose: Ctrl copies, Shift moves,
@@ -1214,6 +1239,7 @@ impl BrowserView {
             #[weak]
             image,
             async move {
+                on_screen(&image).await;
                 if let Some(texture) = crate::thumbnails::load(&info).await {
                     image.set_paintable(Some(&texture));
                     image.add_css_class("file-thumbnail");
@@ -1221,7 +1247,8 @@ impl BrowserView {
             }
         ));
         unsafe { image.set_data("thumb-abort", handle) };
-        glib::spawn_future_local(async move {
+        // Low priority, as the folder appearing matters more than the pictures in it.
+        glib::MainContext::default().spawn_local_with_priority(glib::Priority::LOW, async move {
             let _ = fut.await;
         });
     }
