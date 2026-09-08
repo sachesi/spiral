@@ -366,7 +366,11 @@ fn generate(
             }
         },
     };
-    let ok = run_thumbnailer(&exec, path, &tmp) && stamp(&tmp, uri, mtime);
+    // GIO only accepts a cached thumbnail that names the file it was made from, so one
+    // that does not say so is written again with the words. Thumbnailers that follow the
+    // spec already say it, and are left alone rather than decoded and encoded once more.
+    let ok =
+        run_thumbnailer(&exec, path, &tmp) && (stamped_for(&tmp, mtime) || stamp(&tmp, uri, mtime));
     if ok && std::fs::rename(&tmp, out).is_ok() {
         return true;
     }
