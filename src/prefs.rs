@@ -47,8 +47,32 @@ pub fn date(dt: &glib::DateTime) -> String {
     crate::file_utils::relative_date(dt)
 }
 
+/// Asked once per comparison while a folder sorts, so the answer is kept and the signal
+/// keeps it honest rather than every comparison going to GSettings.
 pub fn folders_first() -> bool {
-    SETTINGS.with(|s| s.boolean("folders-first"))
+    thread_local! {
+        static VALUE: std::cell::OnceCell<std::rc::Rc<std::cell::Cell<bool>>> =
+            const { std::cell::OnceCell::new() };
+    }
+    VALUE.with(|v| {
+        v.get_or_init(|| {
+            let cell = std::rc::Rc::new(std::cell::Cell::new(
+                SETTINGS.with(|s| s.boolean("folders-first")),
+            ));
+            SETTINGS.with(|s| {
+                s.connect_changed(
+                    Some("folders-first"),
+                    glib::clone!(
+                        #[strong]
+                        cell,
+                        move |s, key| cell.set(s.boolean(key))
+                    ),
+                )
+            });
+            cell
+        })
+        .get()
+    })
 }
 
 pub fn tree_view() -> bool {
