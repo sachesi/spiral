@@ -282,6 +282,16 @@ mod imp {
                     move |_, _| obj.set_view_mode(obj.view_mode())
                 ),
             );
+            // Caption lines are read as a grid cell is bound, so changing them has to
+            // build the cells again.
+            self.settings.connect_changed(
+                Some("captions"),
+                glib::clone!(
+                    #[weak]
+                    obj,
+                    move |_, _| obj.setup_grid_factory()
+                ),
+            );
             for key in crate::prefs::VIEW_KEYS {
                 self.settings.connect_changed(
                     Some(key),
