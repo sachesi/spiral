@@ -44,6 +44,10 @@ because a file another program is still writing is seen empty first, and the ver
 from that snapshot would otherwise stand until the next start whenever the empty file and
 the finished one share a modification second.
 
+A thumbnailer runs behind the window in both queues: nice 10 for the processor and the idle
+class for the disk. Eight decoders at once would otherwise take the machine over, and the
+window they are drawing into is the thing that stops answering.
+
 Thumbnailers run a few at a time, one fewer than the machine has cores and at most eight,
 newest requests first, so the rows on screen win over the ones you scrolled past. One that
 takes longer than twenty seconds is killed, so a file that hangs a decoder costs one
