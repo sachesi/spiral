@@ -159,8 +159,10 @@ folder holding the item and selects it there.
 ## Preview
 
 Space shows the selected file without opening an application, and closes the preview
-again; Escape closes it too. Images, video, sound and text files, source code among them,
-are drawn by Spiral itself, and PDFs a page at a time. The Left and Right arrows walk
+again; Escape closes it too. Images, video, sound and text files are drawn by Spiral
+itself, and PDFs a page at a time. Source code is coloured by GtkSourceView, which knows
+the language from the name and the type of the file; lines are not wrapped, since source is
+read the way it was written, and long ones scroll sideways. The Left and Right arrows walk
 through the folder without leaving the preview, Page Up and Page Down turn the pages of a
 PDF, and Return hands the file to its application. The preview has no close button: it is
 a preview, and the keys that opened it close it again.

@@ -366,7 +366,7 @@ impl PreviewDialog {
         if gio::content_type_is_a(&content_type, "text/plain")
             && let Some(text) = load_text(&file).await
         {
-            return text_view(&text);
+            return text_view(&text, info, &content_type);
         }
         if content_type == "application/pdf"
             && let Some(path) = file.path()
@@ -1093,17 +1093,42 @@ fn flat_button(icon: &str, tooltip: &str) -> gtk::Button {
     button
 }
 
-fn text_view(text: &str) -> gtk::Widget {
-    let view = gtk::TextView::builder()
-        .editable(false)
-        .cursor_visible(false)
-        .monospace(true)
-        .top_margin(12)
-        .bottom_margin(12)
-        .left_margin(12)
-        .right_margin(12)
-        .build();
-    view.buffer().set_text(text);
+/// Text is drawn by GtkSourceView, which colours whatever language it recognises the file
+/// as and leaves anything else plain. Lines are not wrapped: source is read as it is
+/// written, and the preview scrolls sideways for the long ones.
+fn text_view(text: &str, info: &gio::FileInfo, content_type: &str) -> gtk::Widget {
+    use sourceview5::prelude::*;
+
+    static SOURCE_INIT: std::sync::Once = std::sync::Once::new();
+    SOURCE_INIT.call_once(sourceview5::init);
+
+    let buffer = sourceview5::Buffer::new(None);
+    buffer.set_language(
+        sourceview5::LanguageManager::default()
+            .guess_language(Some(info.display_name().as_str()), Some(content_type))
+            .as_ref(),
+    );
+    // One of the schemes GtkSourceView ships for the GNOME palette; with none set the
+    // language is recognised but nothing is coloured.
+    let scheme = if adw::StyleManager::default().is_dark() {
+        "Adwaita-dark"
+    } else {
+        "Adwaita"
+    };
+    buffer.set_style_scheme(
+        sourceview5::StyleSchemeManager::default()
+            .scheme(scheme)
+            .as_ref(),
+    );
+    buffer.set_text(text);
+    let view = sourceview5::View::with_buffer(&buffer);
+    view.set_editable(false);
+    view.set_cursor_visible(false);
+    view.set_monospace(true);
+    view.set_top_margin(12);
+    view.set_bottom_margin(12);
+    view.set_left_margin(12);
+    view.set_right_margin(12);
     let scroll = gtk::ScrolledWindow::builder()
         .child(&view)
         .hexpand(true)
