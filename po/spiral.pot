@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: spiral 0.8.0\n"
+"Project-Id-Version: spiral 0.9.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-08 11:01+0300\n"
+"POT-Creation-Date: 2026-09-08 12:33+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,7 +28,7 @@ msgid "File Manager"
 msgstr ""
 
 #: data/io.github.sachesi.spiral.desktop:4
-#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:339
+#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:340
 #, no-c-format
 msgid "Browse and manage your files"
 msgstr ""
@@ -228,6 +228,19 @@ msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"The sidebar gained Root, the top of the filesystem, and a switch in "
+"Preferences for it and for Favorites. The order folders open in can be "
+"chosen in Preferences instead of only by sorting one, and a folder that "
+"remembers an order of its own still keeps it. Caption lines chosen in the "
+"dialog appear at once. The selection is no longer lost when a file in the "
+"folder is written, so a pasted screenshot keeps the selection it was given. "
+"The star column is as narrow as the star it holds, whatever the word for it "
+"in the language of the moment, and an empty star is faded so it reads as "
+"empty under any icon theme."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:32
+msgid ""
 "The column view is now optional and starts turned off: with it off the view "
 "button and the view menu offer the grid and the list alone. Pasted files, "
 "folders and screenshots are selected once they land in the folder. Source "
@@ -239,7 +252,7 @@ msgid ""
 "longer takes the focus away from a half-typed path."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:32
+#: data/io.github.sachesi.spiral.metainfo.xml:37
 msgid ""
 "Column view no longer decides the view of every folder after it: a folder "
 "that remembers a view of its own gets it back, while columns still survive a "
@@ -250,7 +263,7 @@ msgid ""
 "is half the size it was."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:37
+#: data/io.github.sachesi.spiral.metainfo.xml:42
 msgid ""
 "A quick preview on the Space key: images, PDFs a page at a time, video, "
 "sound and text with source code among it, drawn by Spiral itself in a window "
@@ -266,7 +279,7 @@ msgid ""
 "Windows, tabs and dialogs let go of everything they held when they close."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:42
+#: data/io.github.sachesi.spiral.metainfo.xml:47
 msgid ""
 "A column view, the third way to look at a folder: the path drawn as a strip "
 "of lists, one folder per column, with the folder you are in at the right and "
@@ -278,7 +291,7 @@ msgid ""
 "say, gets its thumbnail without a restart."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:47
+#: data/io.github.sachesi.spiral.metainfo.xml:52
 msgid ""
 "A click on empty space in a folder takes the keyboard and clears the "
 "selection, so Ctrl+A and the other file keys no longer wait for a file to be "
@@ -288,7 +301,7 @@ msgid ""
 "again."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:52
+#: data/io.github.sachesi.spiral.metainfo.xml:57
 msgid ""
 "Two folder panes side by side, off by default and turned on with F3: F6 "
 "moves between them, the pane in charge is outlined, and everything outside "
@@ -298,7 +311,7 @@ msgid ""
 "portal deadlock, and opens a window of its own with the file selected."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:57
+#: data/io.github.sachesi.spiral.metainfo.xml:62
 msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
@@ -308,7 +321,7 @@ msgid ""
 "as the file extension, and a star toggle that follows the favourites."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:62
+#: data/io.github.sachesi.spiral.metainfo.xml:67
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -319,44 +332,44 @@ msgid ""
 "pastes paths into terminals."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:67
+#: data/io.github.sachesi.spiral.metainfo.xml:72
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
 "calls no longer block the interface on slow mounts."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:71
+#: data/io.github.sachesi.spiral.metainfo.xml:76
 msgid "First release."
 msgstr ""
 
-#: src/application.rs:166
+#: src/application.rs:167
 #, no-c-format
 msgid "Open each location in its own window"
 msgstr ""
 
-#: src/application.rs:171
+#: src/application.rs:172
 #, no-c-format
 msgid "Select the given files in their folders"
 msgstr ""
 
-#: src/application.rs:173
+#: src/application.rs:174
 #, no-c-format
 msgid "Close every window and quit"
 msgstr ""
 
-#: src/application.rs:174
+#: src/application.rs:175
 #, no-c-format
 msgid "Print the version and exit"
 msgstr ""
 
-#: src/application.rs:181
+#: src/application.rs:182
 #, no-c-format
 msgid "[FILE…]"
 msgstr ""
 
 #. Translators: put your name here, one per line, optionally with an email address.
-#: src/application.rs:341
+#: src/application.rs:342
 #, no-c-format
 msgid "translator-credits"
 msgstr ""
@@ -366,150 +379,150 @@ msgstr ""
 msgid "Untitled Document"
 msgstr ""
 
-#: src/browser_actions.rs:562
+#: src/browser_actions.rs:558
 #, no-c-format
 msgid "Extract To"
 msgstr ""
 
-#: src/browser_actions.rs:563 src/ops/archive.rs:351
+#: src/browser_actions.rs:559 src/ops/archive.rs:352
 #, no-c-format
 msgid "_Extract"
 msgstr ""
 
-#: src/browser_actions.rs:589
+#: src/browser_actions.rs:585
 #, no-c-format
 msgid "Archive"
 msgstr ""
 
-#: src/browser_actions.rs:701
+#: src/browser_actions.rs:697
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr ""
 
-#: src/browser_actions.rs:715
+#: src/browser_actions.rs:711
 #, no-c-format
 msgid "Move To"
 msgstr ""
 
-#: src/browser_actions.rs:717
+#: src/browser_actions.rs:713
 #, no-c-format
 msgid "Copy To"
 msgstr ""
 
-#: src/browser_actions.rs:720
+#: src/browser_actions.rs:716
 #, no-c-format
 msgid "_Move"
 msgstr ""
 
-#: src/browser_actions.rs:722 ui/browser_view.ui:208
+#: src/browser_actions.rs:718 ui/browser_view.ui:208
 #, no-c-format
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:817 src/browser_view.rs:984
+#: src/browser_actions.rs:813 src/browser_view.rs:1024
 #: src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
 
-#: src/browser_actions.rs:827
+#: src/browser_actions.rs:823
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr ""
 
-#: src/browser_actions.rs:829
+#: src/browser_actions.rs:825
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_actions.rs:837
+#: src/browser_actions.rs:833
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr ""
 
-#: src/browser_actions.rs:842 src/browser_actions.rs:866
+#: src/browser_actions.rs:838 src/browser_actions.rs:862
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
-#: src/ops/archive.rs:350 src/ops/conflict.rs:63 src/ops/conflict.rs:314
+#: src/ops/archive.rs:351 src/ops/conflict.rs:63 src/ops/conflict.rs:314
 #: src/ops/walk.rs:223 src/places_sidebar.rs:640
 #: src/portal/chooser_window.rs:674
 #, no-c-format
 msgid "_Cancel"
 msgstr ""
 
-#: src/browser_actions.rs:843
+#: src/browser_actions.rs:839
 #, no-c-format
 msgid "_Delete"
 msgstr ""
 
-#: src/browser_actions.rs:859
+#: src/browser_actions.rs:855
 #, no-c-format
 msgid "Empty Trash?"
 msgstr ""
 
-#: src/browser_actions.rs:861
+#: src/browser_actions.rs:857
 #, no-c-format
 msgid "All items in the Trash will be permanently deleted."
 msgstr ""
 
-#: src/browser_actions.rs:867 src/places_sidebar.rs:642 ui/browser_view.ui:350
+#: src/browser_actions.rs:863 src/places_sidebar.rs:642 ui/browser_view.ui:350
 #, no-c-format
 msgid "_Empty Trash"
 msgstr ""
 
-#: src/browser_view.rs:500
+#: src/browser_view.rs:503
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:504
+#: src/browser_view.rs:507
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:621
+#: src/browser_view.rs:661
 #, no-c-format
 msgid "Remove from Starred"
 msgstr ""
 
-#: src/browser_view.rs:623
+#: src/browser_view.rs:663
 #, no-c-format
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view.rs:995 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:1035 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:669
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view.rs:1017
+#: src/browser_view.rs:1057
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:1019 ui/browser_view.ui:98
+#: src/browser_view.rs:1059 ui/browser_view.ui:98
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:1039
+#: src/browser_view.rs:1097
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:1055
+#: src/browser_view.rs:1113
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:1060
+#: src/browser_view.rs:1118
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -517,17 +530,17 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1066
+#: src/browser_view.rs:1124
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:1683
+#: src/browser_view.rs:1743
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:1763 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1823 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -578,7 +591,7 @@ msgstr ""
 msgid "_Format"
 msgstr ""
 
-#: src/dialogs/compress.rs:35 src/ops/archive.rs:334
+#: src/dialogs/compress.rs:35 src/ops/archive.rs:335
 #, no-c-format
 msgid "_Password"
 msgstr ""
@@ -756,7 +769,7 @@ msgstr ""
 msgid "The top of the filesystem, above the bookmarks"
 msgstr ""
 
-#: src/dialogs/preferences.rs:111 src/file_utils.rs:313 src/path_bar.rs:315
+#: src/dialogs/preferences.rs:111 src/file_utils.rs:316 src/path_bar.rs:315
 #: src/places_sidebar.rs:432
 #, no-c-format
 msgid "Favorites"
@@ -849,13 +862,13 @@ msgid "First Modified"
 msgstr ""
 
 #: src/dialogs/preferences.rs:197 src/dialogs/properties.rs:251
-#: src/file_utils.rs:150 src/file_utils.rs:165
+#: src/file_utils.rs:153 src/file_utils.rs:168
 #, no-c-format
 msgid "Size"
 msgstr ""
 
 #: src/dialogs/preferences.rs:198 src/dialogs/properties.rs:243
-#: src/file_utils.rs:151 src/file_utils.rs:167 ui/window.ui:358
+#: src/file_utils.rs:154 src/file_utils.rs:170 ui/window.ui:358
 #, no-c-format
 msgid "Type"
 msgstr ""
@@ -865,76 +878,76 @@ msgstr ""
 msgid "Sort Order"
 msgstr ""
 
-#: src/dialogs/preferences.rs:210
+#: src/dialogs/preferences.rs:211
 #, no-c-format
 msgid "How folders without an order of their own are sorted"
 msgstr ""
 
-#: src/dialogs/preferences.rs:264
+#: src/dialogs/preferences.rs:266
 #, no-c-format
 msgid "Automatic"
 msgstr ""
 
-#: src/dialogs/preferences.rs:272
+#: src/dialogs/preferences.rs:274
 #, no-c-format
 msgid "Automatic uses %s"
 msgstr ""
 
-#: src/dialogs/preferences.rs:273
+#: src/dialogs/preferences.rs:275
 #, no-c-format
 msgid "No terminal emulator found in PATH"
 msgstr ""
 
-#: src/dialogs/preferences.rs:276
+#: src/dialogs/preferences.rs:278
 #, no-c-format
 msgid "Terminal"
 msgstr ""
 
-#: src/dialogs/preview.rs:141 ui/shortcuts_dialog.ui:234
+#: src/dialogs/preview.rs:144 ui/shortcuts_dialog.ui:234
 #, no-c-format
 msgid "Preview"
 msgstr ""
 
-#: src/dialogs/preview.rs:518
+#: src/dialogs/preview.rs:521
 #, no-c-format
 msgid "Previous Page"
 msgstr ""
 
-#: src/dialogs/preview.rs:520
+#: src/dialogs/preview.rs:523
 #, no-c-format
 msgid "Next Page"
 msgstr ""
 
-#: src/dialogs/preview.rs:594 src/dialogs/preview.rs:647
+#: src/dialogs/preview.rs:597 src/dialogs/preview.rs:650
 #, no-c-format
 msgid "Fit"
 msgstr ""
 
-#: src/dialogs/preview.rs:596 ui/shortcuts_dialog.ui:151 ui/window.ui:446
+#: src/dialogs/preview.rs:599 ui/shortcuts_dialog.ui:151 ui/window.ui:446
 #: ui/window.ui:530
 #, no-c-format
 msgid "Zoom Out"
 msgstr ""
 
-#: src/dialogs/preview.rs:597
+#: src/dialogs/preview.rs:600
 #, no-c-format
 msgid "Fit to Window"
 msgstr ""
 
-#: src/dialogs/preview.rs:598 ui/shortcuts_dialog.ui:145 ui/window.ui:456
+#: src/dialogs/preview.rs:601 ui/shortcuts_dialog.ui:145 ui/window.ui:456
 #: ui/window.ui:540
 #, no-c-format
 msgid "Zoom In"
 msgstr ""
 
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:865
+#: src/dialogs/preview.rs:868
 #, no-c-format
 msgid "%t, %s"
 msgstr ""
 
 #. Translators: %p is the page being shown, %n the number of pages in the document.
-#: src/dialogs/preview.rs:870
+#: src/dialogs/preview.rs:873
 #, no-c-format
 msgid "%p of %n"
 msgstr ""
@@ -944,7 +957,7 @@ msgstr ""
 msgid "Properties"
 msgstr ""
 
-#: src/dialogs/properties.rs:99 src/file_utils.rs:157 src/file_utils.rs:169
+#: src/dialogs/properties.rs:99 src/file_utils.rs:160 src/file_utils.rs:172
 #, no-c-format
 msgid "Permissions"
 msgstr ""
@@ -971,7 +984,7 @@ msgid_plural "%d Items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/dialogs/properties.rs:247 src/file_utils.rs:168
+#: src/dialogs/properties.rs:247 src/file_utils.rs:171
 #, no-c-format
 msgid "MIME Type"
 msgstr ""
@@ -981,12 +994,12 @@ msgstr ""
 msgid "Calculating…"
 msgstr ""
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:152 ui/window.ui:379
+#: src/dialogs/properties.rs:259 src/file_utils.rs:155 ui/window.ui:379
 #, no-c-format
 msgid "Modified"
 msgstr ""
 
-#: src/dialogs/properties.rs:263 src/file_utils.rs:153
+#: src/dialogs/properties.rs:263 src/file_utils.rs:156
 #, no-c-format
 msgid "Accessed"
 msgstr ""
@@ -1017,7 +1030,7 @@ msgid "You are not the owner, so you cannot change these permissions."
 msgstr ""
 
 #: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
-#: src/file_utils.rs:164
+#: src/file_utils.rs:167
 #, no-c-format
 msgid "None"
 msgstr ""
@@ -1052,12 +1065,12 @@ msgstr ""
 msgid "Could Not Change Permissions"
 msgstr ""
 
-#: src/dialogs/properties.rs:452 src/file_utils.rs:155 src/file_utils.rs:170
+#: src/dialogs/properties.rs:452 src/file_utils.rs:158 src/file_utils.rs:173
 #, no-c-format
 msgid "Owner"
 msgstr ""
 
-#: src/dialogs/properties.rs:453 src/file_utils.rs:156 src/file_utils.rs:171
+#: src/dialogs/properties.rs:453 src/file_utils.rs:159 src/file_utils.rs:174
 #, no-c-format
 msgid "Group"
 msgstr ""
@@ -1105,97 +1118,97 @@ msgstr ""
 msgid "List View"
 msgstr ""
 
-#: src/file_utils.rs:86 src/file_utils.rs:98
+#: src/file_utils.rs:89 src/file_utils.rs:101
 #, no-c-format
 msgid "Folder"
 msgstr ""
 
-#: src/file_utils.rs:154
+#: src/file_utils.rs:157
 #, no-c-format
 msgid "Created"
 msgstr ""
 
-#: src/file_utils.rs:166
+#: src/file_utils.rs:169
 #, no-c-format
 msgid "Date Modified"
 msgstr ""
 
-#: src/file_utils.rs:195
+#: src/file_utils.rs:198
 #, no-c-format
 msgid "Today, %s"
 msgstr ""
 
-#: src/file_utils.rs:196
+#: src/file_utils.rs:199
 #, no-c-format
 msgid "Yesterday, %s"
 msgstr ""
 
-#: src/file_utils.rs:197
+#: src/file_utils.rs:200
 #, no-c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:198
+#: src/file_utils.rs:201
 #, no-c-format
 msgid "Last week"
 msgstr ""
 
-#: src/file_utils.rs:200
+#: src/file_utils.rs:203
 #, no-c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:202
+#: src/file_utils.rs:205
 #, no-c-format
 msgid "Last month"
 msgstr ""
 
-#: src/file_utils.rs:205
+#: src/file_utils.rs:208
 #, no-c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:207
+#: src/file_utils.rs:210
 #, no-c-format
 msgid "Last year"
 msgstr ""
 
-#: src/file_utils.rs:210
+#: src/file_utils.rs:213
 #, no-c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:279
+#: src/file_utils.rs:282
 #, no-c-format
 msgid "Empty"
 msgstr ""
 
-#: src/file_utils.rs:280
+#: src/file_utils.rs:283
 #, no-c-format
 msgid "%d item"
 msgid_plural "%d items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:307 src/path_bar.rs:309 src/places_sidebar.rs:406
+#: src/file_utils.rs:310 src/path_bar.rs:309 src/places_sidebar.rs:406
 #, no-c-format
 msgid "Home"
 msgstr ""
 
-#: src/file_utils.rs:310 src/path_bar.rs:312 src/places_sidebar.rs:439
+#: src/file_utils.rs:313 src/path_bar.rs:312 src/places_sidebar.rs:439
 #, no-c-format
 msgid "Trash"
 msgstr ""
 
-#: src/file_utils.rs:318 src/path_bar.rs:320
+#: src/file_utils.rs:321 src/path_bar.rs:320
 #, no-c-format
 msgid "System"
 msgstr ""
@@ -1301,62 +1314,67 @@ msgstr ""
 msgid "Widely supported, larger archives"
 msgstr ""
 
-#: src/ops/archive.rs:325
+#: src/ops/archive.rs:241
+#, no-c-format
+msgid "bubblewrap is not installed, so archive tools cannot be run safely"
+msgstr ""
+
+#: src/ops/archive.rs:326
 #, no-c-format
 msgid "Cannot extract “%s”: install %t"
 msgstr ""
 
-#: src/ops/archive.rs:343
+#: src/ops/archive.rs:344
 #, no-c-format
 msgid "Enter Password"
 msgstr ""
 
-#: src/ops/archive.rs:344
+#: src/ops/archive.rs:345
 #, no-c-format
 msgid "“%s” is password protected"
 msgstr ""
 
-#: src/ops/archive.rs:388
+#: src/ops/archive.rs:389
 #, no-c-format
 msgid "Archives can only be extracted to local folders"
 msgstr ""
 
-#: src/ops/archive.rs:407 src/ops/archive.rs:529 src/ops/job.rs:131
+#: src/ops/archive.rs:408 src/ops/archive.rs:530 src/ops/job.rs:131
 #, no-c-format
 msgid "Extracting “%s”"
 msgstr ""
 
-#: src/ops/archive.rs:526 src/ops/walk.rs:474
+#: src/ops/archive.rs:527 src/ops/walk.rs:474
 #, no-c-format
 msgid "Waiting for your answer"
 msgstr ""
 
-#: src/ops/archive.rs:615
+#: src/ops/archive.rs:616
 #, no-c-format
 msgid "Archives can only be created in local folders"
 msgstr ""
 
-#: src/ops/archive.rs:620
+#: src/ops/archive.rs:621
 #, no-c-format
 msgid "Archives can only be created from local files"
 msgstr ""
 
-#: src/ops/archive.rs:634
+#: src/ops/archive.rs:635
 #, no-c-format
 msgid "Creating zip archives needs zip or 7-Zip"
 msgstr ""
 
-#: src/ops/archive.rs:642
+#: src/ops/archive.rs:643
 #, no-c-format
 msgid "7-Zip is required to create 7z archives"
 msgstr ""
 
-#: src/ops/archive.rs:650
+#: src/ops/archive.rs:651
 #, no-c-format
 msgid "tar is required to create tar archives"
 msgstr ""
 
-#: src/ops/archive.rs:655
+#: src/ops/archive.rs:656
 #, no-c-format
 msgid "Compressing…"
 msgstr ""
