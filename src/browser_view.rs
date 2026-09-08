@@ -25,6 +25,8 @@ mod imp {
         #[template_child]
         pub column_view: TemplateChild<gtk::ColumnView>,
         #[template_child]
+        pub list_scroll: TemplateChild<gtk::ScrolledWindow>,
+        #[template_child]
         pub columns_scroll: TemplateChild<gtk::ScrolledWindow>,
         #[template_child]
         pub columns_box: TemplateChild<gtk::Box>,
@@ -60,6 +62,8 @@ mod imp {
         pub preview_gen: Cell<u64>,
         /// Set while a rebuild of the strip is waiting for the current change to end.
         pub columns_pending: Cell<bool>,
+        /// Set while the columns of the list are waiting to be fitted to a new width.
+        pub fit_pending: Cell<bool>,
         /// Where a drag is hovering over the strip, and the frame callback that pushes
         /// the strip along and marks the column the drop would land in.
         pub drag_at: Cell<(f64, f64)>,
@@ -137,6 +141,7 @@ mod imp {
                 stack: Default::default(),
                 grid_view: Default::default(),
                 column_view: Default::default(),
+                list_scroll: Default::default(),
                 columns_scroll: Default::default(),
                 columns_box: Default::default(),
                 miller_scroll: Default::default(),
@@ -145,6 +150,7 @@ mod imp {
                 preview_column: Default::default(),
                 preview_gen: Default::default(),
                 columns_pending: Default::default(),
+                fit_pending: Default::default(),
                 drag_at: Default::default(),
                 drag_tick: Default::default(),
                 error_page: Default::default(),
@@ -533,6 +539,9 @@ async fn count_children(dir: &gio::File) -> Option<u64> {
 
 /// Width of the emblem margin beside a grid icon, as in Nautilus.
 const EMBLEM_MARGIN: i32 = 18;
+
+/// What the name column is left with before the columns beside it start giving way.
+const NAME_MIN_WIDTH: i32 = 220;
 
 /// Lock shown on files the user cannot read or change, dimmed like Nautilus emblems. It
 /// keeps its place when empty so icons line up across cells.
@@ -1612,10 +1621,6 @@ impl BrowserView {
                 &gtk::Label::builder()
                     .xalign(0.0)
                     .ellipsize(gtk::pango::EllipsizeMode::Middle)
-                    // A floor under the name: squeezed against the other columns it
-                    // would otherwise shrink to an ellipsis and say nothing at all.
-                    // Below it the list scrolls sideways instead.
-                    .width_chars(14)
                     .build(),
             );
             bx.append(&emblem_image());
@@ -1768,6 +1773,16 @@ impl BrowserView {
                 move |_, _| view.apply_visible_columns()
             ),
         );
+        // Resizing the window redivides the width; the page size of the scroll is what
+        // the list actually got.
+        self.imp()
+            .list_scroll
+            .hadjustment()
+            .connect_page_size_notify(glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                move |_| view.queue_visible_columns()
+            ));
 
         // Header clicks drive FolderModel sort props instead of the column view's own sorter.
         for (col, key) in [
@@ -1810,11 +1825,44 @@ impl BrowserView {
         self.sync_sort_header();
     }
 
-    /// Show the columns the `visible-columns` key names; the name column always stays.
+    /// The width is learnt while the list is being given it, and hiding a column then leaves
+    /// the layout half done; the next idle is soon enough and outside the allocation.
+    fn queue_visible_columns(&self) {
+        if self.imp().fit_pending.replace(true) {
+            return;
+        }
+        glib::idle_add_local_once(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move || {
+                view.imp().fit_pending.set(false);
+                view.apply_visible_columns();
+            }
+        ));
+    }
+
+    /// Show the columns the `visible-columns` key names, as many of them as there is room
+    /// for. The name column takes what the others leave, so in a narrow window they are
+    /// dropped from the right until the name is readable again, rather than the name
+    /// shrinking to an ellipsis or the list running off the edge.
     fn apply_visible_columns(&self) {
-        let on = self.imp().settings.strv("visible-columns");
-        for (key, col) in self.imp().columns.borrow().iter() {
-            col.set_visible(on.iter().any(|k| k == key));
+        let imp = self.imp();
+        let on = imp.settings.strv("visible-columns");
+        let width = imp.list_scroll.width();
+        // Before the first allocation there is no width to divide; the key decides alone.
+        let mut room = if width > 0 {
+            width - NAME_MIN_WIDTH
+        } else {
+            i32::MAX
+        };
+        for (key, col) in imp.columns.borrow().iter() {
+            // The star is a button wide and worth its place at any size.
+            let cost = if *key == "star" { 0 } else { col.fixed_width() };
+            let show = on.iter().any(|k| k == key) && cost <= room;
+            if show {
+                room -= cost;
+            }
+            col.set_visible(show);
         }
     }
 

@@ -87,9 +87,10 @@ The grid can show up to three lines under each name: size or item count, date,
 permissions, type, MIME type, owner, group; "Captions…" in the view menu picks them. In
 the list, "Visible Columns…" chooses among size, type, modified, accessed, created,
 owner, group, permissions and a star column that toggles favourites; the name column
-always stays, and only name, size, type and modified sort. A name too long for its column
-is cut in the middle and shown whole on hover, and the column stops shrinking at about
-fourteen characters, below which the list scrolls sideways instead. Type shows the extension —
+always stays, and only name, size, type and modified sort. The name column takes whatever
+the others leave, so as a window narrows the columns are dropped from the right, one after
+another, rather than the name being squeezed into an ellipsis; they come back as it widens.
+A name too long for the column it has is cut in the middle and shown whole on hover. Type shows the extension —
 "txt", "tar.gz", "Folder" — and falls back to the full description, on a tooltip, for
 names without one. Every column but the name and the star can be resized by dragging its
 header edge.
@@ -161,8 +162,9 @@ folder holding the item and selects it there.
 Space shows the selected file without opening an application, and closes the preview
 again; Escape closes it too. Images, video, sound and text files are drawn by Spiral
 itself, and PDFs a page at a time. Source code is coloured by GtkSourceView, which knows
-the language from the name and the type of the file; lines are not wrapped, since source is
-read the way it was written, and long ones scroll sideways. The Left and Right arrows walk
+the language from the name and the type of the file; the page itself keeps the colours of
+the theme, only the words are the scheme's. Lines are not wrapped, since source is read the
+way it was written, and long ones scroll sideways. The Left and Right arrows walk
 through the folder without leaving the preview, Page Up and Page Down turn the pages of a
 PDF, and Return hands the file to its application. The preview has no close button: it is
 a preview, and the keys that opened it close it again.

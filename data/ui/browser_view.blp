@@ -30,7 +30,7 @@ template $SpiralBrowserView : Box {
 
       StackPage {
         name: "list";
-        child: ScrolledWindow {
+        child: ScrolledWindow list_scroll {
           styles ["spiral-list-view"]
           child: ColumnView column_view {
             enable-rubberband: true;
