@@ -553,6 +553,9 @@ const EMBLEM_MARGIN: i32 = 18;
 /// What the name column is left with before the columns beside it start giving way.
 const NAME_MIN_WIDTH: i32 = 220;
 
+/// The star column: one flat button wide.
+const STAR_WIDTH: i32 = 40;
+
 /// Lock shown on files the user cannot read or change, dimmed like Nautilus emblems. It
 /// keeps its place when empty so icons line up across cells.
 pub(crate) fn emblem_image() -> gtk::Image {
@@ -1922,7 +1925,11 @@ impl BrowserView {
                 crate::starred::is_starred(&file_utils::file_of(&info)),
             );
         });
-        gtk::ColumnViewColumn::new(Some(&gettext("Star")), Some(factory))
+        // No header title and no more room than the button: the star is an icon people
+        // recognise, and "Visible Columns" is where it is named.
+        let column = gtk::ColumnViewColumn::new(None, Some(factory));
+        column.set_fixed_width(STAR_WIDTH);
+        column
     }
 
     fn sync_sort_header(&self) {
