@@ -23,8 +23,14 @@ because a file another program is still writing is seen empty first, and the ver
 from that snapshot would otherwise stand until the next start whenever the empty file and
 the finished one share a modification second.
 
-At most four thumbnailers run at once, newest requests first, so the rows on screen win
-over the ones you scrolled past.
+Thumbnailers run a few at a time, one fewer than the machine has cores and at most eight,
+newest requests first, so the rows on screen win over the ones you scrolled past. One that
+takes longer than twenty seconds is killed, so a file that hangs a decoder costs one
+thumbnail rather than every thumbnail after it.
+
+Answers are kept in memory until 2048 of them or 64 MB of decoded picture have gathered,
+and then the oldest go. Walking through a folder of thousands of pictures therefore costs
+a bounded amount of memory, and scrolling back over the last screens still finds them.
 
 Thumbnailers write plain PNGs, but GIO only accepts a cached thumbnail as valid if the PNG
 carries `Thumb::URI` and `Thumb::MTime` text chunks. Spiral re-saves every generated
