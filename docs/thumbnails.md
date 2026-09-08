@@ -15,11 +15,12 @@ matters for that second case: a thumbnail asked for before the order lands is fo
 about to move somewhere else. A search is not waited for, since its results arrive for as
 long as it runs.
 
-Waiting for the cell matters because the list widgets bind many more cells than they show —
-they keep a pool of them, and a view on a stack page that is not showing binds as well — so
-a folder of a few thousand pictures used to hand twenty times as many files to a decoder as
-it displayed. The request is dropped when the row is scrolled away or rebound, and it is
-carried at low priority, since the folder appearing matters more than the pictures in it.
+Waiting for the cell matters because the list widgets bind many more cells than they show:
+a list keeps two hundred rows and a grid thirty rows of cells, whatever the window shows.
+Only the view on screen holds the model, so the other two bind nothing, and the grid is
+told how many columns fit so its rows are no wider than the window. The request is dropped
+when the row is scrolled away or rebound, and it is carried at low priority, since the
+folder appearing matters more than the pictures in it.
 
 Pictures larger than `thumbnail-limit` (50 MB by default) are left with their icon: reading
 one costs time and memory out of proportion to a thumbnail. Video and sound are not weighed

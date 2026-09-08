@@ -27,6 +27,8 @@ template $SpiralBrowserView : Box {
           styles ["spiral-grid-view"]
           child: GridView grid_view {
             enable-rubberband: true;
+            // The most a wide window at the smallest zoom can hold; the view lowers it
+            // to what fits, since the grid keeps thirty rows of cells bound per column.
             max-columns: 20;
             min-columns: 1;
           };
