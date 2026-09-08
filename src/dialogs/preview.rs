@@ -1002,8 +1002,10 @@ struct Probe {
     is_dir: bool,
     content_type: String,
     path: Option<PathBuf>,
-    /// The thumbnail the listing already holds, which has the proportions of the file.
-    thumbnail: Option<String>,
+    /// What names the thumbnail the cache may already hold, which has the proportions of
+    /// the file. Looking for it is a read, so it waits for the worker with the rest.
+    uri: String,
+    mtime: u64,
 }
 
 /// The shape a file wants: at its own size, never enlarged; as proportions to fill the
@@ -1022,9 +1024,11 @@ impl Probe {
             is_dir: file_utils::is_dir(info),
             content_type: info.content_type().unwrap_or_default().to_string(),
             path: file_utils::file_of(info).path(),
-            thumbnail: info
-                .attribute_byte_string("thumbnail::path")
-                .map(|path| path.to_string()),
+            uri: file_utils::file_of(info).uri().to_string(),
+            mtime: info
+                .modification_date_time()
+                .map(|d| d.to_unix() as u64)
+                .unwrap_or(0),
         }
     }
 
@@ -1070,7 +1074,8 @@ impl Probe {
 
     /// Reading the header of the thumbnail is a few bytes and no decode.
     fn thumbnail_size(&self) -> Option<(f64, f64)> {
-        let (_, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(self.thumbnail.as_ref()?)?;
+        let png = crate::thumbnails::cached_png(&self.uri, self.mtime)?;
+        let (_, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(png)?;
         (width > 0 && height > 0).then_some((width as f64, height as f64))
     }
 }
