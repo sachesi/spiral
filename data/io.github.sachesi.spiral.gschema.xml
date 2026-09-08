@@ -57,6 +57,14 @@
       <default>false</default>
       <summary>Expandable folders in list view</summary>
     </key>
+    <key name="show-root" type="b">
+      <default>true</default>
+      <summary>Show the root of the filesystem in the sidebar</summary>
+    </key>
+    <key name="show-favorites" type="b">
+      <default>true</default>
+      <summary>Show Favorites in the sidebar</summary>
+    </key>
     <key name="use-column-view" type="b">
       <default>false</default>
       <summary>Offer the column view</summary>

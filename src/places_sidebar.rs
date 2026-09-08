@@ -144,6 +144,18 @@ mod imp {
             ];
             self.monitor_handlers.replace(handlers.into());
 
+            // Both places are the user's to keep or drop.
+            for key in ["show-root", "show-favorites"] {
+                crate::prefs::settings().connect_changed(
+                    Some(key),
+                    glib::clone!(
+                        #[strong]
+                        rebuild,
+                        move |_, _| rebuild()
+                    ),
+                );
+            }
+
             // The GTK file chooser and Nautilus edit the same bookmarks file.
             let bookmarks = gio::File::for_path(crate::bookmarks::path());
             if let Ok(m) =
@@ -406,12 +418,22 @@ impl PlacesSidebar {
                 SECTION_PLACES,
             ));
         }
-        list.append(&place_row(
-            "starred-symbolic",
-            &gettext("Favorites"),
-            &gio::File::for_uri(crate::starred::URI),
-            SECTION_PLACES,
-        ));
+        if crate::prefs::show_root() {
+            list.append(&place_row(
+                "drive-harddisk-symbolic",
+                &gettext("Root"),
+                &gio::File::for_path("/"),
+                SECTION_PLACES,
+            ));
+        }
+        if crate::prefs::show_favorites() {
+            list.append(&place_row(
+                "starred-symbolic",
+                &gettext("Favorites"),
+                &gio::File::for_uri(crate::starred::URI),
+                SECTION_PLACES,
+            ));
+        }
         list.append(&place_row(
             "user-trash-symbolic",
             &gettext("Trash"),

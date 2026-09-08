@@ -13,11 +13,12 @@ the other tabs; dragging a tab out of the tab bar also gives it a window. Ctrl+S
 brings back the last closed tab. The last tab leaving closes the window. Window size is
 remembered, tabs are not.
 
-The sidebar lists Home, Desktop, Favorites and Trash, then the XDG user folders and the
-bookmarks from `~/.config/gtk-3.0/bookmarks` (the same file the GTK file chooser uses),
-then every volume and mount the system knows about. Bookmarks can be renamed, removed
-and reordered by dragging; drop a folder on the empty area below the list to bookmark
-it. Unmounted volumes mount when activated. Mounted ones get an eject button, and if a
+The sidebar lists Home, Desktop, Root, Favorites and Trash, then the XDG user folders and the
+bookmarks from `~/.config/gtk-3.0/bookmarks` (the same file the GTK file chooser uses), then
+every volume and mount the system knows about. Bookmarks can be renamed, removed and
+reordered by dragging; drop a folder on the empty area below the list to bookmark it. Root is
+the top of the filesystem; it and Favorites can each be turned off in Preferences, under
+Sidebar. Unmounted volumes mount when activated. Mounted ones get an eject button, and if a
 removable drive has files in its trash you are asked whether to empty it first.
 
 Below roughly 680 px the sidebar folds away behind a button and the navigation controls
