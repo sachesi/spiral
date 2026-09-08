@@ -8,8 +8,11 @@ use gtk::subclass::prelude::*;
 
 use crate::enums::SortKey;
 
-/// How many files a folder has to be listing before its order waits for the end of it.
-const SORT_WHEN_LOADED_ABOVE: u32 = 2000;
+/// How many files a listing may hold and still go on the pipeline before it is complete.
+const SHOW_WHILE_LISTING_UP_TO: u32 = 2000;
+
+/// How long a listing may keep the window blank before what has arrived is shown.
+const SHOW_LISTING_AFTER: std::time::Duration = std::time::Duration::from_secs(1);
 use crate::file_utils;
 use crate::{gio, glib, gtk};
 
@@ -61,7 +64,10 @@ mod imp {
         /// Files the monitor reported, waiting for the next pass over the list.
         pub pending: RefCell<Vec<gio::File>>,
         pub refresh_queued: Cell<bool>,
-        /// Set while a big folder is listing and its order is waiting for the end of it.
+        /// Whether the listing is on the pipeline; a big one waits there for its end,
+        /// see `show_listing`.
+        listing_shown: Cell<bool>,
+        /// Set while a listing shown before its end is waiting for its order.
         sort_deferred: Cell<bool>,
         /// Root of the pipeline: `dir_list`, or `starred_store` for `starred:///`.
         filtered: gtk::FilterListModel,
@@ -118,7 +124,7 @@ mod imp {
             ));
 
             let filtered =
-                gtk::FilterListModel::new(Some(dir_list.clone()), Some(every_filter.clone()));
+                gtk::FilterListModel::new(None::<gio::ListModel>, Some(every_filter.clone()));
             let sorted = gtk::SortListModel::new(Some(filtered.clone()), Some(sorter.clone()));
             let tree = Rc::new(Cell::new(crate::prefs::tree_view()));
             let selection =
@@ -144,6 +150,7 @@ mod imp {
                 monitor: Default::default(),
                 pending: Default::default(),
                 refresh_queued: Default::default(),
+                listing_shown: Default::default(),
                 sort_deferred: Default::default(),
                 filtered,
                 starred_store: gio::ListStore::new::<gio::FileInfo>(),
@@ -186,8 +193,11 @@ mod imp {
                 obj,
                 move |dl| {
                     let imp = obj.imp();
-                    if !dl.is_loading() && imp.sort_deferred.replace(false) {
-                        imp.sorted.set_sorter(Some(&imp.sorter));
+                    if !dl.is_loading() {
+                        imp.show_listing();
+                        if imp.sort_deferred.replace(false) {
+                            imp.sorted.set_sorter(Some(&imp.sorter));
+                        }
                     }
                     // While searching, the search decides when loading ends.
                     if !imp.searching.get() {
@@ -195,21 +205,15 @@ mod imp {
                     }
                 }
             ));
-            // A folder still being listed arrives in batches of thousands, and sorting
-            // each batch into what is already there makes the sorted model rebuild and
-            // every model and view below it follow. Past a few thousand files that costs
-            // far more than an order nobody can read yet is worth, so a big folder is put
-            // in order once, when the listing ends.
+            // A folder arrives in batches of up to five thousand files. A first batch that
+            // is small enough to be the whole folder goes on the pipeline at once; anything
+            // more waits for the end of the listing, see `show_listing`.
             self.dir_list.connect_items_changed(glib::clone!(
                 #[weak]
                 obj,
-                move |dl, _, _, _| {
-                    let imp = obj.imp();
-                    if dl.is_loading()
-                        && dl.n_items() > SORT_WHEN_LOADED_ABOVE
-                        && !imp.sort_deferred.replace(true)
-                    {
-                        imp.sorted.set_sorter(gtk::Sorter::NONE);
+                move |dl, _, _, added| {
+                    if added > 0 && dl.is_loading() && dl.n_items() <= SHOW_WHILE_LISTING_UP_TO {
+                        obj.imp().show_listing();
                     }
                 }
             ));
@@ -256,11 +260,67 @@ mod imp {
     }
 
     impl FolderModel {
-        fn set_location(&self, file: Option<gio::File>) {
+        /// Put the listing on the pipeline, once. Sorting a batch of files into what is
+        /// already there makes the sorted model rebuild, and every model and view below
+        /// it follow: the view binds hundreds of cells each time. A folder that does not
+        /// fit in one batch is therefore kept off the pipeline until it is complete, and
+        /// sorted once. One that is taking long is shown anyway, in the order it arrives,
+        /// and put in order at the end, so a slow disk or share does not leave the window
+        /// blank.
+        pub(super) fn show_listing(&self) {
+            if self.listing_shown.replace(true) || self.is_starred() {
+                return;
+            }
+            if self.dir_list.is_loading() && self.dir_list.n_items() > SHOW_WHILE_LISTING_UP_TO {
+                self.sort_deferred.set(true);
+                self.sorted.set_sorter(gtk::Sorter::NONE);
+            }
+            // The search results are what is shown while searching; the listing goes on
+            // when the search ends.
+            if !self.searching.get() {
+                self.filtered.set_model(Some(&self.dir_list));
+            }
+        }
+
+        /// List `file`, or nothing, from the start. The old listing comes off the
+        /// pipeline first, so the views empty once rather than once per batch of the new
+        /// folder, and go on again through `show_listing`.
+        pub(super) fn start_listing(&self, file: Option<&gio::File>) {
+            self.listing_shown.set(false);
+            if !self.searching.get() {
+                self.filtered.set_model(gio::ListModel::NONE);
+            }
+            if self.sort_deferred.replace(false) {
+                self.sorted.set_sorter(Some(&self.sorter));
+            }
+            // The directory list ignores the file it already has, so listing it again
+            // takes a detour through nothing.
+            if self.dir_list.file().as_ref() == file {
+                self.dir_list.set_file(gio::File::NONE);
+            }
+            self.dir_list.set_file(file);
+            if file.is_some() {
+                glib::timeout_add_local_once(
+                    SHOW_LISTING_AFTER,
+                    glib::clone!(
+                        #[weak(rename_to = obj)]
+                        self.obj(),
+                        move || {
+                            let imp = obj.imp();
+                            if imp.dir_list.is_loading() && imp.dir_list.n_items() > 0 {
+                                imp.show_listing();
+                            }
+                        }
+                    ),
+                );
+            }
+        }
+
+        pub(super) fn set_location(&self, file: Option<gio::File>) {
             let starred = file
                 .as_ref()
                 .is_some_and(crate::starred::is_starred_location);
-            self.dir_list.set_file(file.as_ref().filter(|_| !starred));
+            self.start_listing(file.as_ref().filter(|_| !starred));
             if let Some(old) = self.monitor.take() {
                 old.cancel();
             }
@@ -283,8 +343,6 @@ mod imp {
             if starred {
                 self.filtered.set_model(Some(&self.starred_store));
                 self.obj().load_starred();
-            } else {
-                self.filtered.set_model(Some(&self.dir_list));
             }
             self.sync_hidden();
         }
@@ -346,13 +404,15 @@ mod imp {
                 } else {
                     self.search_gen.set(self.search_gen.get() + 1);
                     self.search_store.remove_all();
-                    let root: &gio::ListModel = if self.is_starred() {
-                        self.starred_store.upcast_ref()
+                    let root: Option<&gio::ListModel> = if self.is_starred() {
+                        Some(self.starred_store.upcast_ref())
+                    } else if self.listing_shown.get() {
+                        Some(self.dir_list.upcast_ref())
                     } else {
-                        self.dir_list.upcast_ref()
+                        None
                     };
-                    self.filtered.set_model(Some(root));
-                    self.set_loading(false);
+                    self.filtered.set_model(root);
+                    self.set_loading(!self.is_starred() && self.dir_list.is_loading());
                 }
                 self.obj().notify_searching();
             }
@@ -515,9 +575,7 @@ impl FolderModel {
             self.load_starred();
             return;
         }
-        let file = self.location();
-        imp.dir_list.set_file(gio::File::NONE);
-        imp.dir_list.set_file(file.as_ref());
+        imp.start_listing(self.location().as_ref());
     }
 
     /// Drop the results and search again after a short pause, so typing does not start a
