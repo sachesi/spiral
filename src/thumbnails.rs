@@ -17,8 +17,24 @@ use gtk::prelude::*;
 use crate::{gdk, gio, glib, gtk};
 
 const SIZE: i32 = 256;
-const MAX_PARALLEL: usize = 4;
-const CACHE_CAP: usize = 512;
+
+/// Thumbnailers to run at once. One core is left to the interface, which is drawing the
+/// rows they are for; a folder of thousands of pictures is otherwise limited by a number
+/// picked for the machines of a decade ago.
+fn max_parallel() -> usize {
+    std::thread::available_parallelism()
+        .map(|n| n.get().saturating_sub(1).clamp(2, 8))
+        .unwrap_or(4)
+}
+
+/// How long one thumbnailer may take before it is killed.
+const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
+
+/// Decoded thumbnails kept in memory, by count and by bytes. Scrolling a folder of
+/// thousands of pictures otherwise either throws the cache away wholesale or grows it
+/// until it is a second copy of the folder.
+const CACHE_ENTRIES: usize = 2048;
+const CACHE_BYTES: usize = 64 * 1024 * 1024;
 
 /// URI, modification time and size. The size belongs in the key because a file being
 /// written is seen empty first, and a verdict of "no thumbnail" taken from that snapshot
@@ -26,7 +42,7 @@ const CACHE_CAP: usize = 512;
 type Key = (String, u64, u64);
 
 thread_local! {
-    static CACHE: RefCell<HashMap<Key, Option<gdk::Texture>>> = RefCell::new(HashMap::new());
+    static CACHE: RefCell<Cache> = RefCell::new(Cache::default());
     /// Loads in progress; later requests for the same key wait for the first one.
     static PENDING: RefCell<HashMap<Key, Vec<oneshot::Sender<Option<gdk::Texture>>>>> = RefCell::new(HashMap::new());
     static RUNNING: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
@@ -35,6 +51,41 @@ thread_local! {
 }
 
 static SEQ: AtomicU64 = AtomicU64::new(0);
+
+/// What has been loaded, oldest first. Answers stay until the room they take is wanted by
+/// newer ones; a folder walked through end to end must not cost the memory of every
+/// picture in it, and must not lose the last screen either.
+#[derive(Default)]
+struct Cache {
+    seen: HashMap<Key, Option<gdk::Texture>>,
+    order: std::collections::VecDeque<Key>,
+    bytes: usize,
+}
+
+fn texture_bytes(texture: &Option<gdk::Texture>) -> usize {
+    texture.as_ref().map_or(0, |t| {
+        t.width().max(0) as usize * t.height().max(0) as usize * 4
+    })
+}
+
+impl Cache {
+    fn insert(&mut self, key: Key, texture: Option<gdk::Texture>) {
+        if let Some(old) = self.seen.insert(key.clone(), texture.clone()) {
+            self.bytes -= texture_bytes(&old);
+        } else {
+            self.order.push_back(key);
+        }
+        self.bytes += texture_bytes(&texture);
+        while self.order.len() > CACHE_ENTRIES || self.bytes > CACHE_BYTES {
+            let Some(oldest) = self.order.pop_front() else {
+                break;
+            };
+            if let Some(gone) = self.seen.remove(&oldest) {
+                self.bytes -= texture_bytes(&gone);
+            }
+        }
+    }
+}
 
 struct Thumbnailer {
     exec: String,
@@ -57,7 +108,7 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
         .map(|d| d.to_unix() as u64)
         .unwrap_or(0);
     let key = (uri.clone(), mtime, info.size().max(0) as u64);
-    if let Some(cached) = CACHE.with(|c| c.borrow().get(&key).cloned()) {
+    if let Some(cached) = CACHE.with(|c| c.borrow().seen.get(&key).cloned()) {
         return cached;
     }
 
@@ -173,19 +224,17 @@ async fn generate_task(key: Key, source: Source) {
 }
 
 fn remember(key: Key, texture: Option<gdk::Texture>) {
-    CACHE.with(|c| {
-        let mut c = c.borrow_mut();
-        if c.len() >= CACHE_CAP {
-            c.clear();
-        }
-        c.insert(key, texture);
-    });
+    CACHE.with(|c| c.borrow_mut().insert(key, texture));
 }
 
 async fn acquire() {
+    thread_local! {
+        static LIMIT: usize = max_parallel();
+    }
+    let limit = LIMIT.with(|l| *l);
     loop {
         if RUNNING.with(|r| {
-            if r.get() < MAX_PARALLEL {
+            if r.get() < limit {
                 r.set(r.get() + 1);
                 true
             } else {
@@ -507,24 +556,16 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> bool {
     cmd.arg("--");
     cmd.args(&argv);
     // The seccomp memfd must stay open until the child has started.
-    let run = cmd
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::piped())
-        .output();
+    let run = run_bounded(&mut cmd, TIMEOUT);
     drop(sandbox.seccomp);
-    if run.as_ref().is_ok_and(|o| o.status.success()) {
+    if run.as_ref().is_ok_and(|(ok, _)| *ok) {
         let _ = std::fs::rename(work.join("thumb.png"), output);
     }
     let _ = std::fs::remove_dir_all(&work);
     match run {
-        Ok(o) if o.status.success() && output.exists() => true,
-        Ok(o) => {
-            glib::g_debug!(
-                "spiral",
-                "thumbnailer {argv:?} failed ({}): {}",
-                o.status,
-                String::from_utf8_lossy(&o.stderr).trim()
-            );
+        Ok((true, _)) if output.exists() => true,
+        Ok((_, err)) => {
+            glib::g_debug!("spiral", "thumbnailer {argv:?} failed: {err}");
             false
         }
         Err(e) => {
@@ -532,6 +573,53 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> bool {
             false
         }
     }
+}
+
+/// Run `cmd` to completion, killing it once it outstays `limit`, and return whether it
+/// succeeded along with what it said on stderr. A decoder stuck on a malformed file would
+/// otherwise hold one of the few generation slots for the rest of the session.
+fn run_bounded(
+    cmd: &mut std::process::Command,
+    limit: std::time::Duration,
+) -> std::io::Result<(bool, String)> {
+    let mut child = cmd
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
+        .spawn()?;
+    // stderr is drained on a thread of its own: a child that fills the pipe would wait
+    // for a reader that is here, waiting for the child.
+    let mut pipe = child.stderr.take();
+    let reader = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        if let Some(pipe) = pipe.as_mut() {
+            let _ = std::io::Read::read_to_end(&mut std::io::Read::take(pipe, 64 * 1024), &mut buf);
+        }
+        buf
+    });
+    let deadline = std::time::Instant::now() + limit;
+    let mut nap = std::time::Duration::from_millis(1);
+    let mut timed_out = false;
+    let status = loop {
+        if let Some(status) = child.try_wait()? {
+            break status;
+        }
+        if std::time::Instant::now() >= deadline {
+            timed_out = true;
+            let _ = child.kill();
+            break child.wait()?;
+        }
+        std::thread::sleep(nap);
+        nap = (nap * 2).min(std::time::Duration::from_millis(20));
+    };
+    let err = reader
+        .join()
+        .map(|b| String::from_utf8_lossy(&b).trim().to_string())
+        .unwrap_or_default();
+    if timed_out {
+        return Ok((false, format!("gave up after {} s", limit.as_secs())));
+    }
+    Ok((status.success(), format!("{status}: {err}")))
 }
 
 /// System thumbnailers win over gdk-pixbuf, matching GNOME (gdk-pixbuf ships one itself).
