@@ -7,12 +7,19 @@ files, all files, or none.
 
 ## How one gets made
 
-A thumbnail is only ever asked for once the cell holding it is on screen. The list widgets
-bind many more cells than they show — they keep a pool of them, and a view on a stack page
-that is not showing binds as well — so a folder of a few thousand pictures used to hand
-twenty times as many files to a decoder as it displayed. The request waits for the cell to
-be mapped and is dropped when the row is scrolled away or rebound, and it is carried at low
-priority, since the folder appearing matters more than the pictures in it.
+A thumbnail is only ever asked for once the cell holding it is on screen and the folder has
+finished listing. Waiting for the listing matters because a folder of more than a couple of
+thousand files is put in order only when the listing ends: a thumbnail asked for before that
+is for a file about to move somewhere else. Opening a folder of fifty thousand files spent
+every one of its first thirty-six requests that way, on files nowhere near the screen by the
+time they were made. A search is not waited for, since its results arrive for as long as it
+runs.
+
+Waiting for the cell matters because the list widgets bind many more cells than they show —
+they keep a pool of them, and a view on a stack page that is not showing binds as well — so
+a folder of a few thousand pictures used to hand twenty times as many files to a decoder as
+it displayed. The request is dropped when the row is scrolled away or rebound, and it is
+carried at low priority, since the folder appearing matters more than the pictures in it.
 
 Pictures larger than `thumbnail-limit` (50 MB by default) are left with their icon: reading
 one costs time and memory out of proportion to a thumbnail. Video and sound are not weighed

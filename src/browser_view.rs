@@ -634,6 +634,28 @@ pub(crate) fn unbind_icon(image: &gtk::Image) {
     image.remove_css_class("file-thumbnail");
 }
 
+/// Wait until the folder has stopped listing. A big folder is put in order once its
+/// listing ends, so a thumbnail asked for before that is for a file about to move somewhere
+/// else: opening a folder of fifty thousand files spent every one of its first requests
+/// that way, on files that were nowhere near the screen by the time they were made. A
+/// search is not waited for, since its results arrive for as long as it runs.
+async fn folder_listed(model: &FolderModel) {
+    if !model.loading() || model.searching() {
+        return;
+    }
+    let (tx, rx) = futures_channel::oneshot::channel();
+    let tx = RefCell::new(Some(tx));
+    let id = model.connect_loading_notify(move |model| {
+        if !model.loading()
+            && let Some(tx) = tx.borrow_mut().take()
+        {
+            let _ = tx.send(());
+        }
+    });
+    let _ = rx.await;
+    model.disconnect(id);
+}
+
 /// Wait until `image` is on screen. The list widgets bind far more cells than they show:
 /// they keep a pool of them, and the views on the stack pages that are not showing bind as
 /// well, so binding a cell says nothing about anyone ever looking at it. A folder of a few
@@ -1266,11 +1288,13 @@ impl BrowserView {
             image.remove_css_class("hidden-file");
         }
         let info = info.clone();
+        let model = self.model();
         let (fut, handle) = futures_util::future::abortable(glib::clone!(
             #[weak]
             image,
             async move {
                 on_screen(&image).await;
+                folder_listed(&model).await;
                 if let Some(texture) = crate::thumbnails::load(&info, at).await {
                     image.set_paintable(Some(&texture));
                     image.add_css_class("file-thumbnail");
