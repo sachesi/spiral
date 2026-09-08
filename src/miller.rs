@@ -501,15 +501,15 @@ impl BrowserView {
                 .sync_create()
                 .build();
             bx.append(&image);
-            bx.append(
-                &gtk::Label::builder()
-                    .xalign(0.0)
-                    .hexpand(true)
-                    .ellipsize(gtk::pango::EllipsizeMode::Middle)
-                    // Let the column width decide, not the longest name in it.
-                    .max_width_chars(1)
-                    .build(),
-            );
+            let label = gtk::Label::builder()
+                .xalign(0.0)
+                .hexpand(true)
+                .ellipsize(gtk::pango::EllipsizeMode::Middle)
+                // Let the column width decide, not the longest name in it.
+                .max_width_chars(1)
+                .build();
+            crate::browser_view::name_tooltip(&label);
+            bx.append(&label);
             bx.append(&emblem_image());
             item.set_child(Some(&bx));
             if current {
@@ -531,7 +531,6 @@ impl BrowserView {
             view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
-            label.set_tooltip_text(Some(&info.display_name()));
             item.set_accessible_label(&info.display_name());
         });
         factory.connect_unbind(|_, item| {
