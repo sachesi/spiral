@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-08 09:25+0300\n"
+"POT-Creation-Date: 2026-09-08 09:52+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -67,14 +67,14 @@ msgstr "Розгортувані теки у вигляді списку"
 
 #: data/io.github.sachesi.spiral.gschema.xml:62
 msgid "Offer the column view"
-msgstr "Пропонувати перегляд у вигляді стовпчиків"
+msgstr "Пропонувати режим перегляду у вигляді стовпчиків"
 
 #: data/io.github.sachesi.spiral.gschema.xml:63
 msgid ""
 "Adds the columns to the views the view button and the menu switch between."
 msgstr ""
-"Додає стовпчики до переглядів, між якими перемикають кнопка перегляду та "
-"меню."
+"Додає стовпчики до режимів перегляду, між якими перемикають кнопка перегляду "
+"та меню."
 
 #: data/io.github.sachesi.spiral.gschema.xml:67
 msgid "Remember the view mode of each folder"
@@ -445,7 +445,7 @@ msgstr "_Пересунути"
 msgid "_Copy"
 msgstr "_Копіювати"
 
-#: src/browser_actions.rs:814 src/browser_view.rs:959
+#: src/browser_actions.rs:814 src/browser_view.rs:968
 #: src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
@@ -498,7 +498,7 @@ msgstr "Усі об’єкти у смітнику буде остаточно �
 msgid "_Empty Trash"
 msgstr "_Спорожнити смітник"
 
-#: src/browser_view.rs:484
+#: src/browser_view.rs:490
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
@@ -506,7 +506,7 @@ msgstr[0] "Вибрано %d теку"
 msgstr[1] "Вибрано %d теки"
 msgstr[2] "Вибрано %d тек"
 
-#: src/browser_view.rs:488
+#: src/browser_view.rs:494
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
@@ -514,44 +514,44 @@ msgstr[0] "Вибрано %d об’єкт"
 msgstr[1] "Вибрано %d об’єкти"
 msgstr[2] "Вибрано %d об’єктів"
 
-#: src/browser_view.rs:596
+#: src/browser_view.rs:605
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Вилучити з вибраного"
 
-#: src/browser_view.rs:598
+#: src/browser_view.rs:607
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Додати до вибраного"
 
-#: src/browser_view.rs:970 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:979 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:647
 #, no-c-format
 msgid "_OK"
 msgstr "_Гаразд"
 
-#: src/browser_view.rs:992
+#: src/browser_view.rs:1001
 #, no-c-format
 msgid "No Results Found"
 msgstr "Нічого не знайдено"
 
-#: src/browser_view.rs:994 ui/browser_view.ui:98
+#: src/browser_view.rs:1003 ui/browser_view.ui:98
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Тека порожня"
 
-#: src/browser_view.rs:1014
+#: src/browser_view.rs:1023
 #, no-c-format
 msgid "Loading…"
 msgstr "Завантаження…"
 
-#: src/browser_view.rs:1030
+#: src/browser_view.rs:1039
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Вибрано «%s»"
 
-#: src/browser_view.rs:1035
+#: src/browser_view.rs:1044
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -560,23 +560,23 @@ msgstr[1] "%d інші об’єкти вибрано"
 msgstr[2] "%d інших об’єктів вибрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1041
+#: src/browser_view.rs:1050
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1662
+#: src/browser_view.rs:1667
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:1742 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1747 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr "Розташування"
 
-#: src/browser_view.rs:1864 src/dialogs/columns.rs:25
+#: src/browser_view.rs:1912 src/dialogs/columns.rs:25
 #, no-c-format
 msgid "Star"
 msgstr "Улюблене"
@@ -760,7 +760,8 @@ msgstr "У вигляді стовпчиків"
 msgid ""
 "A third view drawing the path as a strip of lists, one folder per column"
 msgstr ""
-"Третій перегляд, що малює шлях смугою списків, по одній теці на стовпчик"
+"Третій режим перегляду, що малює шлях смугою списків, по одній теці на "
+"стовпчик"
 
 #: src/dialogs/preferences.rs:77
 #, no-c-format
