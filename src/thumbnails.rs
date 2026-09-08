@@ -401,17 +401,36 @@ pub(crate) struct Sandbox {
     pub seccomp: Option<std::fs::File>,
 }
 
-/// Say once, at startup, what an install without bubblewrap gives up. Nothing that reads a
-/// file someone else wrote runs outside it, so the answer is thumbnails, the preview of
-/// PDFs and every archive operation.
-pub fn warn_without_sandbox() {
-    if glib::find_program_in_path("bwrap").is_none() {
-        glib::g_warning!(
-            "spiral",
-            "bwrap (bubblewrap) is not installed: thumbnails, PDF previews and archive \
-             operations are turned off, because they run untrusted files through decoders \
-             that Spiral will not run unsandboxed"
-        );
+/// Try the sandbox once at startup and say what is wrong with it if anything is. Nothing
+/// that reads a file someone else wrote runs outside it, so thumbnails, the preview of PDFs
+/// and every archive operation depend on it working; a system with user namespaces turned
+/// off would otherwise simply show nothing and say nothing.
+pub fn check_sandbox() {
+    glib::spawn_future_local(async {
+        if let Some(trouble) = gio::spawn_blocking(sandbox_trouble).await.ok().flatten() {
+            glib::g_warning!(
+                "spiral",
+                "the bubblewrap sandbox does not work here, so thumbnails, PDF previews \
+                 and archive operations are turned off: {trouble}"
+            );
+        }
+    });
+}
+
+fn sandbox_trouble() -> Option<String> {
+    let Some(sandbox) = sandbox_base("/") else {
+        return Some("bwrap (bubblewrap) is not installed".into());
+    };
+    // Something harmless to run inside it, only to see whether the sandbox itself starts.
+    let inside = glib::find_program_in_path("true")?;
+    let mut cmd = std::process::Command::new(&sandbox.argv[0]);
+    cmd.args(&sandbox.argv[1..]).arg("--").arg(&inside);
+    let outcome = run_bounded(&mut cmd, TIMEOUT);
+    drop(sandbox.seccomp);
+    match outcome {
+        Ok((true, _)) => None,
+        Ok((false, trouble)) => Some(trouble),
+        Err(e) => Some(e.to_string()),
     }
 }
 
