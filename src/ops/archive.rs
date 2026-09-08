@@ -235,27 +235,28 @@ async fn run(
     let launcher = gio::SubprocessLauncher::new(
         gio::SubprocessFlags::STDOUT_PIPE | gio::SubprocessFlags::STDERR_MERGE,
     );
-    match crate::thumbnails::sandbox_base(&cmd.argv[0]) {
-        Some(sandbox) => {
-            argv.extend(sandbox.argv);
-            for (host, inner, writable) in &cmd.binds {
-                argv.push(if *writable { "--bind" } else { "--ro-bind" }.into());
-                argv.push(host.to_string_lossy().into_owned());
-                argv.push(inner.to_string_lossy().into_owned());
-            }
-            argv.push("--chdir".into());
-            argv.push(cmd.cwd.to_string_lossy().into_owned());
-            argv.push("--".into());
-            if let Some(fd) = sandbox.seccomp {
-                let fd = OwnedFd::from(fd);
-                launcher.take_fd(
-                    fd.try_clone().map_err(|e| Fail::Failed(e.to_string()))?,
-                    &fd,
-                );
-                seccomp = Some(fd);
-            }
-        }
-        None => launcher.set_cwd(&cmd.cwd),
+    // An archive is a file from anywhere and its tool is a parser: no sandbox, no run.
+    let Some(sandbox) = crate::thumbnails::sandbox_base(&cmd.argv[0]) else {
+        return Err(Fail::Failed(gettext(
+            "bubblewrap is not installed, so archive tools cannot be run safely",
+        )));
+    };
+    argv.extend(sandbox.argv);
+    for (host, inner, writable) in &cmd.binds {
+        argv.push(if *writable { "--bind" } else { "--ro-bind" }.into());
+        argv.push(host.to_string_lossy().into_owned());
+        argv.push(inner.to_string_lossy().into_owned());
+    }
+    argv.push("--chdir".into());
+    argv.push(cmd.cwd.to_string_lossy().into_owned());
+    argv.push("--".into());
+    if let Some(fd) = sandbox.seccomp {
+        let fd = OwnedFd::from(fd);
+        launcher.take_fd(
+            fd.try_clone().map_err(|e| Fail::Failed(e.to_string()))?,
+            &fd,
+        );
+        seccomp = Some(fd);
     }
     argv.extend(cmd.argv);
     let os_argv: Vec<&std::ffi::OsStr> = argv.iter().map(std::ffi::OsStr::new).collect();

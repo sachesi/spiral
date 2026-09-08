@@ -1303,10 +1303,11 @@ async fn pdf_page(path: PathBuf, page: u32) -> Option<gdk::Texture> {
     .flatten()
 }
 
-/// Run `program` over `input` the way a thumbnailer runs: inside bubblewrap where it is
-/// installed, with the file bound read-only and one private directory to write into.
-/// `args` is handed the paths as the child sees them, `result` what it printed and the
-/// directory it wrote to, which is removed as soon as `result` returns.
+/// Run `program` over `input` the way a thumbnailer runs: inside bubblewrap, with the file
+/// bound read-only and one private directory to write into. `args` is handed the paths as
+/// the child sees them, `result` what it printed and the directory it wrote to, which is
+/// removed as soon as `result` returns. Without bubblewrap the tool is not run: it is fed
+/// a document from wherever the reader got it.
 fn run_tool<T>(
     program: &str,
     input: &Path,
@@ -1321,35 +1322,31 @@ fn run_tool<T>(
     ));
     // Not create_dir_all: a name another process got to first is refused, not adopted.
     std::fs::create_dir(&work).ok()?;
-    let sandbox = crate::thumbnails::sandbox_base(&program.to_string_lossy());
-    let (input_seen, work_seen) = match sandbox {
-        Some(_) => (Path::new("/tmp/in"), Path::new("/tmp/out")),
-        None => (input, work.as_path()),
-    };
-    let argv = args(input_seen, work_seen);
-    let mut seccomp = None;
-    let mut cmd = match sandbox {
-        Some(sandbox) => {
-            let mut cmd = std::process::Command::new(&sandbox.argv[0]);
-            cmd.args(&sandbox.argv[1..]);
-            // Drawing a page needs the fonts the document does not carry itself.
-            let font_cache = glib::user_cache_dir().join("fontconfig");
-            cmd.args(["--ro-bind-try", "/etc/fonts", "/etc/fonts"]);
-            cmd.args([
-                "--ro-bind-try",
-                "/var/cache/fontconfig",
-                "/var/cache/fontconfig",
-            ]);
-            cmd.arg("--ro-bind-try").arg(&font_cache).arg(&font_cache);
-            cmd.arg("--ro-bind").arg(input).arg(input_seen);
-            cmd.arg("--bind").arg(&work).arg(work_seen);
-            cmd.arg("--").arg(&program);
-            // The seccomp memfd must stay open until the child has started.
-            seccomp = sandbox.seccomp;
-            cmd
+    let sandbox = match crate::thumbnails::sandbox_base(&program.to_string_lossy()) {
+        Some(sandbox) => sandbox,
+        None => {
+            let _ = std::fs::remove_dir(&work);
+            return None;
         }
-        None => std::process::Command::new(&program),
     };
+    let (input_seen, work_seen) = (Path::new("/tmp/in"), Path::new("/tmp/out"));
+    let argv = args(input_seen, work_seen);
+    let mut cmd = std::process::Command::new(&sandbox.argv[0]);
+    cmd.args(&sandbox.argv[1..]);
+    // Drawing a page needs the fonts the document does not carry itself.
+    let font_cache = glib::user_cache_dir().join("fontconfig");
+    cmd.args(["--ro-bind-try", "/etc/fonts", "/etc/fonts"]);
+    cmd.args([
+        "--ro-bind-try",
+        "/var/cache/fontconfig",
+        "/var/cache/fontconfig",
+    ]);
+    cmd.arg("--ro-bind-try").arg(&font_cache).arg(&font_cache);
+    cmd.arg("--ro-bind").arg(input).arg(input_seen);
+    cmd.arg("--bind").arg(&work).arg(work_seen);
+    cmd.arg("--").arg(&program);
+    // The seccomp memfd must stay open until the child has started.
+    let seccomp = sandbox.seccomp;
     let run = cmd
         .args(&argv)
         .stderr(std::process::Stdio::piped())
