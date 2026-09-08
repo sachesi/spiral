@@ -14,7 +14,9 @@ entry matches if its MIME type equals or is a supertype of the file's, and its `
 has to be in `PATH`. Images with no system thumbnailer go to the bundled
 `spiral-thumbnailer`, a gdk-pixbuf loader that handles whatever loaders are installed
 (PNG, JPEG, GIF, BMP, TIFF, and WebP, AVIF, JPEG XL or SVG with their loader packages),
-scales to fit, and applies the EXIF orientation. Anything else gets no thumbnail.
+scales to fit, and applies the EXIF orientation. Anything else gets no thumbnail. The
+helper is a separate program because it is a decoder: it is sandboxed like any other
+thumbnailer, and nothing is ever decoded in the process drawing the window.
 
 The in-memory cache is keyed by URI, modification time and size. The size is part of it
 because a file another program is still writing is seen empty first, and the verdict taken
@@ -34,16 +36,17 @@ pulls the preview OpenDocument files embed, using `unzip`.
 
 ## Sandbox
 
-When `bwrap` is available every thumbnailer runs inside bubblewrap with `/usr` read-only,
-fontconfig directories visible, the input file bound read-only, a private output directory
-bound read-write, a fresh `/tmp`, no network, a cleared environment, and a seccomp filter.
+Every thumbnailer runs inside bubblewrap with `/usr` read-only, fontconfig directories
+visible, the input file bound read-only, a private output directory bound read-write, a
+fresh `/tmp`, no network, a cleared environment, and a seccomp filter.
 The filter is the one Flatpak and gnome-desktop use: namespace, mount, ptrace, module,
 kexec, io_uring and similar system calls fail with EPERM, `clone` with `CLONE_NEWUSER` is
 refused, and `clone3` returns ENOSYS so libc falls back to `clone`. The exact list is in
 `src/thumbnails.rs`.
 
-A thumbnailer that crashes or misbehaves is confined to that sandbox. Without `bwrap`,
-thumbnailers run directly.
+A thumbnailer that crashes or misbehaves is confined to that sandbox. `bwrap` is required:
+without it no thumbnail is generated at all, and Spiral says so once at startup. There is
+no unsandboxed path, because the input is a file the reader did not write.
 
 ## Debugging
 

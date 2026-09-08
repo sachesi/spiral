@@ -12,7 +12,8 @@ bookmarks, background file operations with progress, conflict handling and undo,
 through whatever tools are installed, thumbnails, a Space preview for images, video, sound,
 text and PDFs, drag and drop, "Open in Terminal", the `org.freedesktop.FileManager1` service
 for "Show in folder" and the portal backend. Thumbnailers, archive tools and the PDF previewer
-run under bubblewrap when it is installed.
+run under bubblewrap, which is required: they read files from anywhere, and Spiral has no
+unsandboxed path for them.
 
 ## Building and installing
 

@@ -187,7 +187,7 @@ and sound play through one GStreamer pipeline that Spiral keeps for the whole se
 points at one file after another; a format with no plugin installed for it shows its icon
 instead. PDFs
 need `pdftoppm` from poppler-utils, which runs in the same bubblewrap sandbox as the
-thumbnailers. Text files are shown up to 256 kB, images up to 128 MB and 80 megapixels. A
+thumbnailers and, like them, is not run at all where bubblewrap is missing. Text files are shown up to 256 kB, images up to 128 MB and 80 megapixels. A
 file is only loaded once it has been selected for a moment, so holding an arrow down runs
 through a folder without starting a decoder per file.
 

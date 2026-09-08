@@ -1,7 +1,7 @@
 //! Freedesktop thumbnails: reuse `~/.cache/thumbnails`, otherwise generate via the system
 //! `.thumbnailer` entries (or the bundled gdk-pixbuf helper for images without one), with
-//! bounded concurrency. Every thumbnailer runs inside bubblewrap when it is available, so a
-//! crashing or hostile decoder is confined to the sandbox.
+//! bounded concurrency. Every thumbnailer runs inside bubblewrap, which is required: a
+//! decoder is fed files from anywhere and there is no unconfined path for it to take.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -231,38 +231,20 @@ fn generate(
     let _ = std::fs::create_dir_all(dir);
     let seq = SEQ.fetch_add(1, Ordering::Relaxed);
     let tmp = out.with_extension(format!("{}-{seq}.tmp.png", std::process::id()));
-    let ok = match thumbnailer {
-        Some(t) => run_thumbnailer(&t.exec, path, uri, &tmp) && stamp(&tmp, uri, mtime),
+    // The bundled helper stands in for images no system thumbnailer claims. There is no
+    // third way: decoding in this process would put an untrusted file in front of a loader
+    // with the whole session behind it.
+    let exec = match thumbnailer {
+        Some(t) => t.exec.clone(),
         None => match own_thumbnailer() {
-            Some(bin) => {
-                run_thumbnailer(
-                    &format!("{} %i %o %s", glib::shell_quote(bin).to_string_lossy()),
-                    path,
-                    uri,
-                    &tmp,
-                ) && stamp(&tmp, uri, mtime)
+            Some(bin) => format!("{} %i %o %s", glib::shell_quote(bin).to_string_lossy()),
+            None => {
+                glib::g_debug!("spiral", "thumbnail {uri}: no thumbnailer for it");
+                return false;
             }
-            // Helper not installed: decode in-process as a last resort.
-            None => match gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(path, SIZE, SIZE, true) {
-                Ok(pb) => {
-                    let pb = pb.apply_embedded_orientation().unwrap_or(pb);
-                    pb.savev(
-                        &tmp,
-                        "png",
-                        &[
-                            ("tEXt::Thumb::URI", uri),
-                            ("tEXt::Thumb::MTime", &mtime.to_string()),
-                        ],
-                    )
-                    .is_ok()
-                }
-                Err(e) => {
-                    glib::g_debug!("spiral", "thumbnail {uri}: pixbuf failed: {e}");
-                    false
-                }
-            },
         },
     };
+    let ok = run_thumbnailer(&exec, path, &tmp) && stamp(&tmp, uri, mtime);
     if ok && std::fs::rename(&tmp, out).is_ok() {
         return true;
     }
@@ -289,11 +271,26 @@ fn stamp(png: &Path, uri: &str, mtime: u64) -> bool {
 }
 
 /// A `bwrap` command line up to (not including) the caller's own binds and `--`, for running
-/// helpers over untrusted input. None when bwrap is not installed.
+/// helpers over untrusted input. None when bwrap is not installed, and then the helper is
+/// not run at all: everything this sandbox holds reads files chosen by whoever wrote them.
 pub(crate) struct Sandbox {
     pub argv: Vec<String>,
     /// Inherited memfd holding the seccomp program named in `argv`.
     pub seccomp: Option<std::fs::File>,
+}
+
+/// Say once, at startup, what an install without bubblewrap gives up. Nothing that reads a
+/// file someone else wrote runs outside it, so the answer is thumbnails, the preview of
+/// PDFs and every archive operation.
+pub fn warn_without_sandbox() {
+    if glib::find_program_in_path("bwrap").is_none() {
+        glib::g_warning!(
+            "spiral",
+            "bwrap (bubblewrap) is not installed: thumbnails, PDF previews and archive \
+             operations are turned off, because they run untrusted files through decoders \
+             that Spiral will not run unsandboxed"
+        );
+    }
 }
 
 pub(crate) fn sandbox_base(program: &str) -> Option<Sandbox> {
@@ -465,31 +462,20 @@ fn own_thumbnailer() -> Option<PathBuf> {
         .or_else(|| Some(Path::new(crate::config::LIBEXECDIR).join(name)).filter(|p| p.exists()))
 }
 
-fn run_thumbnailer(exec: &str, input: &Path, uri: &str, output: &Path) -> bool {
+fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> bool {
     let Ok(argv) = glib::shell_parse_argv(exec) else {
         return false;
     };
-    let bwrap = glib::find_program_in_path("bwrap");
     // Inside the sandbox the input is /tmp/in.<ext> and the output lands in a private
     // directory bound at /tmp/out, so the thumbnailer sees nothing else of the home.
     let work = output.with_extension("d");
-    let (in_path, out_path) = if bwrap.is_some() {
-        let ext = input
-            .extension()
-            .map(|e| format!(".{}", e.to_string_lossy()))
-            .unwrap_or_default();
-        (
-            PathBuf::from(format!("/tmp/in{ext}")),
-            PathBuf::from("/tmp/out/thumb.png"),
-        )
-    } else {
-        (input.to_path_buf(), output.to_path_buf())
-    };
-    let in_uri = if bwrap.is_some() {
-        gio::File::for_path(&in_path).uri().to_string()
-    } else {
-        uri.to_string()
-    };
+    let ext = input
+        .extension()
+        .map(|e| format!(".{}", e.to_string_lossy()))
+        .unwrap_or_default();
+    let in_path = PathBuf::from(format!("/tmp/in{ext}"));
+    let out_path = PathBuf::from("/tmp/out/thumb.png");
+    let in_uri = gio::File::for_path(&in_path).uri().to_string();
     let argv: Vec<String> = argv
         .into_iter()
         .map(|a| {
@@ -500,42 +486,33 @@ fn run_thumbnailer(exec: &str, input: &Path, uri: &str, output: &Path) -> bool {
                 .replace("%s", &SIZE.to_string())
         })
         .collect();
-    let mut seccomp = None;
-    let mut cmd = match sandbox_base(&argv[0]) {
-        Some(sandbox) => {
-            if std::fs::create_dir_all(&work).is_err() {
-                return false;
-            }
-            let mut cmd = std::process::Command::new(&sandbox.argv[0]);
-            cmd.args(&sandbox.argv[1..]);
-            let font_cache = glib::user_cache_dir().join("fontconfig");
-            cmd.args(["--ro-bind-try", "/etc/fonts", "/etc/fonts"]);
-            cmd.args([
-                "--ro-bind-try",
-                "/var/cache/fontconfig",
-                "/var/cache/fontconfig",
-            ]);
-            cmd.arg("--ro-bind-try").arg(&font_cache).arg(&font_cache);
-            cmd.arg("--ro-bind").arg(input).arg(&in_path);
-            cmd.arg("--bind").arg(&work).arg("/tmp/out");
-            cmd.arg("--");
-            cmd.args(&argv);
-            // The seccomp memfd must stay open until the child has started.
-            seccomp = sandbox.seccomp;
-            cmd
-        }
-        None => {
-            let mut cmd = std::process::Command::new(&argv[0]);
-            cmd.args(&argv[1..]);
-            cmd
-        }
+    let Some(sandbox) = sandbox_base(&argv[0]) else {
+        return false;
     };
+    if std::fs::create_dir_all(&work).is_err() {
+        return false;
+    }
+    let mut cmd = std::process::Command::new(&sandbox.argv[0]);
+    cmd.args(&sandbox.argv[1..]);
+    let font_cache = glib::user_cache_dir().join("fontconfig");
+    cmd.args(["--ro-bind-try", "/etc/fonts", "/etc/fonts"]);
+    cmd.args([
+        "--ro-bind-try",
+        "/var/cache/fontconfig",
+        "/var/cache/fontconfig",
+    ]);
+    cmd.arg("--ro-bind-try").arg(&font_cache).arg(&font_cache);
+    cmd.arg("--ro-bind").arg(input).arg(&in_path);
+    cmd.arg("--bind").arg(&work).arg("/tmp/out");
+    cmd.arg("--");
+    cmd.args(&argv);
+    // The seccomp memfd must stay open until the child has started.
     let run = cmd
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
         .output();
-    drop(seccomp);
-    if bwrap.is_some() && run.as_ref().is_ok_and(|o| o.status.success()) {
+    drop(sandbox.seccomp);
+    if run.as_ref().is_ok_and(|o| o.status.success()) {
         let _ = std::fs::rename(work.join("thumb.png"), output);
     }
     let _ = std::fs::remove_dir_all(&work);

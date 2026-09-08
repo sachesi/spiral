@@ -47,11 +47,12 @@ is looked up, so you get a rate and time left.
 
 ## Sandbox
 
-With `bwrap` installed, archive tools run in the same bubblewrap sandbox as the
-thumbnailers (see [thumbnails.md](thumbnails.md)): `/usr` read-only, no network, no home,
-a seccomp filter. The archive or the sources are bound read-only, the working directory is
-the only writable place. An archive with hostile paths can at most fill that directory.
-Without `bwrap` the same commands run unconfined.
+Archive tools run in the same bubblewrap sandbox as the thumbnailers (see
+[thumbnails.md](thumbnails.md)): `/usr` read-only, no network, no home, a seccomp filter.
+The archive or the sources are bound read-only, the working directory is the only writable
+place. An archive with hostile paths can at most fill that directory. `bwrap` is required:
+without it the operation fails with a message saying so, rather than running the tool
+unconfined over a file that came from somewhere else.
 
 Both operations can be stopped, and both are undoable: undo deletes what was extracted or
 the archive that was created.

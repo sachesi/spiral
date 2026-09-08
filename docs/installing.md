@@ -9,15 +9,17 @@ blueprint-compiler just`; on Debian `libgtk-4-dev libadwaita-1-dev libgtksourcev
 libseccomp-dev libgstreamer1.0-dev blueprint-compiler just`. `just check` also wants
 `desktop-file-validate` and `appstreamcli`.
 
-To run: GTK 4.22, libadwaita 1.9, GtkSourceView 5, a session bus, and xdg-desktop-portal
-if you want the file chooser. GtkSourceView colours the text files the preview shows. The
+To run: GTK 4.22, libadwaita 1.9, GtkSourceView 5, `bwrap` from bubblewrap, a session bus,
+and xdg-desktop-portal if you want the file chooser. Bubblewrap is not optional: every
+thumbnailer, the PDF previewer and every archive tool runs inside it, and without it those
+are turned off rather than run unconfined. GtkSourceView colours the text files the preview shows. The
 preview plays video and sound through GStreamer, which needs its base plugins and the GTK 4
 sink from gst-plugins-rs: on Fedora `gstreamer1-plugins-base
 gstreamer1-plugin-gtk4`, on Debian `libgstreamer-plugins-base1.0-0 gstreamer1.0-gtk4`, on
 Arch `gst-plugins-base gst-plugin-gtk4`. The plugins for the formats themselves come from
 `gstreamer1-plugins-good` and its siblings; a file whose format has no plugin shows its
-icon instead. Everything else is optional and picked up from `PATH` when present: `bwrap`
-for sandboxing, archive tools, a terminal emulator.
+icon instead. Everything else is optional and picked up from `PATH` when present: archive
+tools, a terminal emulator.
 
 Installing the sink after Spiral has run once may leave a stale GStreamer plugin registry
 behind, and the preview then reports the sink missing until the registry is rebuilt:
