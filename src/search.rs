@@ -123,9 +123,16 @@ async fn content_matches(file: &gio::File, needle: &str) -> bool {
     let Ok((data, _)) = file.load_contents_future().await else {
         return false;
     };
-    String::from_utf8_lossy(&data)
-        .to_lowercase()
-        .contains(needle)
+    // Lowercasing megabytes of text and scanning them is work for a worker thread. The
+    // walk runs on the main loop, which is also drawing the results as they arrive.
+    let needle = needle.to_string();
+    gio::spawn_blocking(move || {
+        String::from_utf8_lossy(&data)
+            .to_lowercase()
+            .contains(&needle)
+    })
+    .await
+    .unwrap_or(false)
 }
 
 /// Walk `root` breadth-first and hand matches to `found` in batches. Returns early once
