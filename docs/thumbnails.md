@@ -26,7 +26,10 @@ it finds if the PNG's `Thumb::MTime` text chunk names the time the file last cha
 answers the same question through its `thumbnail::` attributes, but only by asking it of
 every file in a folder as the folder is listed, which is two fifths of the time a folder of
 fifty thousand files takes to appear; asking it here means asking it for the rows that are
-actually shown. A file another program failed to thumbnail is left alone. For generation, the system `.thumbnailer` entries under
+actually shown. A file another program failed to thumbnail is left alone, and a file that defeats a
+thumbnailer here has a note left beside those, under `fail/spiral`, so the next run does not
+try it again; writing the file again makes the note stale, as it carries the time the file
+was last changed. For generation, the system `.thumbnailer` entries under
 `~/.local/share/thumbnailers` and `XDG_DATA_DIRS` are consulted first, as GNOME does; an
 entry matches if its MIME type equals or is a supertype of the file's, and its `TryExec`
 has to be in `PATH`. Images with no system thumbnailer go to the bundled

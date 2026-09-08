@@ -184,8 +184,11 @@ async fn generate_task(key: Key, source: Source) {
                         return None;
                     }
                     let out = cache_path(&uri);
-                    generate(&path, &uri, mtime, &out, source.thumbnailer.as_deref())
-                        .then_some(out)?
+                    if !generate(&path, &uri, mtime, &out, source.thumbnailer.as_deref()) {
+                        remember_failure(&uri, mtime);
+                        return None;
+                    }
+                    out
                 }
             };
             match gdk::Texture::from_filename(&png) {
@@ -279,15 +282,13 @@ enum Cached {
 /// folder takes to appear. Here the question is asked for the rows actually shown.
 fn cached_thumbnail(uri: &str, mtime: u64) -> Cached {
     let name = cache_name(uri);
-    // Where GIO looks for other programs' failures too, so a file that has already
-    // defeated a thumbnailer is not handed to one again on every start.
-    if stamped_for(
-        &thumbnail_dir("fail")
-            .join("gnome-thumbnail-factory")
-            .join(&name),
-        mtime,
-    ) {
-        return Cached::Failed;
+    // A file that has already defeated a thumbnailer is not handed to one again on every
+    // start. Spiral's own notes sit beside the ones gnome-desktop leaves, which are read
+    // as well: a file another program could not draw is one this one cannot draw either.
+    for by in ["spiral", "gnome-thumbnail-factory"] {
+        if stamped_for(&fail_path(by, &name), mtime) {
+            return Cached::Failed;
+        }
     }
     for size in ["large", "normal"] {
         let png = thumbnail_dir(size).join(&name);
@@ -296,6 +297,35 @@ fn cached_thumbnail(uri: &str, mtime: u64) -> Cached {
         }
     }
     Cached::Missing
+}
+
+fn fail_path(by: &str, name: &str) -> PathBuf {
+    thumbnail_dir("fail").join(by).join(name)
+}
+
+/// Leave a note that this file cannot be drawn, so the next run does not try again. A
+/// folder of files no thumbnailer claims otherwise costs the same fruitless work at every
+/// start. The note is a one-pixel PNG carrying the name and time of the file, which is what
+/// makes it stale when the file is written again.
+fn remember_failure(uri: &str, mtime: u64) {
+    let png = fail_path("spiral", &cache_name(uri));
+    let Some(dir) = png.parent() else { return };
+    if std::fs::create_dir_all(dir).is_err() {
+        return;
+    }
+    let Some(blank) = gtk::gdk_pixbuf::Pixbuf::new(gtk::gdk_pixbuf::Colorspace::Rgb, true, 8, 1, 1)
+    else {
+        return;
+    };
+    blank.fill(0);
+    let _ = blank.savev(
+        &png,
+        "png",
+        &[
+            ("tEXt::Thumb::URI", uri),
+            ("tEXt::Thumb::MTime", &mtime.to_string()),
+        ],
+    );
 }
 
 /// The thumbnail the cache holds for `uri`, for callers that only want the picture.
