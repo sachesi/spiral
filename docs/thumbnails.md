@@ -32,8 +32,8 @@ the finished one share a modification second.
 Thumbnailers run a few at a time, one fewer than the machine has cores and at most eight,
 newest requests first, so the rows on screen win over the ones you scrolled past. One that
 takes longer than twenty seconds is killed, so a file that hangs a decoder costs one
-thumbnail rather than every thumbnail after it, and no single file it writes may pass
-128 MB. The PDF previewer runs under the same limits.
+thumbnail rather than every thumbnail after it. The PDF previewer is bounded the same
+way.
 
 Answers are kept in memory until 2048 of them or 64 MB of decoded picture have gathered,
 and then the oldest go. Walking through a folder of thousands of pictures therefore costs
