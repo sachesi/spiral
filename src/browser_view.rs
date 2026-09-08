@@ -611,6 +611,9 @@ fn set_star(button: &gtk::Button, starred: bool) {
     } else {
         "non-starred-symbolic"
     });
+    // Some icon themes draw the empty star as solidly as the full one, which leaves the
+    // column saying nothing; faded, the two are told apart whatever the theme draws.
+    button.set_opacity(if starred { 1.0 } else { 0.45 });
     button.set_tooltip_text(Some(&if starred {
         gettext("Remove from Starred")
     } else {
