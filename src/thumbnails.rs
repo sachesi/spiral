@@ -203,11 +203,14 @@ async fn generate_task(key: Key, source: Source, at: u32) {
                         return None;
                     }
                     let out = cache_path(&uri);
-                    if !generate(&path, &uri, mtime, &out, source.thumbnailer.as_deref()) {
-                        remember_failure(&uri, mtime);
-                        return None;
+                    match generate(&path, &uri, mtime, &out, source.thumbnailer.as_deref()) {
+                        Ok(()) => out,
+                        Err(Failure::OfTheFile) => {
+                            remember_failure(&uri, mtime);
+                            return None;
+                        }
+                        Err(Failure::OfTheMoment) => return None,
                     }
-                    out
                 }
             };
             match gdk::Texture::from_filename(&png) {
@@ -409,6 +412,18 @@ fn thumb_mtime(png: &Path) -> Option<u64> {
     None
 }
 
+/// Why a thumbnail was not made.
+enum Failure {
+    /// The thumbnailer looked at the file and could not draw it. Worth a note, so the
+    /// next start does not ask again.
+    OfTheFile,
+    /// The thumbnailer ran out of time or could not be started. A machine busy with
+    /// seven other decoders, a long film decoded in software, or a helper that is not
+    /// installed yet say nothing about the file, and a note would keep it from ever
+    /// being asked about again once things are quieter or the helper is there.
+    OfTheMoment,
+}
+
 /// Runs on a worker thread. Writes a spec-compliant PNG (Thumb::URI / Thumb::MTime) atomically.
 fn generate(
     path: &Path,
@@ -416,9 +431,9 @@ fn generate(
     mtime: u64,
     out: &Path,
     thumbnailer: Option<&Thumbnailer>,
-) -> bool {
+) -> Result<(), Failure> {
     let Some(dir) = out.parent() else {
-        return false;
+        return Err(Failure::OfTheMoment);
     };
     let _ = std::fs::create_dir_all(dir);
     let seq = SEQ.fetch_add(1, Ordering::Relaxed);
@@ -432,21 +447,23 @@ fn generate(
             Some(bin) => format!("{} %i %o %s", glib::shell_quote(bin).to_string_lossy()),
             None => {
                 glib::g_debug!("spiral", "thumbnail {uri}: no thumbnailer for it");
-                return false;
+                return Err(Failure::OfTheMoment);
             }
         },
     };
+    let run = run_thumbnailer(&exec, path, &tmp);
     // GIO only accepts a cached thumbnail that names the file it was made from, so one
     // that does not say so is written again with the words. Thumbnailers that follow the
     // spec already say it, and are left alone rather than decoded and encoded once more.
-    let ok =
-        run_thumbnailer(&exec, path, &tmp) && (stamped_for(&tmp, mtime) || stamp(&tmp, uri, mtime));
-    if ok && std::fs::rename(&tmp, out).is_ok() {
-        return true;
+    if run.is_ok()
+        && (stamped_for(&tmp, mtime) || stamp(&tmp, uri, mtime))
+        && std::fs::rename(&tmp, out).is_ok()
+    {
+        return Ok(());
     }
     glib::g_debug!("spiral", "thumbnail {uri}: generation failed");
     let _ = std::fs::remove_file(&tmp);
-    false
+    run.and(Err(Failure::OfTheMoment))
 }
 
 /// Write the Thumb::URI and Thumb::MTime a thumbnailer's PNG was made for; without them a
@@ -733,9 +750,9 @@ fn own_thumbnailer() -> Option<PathBuf> {
         .or_else(|| Some(Path::new(crate::config::LIBEXECDIR).join(name)).filter(|p| p.exists()))
 }
 
-fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> bool {
+fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> Result<(), Failure> {
     let Ok(argv) = glib::shell_parse_argv(exec) else {
-        return false;
+        return Err(Failure::OfTheMoment);
     };
     // Inside the sandbox the input is /tmp/in.<ext> and the output lands in a private
     // directory bound at /tmp/out, so the thumbnailer sees nothing else of the home.
@@ -758,10 +775,10 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> bool {
         })
         .collect();
     let Some(sandbox) = sandbox_base(&argv[0]) else {
-        return false;
+        return Err(Failure::OfTheMoment);
     };
     if std::fs::create_dir_all(&work).is_err() {
-        return false;
+        return Err(Failure::OfTheMoment);
     }
     let mut cmd = std::process::Command::new(&sandbox.argv[0]);
     cmd.args(&sandbox.argv[1..]);
@@ -785,14 +802,18 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> bool {
     }
     let _ = std::fs::remove_dir_all(&work);
     match run {
-        Ok(ran) if ran.ok && output.exists() => true,
+        Ok(ran) if ran.ok && output.exists() => Ok(()),
         Ok(ran) => {
             glib::g_debug!("spiral", "thumbnailer {argv:?} failed: {}", ran.trouble);
-            false
+            Err(if ran.timed_out {
+                Failure::OfTheMoment
+            } else {
+                Failure::OfTheFile
+            })
         }
         Err(e) => {
             glib::g_debug!("spiral", "thumbnailer {argv:?} could not start: {e}");
-            false
+            Err(Failure::OfTheMoment)
         }
     }
 }
@@ -839,6 +860,7 @@ pub(crate) fn run_bounded(
         .to_string();
     Ok(Ran {
         ok: status.success() && !timed_out,
+        timed_out,
         stdout,
         trouble: if timed_out {
             format!("gave up after {} s", limit.as_secs())
@@ -863,6 +885,8 @@ fn stand_aside(pid: u32) {
 /// What a bounded run left behind.
 pub(crate) struct Ran {
     pub ok: bool,
+    /// Killed at the limit rather than finished.
+    pub timed_out: bool,
     pub stdout: Vec<u8>,
     /// What it said for itself when it did not succeed.
     pub trouble: String,

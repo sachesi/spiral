@@ -37,7 +37,9 @@ fifty thousand files takes to appear; asking it here means asking it for the row
 actually shown. A file another program failed to thumbnail is left alone, and a file that defeats a
 thumbnailer here has a note left beside those, under `fail/spiral`, so the next run does not
 try it again; writing the file again makes the note stale, as it carries the time the file
-was last changed. For generation, the system `.thumbnailer` entries under
+was last changed. No note is left for a thumbnailer that ran out of time or could not be
+started: a machine busy with other decoders or a helper not installed yet say nothing about
+the file, and it is asked about again on the next visit. For generation, the system `.thumbnailer` entries under
 `~/.local/share/thumbnailers` and `XDG_DATA_DIRS` are consulted first, as GNOME does; an
 entry matches if its MIME type equals or is a supertype of the file's, and its `TryExec`
 has to be in `PATH`. Images with no system thumbnailer go to the bundled
