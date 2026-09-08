@@ -71,6 +71,12 @@ pub fn per_folder_available() -> bool {
     })
 }
 
+/// The column view is off unless it is asked for: it is a third way of reading a folder,
+/// not one everybody wants in the view button.
+pub fn column_view() -> bool {
+    SETTINGS.with(|s| s.boolean("use-column-view"))
+}
+
 pub fn remember_view() -> bool {
     SETTINGS.with(|s| s.boolean("remember-view")) && per_folder_available()
 }

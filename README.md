@@ -7,12 +7,12 @@ backend so other applications get the same dialog for opening and saving files.
 There is no dependency on a GNOME session. You need a Wayland compositor, a session bus,
 GTK 4.22 and libadwaita 1.9.
 
-Grid, list and column views, tabs, a places sidebar with devices and bookmarks, background file
-operations with progress, conflict handling and undo, archives through whatever tools are
-installed, thumbnails, a Space preview for images, video, sound, text and PDFs, drag and drop,
-"Open in Terminal", the `org.freedesktop.FileManager1` service for "Show in folder" and the
-portal backend. Thumbnailers, archive tools and the PDF previewer run under bubblewrap when
-it is installed.
+Grid and list views, an optional column view, tabs, a places sidebar with devices and
+bookmarks, background file operations with progress, conflict handling and undo, archives
+through whatever tools are installed, thumbnails, a Space preview for images, video, sound,
+text and PDFs, drag and drop, "Open in Terminal", the `org.freedesktop.FileManager1` service
+for "Show in folder" and the portal backend. Thumbnailers, archive tools and the PDF previewer
+run under bubblewrap when it is installed.
 
 ## Building and installing
 

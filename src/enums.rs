@@ -32,12 +32,13 @@ impl ViewMode {
         }
     }
 
-    /// The view the view button switches to next.
+    /// The view the view button switches to next, leaving out the columns where they are
+    /// turned off.
     pub fn next(self) -> Self {
         match self {
             Self::Grid => Self::List,
-            Self::List => Self::Columns,
-            Self::Columns => Self::Grid,
+            Self::List if crate::prefs::column_view() => Self::Columns,
+            _ => Self::Grid,
         }
     }
 

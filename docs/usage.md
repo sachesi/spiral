@@ -59,8 +59,9 @@ Location" on a result jumps to its folder.
 
 ## Views
 
-Grid, list or columns, picked from the dropdown in the header or with Ctrl+1, Ctrl+2 and
-Ctrl+3; the button beside it steps through the three. The dropdown also has zoom, sort
+Grid or list, picked from the dropdown in the header or with Ctrl+1 and Ctrl+2; the button
+beside it steps through them. "Column View" in Preferences adds the columns as a third,
+on Ctrl+3. The dropdown also has zoom, sort
 order, hidden files and the sidebar toggle. Zoom steps are 48, 64, 96, 168 and 256 px in
 the grid and 16 to 64 in the list and the columns; Ctrl+wheel works too.
 
@@ -95,7 +96,10 @@ header edge.
 
 ### Columns
 
-The column view draws the path as a strip of lists, one folder per column, the way the
+The column view is off until "Column View" in Preferences turns it on; with it off the
+views are the grid and the list, and a folder that remembers the columns opens in the list.
+
+It draws the path as a strip of lists, one folder per column, the way the
 Finder does. The last column is the folder you are in; the columns before it are the
 folders that lead there, with the one you came through picked out, and a column appears
 past the last one whenever a single folder is selected, showing what it holds. The strip

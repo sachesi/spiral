@@ -20,7 +20,7 @@ Ctrl+? shows this list inside the application.
 | Ctrl+F | Search the folder |
 | F5, Ctrl+R | Reload |
 | Ctrl+D | Bookmark the folder |
-| Ctrl+1, Ctrl+2, Ctrl+3 | Grid, list or columns |
+| Ctrl+1, Ctrl+2, Ctrl+3 | Grid, list or columns; the columns only where they are turned on |
 | Left, Right | In column view: out to the parent, into the selected folder |
 | Ctrl++, Ctrl+- | Zoom |
 | Ctrl+H | Hidden files |

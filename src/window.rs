@@ -337,6 +337,18 @@ mod imp {
             ));
             obj.add_action(&self.view_mode_action);
             obj.action_set_enabled("win.restore-tab", false);
+            obj.sync_columns_item();
+            self.settings.connect_changed(
+                Some("use-column-view"),
+                glib::clone!(
+                    #[weak(rename_to = win)]
+                    obj,
+                    move |_, _| {
+                        win.sync_columns_item();
+                        win.sync_view_button();
+                    }
+                ),
+            );
             obj.sync_view_button();
             obj.zoom(0);
 
@@ -983,6 +995,34 @@ impl SpiralWindow {
         self.imp()
             .sort_action
             .set_state(&format!("{}-{dir}", model.sort_key().nick()).to_variant());
+    }
+
+    /// The column view is optional: turned off, its item leaves the view menu so the menu
+    /// lists the views there actually are. Both split buttons share the one menu.
+    fn sync_columns_item(&self) {
+        let Some(section) = self
+            .imp()
+            .view_split_button
+            .popover()
+            .and_downcast::<gtk::PopoverMenu>()
+            .and_then(|p| p.menu_model())
+            .and_then(|m| m.item_link(0, gio::MENU_LINK_SECTION.as_str()))
+            .and_downcast::<gio::Menu>()
+        else {
+            return;
+        };
+        match (crate::prefs::column_view(), section.n_items()) {
+            (true, 2) => {
+                let item = gio::MenuItem::new(Some(&gettext("_Columns")), None);
+                item.set_action_and_target_value(
+                    Some("win.view-mode"),
+                    Some(&"columns".to_variant()),
+                );
+                section.append_item(&item);
+            }
+            (false, 3) => section.remove(2),
+            _ => {}
+        }
     }
 
     /// The split button shows the view you switch *to*, like Nautilus.

@@ -14,6 +14,7 @@ Changes apply immediately to open windows.
 | `click-policy` | `double`, `single` | `double` | Open Items With |
 | `folders-first` | bool | true | Sort Folders Before Files |
 | `use-tree-view` | bool | false | Expandable Folders in List View |
+| `use-column-view` | bool | false | Column View |
 | `recursive-search` | `local`, `always`, `never` | `local` | Search in Subfolders |
 | `visible-columns` | list of `size`, `type`, `modified`, `accessed`, `created`, `owner`, `group`, `permissions`, `star` | size, type, modified, star | List view columns (Visible Columns…) |
 | `show-create-link` | bool | false | Create Link in context menus |
@@ -45,6 +46,10 @@ changes `sort-key` and `sort-reversed`, for everything. Both attributes need gvf
 metadata backend; without it there is nowhere to keep them, so the preference is greyed
 out and the keys for everything are used instead. `chooser-view-mode` is the same thing for portal file dialogs,
 which never remember per folder.
+
+`use-column-view` off, which is how it starts, leaves the view button and the view menu with
+the grid and the list alone, and Ctrl+3 does nothing; a folder or a default remembering the
+columns from when it was on opens in the list instead.
 
 `compression-format` is whatever Create Archive was last confirmed with; the dialog starts
 there next time, provided the tools for it are still installed.
