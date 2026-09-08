@@ -165,6 +165,20 @@ struct Source {
 }
 
 async fn generate_task(key: Key, source: Source) {
+    let (uri, mtime) = (key.0.clone(), key.1);
+    // Asking the cache is a handful of stats, so it is asked before queueing for a
+    // generation slot: a thumbnail that is already on disk must not wait behind a video
+    // being decoded. Only what has to be made, and the decoding of what is found, waits.
+    let found = {
+        let uri = uri.clone();
+        gio::spawn_blocking(move || cached_thumbnail(&uri, mtime))
+            .await
+            .unwrap_or(Cached::Missing)
+    };
+    if matches!(found, Cached::Failed) {
+        finish(key, None);
+        return;
+    }
     acquire().await;
     // Rows scrolled away meanwhile: skip the work, it will be requested again if needed.
     let wanted = PENDING.with(|p| {
@@ -173,9 +187,8 @@ async fn generate_task(key: Key, source: Source) {
             .is_some_and(|w| w.iter().any(|tx| !tx.is_canceled()))
     });
     let texture = if wanted {
-        let (uri, mtime) = (key.0.clone(), key.1);
         gio::spawn_blocking(move || {
-            let png = match cached_thumbnail(&uri, mtime) {
+            let png = match found {
                 Cached::Png(png) => png,
                 Cached::Failed => return None,
                 Cached::Missing => {
@@ -194,11 +207,7 @@ async fn generate_task(key: Key, source: Source) {
             match gdk::Texture::from_filename(&png) {
                 Ok(t) => Some(t),
                 Err(e) => {
-                    glib::g_debug!(
-                        "spiral",
-                        "thumbnail {uri}: cannot load {}: {e}",
-                        png.display()
-                    );
+                    glib::g_debug!("spiral", "thumbnail: cannot load {}: {e}", png.display());
                     None
                 }
             }
@@ -210,9 +219,18 @@ async fn generate_task(key: Key, source: Source) {
         None
     };
     release();
-    if wanted {
-        remember(key.clone(), texture.clone());
+    if !wanted {
+        // Nobody is waiting any more, and nothing was worked out: leave the list alone so
+        // the next request for it starts afresh.
+        PENDING.with(|p| p.borrow_mut().remove(&key));
+        return;
     }
+    finish(key, texture);
+}
+
+/// Hand the answer to everyone who asked for it and take the request off the list.
+fn finish(key: Key, texture: Option<gdk::Texture>) {
+    remember(key.clone(), texture.clone());
     if let Some(waiters) = PENDING.with(|p| p.borrow_mut().remove(&key)) {
         for tx in waiters {
             let _ = tx.send(texture.clone());
