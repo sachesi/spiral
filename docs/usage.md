@@ -71,7 +71,9 @@ View for Media Folders" is on; otherwise the global default. "Mostly" means at l
 files, half or more of them media, looking at the first 2000 entries. The sort order
 follows the same preference: with it on, sorting from the menu or a column header applies
 to that folder and is kept in `metadata::spiral-sort`; with it off, it changes the default
-for every folder.
+for every folder. Both attributes are gvfs's doing: where its metadata backend is not
+running there is nowhere to keep them, so the preference is greyed out and the switch
+changes the global default instead.
 
 Files and folders you cannot read or change carry a small lock, and the actions they do
 not allow (cut, rename, trash, delete) are greyed out. Folders you are looking at update
@@ -107,7 +109,8 @@ header and the file actions act on; dropping files on any other column puts them
 folder that column lists.
 
 Unlike the grid and the list, the columns stay put as you walk from folder to folder,
-since walking is what they are for; leave them with the view button or Ctrl+1 and Ctrl+2.
+since walking is what they are for; a folder that remembers a view of its own is the
+exception and takes the strip apart. Leave them with the view button or Ctrl+1 and Ctrl+2.
 A search reaches past the folder you are in, so it falls back to the list while it runs.
 
 ## Selecting, opening, moving things

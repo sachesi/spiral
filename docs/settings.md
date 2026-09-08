@@ -41,7 +41,9 @@ Notes on a few of them:
 `remember-view` on means the grid/list switch and the sort order only affect the folder
 you are in; they are kept in the folder's `metadata::spiral-view` and
 `metadata::spiral-sort` attributes. Off, the switch changes `view-mode`, and sorting
-changes `sort-key` and `sort-reversed`, for everything. `chooser-view-mode` is the same thing for portal file dialogs,
+changes `sort-key` and `sort-reversed`, for everything. Both attributes need gvfs running its
+metadata backend; without it there is nowhere to keep them, so the preference is greyed
+out and the keys for everything are used instead. `chooser-view-mode` is the same thing for portal file dialogs,
 which never remember per folder.
 
 `compression-format` is whatever Create Archive was last confirmed with; the dialog starts
