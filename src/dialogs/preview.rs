@@ -1134,6 +1134,9 @@ fn text_view(text: &str, info: &gio::FileInfo, content_type: &str) -> gtk::Widge
     view.set_editable(false);
     view.set_cursor_visible(false);
     view.set_monospace(true);
+    // Numbers down the side: a preview of a file is read to find something in it, and the
+    // line it is on is what gets said out loud afterwards.
+    view.set_show_line_numbers(true);
     view.set_top_margin(12);
     view.set_bottom_margin(12);
     view.set_left_margin(12);

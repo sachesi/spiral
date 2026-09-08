@@ -164,7 +164,7 @@ Space shows the selected file without opening an application, and closes the pre
 again; Escape closes it too. Images, video, sound and text files are drawn by Spiral
 itself, and PDFs a page at a time. Source code is coloured by GtkSourceView, which knows
 the language from the name and the type of the file; the page itself keeps the colours of
-the theme, only the words are the scheme's. Lines are not wrapped, since source is read the
+the theme, only the words are the scheme's. Lines are numbered down the side. Lines are not wrapped, since source is read the
 way it was written, and long ones scroll sideways. The Left and Right arrows walk
 through the folder without leaving the preview, Page Up and Page Down turn the pages of a
 PDF, and Return hands the file to its application. The preview has no close button: it is
