@@ -132,17 +132,89 @@ pub fn chosen() -> Option<&'static Terminal> {
         .copied()
 }
 
+/// Whether the application's desktop entry has `Terminal=true`. The entry is read from disk
+/// because the `gio` bindings do not carry `GDesktopAppInfo`, which is where GIO keeps it.
+fn wants_terminal(app: &gio::AppInfo) -> bool {
+    let Some(id) = app.id() else { return false };
+    let mut dirs = vec![glib::user_data_dir()];
+    dirs.extend(glib::system_data_dirs());
+    dirs.into_iter().any(|dir| {
+        let file = glib::KeyFile::new();
+        file.load_from_file(
+            dir.join("applications").join(id.as_str()),
+            glib::KeyFileFlags::NONE,
+        )
+        .is_ok()
+            && file
+                .boolean(glib::KEY_FILE_DESKTOP_GROUP, "Terminal")
+                .unwrap_or(false)
+    })
+}
+
 /// Open `dir` in the chosen terminal.
 pub fn open(dir: &Path) -> Result<(), glib::Error> {
-    launch(dir, None)
+    spawn(dir, &[])
 }
 
 /// Run `program` in the chosen terminal, in `dir`; the terminal closes when it exits.
 pub fn run(dir: &Path, program: &Path) -> Result<(), glib::Error> {
-    launch(dir, Some(program))
+    spawn(dir, &[program.to_string_lossy().into_owned()])
 }
 
-fn launch(dir: &Path, program: Option<&Path>) -> Result<(), glib::Error> {
+/// Start `app` on `files`, in a terminal if its desktop entry asks for one. GIO refuses to
+/// start those itself -- it will not go looking for a terminal emulator -- so an editor like
+/// Helix or Vim set as the default for a file type would only ever say it could not be
+/// opened. Returns false for an application that wants no terminal, which is launched the
+/// ordinary way.
+pub fn launch_if_wanted(
+    app: &gio::AppInfo,
+    files: &[gio::File],
+) -> Option<Result<(), glib::Error>> {
+    if !wants_terminal(app) {
+        return None;
+    }
+    let line = app.commandline()?;
+    let Ok(argv) = glib::shell_parse_argv(line.as_os_str()) else {
+        return Some(Err(glib::Error::new(
+            gio::IOErrorEnum::Failed,
+            &gettext("The application's command line cannot be read"),
+        )));
+    };
+    // The desktop entry names where the files go with a field code; one that names none
+    // takes them at the end, as the specification says a launcher should.
+    let mut command: Vec<String> = Vec::new();
+    let mut placed = false;
+    for arg in argv {
+        match arg.to_string_lossy().as_ref() {
+            "%f" | "%F" | "%u" | "%U" => {
+                command.extend(files.iter().map(|f| match f.path() {
+                    Some(path) => path.to_string_lossy().into_owned(),
+                    None => f.uri().to_string(),
+                }));
+                placed = true;
+            }
+            // Icon, translated name and entry path: nothing a command line wants.
+            other if other.starts_with('%') => {}
+            other => command.push(other.to_string()),
+        }
+    }
+    if !placed {
+        command.extend(
+            files
+                .iter()
+                .filter_map(|f| f.path())
+                .map(|p| p.to_string_lossy().into_owned()),
+        );
+    }
+    let dir = files
+        .first()
+        .and_then(|f| f.parent())
+        .and_then(|p| p.path())
+        .unwrap_or_else(glib::home_dir);
+    Some(spawn(&dir, &command))
+}
+
+fn spawn(dir: &Path, command: &[String]) -> Result<(), glib::Error> {
     let Some(t) = chosen() else {
         return Err(glib::Error::new(
             gio::IOErrorEnum::NotFound,
@@ -153,9 +225,9 @@ fn launch(dir: &Path, program: Option<&Path>) -> Result<(), glib::Error> {
     let mut argv: Vec<String> = std::iter::once(t.exec.to_string())
         .chain(t.args.iter().map(|a| a.replace("{}", &dir_s)))
         .collect();
-    if let Some(program) = program {
+    if !command.is_empty() {
         argv.extend(t.run_args.iter().map(|a| a.to_string()));
-        argv.push(program.to_string_lossy().into_owned());
+        argv.extend(command.iter().cloned());
     }
     let argv: Vec<&std::ffi::OsStr> = argv.iter().map(std::ffi::OsStr::new).collect();
     // The launcher inherits the environment (display, session bus) and reaps the child.

@@ -124,7 +124,8 @@ A search reaches past the folder you are in, so it falls back to the list while 
 
 Double click opens by default; Preferences has a single-click option. Files open in
 their default application; "Open With..." lists the alternatives and can change the
-default. Rubber-band selection works in both views. The pill in the corner shows what is
+default. An application whose desktop entry asks for a terminal is given the one from
+Preferences (see [terminal.md](terminal.md)), so a terminal editor works as a default. Rubber-band selection works in both views. The pill in the corner shows what is
 selected and how big it is. A click on empty space clears the selection and gives the
 files the keyboard, so Ctrl+A and the rest of the file keys work right after it.
 

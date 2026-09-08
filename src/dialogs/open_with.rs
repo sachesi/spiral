@@ -196,7 +196,11 @@ impl OpenWithDialog {
         }
         let files = imp.files.borrow().clone();
         let ctx = self.display().app_launch_context();
-        if let Err(e) = app.launch(&files, Some(&ctx)) {
+        // An application that asks for a terminal has to be given one; GIO refuses to
+        // start those itself rather than go looking for a terminal emulator.
+        let outcome = crate::terminal::launch_if_wanted(&app, &files)
+            .unwrap_or_else(|| app.launch(&files, Some(&ctx)));
+        if let Err(e) = outcome {
             let d = adw::AlertDialog::builder()
                 .heading(gettext("Could Not Open"))
                 .body(e.message())

@@ -567,6 +567,19 @@ async fn count_children_at(dir: &gio::File, stamp: i64) -> Option<u64> {
     Some(n)
 }
 
+/// The application a file would open in, which is what decides whether a terminal is needed.
+async fn default_app(file: &gio::File) -> Option<gio::AppInfo> {
+    let info = file
+        .query_info_future(
+            "standard::content-type",
+            gio::FileQueryInfoFlags::NONE,
+            glib::Priority::DEFAULT,
+        )
+        .await
+        .ok()?;
+    gio::AppInfo::default_for_type(&info.content_type()?, !file.is_native())
+}
+
 /// Number of direct children of `dir`, or None if it cannot be read.
 async fn count_children(dir: &gio::File) -> Option<u64> {
     let en = dir
@@ -1039,11 +1052,23 @@ impl BrowserView {
 
     pub fn launch(&self, file: &gio::File) {
         let ctx = self.display().app_launch_context();
-        let uri = file.uri();
+        let file = file.clone();
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
             self,
             async move {
+                // An application that asks for a terminal has to be given one; GIO will not
+                // go looking for a terminal emulator and refuses the launch instead.
+                if let Some(app) = default_app(&file).await
+                    && let Some(result) =
+                        crate::terminal::launch_if_wanted(&app, std::slice::from_ref(&file))
+                {
+                    if let Err(e) = result {
+                        view.show_error(&gettext("Could Not Open"), e.message());
+                    }
+                    return;
+                }
+                let uri = file.uri();
                 if let Err(e) = gio::AppInfo::launch_default_for_uri_future(&uri, Some(&ctx)).await
                 {
                     view.show_error(&gettext("Could Not Open"), e.message());
