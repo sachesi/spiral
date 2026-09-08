@@ -116,9 +116,11 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
     // Which thumbnailer would make one is decided here, where the list of them lives;
     // the cache the freedesktop directories already hold is looked at on the worker,
     // where a thumbnail is decoded anyway.
-    let content_type = info.content_type()?.to_string();
+    // Neither a type nor a local path stops the lookup: a file on a share may still have
+    // a thumbnail in the cache, made when it was somewhere else or by something else.
+    let content_type = info.content_type().unwrap_or_default().to_string();
     let source = Source {
-        path: file.path()?,
+        path: file.path(),
         thumbnailer: thumbnailer_for(&content_type),
         // Images with no thumbnailer of their own go to the bundled helper.
         own: content_type.starts_with("image/"),
@@ -148,7 +150,8 @@ pub async fn load(info: &gio::FileInfo) -> Option<gdk::Texture> {
 
 /// What a thumbnail would be made from, if the cache has none.
 struct Source {
-    path: PathBuf,
+    /// Only a local file can be handed to a thumbnailer.
+    path: Option<PathBuf>,
     thumbnailer: Option<Box<Thumbnailer>>,
     /// Whether the bundled helper would take it: images, which most thumbnailer entries
     /// leave alone.
@@ -170,18 +173,13 @@ async fn generate_task(key: Key, source: Source) {
                 Cached::Png(png) => png,
                 Cached::Failed => return None,
                 Cached::Missing => {
+                    let path = source.path?;
                     if source.thumbnailer.is_none() && !source.own {
                         return None;
                     }
                     let out = cache_path(&uri);
-                    generate(
-                        &source.path,
-                        &uri,
-                        mtime,
-                        &out,
-                        source.thumbnailer.as_deref(),
-                    )
-                    .then_some(out)?
+                    generate(&path, &uri, mtime, &out, source.thumbnailer.as_deref())
+                        .then_some(out)?
                 }
             };
             match gdk::Texture::from_filename(&png) {
