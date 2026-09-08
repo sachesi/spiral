@@ -10,6 +10,7 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use std::os::fd::AsRawFd;
+use std::os::unix::process::CommandExt;
 
 use futures_channel::oneshot;
 use gtk::prelude::*;
@@ -432,8 +433,8 @@ fn sandbox_trouble() -> Option<String> {
     let outcome = run_bounded(&mut cmd, TIMEOUT);
     drop(sandbox.seccomp);
     match outcome {
-        Ok((true, _)) => None,
-        Ok((false, trouble)) => Some(trouble),
+        Ok(ran) if ran.ok => None,
+        Ok(ran) => Some(ran.trouble),
         Err(e) => Some(e.to_string()),
     }
 }
@@ -654,14 +655,14 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> bool {
     // The seccomp memfd must stay open until the child has started.
     let run = run_bounded(&mut cmd, TIMEOUT);
     drop(sandbox.seccomp);
-    if run.as_ref().is_ok_and(|(ok, _)| *ok) {
+    if run.as_ref().is_ok_and(|ran| ran.ok) {
         let _ = std::fs::rename(work.join("thumb.png"), output);
     }
     let _ = std::fs::remove_dir_all(&work);
     match run {
-        Ok((true, _)) if output.exists() => true,
-        Ok((_, err)) => {
-            glib::g_debug!("spiral", "thumbnailer {argv:?} failed: {err}");
+        Ok(ran) if ran.ok && output.exists() => true,
+        Ok(ran) => {
+            glib::g_debug!("spiral", "thumbnailer {argv:?} failed: {}", ran.trouble);
             false
         }
         Err(e) => {
@@ -674,25 +675,32 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> bool {
 /// Run `cmd` to completion, killing it once it outstays `limit`, and return whether it
 /// succeeded along with what it said on stderr. A decoder stuck on a malformed file would
 /// otherwise hold one of the few generation slots for the rest of the session.
-fn run_bounded(
+pub(crate) fn run_bounded(
     cmd: &mut std::process::Command,
     limit: std::time::Duration,
-) -> std::io::Result<(bool, String)> {
+) -> std::io::Result<Ran> {
+    // No single file a helper writes has any business being this large; a decoder made to
+    // run away cannot fill the disk in the time it is given.
+    const OUTPUT_LIMIT: u64 = 128 * 1024 * 1024;
+    unsafe {
+        cmd.pre_exec(|| {
+            let limit = libc::rlimit {
+                rlim_cur: OUTPUT_LIMIT,
+                rlim_max: OUTPUT_LIMIT,
+            };
+            libc::setrlimit(libc::RLIMIT_FSIZE, &limit);
+            Ok(())
+        });
+    }
     let mut child = cmd
         .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()?;
-    // stderr is drained on a thread of its own: a child that fills the pipe would wait
-    // for a reader that is here, waiting for the child.
-    let mut pipe = child.stderr.take();
-    let reader = std::thread::spawn(move || {
-        let mut buf = Vec::new();
-        if let Some(pipe) = pipe.as_mut() {
-            let _ = std::io::Read::read_to_end(&mut std::io::Read::take(pipe, 64 * 1024), &mut buf);
-        }
-        buf
-    });
+    // Each pipe is drained on a thread of its own: a child that fills one would wait for
+    // a reader that is here, waiting for the child.
+    let out = drain(child.stdout.take());
+    let err = drain(child.stderr.take());
     let deadline = std::time::Instant::now() + limit;
     let mut nap = std::time::Duration::from_millis(1);
     let mut timed_out = false;
@@ -708,14 +716,37 @@ fn run_bounded(
         std::thread::sleep(nap);
         nap = (nap * 2).min(std::time::Duration::from_millis(20));
     };
-    let err = reader
-        .join()
-        .map(|b| String::from_utf8_lossy(&b).trim().to_string())
-        .unwrap_or_default();
-    if timed_out {
-        return Ok((false, format!("gave up after {} s", limit.as_secs())));
-    }
-    Ok((status.success(), format!("{status}: {err}")))
+    let stdout = out.join().unwrap_or_default();
+    let stderr = String::from_utf8_lossy(&err.join().unwrap_or_default())
+        .trim()
+        .to_string();
+    Ok(Ran {
+        ok: status.success() && !timed_out,
+        stdout,
+        trouble: if timed_out {
+            format!("gave up after {} s", limit.as_secs())
+        } else {
+            format!("{status}: {stderr}")
+        },
+    })
+}
+
+/// What a bounded run left behind.
+pub(crate) struct Ran {
+    pub ok: bool,
+    pub stdout: Vec<u8>,
+    /// What it said for itself when it did not succeed.
+    pub trouble: String,
+}
+
+fn drain(pipe: Option<impl std::io::Read + Send + 'static>) -> std::thread::JoinHandle<Vec<u8>> {
+    std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        if let Some(pipe) = pipe {
+            let _ = std::io::Read::read_to_end(&mut pipe.take(1024 * 1024), &mut buf);
+        }
+        buf
+    })
 }
 
 /// System thumbnailers win over gdk-pixbuf, matching GNOME (gdk-pixbuf ships one itself).
