@@ -287,6 +287,25 @@ impl Player {
         self.settle();
     }
 
+    /// Nothing can decode the picture. playbin3 does not call that an error: the file
+    /// goes on playing without the stream, which leaves a video sitting on a black frame
+    /// with its sound running. Stop there and fail, so the preview shows the file instead.
+    fn no_decoder(&self) {
+        let imp = self.imp();
+        if let Some(limit) = imp.limit.take() {
+            limit.remove();
+        }
+        let starting = imp.starting.replace(false);
+        let _ = imp.playbin().set_state(gst::State::Null);
+        self.set_error(glib::Error::new(
+            gst::CoreError::MissingPlugin,
+            "no decoder for the picture in this file",
+        ));
+        if starting {
+            self.settle();
+        }
+    }
+
     /// Starting is over, one way or the other: make the switch that waited on it.
     fn settle(&self) {
         if let Some(file) = self.imp().pending.take() {
@@ -319,6 +338,11 @@ impl Player {
                     }
                     self.prepare();
                     self.settle();
+                }
+            }
+            MessageView::Element(e) => {
+                if missing_video_decoder(e.structure()) {
+                    self.no_decoder();
                 }
             }
             MessageView::Eos(_) => self.stream_ended(),
@@ -386,4 +410,20 @@ impl Player {
             ),
         )));
     }
+}
+
+/// A `missing-plugin` message left by a decoder nobody has, for a stream that carries the
+/// picture. The detail of such a message is the caps that went unhandled.
+fn missing_video_decoder(message: Option<&gst::StructureRef>) -> bool {
+    let Some(message) = message else {
+        return false;
+    };
+    if message.name() != "missing-plugin" {
+        return false;
+    }
+    message
+        .get::<gst::Caps>("detail")
+        .ok()
+        .and_then(|caps| Some(caps.structure(0)?.name().starts_with("video/")))
+        .unwrap_or(false)
 }
