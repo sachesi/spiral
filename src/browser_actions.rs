@@ -626,12 +626,15 @@ impl BrowserView {
         let Some(job) = self.manager().map(|m| m.submit(kind)) else {
             return;
         };
-        let view = self.clone();
-        job.connect_status_notify(move |job| {
-            if job.status() == JobStatus::Done {
-                view.select_files_when_loaded(job.landed());
+        job.connect_status_notify(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |job| {
+                if job.status() == JobStatus::Done {
+                    view.select_files_when_loaded(job.landed());
+                }
             }
-        });
+        ));
     }
 
     pub fn submit_kind(&self, kind: JobKind) {
