@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-08 14:32+0300\n"
+"POT-Creation-Date: 2026-09-08 19:09+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -268,6 +268,42 @@ msgstr "sachesi"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"Big folders open in a fraction of the time and scroll without stutter. A "
+"folder that does not fit in one batch of its listing is shown once, complete "
+"and in order, instead of arriving unsorted and being replaced twice; only "
+"the view on screen holds the folder, so the two views not showing no longer "
+"bind every row it changes; the grid keeps cells for the columns that fit the "
+"window rather than for the twenty it may ever have; and a cell's tooltip is "
+"answered when the pointer asks instead of being set on every bind, which "
+"cost a style lookup per cell. Opening a folder of three thousand photos "
+"takes a fifth of the processor time it took on the thread drawing the window."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:28
+msgid ""
+"Thumbnails are asked for only once their cell is on screen and the folder is "
+"in order, and a screenful is made from the top down rather than in the order "
+"the cells happened to be bound. A thumbnailer that ran out of time or could "
+"not be started leaves no note, so the file is tried again on the next visit; "
+"only the notes Spiral left itself are read, not those gnome-desktop leaves; "
+"and where several thumbnailers claim a type they are taken by name and tried "
+"in turn, so one that lacks a codec hands the file to the next. Pictures "
+"larger than a limit in the settings are left with their icon, a thumbnailer "
+"stands aside for the window it draws into, and the debug log accounts for "
+"every request."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:29
+msgid ""
+"Text in the preview has line numbers, on the colour of the page. A video "
+"opens in its own proportions, read from the header of its container when the "
+"cache holds no thumbnail, instead of snapping to them once it plays. An "
+"application whose desktop entry asks for a terminal is given the one from "
+"Preferences, so a terminal editor works as a default."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:34
+msgid ""
 "Bubblewrap is now required. Thumbnailers, the PDF previewer and the archive "
 "tools are decoders fed files nobody here wrote, and all three used to run "
 "unconfined where bubblewrap was missing, while images with no thumbnailer of "
@@ -278,7 +314,7 @@ msgid ""
 "seconds instead of holding a slot for the rest of the session."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:28
+#: data/io.github.sachesi.spiral.metainfo.xml:35
 msgid ""
 "Big folders open in about half the processor time they took. A folder is put "
 "in order once, when its listing ends, instead of after each batch of files "
@@ -292,7 +328,7 @@ msgid ""
 "and generation uses the cores there are."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:33
+#: data/io.github.sachesi.spiral.metainfo.xml:40
 msgid ""
 "The sidebar gained Root, the top of the filesystem, and a switch in "
 "Preferences for it and for Favorites. The order folders open in can be "
@@ -305,7 +341,7 @@ msgid ""
 "empty under any icon theme."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:38
+#: data/io.github.sachesi.spiral.metainfo.xml:45
 msgid ""
 "The column view is now optional and starts turned off: with it off the view "
 "button and the view menu offer the grid and the list alone. Pasted files, "
@@ -318,7 +354,7 @@ msgid ""
 "longer takes the focus away from a half-typed path."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:43
+#: data/io.github.sachesi.spiral.metainfo.xml:50
 msgid ""
 "Column view no longer decides the view of every folder after it: a folder "
 "that remembers a view of its own gets it back, while columns still survive a "
@@ -329,7 +365,7 @@ msgid ""
 "is half the size it was."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:48
+#: data/io.github.sachesi.spiral.metainfo.xml:55
 msgid ""
 "A quick preview on the Space key: images, PDFs a page at a time, video, "
 "sound and text with source code among it, drawn by Spiral itself in a window "
@@ -345,7 +381,7 @@ msgid ""
 "Windows, tabs and dialogs let go of everything they held when they close."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:53
+#: data/io.github.sachesi.spiral.metainfo.xml:60
 msgid ""
 "A column view, the third way to look at a folder: the path drawn as a strip "
 "of lists, one folder per column, with the folder you are in at the right and "
@@ -365,7 +401,7 @@ msgstr ""
 "записывают после создания, например вставленный из буфера снимок экрана, "
 "получает миниатюру без перезапуска."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:58
+#: data/io.github.sachesi.spiral.metainfo.xml:65
 msgid ""
 "A click on empty space in a folder takes the keyboard and clears the "
 "selection, so Ctrl+A and the other file keys no longer wait for a file to be "
@@ -381,7 +417,7 @@ msgstr ""
 "открытое им меню действует на папку. У кнопки фильтров поиска снова есть "
 "значок."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:63
+#: data/io.github.sachesi.spiral.metainfo.xml:70
 msgid ""
 "Two folder panes side by side, off by default and turned on with F3: F6 "
 "moves between them, the pane in charge is outlined, and everything outside "
@@ -398,7 +434,7 @@ msgstr ""
 "папке» из браузера больше не ждёт двадцать пять секунд из-за взаимной "
 "блокировки портала и открывает отдельное окно с выделенным файлом."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:68
+#: data/io.github.sachesi.spiral.metainfo.xml:75
 msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
@@ -415,7 +451,7 @@ msgstr ""
 "столбцы списка с изменяемой шириной, тип показан как расширение файла, "
 "переключатель звёздочки следует за избранным."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:73
+#: data/io.github.sachesi.spiral.metainfo.xml:80
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -433,7 +469,7 @@ msgstr ""
 "паролем. Эмблемы замка и недоступные действия для файлов только для чтения, "
 "папки следят за изменениями извне, а буфер обмена вставляет пути в терминалы."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:78
+#: data/io.github.sachesi.spiral.metainfo.xml:85
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
@@ -444,7 +480,7 @@ msgstr ""
 "-s, -q. Обращения к файловой системе больше не блокируют интерфейс на "
 "медленных точках монтирования."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:82
+#: data/io.github.sachesi.spiral.metainfo.xml:89
 msgid "First release."
 msgstr "Первый выпуск."
 
@@ -524,7 +560,7 @@ msgstr "_Переместить"
 msgid "_Copy"
 msgstr "_Копировать"
 
-#: src/browser_actions.rs:813 src/browser_view.rs:1067 src/browser_view.rs:1074
+#: src/browser_actions.rs:813 src/browser_view.rs:1117 src/browser_view.rs:1124
 #: src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
@@ -577,7 +613,7 @@ msgstr "Все объекты в корзине будут безвозврат�
 msgid "_Empty Trash"
 msgstr "_Очистить корзину"
 
-#: src/browser_view.rs:503
+#: src/browser_view.rs:509
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
@@ -585,7 +621,7 @@ msgstr[0] "Выбрана %d папка"
 msgstr[1] "Выбраны %d папки"
 msgstr[2] "Выбрано %d папок"
 
-#: src/browser_view.rs:507
+#: src/browser_view.rs:513
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
@@ -593,44 +629,44 @@ msgstr[0] "Выбран %d объект"
 msgstr[1] "Выбрано %d объекта"
 msgstr[2] "Выбрано %d объектов"
 
-#: src/browser_view.rs:699
+#: src/browser_view.rs:737
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Удалить из избранного"
 
-#: src/browser_view.rs:701
+#: src/browser_view.rs:739
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Добавить в избранное"
 
-#: src/browser_view.rs:1085 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1135 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:669
 #, no-c-format
 msgid "_OK"
 msgstr "_ОК"
 
-#: src/browser_view.rs:1107
+#: src/browser_view.rs:1157
 #, no-c-format
 msgid "No Results Found"
 msgstr "Ничего не найдено"
 
-#: src/browser_view.rs:1109 ui/browser_view.ui:100
+#: src/browser_view.rs:1159 ui/browser_view.ui:100
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Папка пуста"
 
-#: src/browser_view.rs:1147
+#: src/browser_view.rs:1210
 #, no-c-format
 msgid "Loading…"
 msgstr "Загрузка…"
 
-#: src/browser_view.rs:1163
+#: src/browser_view.rs:1226
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Выбран объект «%s»"
 
-#: src/browser_view.rs:1168
+#: src/browser_view.rs:1231
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -639,17 +675,17 @@ msgstr[1] "%d других объекта выбрано"
 msgstr[2] "%d других объектов выбрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1174
+#: src/browser_view.rs:1237
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1795
+#: src/browser_view.rs:1888
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:1875 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1985 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -1026,46 +1062,46 @@ msgstr "Терминал"
 msgid "Preview"
 msgstr "Просмотр"
 
-#: src/dialogs/preview.rs:521
+#: src/dialogs/preview.rs:523
 #, no-c-format
 msgid "Previous Page"
 msgstr "Предыдущая страница"
 
-#: src/dialogs/preview.rs:523
+#: src/dialogs/preview.rs:525
 #, no-c-format
 msgid "Next Page"
 msgstr "Следующая страница"
 
-#: src/dialogs/preview.rs:597 src/dialogs/preview.rs:650
+#: src/dialogs/preview.rs:599 src/dialogs/preview.rs:652
 #, no-c-format
 msgid "Fit"
 msgstr "Вписать"
 
-#: src/dialogs/preview.rs:599 ui/shortcuts_dialog.ui:151 ui/window.ui:446
+#: src/dialogs/preview.rs:601 ui/shortcuts_dialog.ui:151 ui/window.ui:446
 #: ui/window.ui:530
 #, no-c-format
 msgid "Zoom Out"
 msgstr "Уменьшить"
 
-#: src/dialogs/preview.rs:600
+#: src/dialogs/preview.rs:602
 #, no-c-format
 msgid "Fit to Window"
 msgstr "Вписать в окно"
 
-#: src/dialogs/preview.rs:601 ui/shortcuts_dialog.ui:145 ui/window.ui:456
+#: src/dialogs/preview.rs:603 ui/shortcuts_dialog.ui:145 ui/window.ui:456
 #: ui/window.ui:540
 #, no-c-format
 msgid "Zoom In"
 msgstr "Увеличить"
 
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:868
+#: src/dialogs/preview.rs:871
 #, no-c-format
 msgid "%t, %s"
 msgstr "%t, %s"
 
 #. Translators: %p is the page being shown, %n the number of pages in the document.
-#: src/dialogs/preview.rs:873
+#: src/dialogs/preview.rs:876
 #, no-c-format
 msgid "%p of %n"
 msgstr "%p из %n"
