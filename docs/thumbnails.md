@@ -29,14 +29,15 @@ thumbnail that already exists is shown whatever the size of the file.
 
 A file's thumbnail is looked up in this order: a small in-memory cache, the on-disk cache,
 then generation. The on-disk lookup hashes the file's URI, looks for that name under
-`large`, `normal` and the `fail` directory GIO shares with gnome-desktop, and accepts what
-it finds if the PNG's `Thumb::MTime` text chunk names the time the file last changed. GIO
-answers the same question through its `thumbnail::` attributes, but only by asking it of
-every file in a folder as the folder is listed, which is two fifths of the time a folder of
-fifty thousand files takes to appear; asking it here means asking it for the rows that are
-actually shown. A file another program failed to thumbnail is left alone, and a file that defeats a
-thumbnailer here has a note left beside those, under `fail/spiral`, so the next run does not
-try it again; writing the file again makes the note stale, as it carries the time the file
+`large`, `normal` and its own `fail/spiral` directory, and accepts what it finds if the
+PNG's `Thumb::MTime` text chunk names the time the file last changed. GIO answers the same
+question through its `thumbnail::` attributes, but only by asking it of every file in a
+folder as the folder is listed, which is two fifths of the time a folder of fifty thousand
+files takes to appear; asking it here means asking it for the rows that are actually
+shown. A file that defeats a thumbnailer here has a note left under `fail/spiral`, so the
+next run does not try it again. The notes other programs leave, gnome-desktop's under
+`fail/gnome-thumbnail-factory`, are not read: they draw with other tools, and a file one
+of them gave up on before a codec was installed is not one this one cannot draw; writing the file again makes the note stale, as it carries the time the file
 was last changed. No note is left for a thumbnailer that ran out of time or could not be
 started: a machine busy with other decoders or a helper not installed yet say nothing about
 the file, and it is asked about again on the next visit. For generation, the system `.thumbnailer` entries under
@@ -101,5 +102,7 @@ no unsandboxed path, because the input is a file the reader did not write.
 
     G_MESSAGES_DEBUG=spiral spiral ~/Pictures
 
-logs failed thumbnailer runs with their stderr. `gio info -a 'thumbnail::*' FILE` tells you
-whether GIO considers a cached thumbnail valid.
+logs every thumbnail made, with the time it took and the thumbnailer that made it, every
+failed run with its stderr, and every file skipped because a note says it failed before.
+`gio info -a 'thumbnail::*' FILE` tells you whether GIO considers a cached thumbnail valid;
+its `thumbnail::failed` looks at gnome-desktop's notes, which Spiral does not read.

@@ -182,6 +182,10 @@ async fn generate_task(key: Key, source: Source, at: u32) {
             .unwrap_or(Cached::Missing)
     };
     if matches!(found, Cached::Failed) {
+        glib::g_debug!(
+            "spiral",
+            "thumbnail {uri}: noted as failed before, not tried"
+        );
         finish(key, None);
         return;
     }
@@ -321,12 +325,11 @@ enum Cached {
 fn cached_thumbnail(uri: &str, mtime: u64) -> Cached {
     let name = cache_name(uri);
     // A file that has already defeated a thumbnailer is not handed to one again on every
-    // start. Spiral's own notes sit beside the ones gnome-desktop leaves, which are read
-    // as well: a file another program could not draw is one this one cannot draw either.
-    for by in ["spiral", "gnome-thumbnail-factory"] {
-        if stamped_for(&fail_path(by, &name), mtime) {
-            return Cached::Failed;
-        }
+    // start. Only Spiral's own notes count: the spec keeps them per program because
+    // programs draw with different tools, and a file gnome-desktop gave up on before a
+    // codec was installed is not one this one cannot draw.
+    if stamped_for(&fail_path("spiral", &name), mtime) {
+        return Cached::Failed;
     }
     for size in ["large", "normal"] {
         let png = thumbnail_dir(size).join(&name);
@@ -451,6 +454,7 @@ fn generate(
             }
         },
     };
+    let started = std::time::Instant::now();
     let run = run_thumbnailer(&exec, path, &tmp);
     // GIO only accepts a cached thumbnail that names the file it was made from, so one
     // that does not say so is written again with the words. Thumbnailers that follow the
@@ -459,6 +463,11 @@ fn generate(
         && (stamped_for(&tmp, mtime) || stamp(&tmp, uri, mtime))
         && std::fs::rename(&tmp, out).is_ok()
     {
+        glib::g_debug!(
+            "spiral",
+            "thumbnail {uri}: made in {} ms by {exec}",
+            started.elapsed().as_millis()
+        );
         return Ok(());
     }
     glib::g_debug!("spiral", "thumbnail {uri}: generation failed");
