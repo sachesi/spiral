@@ -90,7 +90,6 @@ impl BrowserView {
     pub(crate) fn setup_miller(&self) {
         let imp = self.imp();
         imp.miller_scroll.set_width_request(COLUMN_WIDTH);
-        imp.miller_list.set_model(Some(&imp.model.selection()));
         imp.miller_list
             .set_factory(Some(&self.miller_factory(true)));
         self.connect_location_notify(|view| view.schedule_columns());
