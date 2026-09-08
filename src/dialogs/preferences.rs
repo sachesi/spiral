@@ -27,24 +27,23 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     ));
     general.add(&choice_row(
         &settings,
-        "click-policy",
-        &gettext("Open Items With"),
-        None,
-        &[gettext("Double Click"), gettext("Single Click")],
-    ));
-    let folders_first = adw::SwitchRow::builder()
-        .title(gettext("Sort Folders Before Files"))
-        .build();
-    settings
-        .bind("folders-first", &folders_first, "active")
-        .build();
-    general.add(&folders_first);
-    general.add(&choice_row(
-        &settings,
         "date-format",
         &gettext("Date Format"),
         None,
         &[gettext("Relative"), gettext("Full Date and Time")],
+    ));
+    general.add(&terminal_row(&settings));
+    page.add(&general);
+
+    let behaviour = adw::PreferencesGroup::builder()
+        .title(gettext("Behaviour"))
+        .build();
+    behaviour.add(&choice_row(
+        &settings,
+        "click-policy",
+        &gettext("Open Items With"),
+        None,
+        &[gettext("Double Click"), gettext("Single Click")],
     ));
     let ask_on_drop = adw::SwitchRow::builder()
         .title(gettext("Ask What to Do With Dropped Files"))
@@ -53,13 +52,27 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
         ))
         .build();
     settings.bind("ask-on-drop", &ask_on_drop, "active").build();
-    general.add(&ask_on_drop);
-    general.add(&terminal_row(&settings));
-    page.add(&general);
+    behaviour.add(&ask_on_drop);
+    page.add(&behaviour);
 
     let views = adw::PreferencesGroup::builder()
         .title(gettext("Views"))
         .build();
+    let folders_first = adw::SwitchRow::builder()
+        .title(gettext("Sort Folders Before Files"))
+        .build();
+    settings
+        .bind("folders-first", &folders_first, "active")
+        .build();
+    views.add(&folders_first);
+    let guess = adw::SwitchRow::builder()
+        .title(gettext("Grid View for Media Folders"))
+        .subtitle(gettext(
+            "Folders that are mostly images and videos open in grid view",
+        ))
+        .build();
+    settings.bind("guess-view", &guess, "active").build();
+    views.add(&guess);
     let remember = adw::SwitchRow::builder()
         .title(gettext("Remember View per Folder"))
         .subtitle(gettext(
@@ -69,14 +82,6 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     settings.bind("remember-view", &remember, "active").build();
     remember.set_sensitive(crate::prefs::per_folder_available());
     views.add(&remember);
-    let guess = adw::SwitchRow::builder()
-        .title(gettext("Grid View for Media Folders"))
-        .subtitle(gettext(
-            "Folders that are mostly images and videos open in grid view",
-        ))
-        .build();
-    settings.bind("guess-view", &guess, "active").build();
-    views.add(&guess);
     let tree = adw::SwitchRow::builder()
         .title(gettext("Expandable Folders in List View"))
         .build();
