@@ -22,6 +22,12 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.10.0" date="2026-09-08">
+      <description>
+        <p>Bubblewrap is now required. Thumbnailers, the PDF previewer and the archive tools are decoders fed files nobody here wrote, and all three used to run unconfined where bubblewrap was missing, while images with no thumbnailer of their own were decoded inside the window itself. None of that happens any more: without the sandbox they are not run, and Spiral tries it once at startup and says what is wrong with it rather than showing nothing. A thumbnailer or a PDF tool that stops answering is killed after twenty seconds instead of holding a slot for the rest of the session.</p>
+        <p>Big folders open in about half the processor time they took. A folder is put in order once, when its listing ends, instead of after each batch of files arrives; names are collated once each instead of once per comparison; a thumbnail is looked for when a row is shown instead of for every file in the folder, listed or not; a burst of changes in a folder is answered in one pass; and the selection is read out once a frame rather than on every motion of a rubber band. Item counts under grid icons are remembered, and searching file contents no longer does its reading and matching on the thread drawing the window. The thumbnail cache keeps to a size instead of emptying itself, and generation uses the cores there are.</p>
+      </description>
+    </release>
     <release version="0.9.0" date="2026-09-08">
       <description>
         <p>The sidebar gained Root, the top of the filesystem, and a switch in Preferences for it and for Favorites. The order folders open in can be chosen in Preferences instead of only by sorting one, and a folder that remembers an order of its own still keeps it. Caption lines chosen in the dialog appear at once. The selection is no longer lost when a file in the folder is written, so a pasted screenshot keeps the selection it was given. The star column is as narrow as the star it holds, whatever the word for it in the language of the moment, and an empty star is faded so it reads as empty under any icon theme.</p>
