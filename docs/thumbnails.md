@@ -57,7 +57,9 @@ refused, and `clone3` returns ENOSYS so libc falls back to `clone`. The exact li
 `src/thumbnails.rs`.
 
 A thumbnailer that crashes or misbehaves is confined to that sandbox. `bwrap` is required:
-without it no thumbnail is generated at all, and Spiral says so once at startup. There is
+without it no thumbnail is generated at all. Spiral tries the sandbox once at startup and
+says what is wrong with it if anything is, so a system with `bwrap` missing or with user
+namespaces turned off gives a reason rather than empty icons. There is
 no unsandboxed path, because the input is a file the reader did not write.
 
 ## Debugging
