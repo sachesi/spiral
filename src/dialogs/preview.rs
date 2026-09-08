@@ -63,6 +63,9 @@ const SOUND_SHAPE: (i32, i32) = (420, 234);
 const INFO_SHAPE: (i32, i32) = (340, 214);
 /// How long one page of the preview takes to fade into the next.
 const CROSSFADE: Duration = Duration::from_millis(120);
+
+/// How long the PDF tool may take over one page before it is killed.
+const TOOL_TIMEOUT: Duration = Duration::from_secs(20);
 /// Zoom: one step of the buttons or the wheel, and how far it goes either way.
 const ZOOM_STEP: f64 = 1.25;
 const ZOOM_MIN: f64 = 0.05;
@@ -1350,22 +1353,16 @@ fn run_tool<T>(
     cmd.arg("--ro-bind").arg(input).arg(input_seen);
     cmd.arg("--bind").arg(&work).arg(work_seen);
     cmd.arg("--").arg(&program);
+    cmd.args(&argv);
+    // Bounded like a thumbnailer: a document that stops the tool would otherwise leave
+    // the preview on its spinner and the worker thread on the tool, for good.
+    let run = crate::thumbnails::run_bounded(&mut cmd, TOOL_TIMEOUT);
     // The seccomp memfd must stay open until the child has started.
-    let seccomp = sandbox.seccomp;
-    let run = cmd
-        .args(&argv)
-        .stderr(std::process::Stdio::piped())
-        .output();
-    drop(seccomp);
+    drop(sandbox.seccomp);
     let out = match run {
-        Ok(out) if out.status.success() => result(&out.stdout, &work),
-        Ok(out) => {
-            glib::g_debug!(
-                "spiral",
-                "preview {program:?} failed ({}): {}",
-                out.status,
-                String::from_utf8_lossy(&out.stderr).trim()
-            );
+        Ok(ran) if ran.ok => result(&ran.stdout, &work),
+        Ok(ran) => {
+            glib::g_debug!("spiral", "preview {program:?} failed: {}", ran.trouble);
             None
         }
         Err(e) => {
