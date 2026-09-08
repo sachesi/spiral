@@ -55,6 +55,9 @@ mod imp {
         /// `DirectoryList` only tracks additions, removals and attribute changes; this one
         /// catches files rewritten in place so sizes, dates and thumbnails follow.
         monitor: RefCell<Option<gio::FileMonitor>>,
+        /// Files the monitor reported, waiting for the next pass over the list.
+        pub pending: RefCell<Vec<gio::File>>,
+        pub refresh_queued: Cell<bool>,
         /// Root of the pipeline: `dir_list`, or `starred_store` for `starred:///`.
         filtered: gtk::FilterListModel,
         pub starred_store: gio::ListStore,
@@ -134,6 +137,8 @@ mod imp {
                 sorted,
                 tree,
                 monitor: Default::default(),
+                pending: Default::default(),
+                refresh_queued: Default::default(),
                 filtered,
                 starred_store: gio::ListStore::new::<gio::FileInfo>(),
                 starred_gen: Default::default(),
@@ -455,6 +460,23 @@ impl FolderModel {
         })
     }
 
+    /// Positions of `files` in the current view order, in one pass. `position_of` walks
+    /// the whole list for each file it is asked about, which pasting a hundred files into
+    /// a folder of a hundred thousand cannot afford.
+    pub fn positions_of(&self, files: &[gio::File]) -> Vec<u32> {
+        if files.is_empty() {
+            return Vec::new();
+        }
+        let wanted: std::collections::HashSet<String> =
+            files.iter().map(|f| f.uri().to_string()).collect();
+        (0..self.n_items())
+            .filter(|&i| {
+                self.info_at(i)
+                    .is_some_and(|info| wanted.contains(file_utils::file_of(&info).uri().as_str()))
+            })
+            .collect()
+    }
+
     pub fn reload(&self) {
         let imp = self.imp();
         if imp.searching.get() {
@@ -526,56 +548,74 @@ impl FolderModel {
         ));
     }
 
-    /// Re-read `file`'s attributes into the info already in the list, so bound cells rebind
-    /// and the sort order follows, while the selection (tracked by object) survives.
+    /// Re-read the attributes of files that changed into the infos already in the list, so
+    /// bound cells rebind and the sort order follows, while the selection (tracked by
+    /// object) survives. The monitor reports one file at a time and a busy folder reports
+    /// many in a row, so they are gathered for a moment and answered together: a pass per
+    /// file would walk a large folder once per file written into it.
     fn refresh(&self, file: gio::File) {
+        let imp = self.imp();
+        imp.pending.borrow_mut().push(file);
+        if imp.refresh_queued.replace(true) {
+            return;
+        }
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = model)]
             self,
             async move {
-                let Ok(fresh) = file
-                    .query_info_future(
-                        file_utils::ATTRIBUTES,
-                        gio::FileQueryInfoFlags::NONE,
-                        glib::Priority::DEFAULT,
-                    )
-                    .await
-                else {
-                    return;
-                };
-                let dl = &model.imp().dir_list;
-                // ponytail: linear scan per change; index by name if huge folders churn.
-                let found = (0..dl.n_items())
-                    .filter_map(|i| {
-                        dl.item(i)
-                            .and_downcast::<gio::FileInfo>()
-                            .map(|info| (i, info))
-                    })
-                    .find(|(_, info)| file_utils::file_of(info).equal(&file));
-                if let Some((pos, info)) = found {
-                    // Rewriting a row makes the sorted model rebuild, and the selection,
-                    // which it keeps by position, goes with it: one file being written is
-                    // enough to clear the lot. A pasted screenshot, written the moment
-                    // after it was created, would lose the selection it was just given.
-                    // Remember the files and select them again where they end up.
-                    let selected = model.selected_files();
-                    fresh.set_attribute_object("standard::file", &file);
-                    fresh.copy_into(&info);
-                    // The keys cached on it describe the name it had a moment ago.
-                    file_utils::forget_sort_keys(&info);
-                    dl.items_changed(pos, 1, 1);
-                    if !selected.is_empty() {
-                        let sel = model.selection();
-                        sel.unselect_all();
-                        for file in &selected {
-                            if let Some(p) = model.position_of(file) {
-                                sel.select_item(p, false);
-                            }
-                        }
-                    }
-                }
+                glib::timeout_future(std::time::Duration::from_millis(50)).await;
+                model.imp().refresh_queued.set(false);
+                let files = std::mem::take(&mut *model.imp().pending.borrow_mut());
+                model.apply_refresh(files).await;
             }
         ));
+    }
+
+    async fn apply_refresh(&self, files: Vec<gio::File>) {
+        let mut fresh = std::collections::HashMap::new();
+        for file in files {
+            if let Ok(info) = file
+                .query_info_future(
+                    file_utils::ATTRIBUTES,
+                    gio::FileQueryInfoFlags::NONE,
+                    glib::Priority::DEFAULT,
+                )
+                .await
+            {
+                info.set_attribute_object("standard::file", &file);
+                fresh.insert(file.uri().to_string(), info);
+            }
+        }
+        let dl = &self.imp().dir_list;
+        let hits: Vec<(u32, gio::FileInfo, gio::FileInfo)> = (0..dl.n_items())
+            .filter_map(|i| {
+                let info = dl.item(i).and_downcast::<gio::FileInfo>()?;
+                let new = fresh.get(file_utils::file_of(&info).uri().as_str())?;
+                Some((i, info, new.clone()))
+            })
+            .collect();
+        if hits.is_empty() {
+            return;
+        }
+        // Rewriting a row makes the sorted model rebuild, and the selection, which it
+        // keeps by position, goes with it: one file being written is enough to clear the
+        // lot. A pasted screenshot, written the moment after it was created, would lose
+        // the selection it was just given. Remember the files and select them again where
+        // they end up.
+        let selected = self.selected_files();
+        for (pos, info, new) in hits {
+            new.copy_into(&info);
+            // The keys cached on it describe the name it had a moment ago.
+            file_utils::forget_sort_keys(&info);
+            dl.items_changed(pos, 1, 1);
+        }
+        if !selected.is_empty() {
+            let sel = self.selection();
+            sel.unselect_all();
+            for pos in self.positions_of(&selected) {
+                sel.select_item(pos, false);
+            }
+        }
     }
 
     /// Query every starred file; entries that no longer exist are unstarred.

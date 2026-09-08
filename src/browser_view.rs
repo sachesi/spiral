@@ -1176,21 +1176,19 @@ impl BrowserView {
         glib::spawn_future_local(async move {
             let model = view.model();
             let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+            let mut found = model.positions_of(&files);
             while std::time::Instant::now() < deadline
-                && (model.loading() || files.iter().any(|f| model.position_of(f).is_none()))
+                && (model.loading() || found.len() < files.len())
             {
                 glib::timeout_future(std::time::Duration::from_millis(50)).await;
+                found = model.positions_of(&files);
             }
             let sel = model.selection();
             sel.unselect_all();
-            let mut first = None;
-            for f in &files {
-                if let Some(pos) = model.position_of(f) {
-                    sel.select_item(pos, false);
-                    first.get_or_insert(pos);
-                }
+            for &pos in &found {
+                sel.select_item(pos, false);
             }
-            if let Some(pos) = first {
+            if let Some(&pos) = found.first() {
                 view.reveal_position(pos, gtk::ListScrollFlags::FOCUS);
             }
         });
