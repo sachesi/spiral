@@ -95,6 +95,11 @@
       <default>'local'</default>
       <summary>Which folders get their items counted</summary>
     </key>
+    <key name="thumbnail-limit" type="t">
+      <default>50</default>
+      <summary>Largest picture to make a thumbnail of, in megabytes</summary>
+      <description>Pictures larger than this are shown with their icon instead: decoding one costs time and memory out of proportion to a thumbnail. A thumbnail that already exists is shown whatever the size of the file. Video and sound are not limited, since their thumbnailers read a frame rather than the whole file.</description>
+    </key>
     <key name="view-mode" enum="io.github.sachesi.spiral.ViewMode">
       <default>'grid'</default>
       <summary>Default view mode</summary>

@@ -26,6 +26,7 @@ Changes apply immediately to open windows.
 | `remember-view` | bool | true | Remember View per Folder |
 | `guess-view` | bool | true | Grid View for Media Folders |
 | `thumbnails` | `local`, `always`, `never` | `local` | Show Thumbnails |
+| `thumbnail-limit` | megabytes | 50 | |
 | `item-counts` | `local`, `always`, `never` | `local` | Count Items in Folders |
 | `view-mode` | `grid`, `list`, `columns` | `grid` | |
 | `chooser-view-mode` | `grid`, `list`, `columns` | `list` | |
@@ -62,6 +63,9 @@ there next time, provided the tools for it are still installed.
 
 `local` for thumbnails and item counts means files on the local disk only; network
 mounts are skipped because reading every file on a share can take a while.
+`thumbnail-limit` is the largest picture worth decoding for a thumbnail; video and sound
+are not weighed by it, and a thumbnail that already exists is shown whatever the size of
+the file.
 
 `captions` are the lines under grid icons, top to bottom. `size` becomes an item count on
 folders when `item-counts` allows it.
