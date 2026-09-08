@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-08 09:52+0300\n"
+"POT-Creation-Date: 2026-09-08 11:01+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -66,68 +66,76 @@ msgid "Expandable folders in list view"
 msgstr "Розгортувані теки у вигляді списку"
 
 #: data/io.github.sachesi.spiral.gschema.xml:62
+msgid "Show the root of the filesystem in the sidebar"
+msgstr "Показувати корінь файлової системи на бічній панелі"
+
+#: data/io.github.sachesi.spiral.gschema.xml:66
+msgid "Show Favorites in the sidebar"
+msgstr "Показувати «Улюблене» на бічній панелі"
+
+#: data/io.github.sachesi.spiral.gschema.xml:70
 msgid "Offer the column view"
 msgstr "Пропонувати режим перегляду у вигляді стовпчиків"
 
-#: data/io.github.sachesi.spiral.gschema.xml:63
+#: data/io.github.sachesi.spiral.gschema.xml:71
 msgid ""
 "Adds the columns to the views the view button and the menu switch between."
 msgstr ""
 "Додає стовпчики до режимів перегляду, між якими перемикають кнопка перегляду "
 "та меню."
 
-#: data/io.github.sachesi.spiral.gschema.xml:67
+#: data/io.github.sachesi.spiral.gschema.xml:75
 msgid "Remember the view mode of each folder"
 msgstr "Запам’ятовувати режим перегляду для кожної теки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:71
+#: data/io.github.sachesi.spiral.gschema.xml:79
 msgid "Open folders that are mostly images and videos in grid view"
 msgstr ""
 "Відкривати теки, що складаються переважно із зображень і відео, у вигляді "
 "сітки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:75
+#: data/io.github.sachesi.spiral.gschema.xml:83
 msgid "Terminal emulator for “Open in Terminal”"
 msgstr "Емулятор термінала для «Відкрити в терміналі»"
 
-#: data/io.github.sachesi.spiral.gschema.xml:76
+#: data/io.github.sachesi.spiral.gschema.xml:84
 msgid "Executable name; empty picks the first installed one."
 msgstr ""
 "Назва виконуваного файла; порожнє значення означає перший встановлений."
 
-#: data/io.github.sachesi.spiral.gschema.xml:80
+#: data/io.github.sachesi.spiral.gschema.xml:88
 msgid "Which files get thumbnails"
 msgstr "Для яких файлів показувати мініатюри"
 
-#: data/io.github.sachesi.spiral.gschema.xml:84
+#: data/io.github.sachesi.spiral.gschema.xml:92
 msgid "Where searches look into subfolders"
 msgstr "Де шукати у підтеках"
 
-#: data/io.github.sachesi.spiral.gschema.xml:88
+#: data/io.github.sachesi.spiral.gschema.xml:96
 msgid "Which folders get their items counted"
 msgstr "Для яких тек підраховувати кількість об’єктів"
 
-#: data/io.github.sachesi.spiral.gschema.xml:92
+#: data/io.github.sachesi.spiral.gschema.xml:100
 msgid "Default view mode"
 msgstr "Типовий режим перегляду"
 
-#: data/io.github.sachesi.spiral.gschema.xml:96
+#: data/io.github.sachesi.spiral.gschema.xml:104
 msgid "View mode of file chooser dialogs"
 msgstr "Режим перегляду у вікнах вибору файлів"
 
-#: data/io.github.sachesi.spiral.gschema.xml:100
+#: data/io.github.sachesi.spiral.gschema.xml:108
 msgid "Sort key"
 msgstr "Ключ упорядкування"
 
-#: data/io.github.sachesi.spiral.gschema.xml:104
+#: data/io.github.sachesi.spiral.gschema.xml:112
 msgid "Reverse sort order"
 msgstr "Зворотний порядок упорядкування"
 
-#: data/io.github.sachesi.spiral.gschema.xml:108
+#: data/io.github.sachesi.spiral.gschema.xml:116
 msgid "Format the Create Archive dialog starts with"
 msgstr "Формат, з якого починається діалог створення архіву"
 
-#: data/io.github.sachesi.spiral.gschema.xml:109
+#: data/io.github.sachesi.spiral.gschema.xml:117
 msgid ""
 "Extension without the dot: zip, tar.xz, tar.zst, 7z or tar.gz; the last one "
 "used."
@@ -135,15 +143,15 @@ msgstr ""
 "Розширення без крапки: zip, tar.xz, tar.zst, 7z або tar.gz; останнє "
 "використане."
 
-#: data/io.github.sachesi.spiral.gschema.xml:113
+#: data/io.github.sachesi.spiral.gschema.xml:121
 msgid "Show hidden files"
 msgstr "Показувати приховані файли"
 
-#: data/io.github.sachesi.spiral.gschema.xml:117
+#: data/io.github.sachesi.spiral.gschema.xml:125
 msgid "Captions under icons in grid view"
 msgstr "Підписи під піктограмами у вигляді сітки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:118
+#: data/io.github.sachesi.spiral.gschema.xml:126
 msgid ""
 "Up to three of: size, date_modified, permissions, type, mime_type, owner, "
 "group, none."
@@ -151,11 +159,11 @@ msgstr ""
 "До трьох значень із: size, date_modified, permissions, type, mime_type, "
 "owner, group, none."
 
-#: data/io.github.sachesi.spiral.gschema.xml:122
+#: data/io.github.sachesi.spiral.gschema.xml:130
 msgid "Columns shown in list view besides the name"
 msgstr "Стовпчики, які показуються у вигляді списку, крім назви"
 
-#: data/io.github.sachesi.spiral.gschema.xml:123
+#: data/io.github.sachesi.spiral.gschema.xml:131
 msgid ""
 "Any of: size, type, modified, accessed, created, owner, group, permissions, "
 "star."
@@ -163,31 +171,31 @@ msgstr ""
 "Будь-які з: size, type, modified, accessed, created, owner, group, "
 "permissions, star."
 
-#: data/io.github.sachesi.spiral.gschema.xml:128
+#: data/io.github.sachesi.spiral.gschema.xml:136
 msgid "Icon size in grid view"
 msgstr "Розмір піктограм у вигляді сітки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:133
+#: data/io.github.sachesi.spiral.gschema.xml:141
 msgid "Icon size in list view"
 msgstr "Розмір піктограм у вигляді списку"
 
-#: data/io.github.sachesi.spiral.gschema.xml:137
+#: data/io.github.sachesi.spiral.gschema.xml:145
 msgid "Window size"
 msgstr "Розмір вікна"
 
-#: data/io.github.sachesi.spiral.gschema.xml:141
+#: data/io.github.sachesi.spiral.gschema.xml:149
 msgid "Window maximized"
 msgstr "Вікно розгорнуто"
 
-#: data/io.github.sachesi.spiral.gschema.xml:145
+#: data/io.github.sachesi.spiral.gschema.xml:153
 msgid "Show places sidebar"
 msgstr "Показувати бічну панель"
 
-#: data/io.github.sachesi.spiral.gschema.xml:149
+#: data/io.github.sachesi.spiral.gschema.xml:157
 msgid "Ask whether to copy or move dropped files"
 msgstr "Питати, копіювати чи перемістити перетягнуті файли"
 
-#: data/io.github.sachesi.spiral.gschema.xml:153
+#: data/io.github.sachesi.spiral.gschema.xml:161
 msgid "Show two folder panes side by side"
 msgstr "Показувати дві панелі тек поруч"
 
@@ -241,6 +249,19 @@ msgstr "sachesi"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"The column view is now optional and starts turned off: with it off the view "
+"button and the view menu offer the grid and the list alone. Pasted files, "
+"folders and screenshots are selected once they land in the folder. Source "
+"code in the preview is coloured, on the window's own background, and text "
+"files keep their lines unwrapped. The list drops the columns beside the name "
+"as a window narrows, so a name is never squeezed into an ellipsis, and shows "
+"the whole of one that had to be cut when the pointer rests on it. "
+"Preferences are grouped by what they change, and Tab in the location bar no "
+"longer takes the focus away from a half-typed path."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:32
+msgid ""
 "Column view no longer decides the view of every folder after it: a folder "
 "that remembers a view of its own gets it back, while columns still survive a "
 "move that has nothing else to say. Where the system cannot keep a setting "
@@ -250,7 +271,7 @@ msgid ""
 "is half the size it was."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:32
+#: data/io.github.sachesi.spiral.metainfo.xml:37
 msgid ""
 "A quick preview on the Space key: images, PDFs a page at a time, video, "
 "sound and text with source code among it, drawn by Spiral itself in a window "
@@ -266,7 +287,7 @@ msgid ""
 "Windows, tabs and dialogs let go of everything they held when they close."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:37
+#: data/io.github.sachesi.spiral.metainfo.xml:42
 msgid ""
 "A column view, the third way to look at a folder: the path drawn as a strip "
 "of lists, one folder per column, with the folder you are in at the right and "
@@ -286,7 +307,7 @@ msgstr ""
 "записують після створення, наприклад вставлений з буфера знімок екрана, "
 "отримує мініатюру без перезапуску."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:42
+#: data/io.github.sachesi.spiral.metainfo.xml:47
 msgid ""
 "A click on empty space in a folder takes the keyboard and clears the "
 "selection, so Ctrl+A and the other file keys no longer wait for a file to be "
@@ -302,7 +323,7 @@ msgstr ""
 "позначення, а відкрите ним меню діє на теку. Кнопка фільтрів пошуку знову "
 "має піктограму."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:47
+#: data/io.github.sachesi.spiral.metainfo.xml:52
 msgid ""
 "Two folder panes side by side, off by default and turned on with F3: F6 "
 "moves between them, the pane in charge is outlined, and everything outside "
@@ -319,7 +340,7 @@ msgstr ""
 "двадцять п’ять секунд через взаємне блокування портала й відкриває власне "
 "вікно з позначеним файлом."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:52
+#: data/io.github.sachesi.spiral.metainfo.xml:57
 msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
@@ -336,7 +357,7 @@ msgstr ""
 "Компактні стовпці списку зі змінною шириною, тип показано як розширення "
 "файла, перемикач зірочки стежить за вибраним."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:57
+#: data/io.github.sachesi.spiral.metainfo.xml:62
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -354,7 +375,7 @@ msgstr ""
 "та недоступні дії для файлів лише для читання, теки стежать за змінами "
 "ззовні, а буфер обміну вставляє шляхи в термінали."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:62
+#: data/io.github.sachesi.spiral.metainfo.xml:67
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
@@ -365,7 +386,7 @@ msgstr ""
 "виклик, -w, -s, -q. Звернення до файлової системи більше не блокують "
 "інтерфейс на повільних точках монтування."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:66
+#: data/io.github.sachesi.spiral.metainfo.xml:71
 msgid "First release."
 msgstr "Перший випуск."
 
@@ -420,43 +441,43 @@ msgstr "_Розпакувати"
 msgid "Archive"
 msgstr "Архів"
 
-#: src/browser_actions.rs:698
+#: src/browser_actions.rs:701
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr "Не вдалося вставити зображення"
 
-#: src/browser_actions.rs:712
+#: src/browser_actions.rs:715
 #, no-c-format
 msgid "Move To"
 msgstr "Пересунути до"
 
-#: src/browser_actions.rs:714
+#: src/browser_actions.rs:717
 #, no-c-format
 msgid "Copy To"
 msgstr "Копіювати до"
 
-#: src/browser_actions.rs:717
+#: src/browser_actions.rs:720
 #, no-c-format
 msgid "_Move"
 msgstr "_Пересунути"
 
-#: src/browser_actions.rs:719 ui/browser_view.ui:208
+#: src/browser_actions.rs:722 ui/browser_view.ui:208
 #, no-c-format
 msgid "_Copy"
 msgstr "_Копіювати"
 
-#: src/browser_actions.rs:814 src/browser_view.rs:968
+#: src/browser_actions.rs:817 src/browser_view.rs:984
 #: src/dialogs/open_with.rs:201
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не вдалося відкрити"
 
-#: src/browser_actions.rs:824
+#: src/browser_actions.rs:827
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Остаточно вилучити «%s»?"
 
-#: src/browser_actions.rs:826
+#: src/browser_actions.rs:829
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -464,41 +485,41 @@ msgstr[0] "Остаточно вилучити %d об’єкт?"
 msgstr[1] "Остаточно вилучити %d об’єкти?"
 msgstr[2] "Остаточно вилучити %d об’єктів?"
 
-#: src/browser_actions.rs:834
+#: src/browser_actions.rs:837
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Остаточно вилучені об’єкти неможливо відновити."
 
-#: src/browser_actions.rs:839 src/browser_actions.rs:863
+#: src/browser_actions.rs:842 src/browser_actions.rs:866
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
 #: src/ops/archive.rs:350 src/ops/conflict.rs:63 src/ops/conflict.rs:314
-#: src/ops/walk.rs:223 src/places_sidebar.rs:618
+#: src/ops/walk.rs:223 src/places_sidebar.rs:640
 #: src/portal/chooser_window.rs:674
 #, no-c-format
 msgid "_Cancel"
 msgstr "_Скасувати"
 
-#: src/browser_actions.rs:840
+#: src/browser_actions.rs:843
 #, no-c-format
 msgid "_Delete"
 msgstr "В_илучити"
 
-#: src/browser_actions.rs:856
+#: src/browser_actions.rs:859
 #, no-c-format
 msgid "Empty Trash?"
 msgstr "Спорожнити смітник?"
 
-#: src/browser_actions.rs:858
+#: src/browser_actions.rs:861
 #, no-c-format
 msgid "All items in the Trash will be permanently deleted."
 msgstr "Усі об’єкти у смітнику буде остаточно вилучено."
 
-#: src/browser_actions.rs:864 src/places_sidebar.rs:620 ui/browser_view.ui:350
+#: src/browser_actions.rs:867 src/places_sidebar.rs:642 ui/browser_view.ui:350
 #, no-c-format
 msgid "_Empty Trash"
 msgstr "_Спорожнити смітник"
 
-#: src/browser_view.rs:490
+#: src/browser_view.rs:500
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
@@ -506,7 +527,7 @@ msgstr[0] "Вибрано %d теку"
 msgstr[1] "Вибрано %d теки"
 msgstr[2] "Вибрано %d тек"
 
-#: src/browser_view.rs:494
+#: src/browser_view.rs:504
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
@@ -514,44 +535,44 @@ msgstr[0] "Вибрано %d об’єкт"
 msgstr[1] "Вибрано %d об’єкти"
 msgstr[2] "Вибрано %d об’єктів"
 
-#: src/browser_view.rs:605
+#: src/browser_view.rs:621
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Вилучити з вибраного"
 
-#: src/browser_view.rs:607
+#: src/browser_view.rs:623
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Додати до вибраного"
 
-#: src/browser_view.rs:979 src/dialogs/open_with.rs:204
+#: src/browser_view.rs:995 src/dialogs/open_with.rs:204
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
-#: src/ops/walk.rs:46 src/places_sidebar.rs:647
+#: src/ops/walk.rs:46 src/places_sidebar.rs:669
 #, no-c-format
 msgid "_OK"
 msgstr "_Гаразд"
 
-#: src/browser_view.rs:1001
+#: src/browser_view.rs:1017
 #, no-c-format
 msgid "No Results Found"
 msgstr "Нічого не знайдено"
 
-#: src/browser_view.rs:1003 ui/browser_view.ui:98
+#: src/browser_view.rs:1019 ui/browser_view.ui:98
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Тека порожня"
 
-#: src/browser_view.rs:1023
+#: src/browser_view.rs:1039
 #, no-c-format
 msgid "Loading…"
 msgstr "Завантаження…"
 
-#: src/browser_view.rs:1039
+#: src/browser_view.rs:1055
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Вибрано «%s»"
 
-#: src/browser_view.rs:1044
+#: src/browser_view.rs:1060
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -560,26 +581,21 @@ msgstr[1] "%d інші об’єкти вибрано"
 msgstr[2] "%d інших об’єктів вибрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1050
+#: src/browser_view.rs:1066
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:1667
+#: src/browser_view.rs:1683
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:1747 src/dialogs/properties.rs:256
+#: src/browser_view.rs:1763 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
 msgstr "Розташування"
-
-#: src/browser_view.rs:1912 src/dialogs/columns.rs:25
-#, no-c-format
-msgid "Star"
-msgstr "Улюблене"
 
 #: src/dialogs/captions.rs:20
 #, no-c-format
@@ -605,6 +621,11 @@ msgstr "Третій"
 #, no-c-format
 msgid "Captions"
 msgstr "Підписи"
+
+#: src/dialogs/columns.rs:25
+#, no-c-format
+msgid "Star"
+msgstr "Улюблене"
 
 #: src/dialogs/columns.rs:40
 #, no-c-format
@@ -790,12 +811,38 @@ msgstr "Перемикання вигляду та впорядкування д
 msgid "Expandable Folders in List View"
 msgstr "Розгортувані теки у вигляді списку"
 
-#: src/dialogs/preferences.rs:101
+#: src/dialogs/preferences.rs:102
+#, no-c-format
+msgid "Sidebar"
+msgstr "Бічна панель"
+
+#: src/dialogs/preferences.rs:105 src/places_sidebar.rs:424
+#, no-c-format
+msgid "Root"
+msgstr "Корінь"
+
+#: src/dialogs/preferences.rs:106
+#, no-c-format
+msgid "The top of the filesystem, above the bookmarks"
+msgstr "Вершина файлової системи, над закладками"
+
+#: src/dialogs/preferences.rs:111 src/file_utils.rs:313 src/path_bar.rs:315
+#: src/places_sidebar.rs:432
+#, no-c-format
+msgid "Favorites"
+msgstr "Улюблене"
+
+#: src/dialogs/preferences.rs:112
+#, no-c-format
+msgid "The starred files and folders"
+msgstr "Файли й теки, позначені зірочкою"
+
+#: src/dialogs/preferences.rs:121
 #, no-c-format
 msgid "Optional Context Menu Actions"
 msgstr "Додаткові дії контекстного меню"
 
-#: src/dialogs/preferences.rs:103
+#: src/dialogs/preferences.rs:123
 #, no-c-format
 msgid ""
 "Shift+Delete deletes permanently either way, and links can always be pasted."
@@ -803,74 +850,116 @@ msgstr ""
 "Shift+Delete у будь-якому разі вилучає остаточно, а посилання завжди можна "
 "вставити."
 
-#: src/dialogs/preferences.rs:107
+#: src/dialogs/preferences.rs:127
 #, no-c-format
 msgid "Create Link"
 msgstr "Створити посилання"
 
-#: src/dialogs/preferences.rs:114 ui/shortcuts_dialog.ui:228
+#: src/dialogs/preferences.rs:134 ui/shortcuts_dialog.ui:228
 #, no-c-format
 msgid "Delete Permanently"
 msgstr "Вилучити остаточно"
 
-#: src/dialogs/preferences.rs:123
+#: src/dialogs/preferences.rs:143
 #, no-c-format
 msgid "Performance"
 msgstr "Швидкодія"
 
-#: src/dialogs/preferences.rs:125
+#: src/dialogs/preferences.rs:145
 #, no-c-format
 msgid "Reading every file on a network share or a slow disk can take a while."
 msgstr ""
 "Читання всіх файлів на мережевому ресурсі або повільному диску може тривати "
 "довго."
 
-#: src/dialogs/preferences.rs:129
+#: src/dialogs/preferences.rs:149
 #, no-c-format
 msgid "Local Files Only"
 msgstr "Лише локальні файли"
 
-#: src/dialogs/preferences.rs:130
+#: src/dialogs/preferences.rs:150
 #, no-c-format
 msgid "All Files"
 msgstr "Усі файли"
 
-#: src/dialogs/preferences.rs:131
+#: src/dialogs/preferences.rs:151
 #, no-c-format
 msgid "Never"
 msgstr "Ніколи"
 
-#: src/dialogs/preferences.rs:136
+#: src/dialogs/preferences.rs:156
 #, no-c-format
 msgid "Show Thumbnails"
 msgstr "Показувати мініатюри"
 
-#: src/dialogs/preferences.rs:143
+#: src/dialogs/preferences.rs:163
 #, no-c-format
 msgid "Count Items in Folders"
 msgstr "Підраховувати об’єкти в теках"
 
-#: src/dialogs/preferences.rs:150
+#: src/dialogs/preferences.rs:170
 #, no-c-format
 msgid "Search in Subfolders"
 msgstr "Пошук у підтеках"
 
-#: src/dialogs/preferences.rs:185
+#: src/dialogs/preferences.rs:193
+#, no-c-format
+msgid "A-Z"
+msgstr "А-Я"
+
+#: src/dialogs/preferences.rs:194
+#, no-c-format
+msgid "Z-A"
+msgstr "Я-А"
+
+#: src/dialogs/preferences.rs:195
+#, no-c-format
+msgid "Last Modified"
+msgstr "За датою зміни"
+
+#: src/dialogs/preferences.rs:196
+#, no-c-format
+msgid "First Modified"
+msgstr "Спочатку старі"
+
+#: src/dialogs/preferences.rs:197 src/dialogs/properties.rs:251
+#: src/file_utils.rs:150 src/file_utils.rs:165
+#, no-c-format
+msgid "Size"
+msgstr "Розмір"
+
+#: src/dialogs/preferences.rs:198 src/dialogs/properties.rs:243
+#: src/file_utils.rs:151 src/file_utils.rs:167 ui/window.ui:358
+#, no-c-format
+msgid "Type"
+msgstr "Тип"
+
+#: src/dialogs/preferences.rs:209
+#, no-c-format
+msgid "Sort Order"
+msgstr "Упорядкування"
+
+#: src/dialogs/preferences.rs:210
+#, no-c-format
+msgid "How folders without an order of their own are sorted"
+msgstr "Як упорядковуються теки, що не мають власного порядку"
+
+#: src/dialogs/preferences.rs:264
 #, no-c-format
 msgid "Automatic"
 msgstr "Автоматично"
 
-#: src/dialogs/preferences.rs:193
+#: src/dialogs/preferences.rs:272
 #, no-c-format
 msgid "Automatic uses %s"
 msgstr "Автоматично: %s"
 
-#: src/dialogs/preferences.rs:194
+#: src/dialogs/preferences.rs:273
 #, no-c-format
 msgid "No terminal emulator found in PATH"
 msgstr "У PATH не знайдено емулятора термінала"
 
-#: src/dialogs/preferences.rs:197
+#: src/dialogs/preferences.rs:276
 #, no-c-format
 msgid "Terminal"
 msgstr "Термінал"
@@ -957,12 +1046,6 @@ msgstr[0] "%d об’єкт"
 msgstr[1] "%d об’єкти"
 msgstr[2] "%d об’єктів"
 
-#: src/dialogs/properties.rs:243 src/file_utils.rs:151 src/file_utils.rs:167
-#: ui/window.ui:358
-#, no-c-format
-msgid "Type"
-msgstr "Тип"
-
 #: src/dialogs/properties.rs:247 src/file_utils.rs:168
 #, no-c-format
 msgid "MIME Type"
@@ -972,11 +1055,6 @@ msgstr "Тип MIME"
 #, no-c-format
 msgid "Calculating…"
 msgstr "Обчислення…"
-
-#: src/dialogs/properties.rs:251 src/file_utils.rs:150 src/file_utils.rs:165
-#, no-c-format
-msgid "Size"
-msgstr "Розмір"
 
 #: src/dialogs/properties.rs:259 src/file_utils.rs:152 ui/window.ui:379
 #, no-c-format
@@ -1188,20 +1266,15 @@ msgstr[0] "%d об’єкт"
 msgstr[1] "%d об’єкти"
 msgstr[2] "%d об’єктів"
 
-#: src/file_utils.rs:307 src/path_bar.rs:309 src/places_sidebar.rs:394
+#: src/file_utils.rs:307 src/path_bar.rs:309 src/places_sidebar.rs:406
 #, no-c-format
 msgid "Home"
 msgstr "Домівка"
 
-#: src/file_utils.rs:310 src/path_bar.rs:312 src/places_sidebar.rs:417
+#: src/file_utils.rs:310 src/path_bar.rs:312 src/places_sidebar.rs:439
 #, no-c-format
 msgid "Trash"
 msgstr "Смітник"
-
-#: src/file_utils.rs:313 src/path_bar.rs:315 src/places_sidebar.rs:411
-#, no-c-format
-msgid "Favorites"
-msgstr "Улюблене"
 
 #: src/file_utils.rs:318 src/path_bar.rs:320
 #, no-c-format
@@ -1263,7 +1336,7 @@ msgstr "Перейменувати файл"
 msgid "New Filename"
 msgstr "Нова назва"
 
-#: src/naming.rs:155 src/ops/conflict.rs:71 src/places_sidebar.rs:737
+#: src/naming.rs:155 src/ops/conflict.rs:71 src/places_sidebar.rs:759
 #, no-c-format
 msgid "_Rename"
 msgstr "Пере_йменувати"
@@ -1831,47 +1904,47 @@ msgstr "копія"
 msgid "Edit Location"
 msgstr "Змінити адресу"
 
-#: src/places_sidebar.rs:404
+#: src/places_sidebar.rs:416
 #, no-c-format
 msgid "Desktop"
 msgstr "Стільниця"
 
-#: src/places_sidebar.rs:512
+#: src/places_sidebar.rs:534
 #, no-c-format
 msgid "Eject"
 msgstr "Витягнути"
 
-#: src/places_sidebar.rs:546
+#: src/places_sidebar.rs:568
 #, no-c-format
 msgid "Could Not Mount"
 msgstr "Не вдалося змонтувати"
 
-#: src/places_sidebar.rs:575
+#: src/places_sidebar.rs:597
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr "Запис даних на «%s»"
 
-#: src/places_sidebar.rs:577
+#: src/places_sidebar.rs:599
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr "Не від’єднуйте до завершення"
 
-#: src/places_sidebar.rs:596
+#: src/places_sidebar.rs:618
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr "Тепер «%s» можна від’єднати"
 
-#: src/places_sidebar.rs:602
+#: src/places_sidebar.rs:624
 #, no-c-format
 msgid "Could Not Eject"
 msgstr "Не вдалося витягнути"
 
-#: src/places_sidebar.rs:613
+#: src/places_sidebar.rs:635
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr "Спорожнити смітник перед демонтуванням?"
 
-#: src/places_sidebar.rs:615
+#: src/places_sidebar.rs:637
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
@@ -1880,7 +1953,7 @@ msgstr ""
 "Щоб звільнити місце на цьому томі, потрібно спорожнити смітник. Усі об’єкти "
 "у смітнику цього тому буде остаточно втрачено."
 
-#: src/places_sidebar.rs:619
+#: src/places_sidebar.rs:641
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr "_Не спорожняти"
