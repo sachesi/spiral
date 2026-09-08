@@ -168,13 +168,9 @@ impl BrowserView {
             self,
             move || view.update_action_state()
         );
-        self.model()
-            .selection()
-            .connect_selection_changed(glib::clone!(
-                #[strong]
-                update,
-                move |_, _, _| update()
-            ));
+        // The selection is not watched here: the view coalesces its own changes and calls
+        // `update_action_state` from there, so a rubber band costs one update, not one
+        // per motion event.
         self.connect_location_notify(glib::clone!(
             #[strong]
             update,
@@ -405,7 +401,7 @@ impl BrowserView {
         }
     }
 
-    fn update_action_state(&self) {
+    pub(crate) fn update_action_state(&self) {
         if self.chooser_mode() {
             return;
         }
