@@ -134,7 +134,9 @@ its row. Drop targets are folders in the view, breadcrumbs and sidebar entries e
 Trash and Favorites. Cut, copy and paste use the same clipboard format as GNOME Files, so
 the two interoperate; files waiting on the clipboard as a cut are shown faded until they
 are pasted. An image on the clipboard with no files behind it — a screenshot, say —
-pastes into the folder as "Pasted Image.png". "Paste Into Folder" pastes into a selected folder without entering it.
+pastes into the folder as "Pasted Image.png". What a paste leaves in the folder is selected
+once it lands, ready for whatever is done to it next. "Paste Into Folder" pastes into a
+selected folder without entering it.
 
 "Copy to…" and "Move to…" ask for a folder instead of using the clipboard. "Paste as
 Link" and, when turned on in Preferences, "Create Link" make symbolic links; a link

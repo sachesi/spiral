@@ -1121,12 +1121,21 @@ impl BrowserView {
         });
     }
 
-    /// Select `files` once the directory finished loading (used by FileManager1.ShowItems).
+    /// Select `files` once the directory finished loading (used by FileManager1.ShowItems
+    /// and by pasting). A file written a moment ago reaches the model through the folder
+    /// monitor, which lags behind the operation that made it, so wait for it to turn up
+    /// rather than selecting nothing; a file that is never coming only costs the wait.
     pub fn select_files_when_loaded(&self, files: Vec<gio::File>) {
+        if files.is_empty() {
+            return;
+        }
         let view = self.clone();
         glib::spawn_future_local(async move {
             let model = view.model();
-            while model.loading() {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+            while std::time::Instant::now() < deadline
+                && (model.loading() || files.iter().any(|f| model.position_of(f).is_none()))
+            {
                 glib::timeout_future(std::time::Duration::from_millis(50)).await;
             }
             let sel = model.selection();
