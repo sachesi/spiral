@@ -86,7 +86,9 @@ The grid can show up to three lines under each name: size or item count, date,
 permissions, type, MIME type, owner, group; "Captions…" in the view menu picks them. In
 the list, "Visible Columns…" chooses among size, type, modified, accessed, created,
 owner, group, permissions and a star column that toggles favourites; the name column
-always stays, and only name, size, type and modified sort. Type shows the extension —
+always stays, and only name, size, type and modified sort. A name too long for its column
+is cut in the middle and shown whole on hover, and the column stops shrinking at about
+fourteen characters, below which the list scrolls sideways instead. Type shows the extension —
 "txt", "tar.gz", "Folder" — and falls back to the full description, on a tooltip, for
 names without one. Every column but the name and the star can be resized by dragging its
 header edge.
