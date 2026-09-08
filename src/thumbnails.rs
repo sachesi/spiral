@@ -740,6 +740,7 @@ pub(crate) fn run_bounded(
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()?;
+    stand_aside(child.id());
     // Each pipe is drained on a thread of its own: a child that fills one would wait for
     // a reader that is here, waiting for the child.
     let out = drain(child.stdout.take());
@@ -772,6 +773,18 @@ pub(crate) fn run_bounded(
             format!("{status}: {stderr}")
         },
     })
+}
+
+/// Put a helper behind the interface for both processor and disk. Several decoders at once
+/// will otherwise take a machine over, and the window they are drawing into stops answering
+/// while they do. Both are set after the child has started, since a pre-exec hook would cost
+/// the fork-free spawn; the child passes them on to whatever it starts in turn.
+fn stand_aside(pid: u32) {
+    unsafe {
+        libc::setpriority(libc::PRIO_PROCESS, pid, 10);
+        // Idle in the disk queue, which is class 3 in the top three bits of the value.
+        libc::syscall(libc::SYS_ioprio_set, 1, pid, 3 << 13);
+    }
 }
 
 /// What a bounded run left behind.
