@@ -267,6 +267,15 @@ mod imp {
                     }
                 ),
             );
+            // Turning the column view off puts the views that are in it back in the list.
+            self.settings.connect_changed(
+                Some("use-column-view"),
+                glib::clone!(
+                    #[weak]
+                    obj,
+                    move |_, _| obj.set_view_mode(obj.view_mode())
+                ),
+            );
             for key in crate::prefs::VIEW_KEYS {
                 self.settings.connect_changed(
                     Some(key),
@@ -414,6 +423,12 @@ mod imp {
 
     impl BrowserView {
         fn set_view_mode(&self, mode: ViewMode) {
+            // With the column view turned off the list stands in for it, whatever the
+            // settings or a folder remember from when it was on.
+            let mode = match mode {
+                ViewMode::Columns if !crate::prefs::column_view() => ViewMode::List,
+                mode => mode,
+            };
             self.view_mode.set(mode);
             // Only the list can show a folder's children in place.
             if mode != ViewMode::List {
@@ -810,6 +825,9 @@ impl BrowserView {
     /// Switch view: for this folder only when views are remembered per folder, otherwise
     /// as the new global default.
     pub fn choose_view_mode(&self, next: ViewMode) {
+        if next == ViewMode::Columns && !crate::prefs::column_view() {
+            return;
+        }
         self.set_view_mode(next);
         let nick = next.nick();
         match self.location() {
@@ -1624,6 +1642,8 @@ impl BrowserView {
             view.bind_icon(&image, &emblem, &info);
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
+            // Whatever the column had to cut off, on hover.
+            label.set_tooltip_text(Some(&info.display_name()));
         });
         name_factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();

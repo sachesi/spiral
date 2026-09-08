@@ -57,6 +57,11 @@
       <default>false</default>
       <summary>Expandable folders in list view</summary>
     </key>
+    <key name="use-column-view" type="b">
+      <default>false</default>
+      <summary>Offer the column view</summary>
+      <description>Adds the columns to the views the view button and the menu switch between.</description>
+    </key>
     <key name="remember-view" type="b">
       <default>true</default>
       <summary>Remember the view mode of each folder</summary>

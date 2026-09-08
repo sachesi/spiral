@@ -65,6 +65,14 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
         .bind("folders-first", &folders_first, "active")
         .build();
     views.add(&folders_first);
+    let columns = adw::SwitchRow::builder()
+        .title(gettext("Column View"))
+        .subtitle(gettext(
+            "A third view drawing the path as a strip of lists, one folder per column",
+        ))
+        .build();
+    settings.bind("use-column-view", &columns, "active").build();
+    views.add(&columns);
     let guess = adw::SwitchRow::builder()
         .title(gettext("Grid View for Media Folders"))
         .subtitle(gettext(
