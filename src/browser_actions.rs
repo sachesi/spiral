@@ -7,7 +7,7 @@ use crate::adw::subclass::prelude::*;
 use crate::application::SpiralApplication;
 use crate::browser_view::BrowserView;
 use crate::file_utils;
-use crate::ops::{JobKind, JobManager};
+use crate::ops::{JobKind, JobManager, JobStatus};
 use crate::{clipboard, gio, glib, gtk};
 
 /// Position of the first name cell below `w`, a few levels deep at most.
@@ -620,6 +620,20 @@ impl BrowserView {
         }
     }
 
+    /// Submit and select what the job leaves in the folder, the way pasting should end:
+    /// with the pasted files picked out, ready for the next thing done to them.
+    fn submit_and_select(&self, kind: JobKind) {
+        let Some(job) = self.manager().map(|m| m.submit(kind)) else {
+            return;
+        };
+        let view = self.clone();
+        job.connect_status_notify(move |job| {
+            if job.status() == JobStatus::Done {
+                view.select_files_when_loaded(job.landed());
+            }
+        });
+    }
+
     pub fn submit_kind(&self, kind: JobKind) {
         self.submit(kind);
     }
@@ -658,7 +672,7 @@ impl BrowserView {
                     return;
                 };
                 let pairs = files.into_iter().map(|f| (f, dest.clone())).collect();
-                view.submit(JobKind::Transfer {
+                view.submit_and_select(JobKind::Transfer {
                     pairs,
                     is_move: cut,
                 });
@@ -676,7 +690,7 @@ impl BrowserView {
             self,
             async move {
                 match cb.read_texture_future().await {
-                    Ok(Some(image)) => view.submit(JobKind::SaveImage {
+                    Ok(Some(image)) => view.submit_and_select(JobKind::SaveImage {
                         parent: dest,
                         image,
                     }),
@@ -731,7 +745,7 @@ impl BrowserView {
             self,
             async move {
                 if let Some((files, _)) = clipboard::read(&cb).await {
-                    view.submit(JobKind::Link { files, dest });
+                    view.submit_and_select(JobKind::Link { files, dest });
                 }
             }
         ));

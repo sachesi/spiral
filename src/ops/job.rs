@@ -303,6 +303,16 @@ impl Job {
         self.imp().kind.borrow().clone().expect("job without kind")
     }
 
+    /// The top-level items the job left where it was aimed: what a paste puts in a folder.
+    pub fn landed(&self) -> Vec<gio::File> {
+        let out = self.imp().outcome.borrow();
+        out.created
+            .iter()
+            .cloned()
+            .chain(out.moved.iter().map(|(_, dest)| dest.clone()))
+            .collect()
+    }
+
     pub fn cancel(&self) {
         if let Some(h) = self.imp().abort.borrow().as_ref() {
             h.abort();
