@@ -1122,6 +1122,7 @@ fn text_view(text: &str, info: &gio::FileInfo, content_type: &str) -> gtk::Widge
     );
     buffer.set_text(text);
     let view = sourceview5::View::with_buffer(&buffer);
+    view.add_css_class("spiral-source-view");
     view.set_editable(false);
     view.set_cursor_visible(false);
     view.set_monospace(true);
