@@ -3,14 +3,16 @@
 ## What you need
 
 To build: Rust 1.88 or newer, `blueprint-compiler`, `just`, and the development packages
-of GTK 4.22, libadwaita 1.9, libseccomp and GStreamer. On Fedora that is `gtk4-devel
-libadwaita-devel libseccomp-devel gstreamer1-devel blueprint-compiler just`; on Debian
-`libgtk-4-dev libadwaita-1-dev libseccomp-dev libgstreamer1.0-dev blueprint-compiler
-just`. `just check` also wants `desktop-file-validate` and `appstreamcli`.
+of GTK 4.22, libadwaita 1.9, GtkSourceView 5, libseccomp and GStreamer. On Fedora that is
+`gtk4-devel libadwaita-devel gtksourceview5-devel libseccomp-devel gstreamer1-devel
+blueprint-compiler just`; on Debian `libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev
+libseccomp-dev libgstreamer1.0-dev blueprint-compiler just`. `just check` also wants
+`desktop-file-validate` and `appstreamcli`.
 
-To run: GTK 4.22, libadwaita 1.9, a session bus, and xdg-desktop-portal if you want the
-file chooser. The preview plays video and sound through GStreamer, which needs its base
-plugins and the GTK 4 sink from gst-plugins-rs: on Fedora `gstreamer1-plugins-base
+To run: GTK 4.22, libadwaita 1.9, GtkSourceView 5, a session bus, and xdg-desktop-portal
+if you want the file chooser. GtkSourceView colours the text files the preview shows. The
+preview plays video and sound through GStreamer, which needs its base plugins and the GTK 4
+sink from gst-plugins-rs: on Fedora `gstreamer1-plugins-base
 gstreamer1-plugin-gtk4`, on Debian `libgstreamer-plugins-base1.0-0 gstreamer1.0-gtk4`, on
 Arch `gst-plugins-base gst-plugin-gtk4`. The plugins for the formats themselves come from
 `gstreamer1-plugins-good` and its siblings; a file whose format has no plugin shows its
