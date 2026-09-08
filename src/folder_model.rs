@@ -7,6 +7,9 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 
 use crate::enums::SortKey;
+
+/// How many files a folder has to be listing before its order waits for the end of it.
+const SORT_WHEN_LOADED_ABOVE: u32 = 2000;
 use crate::file_utils;
 use crate::{gio, glib, gtk};
 
@@ -58,6 +61,8 @@ mod imp {
         /// Files the monitor reported, waiting for the next pass over the list.
         pub pending: RefCell<Vec<gio::File>>,
         pub refresh_queued: Cell<bool>,
+        /// Set while a big folder is listing and its order is waiting for the end of it.
+        sort_deferred: Cell<bool>,
         /// Root of the pipeline: `dir_list`, or `starred_store` for `starred:///`.
         filtered: gtk::FilterListModel,
         pub starred_store: gio::ListStore,
@@ -139,6 +144,7 @@ mod imp {
                 monitor: Default::default(),
                 pending: Default::default(),
                 refresh_queued: Default::default(),
+                sort_deferred: Default::default(),
                 filtered,
                 starred_store: gio::ListStore::new::<gio::FileInfo>(),
                 starred_gen: Default::default(),
@@ -179,9 +185,31 @@ mod imp {
                 #[weak]
                 obj,
                 move |dl| {
+                    let imp = obj.imp();
+                    if !dl.is_loading() && imp.sort_deferred.replace(false) {
+                        imp.sorted.set_sorter(Some(&imp.sorter));
+                    }
                     // While searching, the search decides when loading ends.
-                    if !obj.imp().searching.get() {
-                        obj.imp().set_loading(dl.is_loading());
+                    if !imp.searching.get() {
+                        imp.set_loading(dl.is_loading());
+                    }
+                }
+            ));
+            // A folder still being listed arrives in batches of thousands, and sorting
+            // each batch into what is already there makes the sorted model rebuild and
+            // every model and view below it follow. Past a few thousand files that costs
+            // far more than an order nobody can read yet is worth, so a big folder is put
+            // in order once, when the listing ends.
+            self.dir_list.connect_items_changed(glib::clone!(
+                #[weak]
+                obj,
+                move |dl, _, _, _| {
+                    let imp = obj.imp();
+                    if dl.is_loading()
+                        && dl.n_items() > SORT_WHEN_LOADED_ABOVE
+                        && !imp.sort_deferred.replace(true)
+                    {
+                        imp.sorted.set_sorter(gtk::Sorter::NONE);
                     }
                 }
             ));
