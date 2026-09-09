@@ -68,6 +68,7 @@ pub mod prefs;
 pub mod progress_indicator;
 pub mod search;
 pub mod starred;
+pub mod tags;
 pub mod templates;
 pub mod terminal;
 pub mod thumbnails;

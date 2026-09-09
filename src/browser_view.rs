@@ -53,6 +53,11 @@ mod imp {
         /// How many items the template put in `open_section`; what follows is ours.
         pub open_items: Cell<u32>,
         #[template_child]
+        pub tags_section: TemplateChild<gio::Menu>,
+        /// The row of tag dots the item menu shows, kept between menus; the popover drops
+        /// it whenever it builds a menu afresh, and it is put back.
+        pub tag_picker: RefCell<Option<gtk::Box>>,
+        #[template_child]
         pub background_menu: TemplateChild<gio::MenuModel>,
         #[template_child]
         pub new_section: TemplateChild<gio::Menu>,
@@ -182,6 +187,8 @@ mod imp {
                 item_menu: Default::default(),
                 open_section: Default::default(),
                 open_items: Default::default(),
+                tags_section: Default::default(),
+                tag_picker: Default::default(),
                 background_menu: Default::default(),
                 new_section: Default::default(),
                 drop_menu: Default::default(),
@@ -320,6 +327,20 @@ mod imp {
                     move |_, _| obj.set_view_mode(obj.view_mode())
                 ),
             );
+            // The dots beside the names come and go with the tags and the preference.
+            for key in ["use-tags", "tags"] {
+                self.settings.connect_changed(
+                    Some(key),
+                    glib::clone!(
+                        #[weak]
+                        obj,
+                        move |_, _| {
+                            obj.refresh_cells();
+                            obj.update_action_state();
+                        }
+                    ),
+                );
+            }
             // Caption lines are read as a grid cell is bound, so changing them has to
             // build the cells again.
             self.settings.connect_changed(
@@ -665,6 +686,99 @@ pub(crate) fn emblem_image() -> gtk::Image {
 
 fn set_emblem(emblem: &gtk::Image, locked: bool) {
     emblem.set_icon_name(locked.then_some("changes-prevent-symbolic"));
+}
+
+/// A tag's colour as a dot; CSS paints it.
+pub(crate) fn tag_dot(color: &str) -> gtk::Image {
+    let class = if color.is_empty() {
+        "spiral-tag-none".to_string()
+    } else {
+        format!("spiral-tag-{color}")
+    };
+    gtk::Image::builder()
+        .css_classes(["spiral-tag-dot", &class])
+        .halign(gtk::Align::Center)
+        .valign(gtk::Align::Center)
+        .build()
+}
+
+/// The column of dots a cell shows its tags in, stacked at the top left of the icon the
+/// way the lock sits at the top right; empty until the cell is bound.
+pub(crate) fn tag_dots() -> gtk::Box {
+    gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(2)
+        .halign(gtk::Align::Center)
+        .valign(gtk::Align::Start)
+        .css_classes(["spiral-tags"])
+        .build()
+}
+
+/// A small icon with its tag dots laid over its top left corner, for the views whose
+/// icons have no margin to keep them in.
+pub(crate) fn icon_with_tags(image: &gtk::Image) -> gtk::Overlay {
+    let overlay = gtk::Overlay::builder().child(image).build();
+    let dots = tag_dots();
+    dots.set_halign(gtk::Align::Start);
+    overlay.add_overlay(&dots);
+    overlay
+}
+
+/// The icon and the dots of a cell that keeps them in an overlay.
+pub(crate) fn overlay_parts(overlay: &gtk::Overlay) -> (gtk::Image, gtk::Box) {
+    let image = overlay.child().and_downcast::<gtk::Image>().unwrap();
+    let dots = overlay.last_child().and_downcast::<gtk::Box>().unwrap();
+    (image, dots)
+}
+
+/// A dot per tag of the file with a colour, reusing the dots that are there: cells are
+/// bound far more often than tags change. A file that carries tags is made known to the
+/// index while it is here, in case it was tagged elsewhere or moved by another program.
+pub(crate) fn set_tags(dots: &gtk::Box, info: &gio::FileInfo) {
+    let names = if crate::tags::enabled() {
+        crate::tags::of_info(info)
+    } else {
+        Vec::new()
+    };
+    let mut child = dots.first_child();
+    let mut shown = 0;
+    for name in &names {
+        let Some(color) = crate::tags::color_of(name).filter(|c| !c.is_empty()) else {
+            continue;
+        };
+        let class = format!("spiral-tag-{color}");
+        match child.take() {
+            Some(dot) => {
+                dot.set_css_classes(&["spiral-tag-dot", &class]);
+                child = dot.next_sibling();
+            }
+            None => dots.append(&tag_dot(&color)),
+        }
+        shown += 1;
+    }
+    while let Some(dot) = child {
+        child = dot.next_sibling();
+        dots.remove(&dot);
+    }
+    dots.set_tooltip_text((shown > 0).then(|| names.join(", ")).as_deref());
+    if !names.is_empty() {
+        crate::tags::note(&file_utils::file_of(info), &names);
+    }
+}
+
+/// The tag dots of a grid or list name cell, wherever the cell keeps them.
+fn cell_tags(cell: &gtk::Widget) -> Option<gtk::Box> {
+    let mut child = cell.first_child();
+    while let Some(c) = child {
+        if c.has_css_class("spiral-tags") {
+            return c.downcast().ok();
+        }
+        if let Some(found) = cell_tags(&c) {
+            return Some(found);
+        }
+        child = c.next_sibling();
+    }
+    None
 }
 
 pub(crate) fn unbind_icon(image: &gtk::Image) {
@@ -1985,6 +2099,9 @@ impl BrowserView {
                     );
                 } else if let Some(emblem) = cell_emblem(cell) {
                     set_emblem(&emblem, file_utils::is_locked(&info, writable));
+                    if let Some(dots) = cell_tags(cell) {
+                        set_tags(&dots, &info);
+                    }
                 }
             });
         }
@@ -2043,13 +2160,16 @@ impl BrowserView {
             labels.append(&label);
             labels.append(&captions);
             // Icon between two emblem-wide margins, the lock stacked at the top of the
-            // right one: the Nautilus grid cell geometry.
-            image.set_margin_start(EMBLEM_MARGIN);
+            // right one, the tags at the top of the left one: the Nautilus grid cell
+            // geometry, with the margin it leaves empty put to use.
+            let dots = tag_dots();
+            dots.set_width_request(EMBLEM_MARGIN);
             image.set_hexpand(true);
             let emblem = emblem_image();
             emblem.set_width_request(EMBLEM_MARGIN);
             emblem.set_valign(gtk::Align::Start);
             let icon_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            icon_row.append(&dots);
             icon_row.append(&image);
             icon_row.append(&emblem);
             let bx = gtk::Box::builder()
@@ -2072,7 +2192,8 @@ impl BrowserView {
             };
             let bx = item.child().unwrap();
             let icon_row = bx.first_child().unwrap();
-            let image = icon_row.first_child().and_downcast::<gtk::Image>().unwrap();
+            let dots = icon_row.first_child().and_downcast::<gtk::Box>().unwrap();
+            let image = dots.next_sibling().and_downcast::<gtk::Image>().unwrap();
             let emblem = icon_row.last_child().and_downcast::<gtk::Image>().unwrap();
             let labels = bx.last_child().unwrap();
             let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
@@ -2081,6 +2202,7 @@ impl BrowserView {
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             item.set_accessible_label(&info.display_name());
+            set_tags(&dots, &info);
             view.bind_captions(&captions, &info);
         });
         factory.connect_unbind(|_, item| {
@@ -2089,6 +2211,7 @@ impl BrowserView {
             if let Some(image) = bx
                 .first_child()
                 .and_then(|row| row.first_child())
+                .and_then(|dots| dots.next_sibling())
                 .and_downcast::<gtk::Image>()
             {
                 unbind_icon(&image);
@@ -2122,7 +2245,7 @@ impl BrowserView {
             view.bind_property("list-icon-size", &image, "pixel-size")
                 .sync_create()
                 .build();
-            bx.append(&image);
+            bx.append(&icon_with_tags(&image));
             let label = gtk::Label::builder()
                 .xalign(0.0)
                 .ellipsize(gtk::pango::EllipsizeMode::Middle)
@@ -2147,12 +2270,14 @@ impl BrowserView {
             expander.set_list_row(item.item().and_downcast::<gtk::TreeListRow>().as_ref());
             expander.set_hide_expander(!crate::prefs::tree_view());
             let bx = expander.child().unwrap();
-            let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
-            let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
+            let overlay = bx.first_child().and_downcast::<gtk::Overlay>().unwrap();
+            let (image, dots) = overlay_parts(&overlay);
+            let label = overlay.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
             view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
+            set_tags(&dots, &info);
         });
         name_factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
@@ -2160,12 +2285,12 @@ impl BrowserView {
                 return;
             };
             expander.set_list_row(None);
-            if let Some(image) = expander
+            if let Some(overlay) = expander
                 .child()
                 .and_then(|b| b.first_child())
-                .and_downcast::<gtk::Image>()
+                .and_downcast::<gtk::Overlay>()
             {
-                unbind_icon(&image);
+                unbind_icon(&overlay_parts(&overlay).0);
             }
         });
         let name_col = gtk::ColumnViewColumn::new(Some(&gettext("Name")), Some(name_factory));

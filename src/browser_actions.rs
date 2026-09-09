@@ -148,6 +148,7 @@ impl BrowserView {
         add("preview", |v| v.show_preview());
         add("star", |v| v.set_selection_starred(true));
         add("unstar", |v| v.set_selection_starred(false));
+        add("tags", |v| v.show_tags());
         add("open-item-location", |v| v.open_item_location());
         add("bookmark", |v| {
             if let Some(dir) = v.location() {
@@ -287,7 +288,7 @@ impl BrowserView {
             }
         ));
         imp.clipboard_handler.replace(Some(clipboard_handler));
-        for key in ["show-delete-permanently", "show-create-link"] {
+        for key in ["show-delete-permanently", "show-create-link", "use-tags"] {
             imp.settings.connect_changed(
                 Some(key),
                 glib::clone!(
@@ -475,10 +476,10 @@ impl BrowserView {
             .location()
             .is_some_and(|l| l.uri().starts_with("trash:"));
         // Virtual folders: nothing can be created or pasted there.
-        let virtual_dir = in_trash
-            || self
-                .location()
-                .is_some_and(|l| crate::starred::is_starred_location(&l));
+        let is_list = |l: &gio::File| {
+            crate::starred::is_starred_location(l) || crate::tags::is_tag_location(l)
+        };
+        let virtual_dir = in_trash || self.location().is_some_and(|l| is_list(&l));
         let can_write = !virtual_dir && self.imp().can_write.get();
         let all = |attr: &str| infos.iter().all(|i| file_utils::allows(i, attr));
         let (can_delete, can_trash, can_rename) = (
@@ -523,10 +524,7 @@ impl BrowserView {
             "restore",
             in_trash && n > 0 && infos.iter().all(|i| i.has_attribute("trash::orig-path")),
         );
-        let in_virtual = self.model().searching()
-            || self
-                .location()
-                .is_some_and(|l| crate::starred::is_starred_location(&l));
+        let in_virtual = self.model().searching() || self.location().is_some_and(|l| is_list(&l));
         self.set_enabled(
             "open-item-location",
             n == 1 && in_virtual && file_utils::file_of(&infos[0]).parent().is_some(),
@@ -587,6 +585,11 @@ impl BrowserView {
             .count();
         self.set_enabled("star", !in_trash && starred < n);
         self.set_enabled("unstar", starred > 0);
+        // Tags live in an extended attribute, which is the local filesystems' to keep.
+        self.set_enabled(
+            "tags",
+            crate::tags::enabled() && n > 0 && local && !in_trash && !self.chooser_mode(),
+        );
         self.set_enabled(
             "bookmark",
             !virtual_dir
@@ -701,6 +704,167 @@ impl BrowserView {
         }
         self.update_action_state();
         self.refresh_cells();
+    }
+
+    /// How the selection stands with a tag: on every file, on some, or on none.
+    fn tag_state(&self, name: &str) -> crate::dialogs::TagState {
+        let infos = self.model().selected_infos();
+        let with = infos
+            .iter()
+            .filter(|i| crate::tags::of_info(i).iter().any(|t| t == name))
+            .count();
+        match with {
+            0 => crate::dialogs::TagState::None,
+            n if n == infos.len() => crate::dialogs::TagState::All,
+            _ => crate::dialogs::TagState::Some,
+        }
+    }
+
+    /// Put a tag on the whole selection or take it off the whole selection. The infos
+    /// on screen are told as well: the folder monitor will say the same a moment later,
+    /// but the dots should not wait for it.
+    pub(crate) fn set_selection_tag(&self, name: &str, on: bool) {
+        for info in self.model().selected_infos() {
+            let file = file_utils::file_of(&info);
+            if let Err(e) = crate::tags::set(&file, name, on) {
+                if let Some(win) = self.root().and_downcast::<crate::window::SpiralWindow>() {
+                    win.show_toast(
+                        &gettext("Could not tag “%s”: %m")
+                            .replace("%s", &info.display_name())
+                            .replace("%m", e.message()),
+                        false,
+                    );
+                }
+                break;
+            }
+            let mut names = crate::tags::of_info(&info);
+            names.retain(|t| t != name);
+            if on {
+                names.push(name.to_string());
+            }
+            match crate::tags::attribute_value(&names) {
+                Some(v) => info.set_attribute_string(crate::tags::ATTRIBUTE, &v),
+                None => info.remove_attribute(crate::tags::ATTRIBUTE),
+            }
+        }
+        self.refresh_cells();
+    }
+
+    /// Every tag by name, with a box each, and a way to make a new one.
+    fn show_tags(&self) {
+        let mut carried: Vec<String> = Vec::new();
+        for info in self.model().selected_infos() {
+            for name in crate::tags::of_info(&info) {
+                if !carried.contains(&name) {
+                    carried.push(name);
+                }
+            }
+        }
+        let view = self.clone();
+        crate::dialogs::tags_dialog(
+            self,
+            carried,
+            move |name| view.tag_state(name),
+            glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                move |name, on| view.set_selection_tag(name, on)
+            ),
+        );
+    }
+
+    /// The tags section of the item menu: the coloured tags as a row of dots to click,
+    /// then the dialog, while tags are on; nothing while they are off. It is only touched
+    /// when that changes: the popover loses the slot the dots go in when the item is
+    /// taken out and put back, and would not take them again.
+    fn sync_tags_menu(&self) {
+        let imp = self.imp();
+        let section = &imp.tags_section;
+        let picker =
+            self.tag_action_enabled() && crate::tags::all().iter().any(|t| !t.color.is_empty());
+        let wanted = match (self.tag_action_enabled(), picker) {
+            (false, _) => 0,
+            (true, false) => 1,
+            (true, true) => 2,
+        };
+        if section.n_items() == wanted {
+            return;
+        }
+        while section.n_items() > 0 {
+            section.remove(0);
+        }
+        if picker {
+            let item = gio::MenuItem::new(None, None);
+            item.set_attribute_value("custom", Some(&"tags".to_variant()));
+            section.append_item(&item);
+        }
+        if wanted > 0 {
+            section.append(Some(&gettext("_Tags…")), Some("view.tags"));
+        }
+    }
+
+    fn tag_action_enabled(&self) -> bool {
+        self.imp()
+            .actions
+            .lookup_action("tags")
+            .and_downcast::<gio::SimpleAction>()
+            .is_some_and(|a| a.is_enabled())
+    }
+
+    /// The row of dots for the menu on show: one per coloured tag, marked where the
+    /// selection carries it. Built once and kept; the popover lets go of it whenever it
+    /// builds a menu again, and it goes back in the slot the section leaves for it.
+    fn attach_tag_picker(&self) {
+        let imp = self.imp();
+        if !self.tag_action_enabled() {
+            return;
+        }
+        let existing = imp.tag_picker.borrow().clone();
+        let picker = existing.unwrap_or_else(|| {
+            let bx = gtk::Box::builder()
+                .spacing(2)
+                .css_classes(["spiral-tag-picker"])
+                .build();
+            imp.tag_picker.replace(Some(bx.clone()));
+            bx
+        });
+        while let Some(child) = picker.first_child() {
+            picker.remove(&child);
+        }
+        for tag in crate::tags::all().iter().filter(|t| !t.color.is_empty()) {
+            let dot = crate::browser_view::tag_dot(&tag.color);
+            match self.tag_state(&tag.name) {
+                crate::dialogs::TagState::All => dot.set_icon_name(Some("object-select-symbolic")),
+                crate::dialogs::TagState::Some => {
+                    dot.set_icon_name(Some("object-select-symbolic"));
+                    dot.add_css_class("spiral-tag-some");
+                }
+                crate::dialogs::TagState::None => {}
+            }
+            let button = gtk::Button::builder()
+                .child(&dot)
+                .tooltip_text(&tag.name)
+                .css_classes(["flat", "circular"])
+                .build();
+            let on = !matches!(self.tag_state(&tag.name), crate::dialogs::TagState::All);
+            let name = tag.name.clone();
+            button.connect_clicked(glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                move |_| {
+                    if let Some(p) = view.imp().popover.borrow().as_ref() {
+                        p.popdown();
+                    }
+                    view.set_selection_tag(&name, on);
+                }
+            ));
+            picker.append(&button);
+        }
+        if picker.parent().is_none()
+            && let Some(popover) = imp.popover.borrow().as_ref()
+        {
+            popover.add_child(&picker, "tags");
+        }
     }
 
     fn submit(&self, kind: JobKind) {
@@ -1208,6 +1372,7 @@ impl BrowserView {
         self.update_action_state();
         let model: &gio::MenuModel = if on_item {
             self.sync_open_menu();
+            self.sync_tags_menu();
             &imp.item_menu
         } else {
             self.sync_new_menu();
@@ -1220,6 +1385,9 @@ impl BrowserView {
             .map(|p| (p.x() as f64, p.y() as f64))
             .unwrap_or((x, y));
         self.popup_model(model, px, py);
+        if on_item {
+            self.attach_tag_picker();
+        }
     }
 
     /// Show `model` as a popover menu at a point in the view's own coordinates.

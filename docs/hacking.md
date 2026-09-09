@@ -24,6 +24,7 @@
     src/dialogs/           preferences, properties, open with, compress, folder chooser
     src/prefs.rs           settings that affect formatting and loading
     src/naming.rs          name validation, rename popover, new folder dialog
+    src/tags.rs            colour tags: the xattr on the file, the index, the setting
     src/file_utils.rs      names, dates, sizes, icons
 
 Widgets are GObject subclasses with composite templates from the Blueprint files. Actions

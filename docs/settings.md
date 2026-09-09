@@ -17,6 +17,8 @@ Changes apply immediately to open windows.
 | `use-column-view` | bool | false | Column View |
 | `show-root` | bool | true | Root (sidebar) |
 | `show-favorites` | bool | true | Favorites (sidebar) |
+| `use-tags` | bool | false | Colour Tags |
+| `tags` | list of (name, colour) | empty | edited from the sidebar and the Tags… dialog |
 | `recursive-search` | `local`, `always`, `never` | `local` | Search in Subfolders |
 | `visible-columns` | list of `size`, `type`, `modified`, `accessed`, `created`, `owner`, `group`, `permissions`, `star` | size, type, modified, star | List view columns (Visible Columns…) |
 | `show-create-link` | bool | false | Create Link in context menus |
@@ -61,6 +63,10 @@ sorting from the menu writes these two keys.
 `compression-format` is whatever Create Archive was last confirmed with; the dialog starts
 there next time, provided the tools for it are still installed.
 
+`tags` holds every tag as a name and a colour, the colour one of `red`, `orange`, `yellow`,
+`green`, `blue`, `purple`, `gray` or empty for none. Empty, which is how it starts, stands
+for the seven colours named after themselves in the interface language.
+
 `local` for thumbnails and item counts means files on the local disk only; network
 mounts are skipped because reading every file on a share can take a while.
 `thumbnail-limit` is the largest picture worth decoding for a thumbnail; video and sound
@@ -71,4 +77,6 @@ the file.
 folders when `item-counts` allows it.
 
 Outside GSettings, Spiral keeps bookmarks in `~/.config/gtk-3.0/bookmarks`, favorites in
-`~/.local/share/spiral/starred`, and per-folder view, sort order and custom icon in GIO file metadata.
+`~/.local/share/spiral/starred`, the index of tagged files in `~/.local/share/spiral/tags`,
+the tags themselves in the `user.xdg.tags` extended attribute of each file, and per-folder
+view, sort order and custom icon in GIO file metadata.

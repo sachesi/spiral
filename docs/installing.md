@@ -97,4 +97,5 @@ so `pkill -x` never matches it.
     just unset-portal
 
 User data stays: settings in dconf, bookmarks in `~/.config/gtk-3.0/bookmarks`, favorites
-in `~/.local/share/spiral/starred`, thumbnails in `~/.cache/thumbnails`.
+in `~/.local/share/spiral/starred`, the tag index in `~/.local/share/spiral/tags`, the tags
+on the files themselves, thumbnails in `~/.cache/thumbnails`.

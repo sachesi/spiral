@@ -16,7 +16,7 @@ use crate::{gio, glib};
 pub const ATTRIBUTES: &str = "standard::*,time::modified,time::access,time::created,\
 access::can-read,access::can-write,access::can-delete,access::can-trash,\
 access::can-rename,access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,\
-metadata::custom-icon,metadata::custom-icon-name";
+metadata::custom-icon,metadata::custom-icon-name,xattr::xdg.tags";
 
 /// Icon to draw for `info`, honouring the Nautilus-compatible custom icon metadata.
 pub fn icon_of(info: &gio::FileInfo) -> gio::Icon {
@@ -314,6 +314,9 @@ pub fn location_name(file: &gio::File) -> String {
     }
     if crate::starred::is_starred_location(file) {
         return gettext("Favorites");
+    }
+    if crate::tags::is_tag_location(file) {
+        return crate::tags::tag_of_location(file).unwrap_or_else(|| gettext("Tags"));
     }
     if let Some(path) = file.path()
         && path.as_os_str() == "/"

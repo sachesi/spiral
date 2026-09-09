@@ -120,6 +120,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 loop {
                     match file.set_display_name_future(&new_name, PRIO).await {
                         Ok(new_file) => {
+                            crate::tags::relocate(&file, &new_file);
                             job.imp().outcome.borrow_mut().renamed.push((new_file, old));
                             break;
                         }
@@ -360,6 +361,7 @@ async fn transfer_one(
                 Ok(()) => {
                     job.set_files_done(job.files_done() + 1);
                     job.report(false);
+                    crate::tags::relocate(src, &dest);
                     return Ok(Some(dest));
                 }
                 Err(e)
@@ -440,6 +442,7 @@ async fn transfer_one(
             }
             if is_move && all_moved {
                 let _ = src.delete_future(PRIO).await;
+                crate::tags::relocate(src, &dest);
             }
             return Ok(Some(dest));
         }
@@ -464,6 +467,7 @@ async fn transfer_one(
                 job.report(false);
                 if is_move {
                     let _ = src.delete_future(PRIO).await;
+                    crate::tags::relocate(src, &dest);
                 }
                 let _ = top_level;
                 return Ok(Some(dest));

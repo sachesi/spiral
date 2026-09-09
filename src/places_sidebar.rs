@@ -1,11 +1,11 @@
 //! Places sidebar: home, starred, trash, XDG dirs and GTK bookmarks (reorderable, renamable),
-//! plus drives and mounts from `gio::VolumeMonitor`.
+//! drives and mounts from `gio::VolumeMonitor`, and the tags while they are on.
 
 use std::cell::{Cell, RefCell};
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use gettextrs::gettext;
+use gettextrs::{gettext, ngettext};
 
 use crate::{adw, gdk, gio, glib, gtk};
 
@@ -19,6 +19,8 @@ mod imp {
         pub list: TemplateChild<gtk::ListBox>,
         #[template_child]
         pub row_menu: TemplateChild<gio::MenuModel>,
+        #[template_child]
+        pub tag_menu: TemplateChild<gio::MenuModel>,
         pub monitor: gio::VolumeMonitor,
         /// Handlers on the monitor, which is shared by every window and outlives them.
         pub monitor_handlers: RefCell<Vec<glib::SignalHandlerId>>,
@@ -39,6 +41,7 @@ mod imp {
             Self {
                 list: Default::default(),
                 row_menu: Default::default(),
+                tag_menu: Default::default(),
                 monitor: gio::VolumeMonitor::get(),
                 monitor_handlers: Default::default(),
                 bookmarks_monitor: Default::default(),
@@ -150,8 +153,8 @@ mod imp {
             ];
             self.monitor_handlers.replace(handlers.into());
 
-            // Both places are the user's to keep or drop.
-            for key in ["show-root", "show-favorites"] {
+            // Both places are the user's to keep or drop, and so are the tags.
+            for key in ["show-root", "show-favorites", "use-tags", "tags"] {
                 crate::prefs::settings().connect_changed(
                     Some(key),
                     glib::clone!(
@@ -377,10 +380,22 @@ fn row_volume(row: &gtk::ListBoxRow) -> Option<gio::Volume> {
 const SECTION_PLACES: u8 = 0;
 const SECTION_BOOKMARKS: u8 = 1;
 const SECTION_DEVICES: u8 = 2;
+const SECTION_TAGS: u8 = 3;
 
 fn make_row(icon: &gio::Icon, title: &str, section: u8) -> (gtk::ListBoxRow, gtk::Box) {
+    let image = gtk::Image::builder().gicon(icon).build();
+    row_with(&image, title, section)
+}
+
+/// A row led by `leading`: an icon as a rule, a coloured dot for a tag.
+fn row_with(
+    leading: &impl IsA<gtk::Widget>,
+    title: &str,
+    section: u8,
+) -> (gtk::ListBoxRow, gtk::Box) {
     let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    content.append(&gtk::Image::builder().gicon(icon).margin_end(8).build());
+    leading.set_margin_end(8);
+    content.append(leading);
     content.append(
         &gtk::Label::builder()
             .label(title)
@@ -402,6 +417,62 @@ fn place_row(icon: &str, title: &str, file: &gio::File, section: u8) -> gtk::Lis
     let (row, _) = make_row(&gio::ThemedIcon::new(icon).upcast(), title, section);
     unsafe { row.set_data("file", file.clone()) };
     add_drop_target(&row, file);
+    row
+}
+
+/// A tag: its dot and its name, opening the list of what carries it. Files dropped on
+/// it are given the tag, the way Finder does it.
+fn tag_row(tag: &crate::tags::Tag) -> gtk::ListBoxRow {
+    // The dot in a box as wide as the icons of the rows above, so the names line up and
+    // the dot stays round.
+    let holder = gtk::Box::builder()
+        .width_request(16)
+        .halign(gtk::Align::Center)
+        .build();
+    holder.append(&crate::browser_view::tag_dot(&tag.color));
+    let (row, _) = row_with(&holder, &tag.name, SECTION_TAGS);
+    unsafe { row.set_data("file", crate::tags::location(&tag.name)) };
+    unsafe { row.set_data("tag", tag.name.clone()) };
+    let target = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
+    let name = tag.name.clone();
+    target.connect_drop(glib::clone!(
+        #[weak]
+        row,
+        #[upgrade_or]
+        false,
+        move |_, value, _, _| {
+            let Ok(list) = value.get::<gdk::FileList>() else {
+                return false;
+            };
+            let mut failed = None;
+            for file in list.files() {
+                if let Err(e) = crate::tags::set(&file, &name, true) {
+                    failed = Some((file, e));
+                    break;
+                }
+            }
+            if let Some((file, e)) = failed
+                && let Some(win) = row.root().and_downcast::<crate::window::SpiralWindow>()
+            {
+                win.show_toast(
+                    &gettext("Could not tag “%s”: %m")
+                        .replace("%s", &crate::ops::name(&file))
+                        .replace("%m", e.message()),
+                    false,
+                );
+            }
+            // The dots on the files are read as their cells are bound; make them look.
+            if let Some(view) = row
+                .root()
+                .and_downcast::<crate::window::SpiralWindow>()
+                .and_then(|w| w.current_view())
+            {
+                view.reload();
+            }
+            true
+        }
+    ));
+    row.add_controller(target);
     row
 }
 
@@ -498,6 +569,11 @@ fn trash_drop_action(target: &gtk::DropTarget) -> gdk::DragAction {
     } else {
         gdk::DragAction::COPY
     }
+}
+
+/// The tag a row stands for, by name.
+fn row_tag(row: &gtk::ListBoxRow) -> Option<String> {
+    unsafe { row.data::<String>("tag").map(|p| p.as_ref().clone()) }
 }
 
 fn row_section(row: &gtk::ListBoxRow) -> u8 {
@@ -602,6 +678,12 @@ impl PlacesSidebar {
                 continue;
             }
             list.append(&self.mount_row(&mount));
+        }
+
+        if crate::tags::enabled() {
+            for tag in crate::tags::all().iter() {
+                list.append(&tag_row(tag));
+            }
         }
 
         let current = imp.current.borrow().clone();
@@ -818,14 +900,50 @@ impl PlacesSidebar {
         add("rename", |s, row| {
             if let Some(file) = row_bookmark(row) {
                 s.rename_bookmark(row, &file);
+            } else if let Some(tag) = row_tag(row) {
+                s.rename_tag(row, &tag);
             }
         });
         add("remove", |s, row| {
             if let Some(file) = row_bookmark(row) {
                 crate::bookmarks::remove(&file);
                 s.rebuild();
+            } else if let Some(tag) = row_tag(row) {
+                s.remove_tag(tag);
             }
         });
+        add("new-tag", |s, _| {
+            glib::spawn_future_local(glib::clone!(
+                #[weak(rename_to = sidebar)]
+                s,
+                async move {
+                    if let Some(tag) = crate::dialogs::new_tag_dialog(&sidebar).await {
+                        crate::tags::add(tag);
+                    }
+                }
+            ));
+        });
+        // The colour of the tag the menu is over; the menu shows it as the one picked.
+        let color = gio::SimpleAction::new_stateful(
+            "tag-color",
+            Some(glib::VariantTy::STRING),
+            &"".to_variant(),
+        );
+        color.connect_activate(glib::clone!(
+            #[weak(rename_to = sidebar)]
+            self,
+            move |action, param| {
+                let row = sidebar.imp().menu_row.borrow().clone();
+                if let (Some(tag), Some(color)) = (
+                    row.as_ref().and_then(row_tag),
+                    param.and_then(glib::Variant::str),
+                ) {
+                    action.set_state(param.unwrap());
+                    crate::tags::set_color(&tag, color);
+                }
+            }
+        ));
+        group.add_action(&color);
         add("eject", |s, row| {
             if let Some(target) = row_eject(row) {
                 s.eject(target);
@@ -887,23 +1005,39 @@ impl PlacesSidebar {
             }
         };
         let bookmark = row_bookmark(row).is_some();
+        let tag = row_tag(row);
         enable("open-new-tab", row_file(row).is_some());
-        enable("rename", bookmark);
-        enable("remove", bookmark);
+        enable("rename", bookmark || tag.is_some());
+        enable("remove", bookmark || tag.is_some());
         enable("eject", row_eject(row).is_some());
         enable(
             "empty-trash",
             !imp.trash_empty.get() && row_file(row).is_some_and(|f| f.uri().starts_with("trash:")),
         );
+        if let Some(tag) = &tag
+            && let Some(a) = imp
+                .actions
+                .lookup_action("tag-color")
+                .and_downcast::<gio::SimpleAction>()
+        {
+            a.set_state(&crate::tags::color_of(tag).unwrap_or_default().to_variant());
+        }
         let existing = imp.popover.borrow().clone();
         let popover = existing.unwrap_or_else(|| {
-            let p = gtk::PopoverMenu::from_model(Some(&*imp.row_menu));
+            let p = gtk::PopoverMenu::from_model(gio::MenuModel::NONE);
+            p.set_flags(gtk::PopoverMenuFlags::NESTED);
             p.set_parent(self);
             p.set_has_arrow(false);
             p.set_halign(gtk::Align::Start);
             imp.popover.replace(Some(p.clone()));
             p
         });
+        let model: &gio::MenuModel = if tag.is_some() {
+            &imp.tag_menu
+        } else {
+            &imp.row_menu
+        };
+        popover.set_menu_model(Some(model));
         let p = imp
             .list
             .compute_point(self, &gtk::graphene::Point::new(x as f32, y as f32))
@@ -919,7 +1053,83 @@ impl PlacesSidebar {
             .find(|(f, _)| f.equal(file))
             .and_then(|(_, l)| l)
             .unwrap_or_else(|| crate::file_utils::location_name(file));
-        let entry = gtk::Entry::builder().text(&label).build();
+        let file = file.clone();
+        self.rename_row(
+            row,
+            &label,
+            |_| true,
+            move |name| crate::bookmarks::rename(&file, name),
+        );
+    }
+
+    /// The same popover for a tag. The name has to be one a tag can have and not one
+    /// another tag has; the tag's own name is fine, and changes nothing.
+    fn rename_tag(&self, row: &gtk::ListBoxRow, tag: &str) {
+        let old = tag.to_string();
+        self.rename_row(
+            row,
+            tag,
+            glib::clone!(
+                #[strong]
+                old,
+                move |name| {
+                    crate::tags::valid_name(name)
+                        && (name.trim() == old || !crate::tags::exists(name.trim()))
+                }
+            ),
+            move |name| {
+                let name = name.trim();
+                if name != old {
+                    crate::tags::rename(&old, name);
+                }
+            },
+        );
+    }
+
+    /// A tag is taken off everything that carries it when it goes, so ask first.
+    fn remove_tag(&self, tag: String) {
+        let n = crate::tags::files_with(Some(&tag)).len() as u32;
+        let dialog = adw::AlertDialog::builder()
+            .heading(gettext("Remove Tag “%s”?").replace("%s", &tag))
+            .body(if n == 0 {
+                gettext("No file carries it.")
+            } else {
+                ngettext(
+                    "It will be taken off the %d file that carries it.",
+                    "It will be taken off the %d files that carry it.",
+                    n,
+                )
+                .replace("%d", &n.to_string())
+            })
+            .close_response("cancel")
+            .default_response("cancel")
+            .build();
+        dialog.add_responses(&[
+            ("cancel", &gettext("_Cancel")),
+            ("remove", &gettext("_Remove")),
+        ]);
+        dialog.set_response_appearance("remove", adw::ResponseAppearance::Destructive);
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = sidebar)]
+            self,
+            async move {
+                if dialog.choose_future(Some(&sidebar)).await == "remove" {
+                    crate::tags::remove(&tag);
+                }
+            }
+        ));
+    }
+
+    /// Entry popover over `row` with `label` in it. `valid` says whether what is typed
+    /// may be accepted, `accept` takes it.
+    fn rename_row(
+        &self,
+        row: &gtk::ListBoxRow,
+        label: &str,
+        valid: impl Fn(&str) -> bool + 'static,
+        accept: impl Fn(&str) + 'static,
+    ) {
+        let entry = gtk::Entry::builder().text(label).build();
         let button = gtk::Button::builder()
             .label(gettext("_Rename"))
             .use_underline(true)
@@ -950,21 +1160,30 @@ impl PlacesSidebar {
             .pointing_to(&bounds)
             .build();
         popover.set_parent(self);
-        let accept = glib::clone!(
+        let valid = std::rc::Rc::new(valid);
+        entry.connect_changed(glib::clone!(
+            #[weak]
+            button,
+            #[strong]
+            valid,
+            move |entry| button.set_sensitive(valid(&entry.text()))
+        ));
+        let accept = std::rc::Rc::new(glib::clone!(
             #[weak(rename_to = sidebar)]
             self,
             #[weak]
             entry,
             #[weak]
             popover,
-            #[strong]
-            file,
             move || {
-                crate::bookmarks::rename(&file, &entry.text());
+                if !valid(&entry.text()) {
+                    return;
+                }
+                accept(&entry.text());
                 popover.popdown();
                 sidebar.rebuild();
             }
-        );
+        ));
         button.connect_clicked(glib::clone!(
             #[strong]
             accept,

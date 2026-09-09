@@ -18,7 +18,8 @@ remembered, tabs are not.
 
 The sidebar lists Home, Desktop, Root, Favorites and Trash, then the XDG user folders and the
 bookmarks from `~/.config/gtk-3.0/bookmarks` (the same file the GTK file chooser uses), then
-every volume and mount the system knows about. Bookmarks can be renamed, removed and
+every volume and mount the system knows about, then the tags if they are turned on (see
+[Tags](#tags)). Bookmarks can be renamed, removed and
 reordered by dragging; drop a folder on the empty area below the list to bookmark it, and
 files on Trash to trash them. The Trash entry's own menu empties it. Root is
 the top of the filesystem; it and Favorites can each be turned off in Preferences, under
@@ -237,6 +238,33 @@ through a folder without starting a decoder per file.
 which is the `starred:///` location; it lists every starred item including hidden ones
 and quietly drops entries that no longer exist. The list is a plain file,
 `~/.local/share/spiral/starred`, one URI per line.
+
+## Tags
+
+Off by default; "Colour Tags" in Preferences turns them on. Seven tags named after their
+colours come with it, and "New Tag…" makes more, with a name and a colour or none. A tagged
+file shows a dot per tag at the top left of its icon, where the lock sits at the top right.
+
+The context menu of a selection shows the coloured tags as a row of dots: a click puts the
+tag on every selected file, or takes it off when they all have it; a dot with a tick is on
+all of them, a faded tick on some. "Tags…" below the row lists every tag by name with a box
+each, the tags a file carries that Spiral does not know about included, and makes new ones.
+Dropping files on a tag in the sidebar gives them that tag.
+
+Each tag in the sidebar opens the list of what carries it; the "Tags" crumb above it lists
+every tagged file. A tag's own menu there renames it, changes its colour, removes it, or
+makes a new one. Renaming and removing rewrite every file known to carry the tag, so
+removing asks first. Removing every tag brings the seven colours back.
+
+A file's tags are the `user.xdg.tags` extended attribute on the file itself, the one Dolphin
+and Baloo use, so they survive a rename, a move or a copy, and other programs see them and
+Spiral sees theirs. That also means they live only where the filesystem keeps extended
+attributes: files on a network share or a FAT-formatted stick cannot be tagged. Since no
+program can ask every file on the disk, Spiral keeps an index of which files carry which
+tag, `~/.local/share/spiral/tags`, one `tag<TAB>uri` line per pair; a file tagged elsewhere
+or moved by another program joins it when a listing shows it, provided the tag is one on
+offer, and an entry that has stopped being true is dropped when the tag is listed. The tags themselves, name and colour
+each, are the `tags` setting.
 
 ## Properties
 

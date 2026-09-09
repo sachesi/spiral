@@ -325,6 +325,9 @@ fn root_icon_and_name(
     if crate::starred::is_starred_location(root) {
         return ("starred-symbolic", gettext("Favorites"));
     }
+    if crate::tags::is_tag_location(root) {
+        return ("tag-symbolic", file_utils::location_name(root));
+    }
     if root.path().is_some_and(|p| p.as_os_str() == "/") {
         let name = glib::os_info("NAME")
             .map(|s| s.to_string())

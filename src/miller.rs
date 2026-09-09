@@ -11,7 +11,8 @@ use std::time::Duration;
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
 use crate::browser_view::{
-    BrowserView, emblem_image, preferred_action, remember_list_item, set_cut, unbind_icon,
+    BrowserView, emblem_image, icon_with_tags, overlay_parts, preferred_action, remember_list_item,
+    set_cut, set_tags, unbind_icon,
 };
 use crate::enums::ViewMode;
 use crate::file_utils;
@@ -501,7 +502,7 @@ impl BrowserView {
             view.bind_property("list-icon-size", &image, "pixel-size")
                 .sync_create()
                 .build();
-            bx.append(&image);
+            bx.append(&icon_with_tags(&image));
             let label = gtk::Label::builder()
                 .xalign(0.0)
                 .hexpand(true)
@@ -526,22 +527,24 @@ impl BrowserView {
                 return;
             };
             let bx = item.child().unwrap();
-            let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
-            let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
+            let overlay = bx.first_child().and_downcast::<gtk::Overlay>().unwrap();
+            let (image, dots) = overlay_parts(&overlay);
+            let label = overlay.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
             view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             item.set_accessible_label(&info.display_name());
+            set_tags(&dots, &info);
         });
         factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            if let Some(image) = item
+            if let Some(overlay) = item
                 .child()
                 .and_then(|bx| bx.first_child())
-                .and_downcast::<gtk::Image>()
+                .and_downcast::<gtk::Overlay>()
             {
-                unbind_icon(&image);
+                unbind_icon(&overlay_parts(&overlay).0);
             }
         });
         factory

@@ -69,17 +69,19 @@ mod imp {
         listing_shown: Cell<bool>,
         /// Set while a listing shown before its end is waiting for its order.
         sort_deferred: Cell<bool>,
-        /// Root of the pipeline: `dir_list`, or `starred_store` for `starred:///`.
+        /// Root of the pipeline: `dir_list`, or `list_store` for the locations that are a
+        /// list of files rather than a folder, `starred:///` and `tag:///`.
         filtered: gtk::FilterListModel,
         /// Holds what a stopped listing had read, since a directory list drops its items
         /// the moment it is told to stop.
         pub stopped_store: gio::ListStore,
-        pub starred_store: gio::ListStore,
-        pub starred_gen: Cell<u64>,
+        pub list_store: gio::ListStore,
+        pub list_gen: Cell<u64>,
         starred_handler: RefCell<Option<glib::SignalHandlerId>>,
-        /// Both handlers sit on objects that outlive the model -- the starred list and the
-        /// settings -- and a column view makes and drops models as it walks, so they have
-        /// to come off again.
+        tags_handler: RefCell<Option<glib::SignalHandlerId>>,
+        /// The handlers sit on objects that outlive the model -- the starred list, the tag
+        /// index and the settings -- and a column view makes and drops models as it walks,
+        /// so they have to come off again.
         tree_handler: RefCell<Option<glib::SignalHandlerId>>,
         /// Whether a search walks the folders below this one. A file chooser searches the
         /// folder it is showing and nothing else: it is picking a file, not looking for one.
@@ -160,9 +162,10 @@ mod imp {
                 sort_deferred: Default::default(),
                 filtered,
                 stopped_store: gio::ListStore::new::<gio::FileInfo>(),
-                starred_store: gio::ListStore::new::<gio::FileInfo>(),
-                starred_gen: Default::default(),
+                list_store: gio::ListStore::new::<gio::FileInfo>(),
+                list_gen: Default::default(),
                 starred_handler: Default::default(),
+                tags_handler: Default::default(),
                 tree_handler: Default::default(),
                 search_recursive: Cell::new(true),
                 search_store: gio::ListStore::new::<gio::FileInfo>(),
@@ -187,6 +190,9 @@ mod imp {
         fn dispose(&self) {
             if let Some(id) = self.starred_handler.take() {
                 crate::starred::list().disconnect(id);
+            }
+            if let Some(id) = self.tags_handler.take() {
+                crate::tags::index().disconnect(id);
             }
             if let Some(id) = self.tree_handler.take() {
                 crate::prefs::settings().disconnect(id);
@@ -230,11 +236,21 @@ mod imp {
                 obj,
                 move |_, _, _, _| {
                     if obj.imp().is_starred() {
-                        obj.load_starred();
+                        obj.load_list();
                     }
                 }
             ));
             self.starred_handler.replace(Some(id));
+            let id = crate::tags::index().connect_items_changed(glib::clone!(
+                #[weak]
+                obj,
+                move |_, _, _, _| {
+                    if obj.imp().is_tag() {
+                        obj.load_list();
+                    }
+                }
+            ));
+            self.tags_handler.replace(Some(id));
             let id = crate::prefs::settings().connect_changed(
                 Some("use-tree-view"),
                 glib::clone!(
@@ -276,7 +292,7 @@ mod imp {
         /// and put in order at the end, so a slow disk or share does not leave the window
         /// blank.
         pub(super) fn show_listing(&self) {
-            if self.listing_shown.replace(true) || self.is_starred() {
+            if self.listing_shown.replace(true) || self.is_list() {
                 return;
             }
             if self.dir_list.is_loading() && self.dir_list.n_items() > SHOW_WHILE_LISTING_UP_TO {
@@ -342,14 +358,12 @@ mod imp {
         }
 
         pub(super) fn set_location(&self, file: Option<gio::File>) {
-            let starred = file
-                .as_ref()
-                .is_some_and(crate::starred::is_starred_location);
-            self.start_listing(file.as_ref().filter(|_| !starred));
+            let list = file.as_ref().is_some_and(is_list_location);
+            self.start_listing(file.as_ref().filter(|_| !list));
             if let Some(old) = self.monitor.take() {
                 old.cancel();
             }
-            if let Some(dir) = file.as_ref().filter(|_| !starred)
+            if let Some(dir) = file.as_ref().filter(|_| !list)
                 && let Ok(monitor) =
                     dir.monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
             {
@@ -357,7 +371,11 @@ mod imp {
                     #[weak(rename_to = obj)]
                     self.obj(),
                     move |_, changed, _, event| {
-                        if event == gio::FileMonitorEvent::ChangesDoneHint {
+                        // A tag or a mode set on a file is an attribute change and
+                        // nothing else; there is no end of writing to wait for.
+                        if event == gio::FileMonitorEvent::ChangesDoneHint
+                            || event == gio::FileMonitorEvent::AttributeChanged
+                        {
                             obj.refresh(changed.clone());
                         }
                     }
@@ -365,9 +383,9 @@ mod imp {
                 self.monitor.replace(Some(monitor));
             }
             self.location.replace(file);
-            if starred {
-                self.filtered.set_model(Some(&self.starred_store));
-                self.obj().load_starred();
+            if list {
+                self.filtered.set_model(Some(&self.list_store));
+                self.obj().load_list();
             }
             self.sync_hidden();
         }
@@ -377,6 +395,21 @@ mod imp {
                 .borrow()
                 .as_ref()
                 .is_some_and(crate::starred::is_starred_location)
+        }
+
+        pub(super) fn is_tag(&self) -> bool {
+            self.location
+                .borrow()
+                .as_ref()
+                .is_some_and(crate::tags::is_tag_location)
+        }
+
+        /// Whether the location is a list of files rather than a folder.
+        pub(super) fn is_list(&self) -> bool {
+            self.location
+                .borrow()
+                .as_ref()
+                .is_some_and(is_list_location)
         }
 
         pub(super) fn set_loading(&self, v: bool) {
@@ -391,9 +424,9 @@ mod imp {
             }
         }
 
-        /// Favorites always show everything that was starred, hidden or not.
+        /// Favorites and tags always show everything in them, hidden or not.
         fn sync_hidden(&self) {
-            let show = self.show_hidden.get() || self.is_starred();
+            let show = self.show_hidden.get() || self.is_list();
             if self.hidden_state.replace(show) == show {
                 return;
             }
@@ -429,15 +462,15 @@ mod imp {
                 } else {
                     self.search_gen.set(self.search_gen.get() + 1);
                     self.search_store.remove_all();
-                    let root: Option<&gio::ListModel> = if self.is_starred() {
-                        Some(self.starred_store.upcast_ref())
+                    let root: Option<&gio::ListModel> = if self.is_list() {
+                        Some(self.list_store.upcast_ref())
                     } else if self.listing_shown.get() {
                         Some(self.dir_list.upcast_ref())
                     } else {
                         None
                     };
                     self.filtered.set_model(root);
-                    self.set_loading(!self.is_starred() && self.dir_list.is_loading());
+                    self.set_loading(!self.is_list() && self.dir_list.is_loading());
                 }
                 self.obj().notify_searching();
             }
@@ -474,6 +507,12 @@ mod imp {
             }
         }
     }
+}
+
+/// Favorites and tags are lists of files, not folders: nothing is listed or watched, the
+/// files are asked about one by one.
+fn is_list_location(file: &gio::File) -> bool {
+    crate::starred::is_starred_location(file) || crate::tags::is_tag_location(file)
 }
 
 /// Tree over `sorted` whose folders unfold into their own filtered, sorted listing while
@@ -598,9 +637,9 @@ impl FolderModel {
         if !self.loading() {
             return;
         }
-        if imp.searching.get() || imp.is_starred() {
+        if imp.searching.get() || imp.is_list() {
             imp.search_gen.set(imp.search_gen.get() + 1);
-            imp.starred_gen.set(imp.starred_gen.get() + 1);
+            imp.list_gen.set(imp.list_gen.get() + 1);
             imp.set_loading(false);
             return;
         }
@@ -627,8 +666,8 @@ impl FolderModel {
             self.restart_search();
             return;
         }
-        if imp.is_starred() {
-            self.load_starred();
+        if imp.is_list() {
+            self.load_list();
             return;
         }
         imp.start_listing(self.location().as_ref());
@@ -653,7 +692,7 @@ impl FolderModel {
             kind: imp.search_kind.borrow().clone(),
             since: crate::search::since_for(&imp.search_date.borrow()),
             recursive: imp.search_recursive.get()
-                && !imp.is_starred()
+                && !imp.is_list()
                 && crate::prefs::recursive_search_for(&root),
             show_hidden: imp.show_hidden.get(),
         };
@@ -666,9 +705,9 @@ impl FolderModel {
                 if !alive() {
                     return;
                 }
-                // Favorites are a list, not a folder: search among them directly.
-                if model.imp().is_starred() {
-                    let store = &model.imp().starred_store;
+                // Favorites and tags are a list, not a folder: search among them directly.
+                if model.imp().is_list() {
+                    let store = &model.imp().list_store;
                     let hits: Vec<gio::FileInfo> = store
                         .iter::<gio::FileInfo>()
                         .flatten()
@@ -762,19 +801,33 @@ impl FolderModel {
         }
     }
 
-    /// Query every starred file; entries that no longer exist are unstarred.
-    fn load_starred(&self) {
+    /// Query every file of the list. A starred file that no longer exists is unstarred;
+    /// a file the tag index has wrong -- gone, or without the tag any more -- is taken out
+    /// of the index.
+    fn load_list(&self) {
         let imp = self.imp();
-        let generation = imp.starred_gen.get() + 1;
-        imp.starred_gen.set(generation);
+        let generation = imp.list_gen.get() + 1;
+        imp.list_gen.set(generation);
         imp.set_loading(true);
+        let Some(location) = self.location() else {
+            return;
+        };
+        let starred = crate::starred::is_starred_location(&location);
+        let tag = crate::tags::tag_of_location(&location);
+        let files = if starred {
+            crate::starred::files()
+        } else {
+            crate::tags::files_with(tag.as_deref())
+        };
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = model)]
             self,
             async move {
                 let mut infos = Vec::new();
                 let mut missing = Vec::new();
-                for file in crate::starred::files() {
+                // (file, tags it was down for and has not got)
+                let mut stale: Vec<(gio::File, Vec<String>)> = Vec::new();
+                for file in files {
                     match file
                         .query_info_future(
                             file_utils::ATTRIBUTES,
@@ -785,21 +838,49 @@ impl FolderModel {
                     {
                         Ok(info) => {
                             info.set_attribute_object("standard::file", &file);
-                            infos.push(info);
+                            if starred {
+                                infos.push(info);
+                                continue;
+                            }
+                            let has = crate::tags::of_info(&info);
+                            let wrong: Vec<String> = crate::tags::indexed(&file)
+                                .into_iter()
+                                .filter(|t| !has.contains(t))
+                                .collect();
+                            let listed = match &tag {
+                                Some(t) => has.contains(t),
+                                None => has.iter().any(|t| !wrong.contains(t)),
+                            };
+                            if listed {
+                                infos.push(info);
+                            }
+                            if !wrong.is_empty() {
+                                stale.push((file, wrong));
+                            }
                         }
                         Err(e) if e.matches(gio::IOErrorEnum::NotFound) => missing.push(file),
                         Err(_) => {}
                     }
                 }
                 let imp = model.imp();
-                if imp.starred_gen.get() != generation {
+                if imp.list_gen.get() != generation {
                     return;
                 }
-                imp.starred_store
-                    .splice(0, imp.starred_store.n_items(), &infos);
+                imp.list_store.splice(0, imp.list_store.n_items(), &infos);
                 imp.set_loading(false);
                 for file in missing {
-                    crate::starred::set_starred(&file, false);
+                    if starred {
+                        crate::starred::set_starred(&file, false);
+                    } else {
+                        for t in crate::tags::indexed(&file) {
+                            crate::tags::forget(&t, &file);
+                        }
+                    }
+                }
+                for (file, wrong) in stale {
+                    for t in wrong {
+                        crate::tags::forget(&t, &file);
+                    }
                 }
             }
         ));
