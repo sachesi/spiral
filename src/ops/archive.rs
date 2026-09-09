@@ -400,7 +400,7 @@ pub async fn extract(
             )
             .await
             .map_err(|e| Fail::Failed(e.message().to_string()))?;
-        let mime = info.content_type().unwrap_or_default();
+        let mime = crate::file_utils::content_type_of(&info).unwrap_or_default();
         let tools = extractors(&mime);
         let Some((tool, exe)) = tools.iter().find_map(|t| t.path().map(|p| (*t, p))) else {
             return Err(no_tool(archive, tools));

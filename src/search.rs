@@ -68,8 +68,7 @@ pub fn since_for(nick: &str) -> Option<glib::DateTime> {
 
 fn kind_matches(kind: &str, info: &gio::FileInfo) -> bool {
     let is = |t: &str| {
-        info.content_type()
-            .is_some_and(|ct| gio::content_type_is_a(&ct, t))
+        file_utils::content_type_of(info).is_some_and(|ct| gio::content_type_is_a(&ct, t))
     };
     let any = |types: &[&str]| types.iter().any(|t| is(t));
     match kind {
@@ -113,9 +112,8 @@ fn date_matches(since: Option<&glib::DateTime>, info: &gio::FileInfo) -> bool {
 /// Text files of a sane size are worth reading for a content match.
 fn readable(info: &gio::FileInfo) -> bool {
     !file_utils::is_dir(info)
-        && info.size() <= CONTENT_LIMIT
-        && info
-            .content_type()
+        && file_utils::size_of(info) <= CONTENT_LIMIT as u64
+        && file_utils::content_type_of(info)
             .is_some_and(|ct| gio::content_type_is_a(&ct, "text/plain"))
 }
 
@@ -168,7 +166,7 @@ pub async fn run(
             let mut hits = Vec::new();
             for info in batch {
                 let file = en.child(&info);
-                let hidden = info.is_hidden() || info.is_backup();
+                let hidden = file_utils::is_hidden(&info);
                 if query.recursive
                     && file_utils::is_dir(&info)
                     && !info.is_symlink()

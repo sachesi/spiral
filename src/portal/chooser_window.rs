@@ -794,7 +794,7 @@ fn make_filter(filter: Option<FileFilter>, directory: bool) -> gtk::Filter {
         {
             return true;
         }
-        info.content_type()
+        crate::file_utils::content_type_of(info)
             .is_some_and(|ct| mimes.iter().any(|m| gio::content_type_is_a(&ct, m)))
     })
     .upcast()

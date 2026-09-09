@@ -592,8 +592,7 @@ fn mostly_media(model: &FolderModel) -> bool {
             continue;
         }
         files += 1;
-        if info
-            .content_type()
+        if file_utils::content_type_of(&info)
             .is_some_and(|ct| ct.starts_with("image/") || ct.starts_with("video/"))
         {
             media += 1;
@@ -649,7 +648,7 @@ async fn default_app(file: &gio::File) -> Option<gio::AppInfo> {
         )
         .await
         .ok()?;
-    gio::AppInfo::default_for_type(&info.content_type()?, !file.is_native())
+    gio::AppInfo::default_for_type(&file_utils::content_type_of(&info)?, !file.is_native())
 }
 
 /// Number of direct children of `dir`, or None if it cannot be read.
@@ -1414,11 +1413,45 @@ impl BrowserView {
         let file = file_utils::file_of(&info);
         if file_utils::is_dir(&info) {
             self.go_to(&file);
+        } else if let Some(target) = file_utils::target_of(&info) {
+            self.open_target(target);
         } else if self.chooser_mode() {
             self.emit_by_name::<()>("file-activated", &[&file]);
         } else {
             self.launch(&file);
         }
+    }
+
+    /// Follow an entry that stands for somewhere else, as everything in `network:///` and
+    /// `computer:///` does: the entry is not a folder and listing it says as much, so what
+    /// it points at is opened instead. A share that is not mounted answers nothing about
+    /// itself yet, and going there is what mounts it.
+    pub(crate) fn open_target(&self, target: gio::File) {
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                let folder = match target
+                    .query_info_future(
+                        "standard::type",
+                        gio::FileQueryInfoFlags::NONE,
+                        glib::Priority::DEFAULT,
+                    )
+                    .await
+                {
+                    Ok(info) => info.file_type() == gio::FileType::Directory,
+                    // Not mounted, or not there any more: go anyway and let the folder say so.
+                    Err(_) => true,
+                };
+                if folder {
+                    view.go_to(&target);
+                } else if view.chooser_mode() {
+                    view.emit_by_name::<()>("file-activated", &[&target]);
+                } else {
+                    view.launch(&target);
+                }
+            }
+        ));
     }
 
     pub fn launch(&self, file: &gio::File) {
@@ -1576,7 +1609,7 @@ impl BrowserView {
         let size: u64 = infos
             .iter()
             .filter(|i| !file_utils::is_dir(i))
-            .map(|i| i.size() as u64)
+            .map(file_utils::size_of)
             .sum();
         let primary = match (folders, files) {
             (1, 0) | (0, 1) => gettext("“%s” selected").replace("%s", &infos[0].display_name()),
@@ -1679,7 +1712,7 @@ impl BrowserView {
             file_utils::is_locked(info, self.imp().can_write.get()),
         );
         image.set_from_gicon(&crate::file_utils::icon_of(info));
-        if info.is_hidden() || info.is_backup() {
+        if file_utils::is_hidden(info) {
             image.add_css_class("hidden-file");
         } else {
             image.remove_css_class("hidden-file");

@@ -66,7 +66,7 @@ pub fn attach(entry: &gtk::Entry) {
                 .await
                 .into_iter()
                 .filter(|(_, i)| i.file_type() == gio::FileType::Directory)
-                .filter(|(_, i)| show_hidden || !i.is_hidden())
+                .filter(|(_, i)| show_hidden || !crate::file_utils::is_hidden(i))
                 .map(|(_, i)| i.display_name().to_string())
                 .filter(|n| n.to_lowercase().starts_with(&folded))
                 .collect();
