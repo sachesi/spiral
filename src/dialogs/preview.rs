@@ -341,6 +341,16 @@ impl PreviewDialog {
     /// the fade is over, not while it is still being drawn.
     fn show_child(&self, child: &impl IsA<gtk::Widget>) {
         let stack = &self.imp().content;
+        // The video on its way out holds the one player, and a video with autoplay pauses
+        // its stream when it goes. It goes after the fade, by which time the next file is
+        // playing, so the page being replaced gives its autoplay up first.
+        let mut old = stack.first_child();
+        while let Some(widget) = old {
+            old = widget.next_sibling();
+            if let Some(video) = widget.downcast_ref::<gtk::Video>() {
+                video.set_autoplay(false);
+            }
+        }
         stack.add_child(child);
         stack.set_visible_child(child);
     }
