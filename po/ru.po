@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-10 00:23+0300\n"
+"POT-Creation-Date: 2026-09-10 00:28+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -863,7 +863,9 @@ msgstr "Папка пуста"
 msgid ""
 "Nothing installed here can open “%s” addresses. They are read by a gvfs "
 "backend of their own."
-msgstr "В системе нет ничего, что открывало бы адреса «%s». Для них нужен отдельный модуль gvfs."
+msgstr ""
+"В системе нет ничего, что открывало бы адреса «%s». Для них нужен отдельный "
+"модуль gvfs."
 
 #: src/browser_view.rs:1614
 #, no-c-format
@@ -1206,7 +1208,7 @@ msgstr ""
 "Если выключено, Ctrl копирует, а перетаскивание внутри Spiral перемещает без "
 "вопросов"
 
-#: src/dialogs/preferences.rs:62 src/file_utils.rs:363
+#: src/dialogs/preferences.rs:62 src/file_utils.rs:372
 #: src/places_sidebar.rs:706
 #, no-c-format
 msgid "Network"
@@ -1299,7 +1301,7 @@ msgstr "Корень"
 msgid "The top of the filesystem, above the bookmarks"
 msgstr "Вершина файловой системы, над закладками"
 
-#: src/dialogs/preferences.rs:136 src/file_utils.rs:366 src/path_bar.rs:326
+#: src/dialogs/preferences.rs:136 src/file_utils.rs:375 src/path_bar.rs:326
 #: src/places_sidebar.rs:632
 #, no-c-format
 msgid "Favorites"
@@ -1310,7 +1312,7 @@ msgstr "Избранное"
 msgid "The starred files and folders"
 msgstr "Файлы и папки, отмеченные звёздочкой"
 
-#: src/dialogs/preferences.rs:146 src/file_utils.rs:369
+#: src/dialogs/preferences.rs:146 src/file_utils.rs:378
 #, no-c-format
 msgid "Tags"
 msgstr "Метки"
@@ -1450,13 +1452,13 @@ msgid "First Modified"
 msgstr "Сначала старые"
 
 #: src/dialogs/preferences.rs:259 src/dialogs/properties.rs:251
-#: src/file_utils.rs:200 src/file_utils.rs:215
+#: src/file_utils.rs:209 src/file_utils.rs:224
 #, no-c-format
 msgid "Size"
 msgstr "Размер"
 
 #: src/dialogs/preferences.rs:260 src/dialogs/properties.rs:243
-#: src/file_utils.rs:201 src/file_utils.rs:217 ui/window.ui:365
+#: src/file_utils.rs:210 src/file_utils.rs:226 ui/window.ui:365
 #, no-c-format
 msgid "Type"
 msgstr "Тип"
@@ -1545,7 +1547,7 @@ msgstr "%p из %n"
 msgid "Properties"
 msgstr "Свойства"
 
-#: src/dialogs/properties.rs:99 src/file_utils.rs:207 src/file_utils.rs:219
+#: src/dialogs/properties.rs:99 src/file_utils.rs:216 src/file_utils.rs:228
 #, no-c-format
 msgid "Permissions"
 msgstr "Права"
@@ -1573,7 +1575,7 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/dialogs/properties.rs:247 src/file_utils.rs:218
+#: src/dialogs/properties.rs:247 src/file_utils.rs:227
 #, no-c-format
 msgid "MIME Type"
 msgstr "Тип MIME"
@@ -1583,12 +1585,12 @@ msgstr "Тип MIME"
 msgid "Calculating…"
 msgstr "Вычисление…"
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:202 ui/window.ui:386
+#: src/dialogs/properties.rs:259 src/file_utils.rs:211 ui/window.ui:386
 #, no-c-format
 msgid "Modified"
 msgstr "Изменён"
 
-#: src/dialogs/properties.rs:263 src/file_utils.rs:203
+#: src/dialogs/properties.rs:263 src/file_utils.rs:212
 #, no-c-format
 msgid "Accessed"
 msgstr "Последний доступ"
@@ -1619,7 +1621,7 @@ msgid "You are not the owner, so you cannot change these permissions."
 msgstr "Вы не владелец, поэтому не можете изменить эти права."
 
 #: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
-#: src/file_utils.rs:214 src/tags.rs:38
+#: src/file_utils.rs:223 src/tags.rs:38
 #, no-c-format
 msgid "None"
 msgstr "Нет"
@@ -1654,12 +1656,12 @@ msgstr "Чтение и запись"
 msgid "Could Not Change Permissions"
 msgstr "Не удалось изменить права"
 
-#: src/dialogs/properties.rs:452 src/file_utils.rs:205 src/file_utils.rs:220
+#: src/dialogs/properties.rs:452 src/file_utils.rs:214 src/file_utils.rs:229
 #, no-c-format
 msgid "Owner"
 msgstr "Владелец"
 
-#: src/dialogs/properties.rs:453 src/file_utils.rs:206 src/file_utils.rs:221
+#: src/dialogs/properties.rs:453 src/file_utils.rs:215 src/file_utils.rs:230
 #, no-c-format
 msgid "Group"
 msgstr "Группа"
@@ -1748,32 +1750,32 @@ msgstr "В виде сетки"
 msgid "List View"
 msgstr "В виде списка"
 
-#: src/file_utils.rs:136 src/file_utils.rs:148
+#: src/file_utils.rs:145 src/file_utils.rs:157
 #, no-c-format
 msgid "Folder"
 msgstr "Папка"
 
-#: src/file_utils.rs:204
+#: src/file_utils.rs:213
 #, no-c-format
 msgid "Created"
 msgstr "Создан"
 
-#: src/file_utils.rs:216
+#: src/file_utils.rs:225
 #, no-c-format
 msgid "Date Modified"
 msgstr "Дата изменения"
 
-#: src/file_utils.rs:245
+#: src/file_utils.rs:254
 #, no-c-format
 msgid "Today, %s"
 msgstr "Сегодня, %s"
 
-#: src/file_utils.rs:246
+#: src/file_utils.rs:255
 #, no-c-format
 msgid "Yesterday, %s"
 msgstr "Вчера, %s"
 
-#: src/file_utils.rs:247
+#: src/file_utils.rs:256
 #, no-c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
@@ -1781,12 +1783,12 @@ msgstr[0] "%d день назад"
 msgstr[1] "%d дня назад"
 msgstr[2] "%d дней назад"
 
-#: src/file_utils.rs:248
+#: src/file_utils.rs:257
 #, no-c-format
 msgid "Last week"
 msgstr "На прошлой неделе"
 
-#: src/file_utils.rs:250
+#: src/file_utils.rs:259
 #, no-c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
@@ -1794,12 +1796,12 @@ msgstr[0] "%d неделю назад"
 msgstr[1] "%d недели назад"
 msgstr[2] "%d недель назад"
 
-#: src/file_utils.rs:252
+#: src/file_utils.rs:261
 #, no-c-format
 msgid "Last month"
 msgstr "В прошлом месяце"
 
-#: src/file_utils.rs:255
+#: src/file_utils.rs:264
 #, no-c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
@@ -1807,12 +1809,12 @@ msgstr[0] "%d месяц назад"
 msgstr[1] "%d месяца назад"
 msgstr[2] "%d месяцев назад"
 
-#: src/file_utils.rs:257
+#: src/file_utils.rs:266
 #, no-c-format
 msgid "Last year"
 msgstr "В прошлом году"
 
-#: src/file_utils.rs:260
+#: src/file_utils.rs:269
 #, no-c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
@@ -1820,12 +1822,12 @@ msgstr[0] "%d год назад"
 msgstr[1] "%d года назад"
 msgstr[2] "%d лет назад"
 
-#: src/file_utils.rs:329
+#: src/file_utils.rs:338
 #, no-c-format
 msgid "Empty"
 msgstr "Пусто"
 
-#: src/file_utils.rs:330
+#: src/file_utils.rs:339
 #, no-c-format
 msgid "%d item"
 msgid_plural "%d items"
@@ -1833,17 +1835,17 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/file_utils.rs:357 src/path_bar.rs:320 src/places_sidebar.rs:606
+#: src/file_utils.rs:366 src/path_bar.rs:320 src/places_sidebar.rs:606
 #, no-c-format
 msgid "Home"
 msgstr "Домашняя папка"
 
-#: src/file_utils.rs:360 src/path_bar.rs:323 src/places_sidebar.rs:639
+#: src/file_utils.rs:369 src/path_bar.rs:323 src/places_sidebar.rs:639
 #, no-c-format
 msgid "Trash"
 msgstr "Корзина"
 
-#: src/file_utils.rs:374 src/path_bar.rs:334
+#: src/file_utils.rs:383 src/path_bar.rs:334
 #, no-c-format
 msgid "System"
 msgstr "Система"
