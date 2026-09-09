@@ -430,7 +430,9 @@ impl Player {
     /// timeline to show.
     fn redate(&self) {
         let imp = self.imp();
-        if !self.is_prepared() || imp.starting.get() {
+        // Not while a seek is waiting on the pipeline: preparing the stream again takes
+        // the seek out of it, and there is nothing left to answer when it lands.
+        if !self.is_prepared() || imp.starting.get() || imp.seeking.get() {
             return;
         }
         let (seekable, duration) = self.facts();
@@ -442,6 +444,11 @@ impl Player {
         self.stream_unprepared();
         self.stream_prepared(imp.has_audio.get(), imp.has_video.get(), seekable, duration);
         imp.redating.set(false);
+        if let Some(position) = imp.playbin().query_position::<gst::ClockTime>() {
+            // Preparing puts the stream back at the start; say where the file really is,
+            // so the timeline does not fall back until the next tick picks it up.
+            self.update(position.useconds() as i64);
+        }
         if playing {
             self.play();
         }
