@@ -30,7 +30,7 @@ Cancel, Retry or Skip.
 Trashing goes through GIO, so files land in the freedesktop trash of their own
 filesystem and appear in `trash:///`. Where trashing is not possible the job offers to
 delete permanently instead. Permanent deletion always asks, is recursive, and cannot be
-undone. "Empty Trash" is in the folder menu inside Trash.
+undone. "Empty Trash" is in the folder menu inside Trash and in the menu of the sidebar's Trash entry.
 
 ## Names
 

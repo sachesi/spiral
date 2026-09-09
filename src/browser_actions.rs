@@ -647,21 +647,21 @@ impl BrowserView {
         if archives.is_empty() {
             return;
         }
-        let dialog = gtk::FileDialog::builder()
-            .title(gettext("Extract To"))
-            .accept_label(gettext("_Extract"))
-            .initial_folder(
-                &self
-                    .location()
-                    .unwrap_or_else(|| gio::File::for_path(glib::home_dir())),
-            )
-            .build();
+        let start = self
+            .location()
+            .unwrap_or_else(|| gio::File::for_path(glib::home_dir()));
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
             self,
             async move {
-                let win = view.root().and_downcast::<gtk::Window>();
-                if let Ok(dest) = dialog.select_folder_future(win.as_ref()).await {
+                let dest = crate::dialogs::folder_chooser_dialog(
+                    &view,
+                    &gettext("Extract To"),
+                    &gettext("_Extract"),
+                    &start,
+                )
+                .await;
+                if let Some(dest) = dest {
                     view.submit(JobKind::Extract { archives, dest });
                 }
             }
@@ -799,29 +799,21 @@ impl BrowserView {
         if files.is_empty() {
             return;
         }
-        let dialog = gtk::FileDialog::builder()
-            .title(if is_move {
-                gettext("Move To")
-            } else {
-                gettext("Copy To")
-            })
-            .accept_label(if is_move {
-                gettext("_Move")
-            } else {
-                gettext("_Copy")
-            })
-            .initial_folder(
-                &self
-                    .location()
-                    .unwrap_or_else(|| gio::File::for_path(glib::home_dir())),
-            )
-            .build();
+        let (title, accept) = if is_move {
+            (gettext("Move To"), gettext("_Move"))
+        } else {
+            (gettext("Copy To"), gettext("_Copy"))
+        };
+        let start = self
+            .location()
+            .unwrap_or_else(|| gio::File::for_path(glib::home_dir()));
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
             self,
             async move {
-                let win = view.root().and_downcast::<gtk::Window>();
-                if let Ok(dest) = dialog.select_folder_future(win.as_ref()).await {
+                let dest =
+                    crate::dialogs::folder_chooser_dialog(&view, &title, &accept, &start).await;
+                if let Some(dest) = dest {
                     let pairs = files.into_iter().map(|f| (f, dest.clone())).collect();
                     view.submit(JobKind::Transfer { pairs, is_move });
                 }
@@ -944,33 +936,13 @@ impl BrowserView {
     }
 
     fn empty_trash(&self) {
-        let dialog = crate::adw::AlertDialog::builder()
-            .heading(gettext("Empty Trash?"))
-            .body(gettext(
-                "All items in the Trash will be permanently deleted.",
-            ))
-            .close_response("cancel")
-            .build();
-        dialog.add_responses(&[
-            ("cancel", &gettext("_Cancel")),
-            ("empty", &gettext("_Empty Trash")),
-        ]);
-        dialog.set_response_appearance("empty", crate::adw::ResponseAppearance::Destructive);
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
             self,
             async move {
-                if dialog.choose_future(Some(&view)).await != "empty" {
-                    return;
+                if let Some(job) = crate::ops::empty_trash_job(&view).await {
+                    view.submit(job);
                 }
-                // Enumerate the trash itself so hidden and filtered-out items go too.
-                let trash = gio::File::for_uri("trash:///");
-                let files: Vec<gio::File> = crate::ops::children(&trash, "standard::name")
-                    .await
-                    .into_iter()
-                    .map(|(f, _)| f)
-                    .collect();
-                view.submit(JobKind::Delete { files });
             }
         ));
     }

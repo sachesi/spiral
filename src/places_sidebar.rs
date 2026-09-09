@@ -438,8 +438,17 @@ fn add_drop_target(row: &gtk::ListBoxRow, file: &gio::File) {
 
 /// Files dropped on Trash are trashed. Nothing is asked first: unlike a folder, there is
 /// only one thing a drop on the trash can mean, and undo puts them back.
+///
+/// A copy is accepted as readily as a move, and the action is answered from what the drag
+/// offers: a target that only takes `MOVE` refuses every drag that has settled on a copy,
+/// which is what a drag from another application arrives as.
 fn add_trash_drop_target(row: &gtk::ListBoxRow) {
-    let target = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::MOVE);
+    let target = gtk::DropTarget::new(
+        gdk::FileList::static_type(),
+        gdk::DragAction::COPY | gdk::DragAction::MOVE,
+    );
+    target.connect_enter(|t, _, _| trash_drop_action(t));
+    target.connect_motion(|t, _, _| trash_drop_action(t));
     target.connect_drop(move |_, value, _, _| {
         let Ok(list) = value.get::<gdk::FileList>() else {
             return false;
@@ -455,6 +464,20 @@ fn add_trash_drop_target(row: &gtk::ListBoxRow) {
         true
     });
     row.add_controller(target);
+}
+
+/// Move where the drag offers one, a copy otherwise: the files are trashed either way, and
+/// the source is told what it can act on.
+fn trash_drop_action(target: &gtk::DropTarget) -> gdk::DragAction {
+    let offered = target
+        .current_drop()
+        .map(|drop| drop.actions())
+        .unwrap_or(gdk::DragAction::MOVE);
+    if offered.contains(gdk::DragAction::MOVE) {
+        gdk::DragAction::MOVE
+    } else {
+        gdk::DragAction::COPY
+    }
 }
 
 fn row_section(row: &gtk::ListBoxRow) -> u8 {
@@ -788,6 +811,22 @@ impl PlacesSidebar {
                 s.eject(target);
             }
         });
+        add("empty-trash", |s, _| {
+            glib::spawn_future_local(glib::clone!(
+                #[weak(rename_to = sidebar)]
+                s,
+                async move {
+                    let Some(job) = crate::ops::empty_trash_job(&sidebar).await else {
+                        return;
+                    };
+                    if let Some(app) = gio::Application::default()
+                        .and_downcast::<crate::application::SpiralApplication>()
+                    {
+                        app.job_manager().submit(job);
+                    }
+                }
+            ));
+        });
         self.insert_action_group("sidebar", Some(group));
     }
 
@@ -808,6 +847,10 @@ impl PlacesSidebar {
         enable("rename", bookmark);
         enable("remove", bookmark);
         enable("eject", row_eject(row).is_some());
+        enable(
+            "empty-trash",
+            row_file(row).is_some_and(|f| f.uri().starts_with("trash:")),
+        );
         let existing = imp.popover.borrow().clone();
         let popover = existing.unwrap_or_else(|| {
             let p = gtk::PopoverMenu::from_model(Some(&*imp.row_menu));
