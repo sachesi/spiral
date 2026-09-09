@@ -297,7 +297,14 @@ impl BrowserView {
             }
         ));
         imp.clipboard_handler.replace(Some(clipboard_handler));
-        for key in ["show-delete-permanently", "show-create-link"] {
+        for key in [
+            "show-delete-permanently",
+            "show-create-link",
+            "show-open-new-tab",
+            "show-open-new-window",
+            "show-copy-to",
+            "show-move-to",
+        ] {
             imp.settings.connect_changed(
                 Some(key),
                 glib::clone!(
@@ -500,8 +507,12 @@ impl BrowserView {
         self.set_enabled("open", n > 0);
         self.set_enabled("preview", n > 0);
         let all_folders = n > 0 && infos.iter().all(file_utils::is_dir);
-        self.set_enabled("open-new-tab", all_folders);
-        self.set_enabled("open-new-window", all_folders);
+        let shown = |key: &str| self.imp().settings.boolean(key);
+        self.set_enabled("open-new-tab", all_folders && shown("show-open-new-tab"));
+        self.set_enabled(
+            "open-new-window",
+            all_folders && shown("show-open-new-window"),
+        );
         self.set_enabled("open-with", n > 0 && !infos.iter().any(file_utils::is_dir));
         let has_terminal = crate::terminal::chosen().is_some();
         self.set_enabled(
@@ -523,10 +534,9 @@ impl BrowserView {
         self.set_enabled("rename", n > 0 && !in_trash && can_rename);
         self.set_enabled("trash", n > 0 && !in_trash && can_trash);
         self.set_enabled("delete", n > 0 && can_delete);
-        let show_delete = self.imp().settings.boolean("show-delete-permanently");
         self.set_enabled(
             "delete-permanently",
-            n > 0 && can_delete && !in_trash && show_delete,
+            n > 0 && can_delete && !in_trash && shown("show-delete-permanently"),
         );
         self.set_enabled("delete-from-trash", n > 0 && can_delete && in_trash);
         self.set_enabled(
@@ -538,8 +548,11 @@ impl BrowserView {
             "open-item-location",
             n == 1 && in_virtual && file_utils::file_of(&infos[0]).parent().is_some(),
         );
-        self.set_enabled("copy-to", n > 0 && !in_trash);
-        self.set_enabled("move-to", n > 0 && !in_trash && can_delete);
+        self.set_enabled("copy-to", n > 0 && !in_trash && shown("show-copy-to"));
+        self.set_enabled(
+            "move-to",
+            n > 0 && !in_trash && can_delete && shown("show-move-to"),
+        );
         self.set_enabled("run", n == 1 && file_utils::is_program(&infos[0]));
         // A device listed in the folder can be sent away from here, as it can from the
         // sidebar; a drive that takes its medium back is ejected, the rest unmounted.
@@ -568,11 +581,7 @@ impl BrowserView {
         let local_dir = self.location().is_some_and(|l| l.is_native());
         self.set_enabled(
             "create-link",
-            n > 0
-                && local
-                && local_dir
-                && can_write
-                && self.imp().settings.boolean("show-create-link"),
+            n > 0 && local && local_dir && can_write && shown("show-create-link"),
         );
         self.set_enabled(
             "paste-link",

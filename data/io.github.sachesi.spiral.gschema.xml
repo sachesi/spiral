@@ -53,6 +53,22 @@
       <default>false</default>
       <summary>Show “Create Link” in context menus</summary>
     </key>
+    <key name="show-open-new-tab" type="b">
+      <default>false</default>
+      <summary>Show “Open in New Tab” in context menus</summary>
+    </key>
+    <key name="show-open-new-window" type="b">
+      <default>false</default>
+      <summary>Show “Open in New Window” in context menus</summary>
+    </key>
+    <key name="show-copy-to" type="b">
+      <default>false</default>
+      <summary>Show “Copy to…” in context menus</summary>
+    </key>
+    <key name="show-move-to" type="b">
+      <default>false</default>
+      <summary>Show “Move to…” in context menus</summary>
+    </key>
     <key name="use-tree-view" type="b">
       <default>false</default>
       <summary>Expandable folders in list view</summary>

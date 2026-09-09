@@ -11,7 +11,10 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
         .search_enabled(false)
         .build();
     let settings = prefs::settings();
-    let page = adw::PreferencesPage::new();
+    let page = adw::PreferencesPage::builder()
+        .title(gettext("General"))
+        .icon_name("preferences-system-symbolic")
+        .build();
 
     let general = adw::PreferencesGroup::builder()
         .title(gettext("General"))
@@ -54,6 +57,12 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     settings.bind("ask-on-drop", &ask_on_drop, "active").build();
     behaviour.add(&ask_on_drop);
     page.add(&behaviour);
+    dialog.add(&page);
+
+    let page = adw::PreferencesPage::builder()
+        .title(gettext("Views"))
+        .icon_name("view-grid-symbolic")
+        .build();
 
     let views = adw::PreferencesGroup::builder()
         .title(gettext("Views"))
@@ -132,13 +141,29 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     settings.bind("use-tags", &use_tags, "active").build();
     tags.add(&use_tags);
     page.add(&tags);
+    dialog.add(&page);
+
+    let page = adw::PreferencesPage::builder()
+        .title(gettext("Menus"))
+        .icon_name("open-menu-symbolic")
+        .build();
 
     let optional = adw::PreferencesGroup::builder()
         .title(gettext("Optional Context Menu Actions"))
         .description(gettext(
-            "Shift+Delete deletes permanently either way, and links can always be pasted.",
+            "A middle click still opens a folder in a new tab, Shift+Delete still deletes permanently, and links can always be pasted.",
         ))
         .build();
+    for (key, title) in [
+        ("show-open-new-tab", gettext("Open in New Tab")),
+        ("show-open-new-window", gettext("Open in New Window")),
+        ("show-copy-to", gettext("Copy to…")),
+        ("show-move-to", gettext("Move to…")),
+    ] {
+        let row = adw::SwitchRow::builder().title(title).build();
+        settings.bind(key, &row, "active").build();
+        optional.add(&row);
+    }
     let create_link = adw::SwitchRow::builder()
         .title(gettext("Create Link"))
         .build();
@@ -154,9 +179,14 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
         .build();
     optional.add(&delete_permanently);
     page.add(&optional);
+    dialog.add(&page);
+
+    let page = adw::PreferencesPage::builder()
+        .title(gettext("Performance"))
+        .icon_name("power-profile-performance-symbolic")
+        .build();
 
     let performance = adw::PreferencesGroup::builder()
-        .title(gettext("Performance"))
         .description(gettext(
             "Reading every file on a network share or a slow disk can take a while.",
         ))
