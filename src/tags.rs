@@ -14,7 +14,7 @@ use gettextrs::gettext;
 use glib::translate::*;
 
 use crate::gtk::prelude::*;
-use crate::{gio, glib, gtk};
+use crate::{gdk, gio, glib, gtk};
 
 /// The extended attribute, as GIO names it.
 pub const ATTRIBUTE: &str = "xattr::xdg.tags";
@@ -24,6 +24,9 @@ pub const COLORS: [&str; 7] = ["red", "orange", "yellow", "green", "blue", "purp
 
 /// A colour's name, which is also the name of the tag it stands for out of the box.
 pub fn color_name(color: &str) -> String {
+    if is_custom(color) {
+        return gettext("Custom");
+    }
     match color {
         "red" => gettext("Red"),
         "orange" => gettext("Orange"),
@@ -41,10 +44,74 @@ pub fn enabled() -> bool {
     crate::prefs::use_tags()
 }
 
+/// A colour of the user's own, kept as `#rrggbb`.
+pub fn is_custom(color: &str) -> bool {
+    color.len() == 7 && color.starts_with('#')
+}
+
+pub fn hex(rgba: &gdk::RGBA) -> String {
+    let byte = |c: f32| (c.clamp(0.0, 1.0) * 255.0).round() as u8;
+    format!(
+        "#{:02x}{:02x}{:02x}",
+        byte(rgba.red()),
+        byte(rgba.green()),
+        byte(rgba.blue())
+    )
+}
+
+/// The style class that paints a dot of `color`, and the one that washes a row with it.
+/// The palette's classes are in the stylesheet; a custom colour's are written by
+/// `sync_css` as the tags change.
+pub fn dot_class(color: &str) -> String {
+    match color {
+        "" => "spiral-tag-none".to_string(),
+        c if is_custom(c) => format!("spiral-tag-c{}", &c[1..]),
+        c => format!("spiral-tag-{c}"),
+    }
+}
+
+pub fn wash_class(color: &str) -> String {
+    if is_custom(color) {
+        format!("spiral-tag-wash-c{}", &color[1..])
+    } else {
+        format!("spiral-tag-wash-{color}")
+    }
+}
+
+thread_local! {
+    static CUSTOM_CSS: gtk::CssProvider = gtk::CssProvider::new();
+}
+
+/// Rules for a custom colour: the dot, and the wash the views paint with it.
+pub fn css_for(color: &str) -> String {
+    let (dot, wash) = (dot_class(color), wash_class(color));
+    format!(
+        ".{dot} {{ background-color: {color}; }}\n\
+         .spiral-list-view columnview > listview > row.{wash}:not(:selected),\n\
+         .spiral-miller-column listview > row.{wash}:not(:selected),\n\
+         .spiral-grid-view label.{wash} {{\n\
+           background-color: color-mix(in srgb, {color} 18%, transparent);\n}}\n"
+    )
+}
+
+/// Put the classes of every custom colour among the tags on the display.
+fn sync_css() {
+    let css: String = all()
+        .iter()
+        .filter(|t| is_custom(&t.color))
+        .map(|t| css_for(&t.color))
+        .collect();
+    CUSTOM_CSS.with(|p| p.load_from_string(&css));
+}
+
+/// How many tags there may be: the seven colours' worth, so the row of them in the
+/// context menu stays a row.
+pub const MAX: usize = 7;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Tag {
     pub name: String,
-    /// One of `COLORS`, or empty for a tag with a name and no colour.
+    /// One of `COLORS`, or a custom `#rrggbb`.
     pub color: String,
 }
 
@@ -59,7 +126,19 @@ pub fn all() -> Rc<Vec<Tag>> {
     if !WATCHED.replace(true) {
         crate::prefs::settings().connect_changed(Some("tags"), |_, _| {
             ALL.with(|a| a.replace(None));
+            sync_css();
         });
+        if let Some(display) = gdk::Display::default() {
+            CUSTOM_CSS.with(|p| {
+                gtk::style_context_add_provider_for_display(
+                    &display,
+                    p,
+                    gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
+                )
+            });
+        }
+        // The first ask fills the cache below; the rules follow it.
+        glib::idle_add_local_once(sync_css);
     }
     ALL.with(|a| {
         a.borrow_mut()
@@ -116,6 +195,9 @@ pub fn valid_name(name: &str) -> bool {
 
 pub fn add(tag: Tag) {
     let mut tags = (*all()).clone();
+    if tags.len() >= MAX {
+        return;
+    }
     tags.push(tag);
     save_all(&tags);
 }

@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 16:28+0300\n"
+"POT-Creation-Date: 2026-09-09 18:26+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -91,11 +91,10 @@ msgstr "Доступні мітки, кожна з назвою та кольо�
 
 #: data/io.github.sachesi.spiral.gschema.xml:76
 msgid ""
-"The colour is one of red, orange, yellow, green, blue, purple and gray, or "
-"empty for none. An empty list stands for the seven colours."
-msgstr ""
-"Колір — один із red, orange, yellow, green, blue, purple, gray або порожній "
-"рядок, якщо кольору немає. Порожній список означає сім кольорів."
+"Seven at most. The colour is one of red, orange, yellow, green, blue, purple "
+"and gray, or a #rrggbb of your own. An empty list stands for the seven "
+"colours."
+msgstr "Не більше семи. Колір — один із red, orange, yellow, green, blue, purple, gray або власний #rrggbb. Порожній список означає сім кольорів."
 
 #: data/io.github.sachesi.spiral.gschema.xml:80
 msgid "Offer the column view"
@@ -615,43 +614,43 @@ msgstr "Архів"
 msgid "Could not tag “%s”"
 msgstr "Не вдалося позначити «%s»"
 
-#: src/browser_actions.rs:931
+#: src/browser_actions.rs:953
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr "Не вдалося вставити зображення"
 
-#: src/browser_actions.rs:944
+#: src/browser_actions.rs:966
 #, no-c-format
 msgid "Move To"
 msgstr "Пересунути до"
 
-#: src/browser_actions.rs:944
+#: src/browser_actions.rs:966
 #, no-c-format
 msgid "_Move"
 msgstr "_Пересунути"
 
-#: src/browser_actions.rs:946
+#: src/browser_actions.rs:968
 #, no-c-format
 msgid "Copy To"
 msgstr "Копіювати до"
 
-#: src/browser_actions.rs:946 ui/browser_view.ui:203
+#: src/browser_actions.rs:968 ui/browser_view.ui:203
 #, no-c-format
 msgid "_Copy"
 msgstr "_Копіювати"
 
-#: src/browser_actions.rs:1039 src/browser_view.rs:1428
-#: src/browser_view.rs:1435 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1061 src/browser_view.rs:1425
+#: src/browser_view.rs:1432 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не вдалося відкрити"
 
-#: src/browser_actions.rs:1049
+#: src/browser_actions.rs:1071
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Остаточно вилучити «%s»?"
 
-#: src/browser_actions.rs:1051
+#: src/browser_actions.rs:1073
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -659,52 +658,52 @@ msgstr[0] "Остаточно вилучити %d об’єкт?"
 msgstr[1] "Остаточно вилучити %d об’єкти?"
 msgstr[2] "Остаточно вилучити %d об’єктів?"
 
-#: src/browser_actions.rs:1059
+#: src/browser_actions.rs:1081
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Остаточно вилучені об’єкти неможливо відновити."
 
-#: src/browser_actions.rs:1064 src/dialogs/batch_rename.rs:108
+#: src/browser_actions.rs:1086 src/dialogs/batch_rename.rs:108
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
-#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:35
+#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:36
 #: src/ops/archive.rs:351 src/ops/conflict.rs:63 src/ops/conflict.rs:314
 #: src/ops/mod.rs:30 src/ops/walk.rs:263 src/places_sidebar.rs:842
-#: src/places_sidebar.rs:1107 src/portal/chooser_window.rs:852
+#: src/places_sidebar.rs:1131 src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
 msgstr "_Скасувати"
 
-#: src/browser_actions.rs:1065
+#: src/browser_actions.rs:1087
 #, no-c-format
 msgid "_Delete"
 msgstr "В_илучити"
 
-#: src/browser_actions.rs:1118
+#: src/browser_actions.rs:1140
 #, no-c-format
 msgid "Untitled Document"
 msgstr "Документ без назви"
 
-#: src/browser_actions.rs:1152 ui/window.ui:16
+#: src/browser_actions.rs:1174 ui/window.ui:16
 #, no-c-format
 msgid "New _Tab"
 msgstr "Нова в_кладка"
 
-#: src/browser_actions.rs:1153 ui/window.ui:12
+#: src/browser_actions.rs:1175 ui/window.ui:12
 #, no-c-format
 msgid "New _Window"
 msgstr "Нове _вікно"
 
-#: src/browser_actions.rs:1154
+#: src/browser_actions.rs:1176
 #, no-c-format
 msgid "_Terminal"
 msgstr "_Термінал"
 
-#: src/browser_actions.rs:1169
+#: src/browser_actions.rs:1191
 #, no-c-format
 msgid "Open _In"
 msgstr "Відкрити _у"
 
-#: src/browser_actions.rs:1182 ui/path_bar.ui:16
+#: src/browser_actions.rs:1204 ui/path_bar.ui:16
 #, no-c-format
 msgid "New _Document"
 msgstr "Створити _документ"
@@ -725,44 +724,44 @@ msgstr[0] "Вибрано %d об’єкт"
 msgstr[1] "Вибрано %d об’єкти"
 msgstr[2] "Вибрано %d об’єктів"
 
-#: src/browser_view.rs:947
+#: src/browser_view.rs:944
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Вилучити з вибраного"
 
-#: src/browser_view.rs:949
+#: src/browser_view.rs:946
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Додати до вибраного"
 
-#: src/browser_view.rs:1446 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1443 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:871
 #, no-c-format
 msgid "_OK"
 msgstr "_Гаразд"
 
-#: src/browser_view.rs:1468
+#: src/browser_view.rs:1465
 #, no-c-format
 msgid "No Results Found"
 msgstr "Нічого не знайдено"
 
-#: src/browser_view.rs:1470 ui/browser_view.ui:103
+#: src/browser_view.rs:1467 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Тека порожня"
 
-#: src/browser_view.rs:1521
+#: src/browser_view.rs:1518
 #, no-c-format
 msgid "Loading…"
 msgstr "Завантаження…"
 
-#: src/browser_view.rs:1537
+#: src/browser_view.rs:1534
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Вибрано «%s»"
 
-#: src/browser_view.rs:1542
+#: src/browser_view.rs:1539
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -771,17 +770,17 @@ msgstr[1] "%d інші об’єкти вибрано"
 msgstr[2] "%d інших об’єктів вибрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1548
+#: src/browser_view.rs:1545
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:2295 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2280 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:2395 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2380 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -831,7 +830,7 @@ msgstr[1] "%d файли для перейменування"
 msgstr[2] "%d файлів для перейменування"
 
 #: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:71
-#: src/places_sidebar.rs:1133
+#: src/places_sidebar.rs:1157
 #, no-c-format
 msgid "_Rename"
 msgstr "Пере_йменувати"
@@ -1414,7 +1413,7 @@ msgid "You are not the owner, so you cannot change these permissions."
 msgstr "Ви не власник, тому не можете змінити ці права доступу."
 
 #: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
-#: src/file_utils.rs:167 src/tags.rs:35 ui/places_sidebar.ui:96
+#: src/file_utils.rs:167 src/tags.rs:38
 #, no-c-format
 msgid "None"
 msgstr "Немає"
@@ -1512,15 +1511,25 @@ msgstr "_Вибрати"
 msgid "Select Items Matching"
 msgstr "Вибрати за взірцем"
 
-#: src/dialogs/tags.rs:30
+#: src/dialogs/tags.rs:31
 #, no-c-format
 msgid "New Tag"
 msgstr "Нова мітка"
 
-#: src/dialogs/tags.rs:35
+#: src/dialogs/tags.rs:36
 #, no-c-format
 msgid "_Add"
 msgstr "_Додати"
+
+#: src/dialogs/tags.rs:154 ui/places_sidebar.ui:97
+#, no-c-format
+msgid "Custom…"
+msgstr "Власний колір…"
+
+#: src/dialogs/tags.rs:177 src/places_sidebar.rs:921
+#, no-c-format
+msgid "Tag Colour"
+msgstr "Колір мітки"
 
 #: src/enums.rs:55 ui/shortcuts_dialog.ui:140
 #, no-c-format
@@ -2353,17 +2362,17 @@ msgstr ""
 msgid "Do _Not Empty"
 msgstr "_Не спорожняти"
 
-#: src/places_sidebar.rs:1092
+#: src/places_sidebar.rs:1116
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr "Вилучити мітку «%s»?"
 
-#: src/places_sidebar.rs:1094
+#: src/places_sidebar.rs:1118
 #, no-c-format
 msgid "No file carries it."
 msgstr "Її немає на жодному файлі."
 
-#: src/places_sidebar.rs:1097
+#: src/places_sidebar.rs:1121
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
@@ -2371,7 +2380,7 @@ msgstr[0] "Її буде знято з %d файлу, на якому вона �
 msgstr[1] "Її буде знято з %d файлів, на яких вона стоїть."
 msgstr[2] "Її буде знято з %d файлів, на яких вона стоїть."
 
-#: src/places_sidebar.rs:1108 ui/places_sidebar.ui:28
+#: src/places_sidebar.rs:1132 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr "В_илучити"
@@ -2459,37 +2468,42 @@ msgstr ""
 msgid "Show File Operations"
 msgstr "Показати файлові операції"
 
-#: src/tags.rs:28 ui/places_sidebar.ui:61
+#: src/tags.rs:28
+#, no-c-format
+msgid "Custom"
+msgstr "Власний колір"
+
+#: src/tags.rs:31 ui/places_sidebar.ui:61
 #, no-c-format
 msgid "Red"
 msgstr "Червона"
 
-#: src/tags.rs:29 ui/places_sidebar.ui:66
+#: src/tags.rs:32 ui/places_sidebar.ui:66
 #, no-c-format
 msgid "Orange"
 msgstr "Помаранчева"
 
-#: src/tags.rs:30 ui/places_sidebar.ui:71
+#: src/tags.rs:33 ui/places_sidebar.ui:71
 #, no-c-format
 msgid "Yellow"
 msgstr "Жовта"
 
-#: src/tags.rs:31 ui/places_sidebar.ui:76
+#: src/tags.rs:34 ui/places_sidebar.ui:76
 #, no-c-format
 msgid "Green"
 msgstr "Зелена"
 
-#: src/tags.rs:32 ui/places_sidebar.ui:81
+#: src/tags.rs:35 ui/places_sidebar.ui:81
 #, no-c-format
 msgid "Blue"
 msgstr "Синя"
 
-#: src/tags.rs:33 ui/places_sidebar.ui:86
+#: src/tags.rs:36 ui/places_sidebar.ui:86
 #, no-c-format
 msgid "Purple"
 msgstr "Фіолетова"
 
-#: src/tags.rs:34 ui/places_sidebar.ui:91
+#: src/tags.rs:37 ui/places_sidebar.ui:91
 #, no-c-format
 msgid "Grey"
 msgstr "Сіра"
@@ -2586,7 +2600,7 @@ msgstr "Вилучити з _улюбленого"
 msgid "_Restore From Trash"
 msgstr "_Відновити зі смітника"
 
-#: ui/browser_view.ui:262 ui/places_sidebar.ui:23 ui/places_sidebar.ui:102
+#: ui/browser_view.ui:262 ui/places_sidebar.ui:23 ui/places_sidebar.ui:103
 msgid "Rena_me…"
 msgstr "Пере_йменувати…"
 
@@ -2680,11 +2694,11 @@ msgstr "Меню поточної теки"
 msgid "_Colour"
 msgstr "_Колір"
 
-#: ui/places_sidebar.ui:106
+#: ui/places_sidebar.ui:107
 msgid "_Remove…"
 msgstr "В_илучити…"
 
-#: ui/places_sidebar.ui:112
+#: ui/places_sidebar.ui:113
 msgid "New _Tag…"
 msgstr "Нова _мітка…"
 

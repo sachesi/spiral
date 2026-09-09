@@ -87,10 +87,11 @@ menu tag_menu {
         action: "sidebar.tag-color";
         target: "gray";
       }
-      item {
-        label: _("None");
-        action: "sidebar.tag-color";
-        target: "";
+      section {
+        item {
+          label: _("Custom…");
+          action: "sidebar.tag-custom-color";
+        }
       }
     }
     item {
@@ -106,6 +107,7 @@ menu tag_menu {
     item {
       label: _("New _Tag…");
       action: "sidebar.new-tag";
+      hidden-when: "action-disabled";
     }
   }
 }

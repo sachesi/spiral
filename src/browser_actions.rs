@@ -810,37 +810,59 @@ impl BrowserView {
         }
         for tag in crate::tags::all().iter().filter(|t| !t.color.is_empty()) {
             let dot = crate::browser_view::tag_dot(&tag.color);
-            match self.tag_state(&tag.name) {
-                TagState::All => dot.set_icon_name(Some("object-select-symbolic")),
-                TagState::Some => {
-                    dot.set_icon_name(Some("object-select-symbolic"));
-                    dot.add_css_class("spiral-tag-some");
-                }
-                TagState::None => {}
-            }
             let button = gtk::Button::builder()
                 .child(&dot)
                 .tooltip_text(&tag.name)
                 .css_classes(["flat", "circular"])
                 .build();
-            let on = !matches!(self.tag_state(&tag.name), TagState::All);
+            unsafe { button.set_data("tag", tag.name.clone()) };
             let name = tag.name.clone();
             button.connect_clicked(glib::clone!(
                 #[weak(rename_to = view)]
                 self,
                 move |_| {
+                    // The menu goes first: the rows are rewritten under it otherwise.
                     if let Some(p) = view.imp().popover.borrow().as_ref() {
                         p.popdown();
                     }
+                    let on = !matches!(view.tag_state(&name), TagState::All);
                     view.set_selection_tag(&name, on);
                 }
             ));
             picker.append(&button);
         }
+        self.sync_tag_picker();
         if picker.parent().is_none()
             && let Some(popover) = imp.popover.borrow().as_ref()
         {
             popover.add_child(&picker, "tags");
+        }
+    }
+
+    /// Mark each dot of the picker as the selection stands with its tag.
+    fn sync_tag_picker(&self) {
+        let Some(picker) = self.imp().tag_picker.borrow().clone() else {
+            return;
+        };
+        let mut child = picker.first_child();
+        while let Some(button) = child {
+            child = button.next_sibling();
+            let (Some(name), Some(dot)) = (
+                unsafe { button.data::<String>("tag").map(|p| p.as_ref().clone()) },
+                button.first_child(),
+            ) else {
+                continue;
+            };
+            let state = self.tag_state(&name);
+            dot.set_css_classes(&[
+                "spiral-tag-dot",
+                &crate::tags::dot_class(&crate::tags::color_of(&name).unwrap_or_default()),
+            ]);
+            if state == TagState::Some {
+                dot.add_css_class("spiral-tag-some");
+            }
+            let image = dot.downcast_ref::<gtk::Image>().unwrap();
+            image.set_icon_name((state != TagState::None).then_some("object-select-symbolic"));
         }
     }
 

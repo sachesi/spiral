@@ -11,7 +11,7 @@ use std::time::Duration;
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
 use crate::browser_view::{
-    BrowserView, emblem_image, preferred_action, remember_list_item, set_cut, set_tags, tag_dots,
+    BrowserView, bind_tags, emblem_image, preferred_action, remember_list_item, set_cut,
     unbind_icon,
 };
 use crate::enums::ViewMode;
@@ -503,7 +503,6 @@ impl BrowserView {
                 .sync_create()
                 .build();
             bx.append(&image);
-            bx.append(&tag_dots());
             let label = gtk::Label::builder()
                 .xalign(0.0)
                 .hexpand(true)
@@ -529,14 +528,13 @@ impl BrowserView {
             };
             let bx = item.child().unwrap();
             let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
-            let dots = image.next_sibling().and_downcast::<gtk::Box>().unwrap();
-            let label = dots.next_sibling().and_downcast::<gtk::Label>().unwrap();
+            let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
             view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             item.set_accessible_label(&info.display_name());
-            set_tags(&dots, &info);
+            bind_tags(&bx, None, &info);
         });
         factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();

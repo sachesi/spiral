@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.12.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 16:28+0300\n"
+"POT-Creation-Date: 2026-09-09 18:26+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -89,8 +89,9 @@ msgstr ""
 
 #: data/io.github.sachesi.spiral.gschema.xml:76
 msgid ""
-"The colour is one of red, orange, yellow, green, blue, purple and gray, or "
-"empty for none. An empty list stands for the seven colours."
+"Seven at most. The colour is one of red, orange, yellow, green, blue, purple "
+"and gray, or a #rrggbb of your own. An empty list stands for the seven "
+"colours."
 msgstr ""
 
 #: data/io.github.sachesi.spiral.gschema.xml:80
@@ -544,95 +545,95 @@ msgstr ""
 msgid "Could not tag “%s”"
 msgstr ""
 
-#: src/browser_actions.rs:931
+#: src/browser_actions.rs:953
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr ""
 
-#: src/browser_actions.rs:944
+#: src/browser_actions.rs:966
 #, no-c-format
 msgid "Move To"
 msgstr ""
 
-#: src/browser_actions.rs:944
+#: src/browser_actions.rs:966
 #, no-c-format
 msgid "_Move"
 msgstr ""
 
-#: src/browser_actions.rs:946
+#: src/browser_actions.rs:968
 #, no-c-format
 msgid "Copy To"
 msgstr ""
 
-#: src/browser_actions.rs:946 ui/browser_view.ui:203
+#: src/browser_actions.rs:968 ui/browser_view.ui:203
 #, no-c-format
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:1039 src/browser_view.rs:1428
-#: src/browser_view.rs:1435 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1061 src/browser_view.rs:1425
+#: src/browser_view.rs:1432 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
 
-#: src/browser_actions.rs:1049
+#: src/browser_actions.rs:1071
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr ""
 
-#: src/browser_actions.rs:1051
+#: src/browser_actions.rs:1073
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_actions.rs:1059
+#: src/browser_actions.rs:1081
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr ""
 
-#: src/browser_actions.rs:1064 src/dialogs/batch_rename.rs:108
+#: src/browser_actions.rs:1086 src/dialogs/batch_rename.rs:108
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
-#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:35
+#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:36
 #: src/ops/archive.rs:351 src/ops/conflict.rs:63 src/ops/conflict.rs:314
 #: src/ops/mod.rs:30 src/ops/walk.rs:263 src/places_sidebar.rs:842
-#: src/places_sidebar.rs:1107 src/portal/chooser_window.rs:852
+#: src/places_sidebar.rs:1131 src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
 msgstr ""
 
-#: src/browser_actions.rs:1065
+#: src/browser_actions.rs:1087
 #, no-c-format
 msgid "_Delete"
 msgstr ""
 
-#: src/browser_actions.rs:1118
+#: src/browser_actions.rs:1140
 #, no-c-format
 msgid "Untitled Document"
 msgstr ""
 
-#: src/browser_actions.rs:1152 ui/window.ui:16
+#: src/browser_actions.rs:1174 ui/window.ui:16
 #, no-c-format
 msgid "New _Tab"
 msgstr ""
 
-#: src/browser_actions.rs:1153 ui/window.ui:12
+#: src/browser_actions.rs:1175 ui/window.ui:12
 #, no-c-format
 msgid "New _Window"
 msgstr ""
 
-#: src/browser_actions.rs:1154
+#: src/browser_actions.rs:1176
 #, no-c-format
 msgid "_Terminal"
 msgstr ""
 
-#: src/browser_actions.rs:1169
+#: src/browser_actions.rs:1191
 #, no-c-format
 msgid "Open _In"
 msgstr ""
 
-#: src/browser_actions.rs:1182 ui/path_bar.ui:16
+#: src/browser_actions.rs:1204 ui/path_bar.ui:16
 #, no-c-format
 msgid "New _Document"
 msgstr ""
@@ -651,44 +652,44 @@ msgid_plural "%d items selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:947
+#: src/browser_view.rs:944
 #, no-c-format
 msgid "Remove from Starred"
 msgstr ""
 
-#: src/browser_view.rs:949
+#: src/browser_view.rs:946
 #, no-c-format
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view.rs:1446 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1443 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:871
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view.rs:1468
+#: src/browser_view.rs:1465
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:1470 ui/browser_view.ui:103
+#: src/browser_view.rs:1467 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:1521
+#: src/browser_view.rs:1518
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:1537
+#: src/browser_view.rs:1534
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:1542
+#: src/browser_view.rs:1539
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -696,17 +697,17 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1548
+#: src/browser_view.rs:1545
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:2295 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2280 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:2395 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2380 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -755,7 +756,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:71
-#: src/places_sidebar.rs:1133
+#: src/places_sidebar.rs:1157
 #, no-c-format
 msgid "_Rename"
 msgstr ""
@@ -1321,7 +1322,7 @@ msgid "You are not the owner, so you cannot change these permissions."
 msgstr ""
 
 #: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
-#: src/file_utils.rs:167 src/tags.rs:35 ui/places_sidebar.ui:96
+#: src/file_utils.rs:167 src/tags.rs:38
 #, no-c-format
 msgid "None"
 msgstr ""
@@ -1418,14 +1419,24 @@ msgstr ""
 msgid "Select Items Matching"
 msgstr ""
 
-#: src/dialogs/tags.rs:30
+#: src/dialogs/tags.rs:31
 #, no-c-format
 msgid "New Tag"
 msgstr ""
 
-#: src/dialogs/tags.rs:35
+#: src/dialogs/tags.rs:36
 #, no-c-format
 msgid "_Add"
+msgstr ""
+
+#: src/dialogs/tags.rs:154 ui/places_sidebar.ui:97
+#, no-c-format
+msgid "Custom…"
+msgstr ""
+
+#: src/dialogs/tags.rs:177 src/places_sidebar.rs:921
+#, no-c-format
+msgid "Tag Colour"
 msgstr ""
 
 #: src/enums.rs:55 ui/shortcuts_dialog.ui:140
@@ -2225,24 +2236,24 @@ msgstr ""
 msgid "Do _Not Empty"
 msgstr ""
 
-#: src/places_sidebar.rs:1092
+#: src/places_sidebar.rs:1116
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr ""
 
-#: src/places_sidebar.rs:1094
+#: src/places_sidebar.rs:1118
 #, no-c-format
 msgid "No file carries it."
 msgstr ""
 
-#: src/places_sidebar.rs:1097
+#: src/places_sidebar.rs:1121
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/places_sidebar.rs:1108 ui/places_sidebar.ui:28
+#: src/places_sidebar.rs:1132 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr ""
@@ -2329,37 +2340,42 @@ msgstr ""
 msgid "Show File Operations"
 msgstr ""
 
-#: src/tags.rs:28 ui/places_sidebar.ui:61
+#: src/tags.rs:28
+#, no-c-format
+msgid "Custom"
+msgstr ""
+
+#: src/tags.rs:31 ui/places_sidebar.ui:61
 #, no-c-format
 msgid "Red"
 msgstr ""
 
-#: src/tags.rs:29 ui/places_sidebar.ui:66
+#: src/tags.rs:32 ui/places_sidebar.ui:66
 #, no-c-format
 msgid "Orange"
 msgstr ""
 
-#: src/tags.rs:30 ui/places_sidebar.ui:71
+#: src/tags.rs:33 ui/places_sidebar.ui:71
 #, no-c-format
 msgid "Yellow"
 msgstr ""
 
-#: src/tags.rs:31 ui/places_sidebar.ui:76
+#: src/tags.rs:34 ui/places_sidebar.ui:76
 #, no-c-format
 msgid "Green"
 msgstr ""
 
-#: src/tags.rs:32 ui/places_sidebar.ui:81
+#: src/tags.rs:35 ui/places_sidebar.ui:81
 #, no-c-format
 msgid "Blue"
 msgstr ""
 
-#: src/tags.rs:33 ui/places_sidebar.ui:86
+#: src/tags.rs:36 ui/places_sidebar.ui:86
 #, no-c-format
 msgid "Purple"
 msgstr ""
 
-#: src/tags.rs:34 ui/places_sidebar.ui:91
+#: src/tags.rs:37 ui/places_sidebar.ui:91
 #, no-c-format
 msgid "Grey"
 msgstr ""
@@ -2456,7 +2472,7 @@ msgstr ""
 msgid "_Restore From Trash"
 msgstr ""
 
-#: ui/browser_view.ui:262 ui/places_sidebar.ui:23 ui/places_sidebar.ui:102
+#: ui/browser_view.ui:262 ui/places_sidebar.ui:23 ui/places_sidebar.ui:103
 msgid "Rena_me…"
 msgstr ""
 
@@ -2550,11 +2566,11 @@ msgstr ""
 msgid "_Colour"
 msgstr ""
 
-#: ui/places_sidebar.ui:106
+#: ui/places_sidebar.ui:107
 msgid "_Remove…"
 msgstr ""
 
-#: ui/places_sidebar.ui:112
+#: ui/places_sidebar.ui:113
 msgid "New _Tag…"
 msgstr ""
 
