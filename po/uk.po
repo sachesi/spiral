@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 23:19+0300\n"
+"POT-Creation-Date: 2026-09-09 23:47+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -85,7 +85,9 @@ msgstr "Пропонувати розташування на інших маши
 msgid ""
 "Connecting to a server, the network in the sidebar, and shares opened by "
 "address. Nothing of it works without gvfs."
-msgstr "Підключення до сервера, мережа на бічній панелі та спільні ресурси, відкриті за адресою. Нічого з цього не працює без gvfs."
+msgstr ""
+"Підключення до сервера, мережа на бічній панелі та спільні ресурси, відкриті "
+"за адресою. Нічого з цього не працює без gvfs."
 
 #: data/io.github.sachesi.spiral.gschema.xml:79
 msgid "Servers connected to before, the most recent first"
@@ -879,12 +881,12 @@ msgstr[2] "%d інших об’єктів вибрано"
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:2328 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2333 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:2428 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2433 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -1053,17 +1055,17 @@ msgstr "Наприклад: smb://server/share. Доступні в систем
 msgid "Recent Servers"
 msgstr "Нещодавні сервери"
 
-#: src/dialogs/connect_server.rs:70
+#: src/dialogs/connect_server.rs:69
 #, no-c-format
 msgid "C_onnect"
 msgstr "_Підключитися"
 
-#: src/dialogs/connect_server.rs:86
+#: src/dialogs/connect_server.rs:87
 #, no-c-format
 msgid "Connect to Server"
 msgstr "Підключення до сервера"
 
-#: src/dialogs/connect_server.rs:220
+#: src/dialogs/connect_server.rs:228
 #, no-c-format
 msgid "Forget This Server"
 msgstr "Забути цей сервер"
@@ -1207,7 +1209,9 @@ msgstr "Мережа"
 msgid ""
 "Shares on other machines are reached through gvfs, and nothing here works "
 "without it."
-msgstr "Спільні ресурси на інших машинах доступні через gvfs, і без нього тут нічого не працює."
+msgstr ""
+"Спільні ресурси на інших машинах доступні через gvfs, і без нього тут нічого "
+"не працює."
 
 #: src/dialogs/preferences.rs:68
 #, no-c-format
@@ -1219,7 +1223,9 @@ msgstr "Мережеві розташування"
 msgid ""
 "“Connect to Server…” in the main menu, the network in the sidebar, and "
 "shares opened by address"
-msgstr "«Підключитися до сервера…» у головному меню, мережа на бічній панелі та спільні ресурси, відкриті за адресою"
+msgstr ""
+"«Підключитися до сервера…» у головному меню, мережа на бічній панелі та "
+"спільні ресурси, відкриті за адресою"
 
 #: src/dialogs/preferences.rs:79 src/dialogs/preferences.rs:84
 #, no-c-format

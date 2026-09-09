@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.13.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 23:19+0300\n"
+"POT-Creation-Date: 2026-09-09 23:47+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -802,12 +802,12 @@ msgstr[1] ""
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:2328 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2333 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:2428 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2433 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -971,17 +971,17 @@ msgstr ""
 msgid "Recent Servers"
 msgstr ""
 
-#: src/dialogs/connect_server.rs:70
+#: src/dialogs/connect_server.rs:69
 #, no-c-format
 msgid "C_onnect"
 msgstr ""
 
-#: src/dialogs/connect_server.rs:86
+#: src/dialogs/connect_server.rs:87
 #, no-c-format
 msgid "Connect to Server"
 msgstr ""
 
-#: src/dialogs/connect_server.rs:220
+#: src/dialogs/connect_server.rs:228
 #, no-c-format
 msgid "Forget This Server"
 msgstr ""
