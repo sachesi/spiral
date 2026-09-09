@@ -63,6 +63,8 @@ mod imp {
         /// The folder a drag is resting on, and the wait before it springs open.
         pub hover_pos: Cell<Option<u32>>,
         pub hover_timer: RefCell<Option<glib::SourceId>>,
+        /// The row marked as the one a drag is over, to unmark when it moves on.
+        pub drop_row: RefCell<Option<gtk::Widget>>,
         /// The columns of the Miller view beside the folder being viewed: the path
         /// that leads to it, then the folder the selection points at.
         pub side_columns: RefCell<Vec<crate::miller::SideColumn>>,
@@ -186,6 +188,7 @@ mod imp {
                 pending_drop: Default::default(),
                 hover_pos: Default::default(),
                 hover_timer: Default::default(),
+                drop_row: Default::default(),
                 chooser_mode: Default::default(),
                 actions: gio::SimpleActionGroup::new(),
                 popover: Default::default(),
@@ -276,8 +279,13 @@ mod imp {
                     #[upgrade_or]
                     false,
                     move |t, value, x, y| match obj.location() {
-                        Some(loc) if !obj.in_side_column(x, y) =>
-                            obj.drop_files(t, value, &loc, x, y),
+                        // The folder under the pointer takes the drop. Cells carry targets
+                        // of their own, but only the grid's ever see a drag: in a column
+                        // view the crossing never reaches them, so the view looks for itself.
+                        Some(loc) if !obj.in_side_column(x, y) => {
+                            let dest = obj.folder_at(x, y).unwrap_or(loc);
+                            obj.drop_files(t, value, &dest, x, y)
+                        }
                         _ => false,
                     }
                 ));
@@ -1724,30 +1732,24 @@ impl BrowserView {
             gtk::gdk::FileList::static_type(),
             gtk::gdk::DragAction::COPY | gtk::gdk::DragAction::MOVE | gtk::gdk::DragAction::LINK,
         );
+        let over = glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            #[weak]
+            cell,
+            #[upgrade_or]
+            gtk::gdk::DragAction::empty(),
+            move |t: &gtk::DropTarget| match view.cell_folder(&cell) {
+                Some(_) => preferred_action(t),
+                None => gtk::gdk::DragAction::empty(),
+            }
+        );
         target.connect_enter(glib::clone!(
-            #[weak(rename_to = view)]
-            self,
-            #[weak]
-            cell,
-            #[upgrade_or]
-            gtk::gdk::DragAction::empty(),
-            move |t, _, _| match view.cell_folder(&cell) {
-                Some(_) => preferred_action(t),
-                None => gtk::gdk::DragAction::empty(),
-            }
+            #[strong]
+            over,
+            move |t, _, _| over(t)
         ));
-        target.connect_motion(glib::clone!(
-            #[weak(rename_to = view)]
-            self,
-            #[weak]
-            cell,
-            #[upgrade_or]
-            gtk::gdk::DragAction::empty(),
-            move |t, _, _| match view.cell_folder(&cell) {
-                Some(_) => preferred_action(t),
-                None => gtk::gdk::DragAction::empty(),
-            }
-        ));
+        target.connect_motion(move |t, _, _| over(t));
         target.connect_drop(glib::clone!(
             #[weak(rename_to = view)]
             self,
@@ -1784,6 +1786,15 @@ impl BrowserView {
         if over == imp.hover_pos.get() {
             return;
         }
+        // GTK's own drop outline is off in the views whose cells are the columns of a row,
+        // where it would draw around one column; those get the row marked instead. The
+        // grid keeps the outline: a cell there is the whole tile.
+        self.set_drop_row(over.and_then(|_| {
+            imp.stack
+                .pick(x, y, gtk::PickFlags::DEFAULT)
+                .as_ref()
+                .and_then(row_widget)
+        }));
         imp.hover_pos.set(over);
         if let Some(id) = imp.hover_timer.borrow_mut().take() {
             id.remove();
@@ -1812,9 +1823,29 @@ impl BrowserView {
         imp.hover_timer.replace(Some(id));
     }
 
+    /// The folder shown at a point of the view, if there is one there.
+    fn folder_at(&self, x: f64, y: f64) -> Option<gio::File> {
+        let info = self
+            .item_at(x, y)
+            .and_then(|pos| self.model().info_at(pos))?;
+        file_utils::is_dir(&info).then(|| file_utils::file_of(&info))
+    }
+
+    /// Mark the row a drag is over, unmarking the one it left.
+    fn set_drop_row(&self, row: Option<gtk::Widget>) {
+        let row = row.filter(|_| self.view_mode() != ViewMode::Grid);
+        if let Some(old) = self.imp().drop_row.replace(row.clone()) {
+            old.remove_css_class("spiral-drop-row");
+        }
+        if let Some(row) = row {
+            row.add_css_class("spiral-drop-row");
+        }
+    }
+
     /// Stop waiting for a folder to spring open.
     fn end_hover(&self) {
         let imp = self.imp();
+        self.set_drop_row(None);
         imp.hover_pos.set(None);
         if let Some(id) = imp.hover_timer.borrow_mut().take() {
             id.remove();
