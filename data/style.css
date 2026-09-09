@@ -154,6 +154,11 @@
 .spiral-miller-column.spiral-drop-column {
   background-color: color-mix(in srgb, var(--accent-bg-color) 12%, transparent);
 }
+/* The row a drag is over, in the views whose cells are columns of a row */
+.spiral-list-view row.spiral-drop-row,
+.spiral-miller-column row.spiral-drop-row {
+  background-color: color-mix(in srgb, var(--accent-bg-color) 25%, transparent);
+}
 .spiral-miller-column listview {
   background: none;
   padding: 6px;
