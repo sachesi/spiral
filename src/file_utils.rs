@@ -111,6 +111,15 @@ pub fn is_hidden(info: &gio::FileInfo) -> bool {
         || (info.has_attribute("standard::is-backup") && info.is_backup())
 }
 
+/// Whether `info` points at a location nothing installed here can open: a server listed
+/// on the network is reached by the backend for its protocol, and without that backend
+/// the entry is a dead end, so it is not listed at all.
+pub fn is_unreachable(info: &gio::FileInfo) -> bool {
+    target_of(info)
+        .and_then(|target| target.uri_scheme())
+        .is_some_and(|scheme| !crate::network::supports(&scheme))
+}
+
 /// Whether a size would mean anything for `info`. A folder has none worth showing, and
 /// neither has an entry that only points somewhere.
 fn sizeless(info: &gio::FileInfo) -> bool {
@@ -485,6 +494,26 @@ pub fn matches_pattern(name: &str, pattern: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn pointing_at(uri: &str) -> gio::FileInfo {
+        let info = gio::FileInfo::new();
+        info.set_file_type(gio::FileType::Mountable);
+        info.set_attribute_string("standard::target-uri", uri);
+        info
+    }
+
+    /// An entry of `network:///` or `computer:///` is worth listing only where what it
+    /// points at can be opened. Local files always can; a protocol with no backend on
+    /// this system cannot, and in a test there are no backends at all.
+    #[test]
+    fn an_entry_pointing_nowhere_openable_is_unreachable() {
+        assert!(!is_unreachable(&pointing_at("file:///srv")));
+        assert!(is_unreachable(&pointing_at("afp://server/share")));
+        // A file of its own points at nothing and is never in question.
+        let plain = gio::FileInfo::new();
+        plain.set_file_type(gio::FileType::Regular);
+        assert!(!is_unreachable(&plain));
+    }
 
     fn named(name: &str) -> gio::FileInfo {
         let info = gio::FileInfo::new();

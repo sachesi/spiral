@@ -113,8 +113,16 @@ mod imp {
                     hidden_state.get() || !file_utils::is_hidden(info)
                 }
             ));
+            // An entry that stands for a location no installed backend can open is a dead
+            // end: a server on the network needs the backend for its protocol, and without
+            // it the entry answers nothing but an error.
+            let reachable_filter = gtk::CustomFilter::new(|obj| {
+                let info = obj.downcast_ref::<gio::FileInfo>().unwrap();
+                !file_utils::is_unreachable(info)
+            });
             let every_filter = gtk::EveryFilter::new();
             every_filter.append(hidden_filter.clone());
+            every_filter.append(reachable_filter);
 
             let sorter = gtk::CustomSorter::new(glib::clone!(
                 #[strong]
