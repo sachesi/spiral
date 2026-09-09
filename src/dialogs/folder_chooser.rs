@@ -56,6 +56,14 @@ pub async fn folder_chooser_dialog(
     let nav = gtk::Box::builder().spacing(6).build();
     nav.append(&back);
     nav.append(&forward);
+    // Narrow enough and the sidebar goes over the folders instead of beside them; this
+    // is how it is asked back.
+    let show_sidebar = gtk::ToggleButton::builder()
+        .icon_name("sidebar-show-symbolic")
+        .tooltip_text(gettext("Show Sidebar"))
+        .valign(gtk::Align::Center)
+        .visible(false)
+        .build();
     let new_folder = gtk::Button::builder()
         .icon_name("folder-new-symbolic")
         .tooltip_text(gettext("New Folder"))
@@ -66,6 +74,7 @@ pub async fn folder_chooser_dialog(
     let header = adw::HeaderBar::builder()
         .title_widget(location_bar.widget())
         .build();
+    header.pack_start(&show_sidebar);
     header.pack_start(&nav);
     header.pack_end(&new_folder);
 
@@ -109,20 +118,49 @@ pub async fn folder_chooser_dialog(
         .max_sidebar_width(260.0)
         .css_classes(["view"])
         .build();
+    split
+        .bind_property("show-sidebar", &show_sidebar, "active")
+        .bidirectional()
+        .sync_create()
+        .build();
     let dialog = adw::Dialog::builder()
         .title(title)
-        .content_width(860)
-        .content_height(560)
+        .content_width(820)
+        .content_height(540)
         .child(&split)
         .css_classes(["spiral-file-chooser"])
         .build();
     dialog.set_default_widget(Some(&accept));
+    // A dialog is as wide as the window lets it be, and a narrow window leaves no room for
+    // two panes: the sidebar folds away and the button in the header brings it back over
+    // the folders.
+    let bp = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
+        adw::BreakpointConditionLengthType::MaxWidth,
+        550.0,
+        adw::LengthUnit::Sp,
+    ));
+    bp.add_setter(&split, "collapsed", Some(&true.to_value()));
+    bp.add_setter(
+        &split,
+        "sidebar-width-unit",
+        Some(&adw::LengthUnit::Px.to_value()),
+    );
+    bp.add_setter(&show_sidebar, "visible", Some(&true.to_value()));
+    dialog.add_breakpoint(bp);
     dialog.insert_action_group("view", Some(view.action_group()));
 
     sidebar.connect_open_location(glib::clone!(
         #[weak]
         view,
-        move |_, f, _| view.go_to(f)
+        #[weak]
+        split,
+        move |_, f, _| {
+            view.go_to(f);
+            // Over the folders, the sidebar is in the way once it has been used.
+            if split.is_collapsed() {
+                split.set_show_sidebar(false);
+            }
+        }
     ));
     sidebar.set_selected_location(Some(start));
     view.connect_location_notify(glib::clone!(

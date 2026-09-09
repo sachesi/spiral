@@ -270,9 +270,18 @@ async fn run(
         )
         .build();
 
+    // Narrow enough and the sidebar goes over the folders instead of beside them; this
+    // is how it is asked back.
+    let show_sidebar = gtk::ToggleButton::builder()
+        .icon_name("sidebar-show-symbolic")
+        .tooltip_text(gettext("Show Sidebar"))
+        .valign(gtk::Align::Center)
+        .visible(false)
+        .build();
     let header = adw::HeaderBar::builder()
         .title_widget(location_bar.widget())
         .build();
+    header.pack_start(&show_sidebar);
     header.pack_start(&nav);
     header.pack_end(&view_button);
     header.pack_end(&new_folder);
@@ -420,19 +429,38 @@ async fn run(
     // Typing in the view starts a search, as it does in the file manager; the search bar
     // leaves the keys alone while they are going into the name entry.
     search_bar.set_key_capture_widget(Some(&window));
+    split
+        .bind_property("show-sidebar", &show_sidebar, "active")
+        .bidirectional()
+        .sync_create()
+        .build();
     let bp = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
         adw::BreakpointConditionLengthType::MaxWidth,
         682.0,
         adw::LengthUnit::Sp,
     ));
     bp.add_setter(&split, "collapsed", Some(&true.to_value()));
+    bp.add_setter(
+        &split,
+        "sidebar-width-unit",
+        Some(&adw::LengthUnit::Px.to_value()),
+    );
+    bp.add_setter(&show_sidebar, "visible", Some(&true.to_value()));
     window.add_breakpoint(bp);
 
     // ---- wiring ---------------------------------------------------------------------------
     sidebar.connect_open_location(glib::clone!(
         #[weak]
         view,
-        move |_, f, _| view.go_to(f)
+        #[weak]
+        split,
+        move |_, f, _| {
+            view.go_to(f);
+            // Over the folders, the sidebar is in the way once it has been used.
+            if split.is_collapsed() {
+                split.set_show_sidebar(false);
+            }
+        }
     ));
     view.connect_location_notify(glib::clone!(
         #[weak]
