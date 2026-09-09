@@ -50,50 +50,13 @@ menu tag_menu {
     }
   }
   section {
-    submenu {
-      label: _("_Colour");
-      item {
-        label: _("Red");
-        action: "sidebar.tag-color";
-        target: "red";
-      }
-      item {
-        label: _("Orange");
-        action: "sidebar.tag-color";
-        target: "orange";
-      }
-      item {
-        label: _("Yellow");
-        action: "sidebar.tag-color";
-        target: "yellow";
-      }
-      item {
-        label: _("Green");
-        action: "sidebar.tag-color";
-        target: "green";
-      }
-      item {
-        label: _("Blue");
-        action: "sidebar.tag-color";
-        target: "blue";
-      }
-      item {
-        label: _("Purple");
-        action: "sidebar.tag-color";
-        target: "purple";
-      }
-      item {
-        label: _("Grey");
-        action: "sidebar.tag-color";
-        target: "gray";
-      }
-      section {
-        item {
-          label: _("Custom…");
-          action: "sidebar.tag-custom-color";
-        }
-      }
+    // The colours are a row of dots, built in code: a submenu is a menu that cannot
+    // be dismissed by a click outside it once it has been opened.
+    item {
+      custom: "colors";
     }
+  }
+  section {
     item {
       label: _("Rena_me…");
       action: "sidebar.rename";

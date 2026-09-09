@@ -34,6 +34,8 @@ mod imp {
         /// Row the context menu was opened on.
         pub menu_row: RefCell<Option<gtk::ListBoxRow>>,
         pub popover: RefCell<Option<gtk::PopoverMenu>>,
+        /// The row of colours in a tag's menu, kept between menus as the popover keeps it.
+        pub color_picker: RefCell<Option<gtk::Box>>,
     }
 
     impl Default for PlacesSidebar {
@@ -51,6 +53,7 @@ mod imp {
                 actions: gio::SimpleActionGroup::new(),
                 menu_row: Default::default(),
                 popover: Default::default(),
+                color_picker: Default::default(),
             }
         }
     }
@@ -1037,18 +1040,9 @@ impl PlacesSidebar {
             "empty-trash",
             !imp.trash_empty.get() && row_file(row).is_some_and(|f| f.uri().starts_with("trash:")),
         );
-        if let Some(tag) = &tag
-            && let Some(a) = imp
-                .actions
-                .lookup_action("tag-color")
-                .and_downcast::<gio::SimpleAction>()
-        {
-            a.set_state(&crate::tags::color_of(tag).unwrap_or_default().to_variant());
-        }
         let existing = imp.popover.borrow().clone();
         let popover = existing.unwrap_or_else(|| {
             let p = gtk::PopoverMenu::from_model(gio::MenuModel::NONE);
-            p.set_flags(gtk::PopoverMenuFlags::NESTED);
             p.set_parent(self);
             p.set_has_arrow(false);
             p.set_halign(gtk::Align::Start);
@@ -1061,12 +1055,84 @@ impl PlacesSidebar {
             &imp.row_menu
         };
         popover.set_menu_model(Some(model));
+        if let Some(tag) = &tag {
+            self.attach_color_picker(&popover, tag);
+        }
         let p = imp
             .list
             .compute_point(self, &gtk::graphene::Point::new(x as f32, y as f32))
             .unwrap_or_else(|| gtk::graphene::Point::new(x as f32, y as f32));
         popover.set_pointing_to(Some(&gdk::Rectangle::new(p.x() as i32, p.y() as i32, 1, 1)));
         popover.popup();
+    }
+
+    /// The colours a tag can have, as a row of dots with the one it carries marked, and
+    /// a dot of its own for a colour from the colour dialog. The popover holds on to the
+    /// row it was given once, so the dots are made again for the tag whose menu is on the
+    /// way up.
+    fn attach_color_picker(&self, popover: &gtk::PopoverMenu, tag: &str) {
+        let imp = self.imp();
+        let selected = crate::tags::color_of(tag).unwrap_or_default();
+        let existing = imp.color_picker.borrow().clone();
+        let row = existing.unwrap_or_else(|| {
+            let bx = gtk::Box::builder()
+                .spacing(2)
+                .css_classes(["spiral-tag-picker"])
+                .build();
+            imp.color_picker.replace(Some(bx.clone()));
+            bx
+        });
+        while let Some(dot) = row.first_child() {
+            row.remove(&dot);
+        }
+        let button = |dot: &gtk::Image, name: &str| {
+            gtk::Button::builder()
+                .child(dot)
+                .tooltip_text(name)
+                .css_classes(["flat", "circular"])
+                .build()
+        };
+        for color in crate::tags::COLORS {
+            let dot = crate::browser_view::tag_dot(color);
+            if color == selected {
+                dot.set_icon_name(Some("object-select-symbolic"));
+            }
+            let dot = button(&dot, &crate::tags::color_name(color));
+            dot.connect_clicked(glib::clone!(
+                #[weak(rename_to = sidebar)]
+                self,
+                #[weak]
+                popover,
+                move |_| {
+                    // The menu goes first: the rows are rewritten under it otherwise.
+                    popover.popdown();
+                    let _ = sidebar.activate_action("sidebar.tag-color", Some(&color.to_variant()));
+                }
+            ));
+            row.append(&dot);
+        }
+        let custom = crate::tags::is_custom(&selected);
+        let dot = crate::browser_view::tag_dot(if custom { &selected } else { "" });
+        if custom {
+            dot.set_icon_name(Some("object-select-symbolic"));
+        } else {
+            dot.set_css_classes(&["spiral-tag-dot", "spiral-tag-custom"]);
+        }
+        let dot = button(&dot, &gettext("Custom…"));
+        dot.connect_clicked(glib::clone!(
+            #[weak(rename_to = sidebar)]
+            self,
+            #[weak]
+            popover,
+            move |_| {
+                popover.popdown();
+                let _ = sidebar.activate_action("sidebar.tag-custom-color", None);
+            }
+        ));
+        row.append(&dot);
+        if row.parent().is_none() {
+            popover.add_child(&row, "colors");
+        }
     }
 
     /// Entry popover over `row` for the bookmark's label; empty restores the folder name.
