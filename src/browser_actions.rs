@@ -802,16 +802,6 @@ impl BrowserView {
                 .spacing(2)
                 .css_classes(["spiral-tag-picker"])
                 .build();
-            // On the way down to the dots the pointer crosses "Open In", whose submenu
-            // opens under it and, unlike a menu item, the row of dots does not close it:
-            // the first click would only put the submenu away.
-            let motion = gtk::EventControllerMotion::new();
-            motion.connect_enter(glib::clone!(
-                #[weak(rename_to = view)]
-                self,
-                move |_, _, _| view.close_submenus()
-            ));
-            bx.add_controller(motion);
             imp.tag_picker.replace(Some(bx.clone()));
             bx
         });
@@ -846,26 +836,6 @@ impl BrowserView {
             && let Some(popover) = imp.popover.borrow().as_ref()
         {
             popover.add_child(&picker, "tags");
-        }
-    }
-
-    /// Put away whatever submenu the item menu has open, the way the menu itself does
-    /// when the pointer reaches another of its items: hidden, not popped down, since a
-    /// nested popover popped down takes the whole menu with it.
-    fn close_submenus(&self) {
-        fn walk(w: &gtk::Widget) {
-            let mut child = w.first_child();
-            while let Some(c) = child {
-                match c.downcast_ref::<gtk::Popover>() {
-                    Some(p) if p.is_visible() => p.set_visible(false),
-                    Some(_) => {}
-                    None => walk(&c),
-                }
-                child = c.next_sibling();
-            }
-        }
-        if let Some(popover) = self.imp().popover.borrow().as_ref() {
-            walk(popover.upcast_ref());
         }
     }
 
@@ -1185,27 +1155,27 @@ impl BrowserView {
         ));
     }
 
-    /// "Open In" gathers the ways of opening the selection other than the plain one: a
-    /// tab, a window, a terminal. It holds the ones on offer and is left out when none of
-    /// them are, since a submenu of nothing is worse than no submenu.
+    /// The ways of opening the selection other than the plain one: a tab, a window, a
+    /// terminal. Only the ones on offer are there, each an item of its own rather than a
+    /// submenu, which a menu cannot be dismissed out of once it has been opened.
     fn sync_open_menu(&self) {
         let imp = self.imp();
         let section = &imp.open_section;
         if imp.open_items.get() == 0 {
             imp.open_items.set(section.n_items() as u32);
         }
-        // Ours sits after the two the template starts with; what the template puts there
-        // is counted once, so the entries below it can be moved without touching this.
+        // Ours sit after the two the template starts with; what the template puts there
+        // is counted once, so the entries below them can be moved without touching this.
         let ours = 2;
-        if section.n_items() as u32 > imp.open_items.get() {
+        while section.n_items() as u32 > imp.open_items.get() {
             section.remove(ours);
         }
         let ways = [
-            (gettext("New _Tab"), "view.open-new-tab"),
-            (gettext("New _Window"), "view.open-new-window"),
-            (gettext("_Terminal"), "view.open-terminal"),
+            (gettext("Open in New _Tab"), "view.open-new-tab"),
+            (gettext("Open in New _Window"), "view.open-new-window"),
+            (gettext("Open in _Terminal"), "view.open-terminal"),
         ];
-        let menu = gio::Menu::new();
+        let mut at = ours;
         for (label, action) in ways {
             let name = action.trim_start_matches("view.");
             if imp
@@ -1214,11 +1184,9 @@ impl BrowserView {
                 .and_downcast::<gio::SimpleAction>()
                 .is_some_and(|a| a.is_enabled())
             {
-                menu.append(Some(&label), Some(action));
+                section.insert(at, Some(&label), Some(action));
+                at += 1;
             }
-        }
-        if menu.n_items() > 0 {
-            section.insert_submenu(ours, Some(&gettext("Open _In")), &menu);
         }
     }
 

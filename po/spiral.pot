@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.13.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 21:50+0300\n"
+"POT-Creation-Date: 2026-09-09 22:04+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -310,7 +310,10 @@ msgid ""
 "gets its timeline and the seeking that comes with it. Ctrl+S no longer picks "
 "files out by pattern in a save dialog, where that key belongs to the "
 "application the dialog was opened for, and \"Empty Trash…\" does not ask its "
-"question over an empty trash."
+"question over an empty trash. Opening in a new tab, a new window or a "
+"terminal are items of the menu again rather than a submenu, and the colours "
+"of a tag are a row of dots in its menu, since a menu that has had a submenu "
+"open is not dismissed by a click outside it."
 msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:34
@@ -581,100 +584,96 @@ msgstr ""
 msgid "Archive"
 msgstr ""
 
-#: src/browser_actions.rs:752 src/places_sidebar.rs:458
+#: src/browser_actions.rs:752 src/places_sidebar.rs:461
 #, no-c-format
 msgid "Could not tag “%s”"
 msgstr ""
 
-#: src/browser_actions.rs:983
+#: src/browser_actions.rs:953
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr ""
 
-#: src/browser_actions.rs:996
+#: src/browser_actions.rs:966
 #, no-c-format
 msgid "Move To"
 msgstr ""
 
-#: src/browser_actions.rs:996
+#: src/browser_actions.rs:966
 #, no-c-format
 msgid "_Move"
 msgstr ""
 
-#: src/browser_actions.rs:998
+#: src/browser_actions.rs:968
 #, no-c-format
 msgid "Copy To"
 msgstr ""
 
-#: src/browser_actions.rs:998 ui/browser_view.ui:203
+#: src/browser_actions.rs:968 ui/browser_view.ui:203
 #, no-c-format
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:1091 src/browser_view.rs:1425
+#: src/browser_actions.rs:1061 src/browser_view.rs:1425
 #: src/browser_view.rs:1432 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
 
-#: src/browser_actions.rs:1101
+#: src/browser_actions.rs:1071
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr ""
 
-#: src/browser_actions.rs:1103
+#: src/browser_actions.rs:1073
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_actions.rs:1111
+#: src/browser_actions.rs:1081
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr ""
 
-#: src/browser_actions.rs:1116 src/dialogs/batch_rename.rs:108
+#: src/browser_actions.rs:1086 src/dialogs/batch_rename.rs:108
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
 #: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:36
 #: src/ops/archive.rs:351 src/ops/conflict.rs:63 src/ops/conflict.rs:314
-#: src/ops/mod.rs:30 src/ops/walk.rs:263 src/places_sidebar.rs:842
-#: src/places_sidebar.rs:1131 src/portal/chooser_window.rs:852
+#: src/ops/mod.rs:30 src/ops/walk.rs:263 src/places_sidebar.rs:845
+#: src/places_sidebar.rs:1197 src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
 msgstr ""
 
-#: src/browser_actions.rs:1117
+#: src/browser_actions.rs:1087
 #, no-c-format
 msgid "_Delete"
 msgstr ""
 
-#: src/browser_actions.rs:1170
+#: src/browser_actions.rs:1140
 #, no-c-format
 msgid "Untitled Document"
 msgstr ""
 
-#: src/browser_actions.rs:1204 ui/window.ui:16
+#: src/browser_actions.rs:1174 ui/path_bar.ui:32 ui/path_bar.ui:63
+#: ui/places_sidebar.ui:16 ui/places_sidebar.ui:53
 #, no-c-format
-msgid "New _Tab"
+msgid "Open in New _Tab"
 msgstr ""
 
-#: src/browser_actions.rs:1205 ui/window.ui:12
+#: src/browser_actions.rs:1175 ui/path_bar.ui:36 ui/path_bar.ui:67
 #, no-c-format
-msgid "New _Window"
+msgid "Open in New _Window"
 msgstr ""
 
-#: src/browser_actions.rs:1206
+#: src/browser_actions.rs:1176 ui/browser_view.ui:340
 #, no-c-format
-msgid "_Terminal"
+msgid "Open in _Terminal"
 msgstr ""
 
-#: src/browser_actions.rs:1221
-#, no-c-format
-msgid "Open _In"
-msgstr ""
-
-#: src/browser_actions.rs:1234 ui/path_bar.ui:16
+#: src/browser_actions.rs:1202 ui/path_bar.ui:16
 #, no-c-format
 msgid "New _Document"
 msgstr ""
@@ -705,7 +704,7 @@ msgstr ""
 
 #: src/browser_view.rs:1443 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
-#: src/ops/walk.rs:46 src/places_sidebar.rs:871
+#: src/ops/walk.rs:46 src/places_sidebar.rs:874
 #, no-c-format
 msgid "_OK"
 msgstr ""
@@ -797,7 +796,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:71
-#: src/places_sidebar.rs:1157
+#: src/places_sidebar.rs:1223
 #, no-c-format
 msgid "_Rename"
 msgstr ""
@@ -1068,7 +1067,7 @@ msgstr ""
 msgid "Sidebar"
 msgstr ""
 
-#: src/dialogs/preferences.rs:105 src/places_sidebar.rs:610
+#: src/dialogs/preferences.rs:105 src/places_sidebar.rs:613
 #, no-c-format
 msgid "Root"
 msgstr ""
@@ -1079,7 +1078,7 @@ msgid "The top of the filesystem, above the bookmarks"
 msgstr ""
 
 #: src/dialogs/preferences.rs:111 src/file_utils.rs:316 src/path_bar.rs:326
-#: src/places_sidebar.rs:618
+#: src/places_sidebar.rs:621
 #, no-c-format
 msgid "Favorites"
 msgstr ""
@@ -1470,12 +1469,12 @@ msgstr ""
 msgid "_Add"
 msgstr ""
 
-#: src/dialogs/tags.rs:154 ui/places_sidebar.ui:97
+#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1121
 #, no-c-format
 msgid "Custom…"
 msgstr ""
 
-#: src/dialogs/tags.rs:177 src/places_sidebar.rs:921
+#: src/dialogs/tags.rs:177 src/places_sidebar.rs:924
 #, no-c-format
 msgid "Tag Colour"
 msgstr ""
@@ -1571,12 +1570,12 @@ msgid_plural "%d items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:310 src/path_bar.rs:320 src/places_sidebar.rs:592
+#: src/file_utils.rs:310 src/path_bar.rs:320 src/places_sidebar.rs:595
 #, no-c-format
 msgid "Home"
 msgstr ""
 
-#: src/file_utils.rs:313 src/path_bar.rs:323 src/places_sidebar.rs:625
+#: src/file_utils.rs:313 src/path_bar.rs:323 src/places_sidebar.rs:628
 #, no-c-format
 msgid "Trash"
 msgstr ""
@@ -2132,7 +2131,7 @@ msgstr ""
 msgid "All items in the Trash will be permanently deleted."
 msgstr ""
 
-#: src/ops/mod.rs:31 src/places_sidebar.rs:844 ui/browser_view.ui:354
+#: src/ops/mod.rs:31 src/places_sidebar.rs:847 ui/browser_view.ui:354
 #, no-c-format
 msgid "_Empty Trash"
 msgstr ""
@@ -2225,76 +2224,76 @@ msgstr ""
 msgid "Edit Location"
 msgstr ""
 
-#: src/places_sidebar.rs:602
+#: src/places_sidebar.rs:605
 #, no-c-format
 msgid "Desktop"
 msgstr ""
 
-#: src/places_sidebar.rs:726
+#: src/places_sidebar.rs:729
 #, no-c-format
 msgid "Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:760
+#: src/places_sidebar.rs:763
 #, no-c-format
 msgid "Could Not Mount"
 msgstr ""
 
-#: src/places_sidebar.rs:799
+#: src/places_sidebar.rs:802
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:801
+#: src/places_sidebar.rs:804
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr ""
 
-#: src/places_sidebar.rs:820
+#: src/places_sidebar.rs:823
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:826
+#: src/places_sidebar.rs:829
 #, no-c-format
 msgid "Could Not Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:837
+#: src/places_sidebar.rs:840
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr ""
 
-#: src/places_sidebar.rs:839
+#: src/places_sidebar.rs:842
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
 "trashed items on the volume will be permanently lost."
 msgstr ""
 
-#: src/places_sidebar.rs:843
+#: src/places_sidebar.rs:846
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr ""
 
-#: src/places_sidebar.rs:1116
+#: src/places_sidebar.rs:1182
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr ""
 
-#: src/places_sidebar.rs:1118
+#: src/places_sidebar.rs:1184
 #, no-c-format
 msgid "No file carries it."
 msgstr ""
 
-#: src/places_sidebar.rs:1121
+#: src/places_sidebar.rs:1187
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/places_sidebar.rs:1132 ui/places_sidebar.ui:28
+#: src/places_sidebar.rs:1198 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr ""
@@ -2386,37 +2385,37 @@ msgstr ""
 msgid "Custom"
 msgstr ""
 
-#: src/tags.rs:31 ui/places_sidebar.ui:61
+#: src/tags.rs:31
 #, no-c-format
 msgid "Red"
 msgstr ""
 
-#: src/tags.rs:32 ui/places_sidebar.ui:66
+#: src/tags.rs:32
 #, no-c-format
 msgid "Orange"
 msgstr ""
 
-#: src/tags.rs:33 ui/places_sidebar.ui:71
+#: src/tags.rs:33
 #, no-c-format
 msgid "Yellow"
 msgstr ""
 
-#: src/tags.rs:34 ui/places_sidebar.ui:76
+#: src/tags.rs:34
 #, no-c-format
 msgid "Green"
 msgstr ""
 
-#: src/tags.rs:35 ui/places_sidebar.ui:81
+#: src/tags.rs:35
 #, no-c-format
 msgid "Blue"
 msgstr ""
 
-#: src/tags.rs:36 ui/places_sidebar.ui:86
+#: src/tags.rs:36
 #, no-c-format
 msgid "Purple"
 msgstr ""
 
-#: src/tags.rs:37 ui/places_sidebar.ui:91
+#: src/tags.rs:37
 #, no-c-format
 msgid "Grey"
 msgstr ""
@@ -2513,7 +2512,7 @@ msgstr ""
 msgid "_Restore From Trash"
 msgstr ""
 
-#: ui/browser_view.ui:262 ui/places_sidebar.ui:23 ui/places_sidebar.ui:103
+#: ui/browser_view.ui:262 ui/places_sidebar.ui:23 ui/places_sidebar.ui:64
 msgid "Rena_me…"
 msgstr ""
 
@@ -2570,21 +2569,8 @@ msgstr ""
 msgid "Select _All"
 msgstr ""
 
-#: ui/browser_view.ui:340
-msgid "Open in _Terminal"
-msgstr ""
-
 #: ui/browser_view.ui:347 ui/path_bar.ui:73
 msgid "Add to _Bookmarks"
-msgstr ""
-
-#: ui/path_bar.ui:32 ui/path_bar.ui:63 ui/places_sidebar.ui:16
-#: ui/places_sidebar.ui:53
-msgid "Open in New _Tab"
-msgstr ""
-
-#: ui/path_bar.ui:36 ui/path_bar.ui:67
-msgid "Open in New _Window"
 msgstr ""
 
 #: ui/path_bar.ui:40
@@ -2603,15 +2589,11 @@ msgstr ""
 msgid "Current Folder Menu"
 msgstr ""
 
-#: ui/places_sidebar.ui:59
-msgid "_Colour"
-msgstr ""
-
-#: ui/places_sidebar.ui:107
+#: ui/places_sidebar.ui:68
 msgid "_Remove…"
 msgstr ""
 
-#: ui/places_sidebar.ui:113
+#: ui/places_sidebar.ui:74
 msgid "New _Tag…"
 msgstr ""
 
@@ -2741,6 +2723,14 @@ msgstr ""
 
 #: ui/shortcuts_dialog.ui:289
 msgid "Redo"
+msgstr ""
+
+#: ui/window.ui:12
+msgid "New _Window"
+msgstr ""
+
+#: ui/window.ui:16
+msgid "New _Tab"
 msgstr ""
 
 #: ui/window.ui:20
