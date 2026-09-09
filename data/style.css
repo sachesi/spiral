@@ -319,14 +319,14 @@ window {
   padding: 2px 6px;
 }
 .spiral-tag-picker > button {
-  padding: 5px;
+  padding: 4px;
   min-width: 0;
   min-height: 0;
 }
 .spiral-tag-picker .spiral-tag-dot {
-  min-width: 18px;
-  min-height: 18px;
-  -gtk-icon-size: 13px;
+  min-width: 15px;
+  min-height: 15px;
+  -gtk-icon-size: 11px;
 }
 .spiral-tag-some {
   opacity: 0.6;
