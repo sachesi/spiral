@@ -12,7 +12,28 @@ pub fn path() -> PathBuf {
     glib::user_config_dir().join("gtk-3.0").join("bookmarks")
 }
 
+thread_local! {
+    /// The file as it was last read. Every change of the selection asks whether the folder
+    /// is bookmarked, and the answer is not worth a read of the disk each time; the sidebar
+    /// watches the file and forgets this when it changes underneath.
+    static CACHE: std::cell::RefCell<Option<Vec<Entry>>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Read the file again the next time it is asked for.
+pub fn forget() {
+    CACHE.with(|c| c.replace(None));
+}
+
 pub fn load() -> Vec<Entry> {
+    if let Some(entries) = CACHE.with(|c| c.borrow().clone()) {
+        return entries;
+    }
+    let entries = read();
+    CACHE.with(|c| c.replace(Some(entries.clone())));
+    entries
+}
+
+fn read() -> Vec<Entry> {
     std::fs::read_to_string(path())
         .unwrap_or_default()
         .lines()
@@ -43,6 +64,7 @@ fn save(entries: &[Entry]) {
     if let Err(e) = std::fs::write(&p, text) {
         glib::g_warning!("spiral", "cannot save bookmarks: {e}");
     }
+    CACHE.with(|c| c.replace(Some(entries.to_vec())));
 }
 
 pub fn contains(file: &gio::File) -> bool {

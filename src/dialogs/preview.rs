@@ -1422,7 +1422,12 @@ async fn load_texture(file: &gio::File) -> Option<gdk::Texture> {
         .flatten(),
         None => {
             let (data, _) = file.load_bytes_future().await.ok()?;
-            gdk::Texture::from_bytes(&data).ok()
+            // Decoding is the slow part, and a picture from a share is as big as one from
+            // the disk: it belongs on a worker, like the local path above.
+            gio::spawn_blocking(move || gdk::Texture::from_bytes(&data).ok())
+                .await
+                .ok()
+                .flatten()
         }
     }
 }

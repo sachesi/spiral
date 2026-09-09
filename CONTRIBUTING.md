@@ -28,8 +28,18 @@
 
 Widgets are GObject subclasses with composite templates from the Blueprint files. Actions
 use the usual prefixes: `app.`, `win.`, `view.` on the browser view (the chooser reuses
-it), `sidebar.`. All I/O is async GIO on the main context; the only threads are the
-sandboxed children and the D-Bus thread in the portal backend.
+it), `sidebar.`.
+
+I/O is async GIO on the main context. What GIO has no async form for — decoding a picture,
+walking a tree with `std::fs`, waiting on a sandboxed tool, asking gvfs a question over the
+bus — goes to a worker through `gio::spawn_blocking`, with only values that can cross
+threads coming back; GObjects stay where they were made. Beside those workers the only
+threads are the sandboxed children and the D-Bus thread of the portal backend.
+
+Nothing that touches the disk belongs on a path the interface takes often. The answers
+that would (which terminals are installed, what the bookmarks file says, whether gvfs
+keeps per-folder metadata) are read once and kept, and forgotten again when something
+says they have changed.
 
 ## Running
 

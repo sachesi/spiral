@@ -35,6 +35,7 @@ mod imp {
             let app = self.obj();
             self.job_manager.set(JobManager::new(&app)).ok();
             crate::templates::init();
+            crate::prefs::warm_per_folder_available();
             app.setup_actions();
         }
 
