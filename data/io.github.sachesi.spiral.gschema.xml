@@ -73,7 +73,7 @@
     <key name="tags" type="a(ss)">
       <default>[]</default>
       <summary>The tags on offer, each a name and a colour</summary>
-      <description>The colour is one of red, orange, yellow, green, blue, purple and gray, or empty for none. An empty list stands for the seven colours.</description>
+      <description>Seven at most. The colour is one of red, orange, yellow, green, blue, purple and gray, or a #rrggbb of your own. An empty list stands for the seven colours.</description>
     </key>
     <key name="use-column-view" type="b">
       <default>false</default>

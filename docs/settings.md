@@ -63,8 +63,8 @@ sorting from the menu writes these two keys.
 `compression-format` is whatever Create Archive was last confirmed with; the dialog starts
 there next time, provided the tools for it are still installed.
 
-`tags` holds every tag as a name and a colour, the colour one of `red`, `orange`, `yellow`,
-`green`, `blue`, `purple`, `gray` or empty for none. Empty, which is how it starts, stands
+`tags` holds every tag, seven at most, as a name and a colour, the colour one of `red`,
+`orange`, `yellow`, `green`, `blue`, `purple`, `gray` or a `#rrggbb` of your own. Empty, which is how it starts, stands
 for the seven colours named after themselves in the interface language.
 
 `local` for thumbnails and item counts means files on the local disk only; network

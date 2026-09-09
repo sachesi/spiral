@@ -911,6 +911,29 @@ impl PlacesSidebar {
                 s.remove_tag(tag);
             }
         });
+        add("tag-custom-color", |s, row| {
+            let Some(tag) = row_tag(row) else { return };
+            let start = crate::tags::color_of(&tag)
+                .filter(|c| crate::tags::is_custom(c))
+                .and_then(|c| gdk::RGBA::parse(&c).ok());
+            let dialog = gtk::ColorDialog::builder()
+                .with_alpha(false)
+                .title(gettext("Tag Colour"))
+                .build();
+            glib::spawn_future_local(glib::clone!(
+                #[weak(rename_to = sidebar)]
+                s,
+                async move {
+                    let window = sidebar.root().and_downcast::<gtk::Window>();
+                    if let Ok(rgba) = dialog
+                        .choose_rgba_future(window.as_ref(), start.as_ref())
+                        .await
+                    {
+                        crate::tags::set_color(&tag, &crate::tags::hex(&rgba));
+                    }
+                }
+            ));
+        });
         add("new-tag", |s, _| {
             glib::spawn_future_local(glib::clone!(
                 #[weak(rename_to = sidebar)]
@@ -1008,6 +1031,7 @@ impl PlacesSidebar {
         enable("open-new-tab", row_file(row).is_some());
         enable("rename", bookmark || tag.is_some());
         enable("remove", bookmark || tag.is_some());
+        enable("new-tag", crate::tags::all().len() < crate::tags::MAX);
         enable("eject", row_eject(row).is_some());
         enable(
             "empty-trash",

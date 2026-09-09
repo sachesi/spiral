@@ -271,48 +271,62 @@ window {
   color: currentColor;
   opacity: 0.55;
 }
-/* The row of a tagged file, washed with its first colour; a selected row keeps the
-   selection colour, which says more. */
-.spiral-list-view columnview > listview > row.spiral-tag-row-red:not(:selected),
-.spiral-miller-column listview > row.spiral-tag-row-red:not(:selected) {
+/* The dot that opens the colour dialog, before a colour is picked */
+.spiral-tag-custom {
+  background: conic-gradient(#e01b24, #f6d32d, #33d17a, #3584e4, #9141ac, #e01b24);
+}
+/* A tagged file, washed with its first colour: across its row in the list views, behind
+   its name in the grid. A selected row keeps the selection colour, which says more. */
+.spiral-grid-view label.spiral-tag-wash {
+  border-radius: 6px;
+}
+.spiral-list-view columnview > listview > row.spiral-tag-wash-red:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-wash-red:not(:selected),
+.spiral-grid-view label.spiral-tag-wash-red {
   background-color: color-mix(in srgb, var(--spiral-tag-red) 18%, transparent);
 }
-.spiral-list-view columnview > listview > row.spiral-tag-row-orange:not(:selected),
-.spiral-miller-column listview > row.spiral-tag-row-orange:not(:selected) {
+.spiral-list-view columnview > listview > row.spiral-tag-wash-orange:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-wash-orange:not(:selected),
+.spiral-grid-view label.spiral-tag-wash-orange {
   background-color: color-mix(in srgb, var(--spiral-tag-orange) 18%, transparent);
 }
-.spiral-list-view columnview > listview > row.spiral-tag-row-yellow:not(:selected),
-.spiral-miller-column listview > row.spiral-tag-row-yellow:not(:selected) {
+.spiral-list-view columnview > listview > row.spiral-tag-wash-yellow:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-wash-yellow:not(:selected),
+.spiral-grid-view label.spiral-tag-wash-yellow {
   background-color: color-mix(in srgb, var(--spiral-tag-yellow) 22%, transparent);
 }
-.spiral-list-view columnview > listview > row.spiral-tag-row-green:not(:selected),
-.spiral-miller-column listview > row.spiral-tag-row-green:not(:selected) {
+.spiral-list-view columnview > listview > row.spiral-tag-wash-green:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-wash-green:not(:selected),
+.spiral-grid-view label.spiral-tag-wash-green {
   background-color: color-mix(in srgb, var(--spiral-tag-green) 18%, transparent);
 }
-.spiral-list-view columnview > listview > row.spiral-tag-row-blue:not(:selected),
-.spiral-miller-column listview > row.spiral-tag-row-blue:not(:selected) {
+.spiral-list-view columnview > listview > row.spiral-tag-wash-blue:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-wash-blue:not(:selected),
+.spiral-grid-view label.spiral-tag-wash-blue {
   background-color: color-mix(in srgb, var(--spiral-tag-blue) 18%, transparent);
 }
-.spiral-list-view columnview > listview > row.spiral-tag-row-purple:not(:selected),
-.spiral-miller-column listview > row.spiral-tag-row-purple:not(:selected) {
+.spiral-list-view columnview > listview > row.spiral-tag-wash-purple:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-wash-purple:not(:selected),
+.spiral-grid-view label.spiral-tag-wash-purple {
   background-color: color-mix(in srgb, var(--spiral-tag-purple) 18%, transparent);
 }
-.spiral-list-view columnview > listview > row.spiral-tag-row-gray:not(:selected),
-.spiral-miller-column listview > row.spiral-tag-row-gray:not(:selected) {
+.spiral-list-view columnview > listview > row.spiral-tag-wash-gray:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-wash-gray:not(:selected),
+.spiral-grid-view label.spiral-tag-wash-gray {
   background-color: color-mix(in srgb, var(--spiral-tag-gray) 18%, transparent);
 }
 .spiral-tag-picker {
   padding: 2px 6px;
 }
 .spiral-tag-picker > button {
-  padding: 4px;
+  padding: 5px;
   min-width: 0;
   min-height: 0;
 }
 .spiral-tag-picker .spiral-tag-dot {
-  min-width: 16px;
-  min-height: 16px;
-  -gtk-icon-size: 12px;
+  min-width: 18px;
+  min-height: 18px;
+  -gtk-icon-size: 13px;
 }
 .spiral-tag-some {
   opacity: 0.6;
