@@ -174,7 +174,9 @@ document started from a template is a copy of it.
 attached to the window: the sidebar, the folders of the location and nothing else, with
 New Folder in the header for a destination that does not exist yet. Ctrl+L or a click on
 the current folder types a location, Ctrl+R reads it again, and the button takes the
-folder selected, or the one on screen when nothing is. "Extract To…" asks the same way.
+folder selected, or the one on screen when nothing is. In a window too narrow for both
+panes the sidebar folds away, and the button at the left of the header brings it back
+over the folders. "Extract To…" asks the same way.
 "Paste as Link" and, when turned on in Preferences, "Create Link" make symbolic links; a
 link beside its target is called "Link to name".
 
