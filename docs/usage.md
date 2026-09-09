@@ -64,7 +64,9 @@ folder until F5 reads it again.
 Shares on other machines are reached through gvfs, so what Spiral can open is whatever
 gvfs has a backend for: SMB, SFTP and SSH, FTP and FTPS, NFS, WebDAV and the rest. Without
 gvfs installed there are no network locations at all, and Spiral says so instead of
-offering them.
+offering them. "Network Locations" in Preferences, under General, turns the whole of it off
+for those who have no servers to reach: the menu entry goes, the sidebar loses its Network
+section, and an address goes nowhere by itself.
 
 "Connect to Server…" in the main menu asks for an address: a scheme, `://` and the host,
 as in `smb://server/share`, `sftp://user@host` or `davs://host/dav`. The dialog names the
@@ -76,7 +78,10 @@ can be taken off that list one by one.
 
 A share that answers opens in a tab and joins the sidebar under Network, where its button
 disconnects it again; the context menu of the row calls it "Disconnect" rather than
-"Eject". "Network" itself, above them, lists the machines gvfs can find. Everything else
+"Eject". "Network" itself, above them, is where the machines around are listed, for finding
+a server whose address you do not know; it stays empty unless something on the network
+announces itself and gvfs has the backend that hears it, `wsdd` for Windows shares or
+`dns-sd` for the rest. Everything else
 works as it does on a disk: bookmarks, drag and drop, copying, renaming, search. Reading a
 folder over a share is slower than reading one on a disk, which is why thumbnails, item
 counts and searching subfolders are limited to local files unless you say otherwise (see

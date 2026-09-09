@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 23:05+0300\n"
+"POT-Creation-Date: 2026-09-09 23:19+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -78,32 +78,44 @@ msgid "Show “Move to…” in context menus"
 msgstr "Показувати «Пересунути до…» в контекстних меню"
 
 #: data/io.github.sachesi.spiral.gschema.xml:74
-msgid "Servers connected to before, the most recent first"
-msgstr "Сервери, до яких уже підключалися, починаючи з останнього"
+msgid "Offer locations on other machines"
+msgstr "Пропонувати розташування на інших машинах"
 
 #: data/io.github.sachesi.spiral.gschema.xml:75
 msgid ""
-"Offered again by the Connect to Server dialog. Ten at most; the oldest goes "
-"when an eleventh is added."
-msgstr "Пропонуються знову у вікні підключення до сервера. Не більше десяти: коли додається одинадцятий, найстаріший зникає."
+"Connecting to a server, the network in the sidebar, and shares opened by "
+"address. Nothing of it works without gvfs."
+msgstr "Підключення до сервера, мережа на бічній панелі та спільні ресурси, відкриті за адресою. Нічого з цього не працює без gvfs."
 
 #: data/io.github.sachesi.spiral.gschema.xml:79
+msgid "Servers connected to before, the most recent first"
+msgstr "Сервери, до яких уже підключалися, починаючи з останнього"
+
+#: data/io.github.sachesi.spiral.gschema.xml:80
+msgid ""
+"Offered again by the Connect to Server dialog. Ten at most; the oldest goes "
+"when an eleventh is added."
+msgstr ""
+"Пропонуються знову у вікні підключення до сервера. Не більше десяти: коли "
+"додається одинадцятий, найстаріший зникає."
+
+#: data/io.github.sachesi.spiral.gschema.xml:84
 msgid "Expandable folders in list view"
 msgstr "Розгортувані теки у вигляді списку"
 
-#: data/io.github.sachesi.spiral.gschema.xml:83
+#: data/io.github.sachesi.spiral.gschema.xml:88
 msgid "Show the root of the filesystem in the sidebar"
 msgstr "Показувати корінь файлової системи на бічній панелі"
 
-#: data/io.github.sachesi.spiral.gschema.xml:87
+#: data/io.github.sachesi.spiral.gschema.xml:92
 msgid "Show Favorites in the sidebar"
 msgstr "Показувати «Улюблене» на бічній панелі"
 
-#: data/io.github.sachesi.spiral.gschema.xml:91
+#: data/io.github.sachesi.spiral.gschema.xml:96
 msgid "Offer colour tags"
 msgstr "Пропонувати кольорові мітки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:92
+#: data/io.github.sachesi.spiral.gschema.xml:97
 msgid ""
 "Tags are kept on the files themselves, in the user.xdg.tags extended "
 "attribute, and listed in the sidebar."
@@ -111,11 +123,11 @@ msgstr ""
 "Мітки зберігаються в самих файлах, у розширеному атрибуті user.xdg.tags, і "
 "перелічені в бічній панелі."
 
-#: data/io.github.sachesi.spiral.gschema.xml:96
+#: data/io.github.sachesi.spiral.gschema.xml:101
 msgid "The tags on offer, each a name and a colour"
 msgstr "Доступні мітки, кожна з назвою та кольором"
 
-#: data/io.github.sachesi.spiral.gschema.xml:97
+#: data/io.github.sachesi.spiral.gschema.xml:102
 msgid ""
 "Seven at most. The colour is one of red, orange, yellow, green, blue, purple "
 "and gray, or a #rrggbb of your own. An empty list stands for the seven "
@@ -124,53 +136,53 @@ msgstr ""
 "Не більше семи. Колір — один із red, orange, yellow, green, blue, purple, "
 "gray або власний #rrggbb. Порожній список означає сім кольорів."
 
-#: data/io.github.sachesi.spiral.gschema.xml:101
+#: data/io.github.sachesi.spiral.gschema.xml:106
 msgid "Offer the column view"
 msgstr "Пропонувати режим перегляду у вигляді стовпчиків"
 
-#: data/io.github.sachesi.spiral.gschema.xml:102
+#: data/io.github.sachesi.spiral.gschema.xml:107
 msgid ""
 "Adds the columns to the views the view button and the menu switch between."
 msgstr ""
 "Додає стовпчики до режимів перегляду, між якими перемикають кнопка перегляду "
 "та меню."
 
-#: data/io.github.sachesi.spiral.gschema.xml:106
+#: data/io.github.sachesi.spiral.gschema.xml:111
 msgid "Remember the view mode of each folder"
 msgstr "Запам’ятовувати режим перегляду для кожної теки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:110
+#: data/io.github.sachesi.spiral.gschema.xml:115
 msgid "Open folders that are mostly images and videos in grid view"
 msgstr ""
 "Відкривати теки, що складаються переважно із зображень і відео, у вигляді "
 "сітки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:114
+#: data/io.github.sachesi.spiral.gschema.xml:119
 msgid "Terminal emulator for “Open in Terminal”"
 msgstr "Емулятор термінала для «Відкрити в терміналі»"
 
-#: data/io.github.sachesi.spiral.gschema.xml:115
+#: data/io.github.sachesi.spiral.gschema.xml:120
 msgid "Executable name; empty picks the first installed one."
 msgstr ""
 "Назва виконуваного файла; порожнє значення означає перший встановлений."
 
-#: data/io.github.sachesi.spiral.gschema.xml:119
+#: data/io.github.sachesi.spiral.gschema.xml:124
 msgid "Which files get thumbnails"
 msgstr "Для яких файлів показувати мініатюри"
 
-#: data/io.github.sachesi.spiral.gschema.xml:123
+#: data/io.github.sachesi.spiral.gschema.xml:128
 msgid "Where searches look into subfolders"
 msgstr "Де шукати у підтеках"
 
-#: data/io.github.sachesi.spiral.gschema.xml:127
+#: data/io.github.sachesi.spiral.gschema.xml:132
 msgid "Which folders get their items counted"
 msgstr "Для яких тек підраховувати кількість об’єктів"
 
-#: data/io.github.sachesi.spiral.gschema.xml:131
+#: data/io.github.sachesi.spiral.gschema.xml:136
 msgid "Largest picture to make a thumbnail of, in megabytes"
 msgstr "Найбільше зображення, для якого створюється мініатюра, у мегабайтах"
 
-#: data/io.github.sachesi.spiral.gschema.xml:132
+#: data/io.github.sachesi.spiral.gschema.xml:137
 msgid ""
 "Pictures larger than this are shown with their icon instead: decoding one "
 "costs time and memory out of proportion to a thumbnail. A thumbnail that "
@@ -184,41 +196,41 @@ msgstr ""
 "Ð¿Ð¾ÐºÐ°Ð·ÑÑÑÑÑÑ Ð½ÐµÐ·Ð°Ð»ÐµÐ¶Ð½Ð¾ Ð²ÑÐ´ ÑÐ¾Ð·Ð¼ÑÑÑ ÑÐ°Ð¹Ð»Ð°. ÐÑÐ´ÐµÐ¾ ÑÐ° "
 "Ð·Ð²ÑÐº Ð½Ðµ Ð¾Ð±Ð¼ÐµÐ¶ÑÑÑÑÑÑ, Ð±Ð¾ ÑÑÐ½Ñ ÑÑÐ²Ð¾ÑÑÐ²Ð°ÑÑ Ð¼ÑÐ½ÑÐ°ÑÑÑ ÑÐ¸ÑÐ°ÑÑÑ ÐºÐ°Ð´Ñ, Ð° Ð½Ðµ Ð²ÐµÑÑ ÑÐ°Ð¹Ð»."
 
-#: data/io.github.sachesi.spiral.gschema.xml:136
+#: data/io.github.sachesi.spiral.gschema.xml:141
 msgid "Default view mode"
 msgstr "Типовий режим перегляду"
 
-#: data/io.github.sachesi.spiral.gschema.xml:140
+#: data/io.github.sachesi.spiral.gschema.xml:145
 msgid "View mode of file chooser dialogs"
 msgstr "Режим перегляду у вікнах вибору файлів"
 
-#: data/io.github.sachesi.spiral.gschema.xml:144
+#: data/io.github.sachesi.spiral.gschema.xml:149
 msgid "Sort key"
 msgstr "Ключ упорядкування"
 
-#: data/io.github.sachesi.spiral.gschema.xml:148
+#: data/io.github.sachesi.spiral.gschema.xml:153
 msgid "Reverse sort order"
 msgstr "Зворотний порядок упорядкування"
 
-#: data/io.github.sachesi.spiral.gschema.xml:152
+#: data/io.github.sachesi.spiral.gschema.xml:157
 msgid "Sort key of file chooser dialogs"
 msgstr "Ключ упорядкування у вікнах вибору файлів"
 
-#: data/io.github.sachesi.spiral.gschema.xml:153
+#: data/io.github.sachesi.spiral.gschema.xml:158
 msgid "Kept apart from the file manager's own order, as the view mode is."
 msgstr ""
 "Зберігається окремо від упорядкування самого файлового менеджера, як і режим "
 "перегляду."
 
-#: data/io.github.sachesi.spiral.gschema.xml:157
+#: data/io.github.sachesi.spiral.gschema.xml:162
 msgid "Reverse sort order of file chooser dialogs"
 msgstr "Зворотний порядок упорядкування у вікнах вибору файлів"
 
-#: data/io.github.sachesi.spiral.gschema.xml:161
+#: data/io.github.sachesi.spiral.gschema.xml:166
 msgid "Format the Create Archive dialog starts with"
 msgstr "Формат, з якого починається діалог створення архіву"
 
-#: data/io.github.sachesi.spiral.gschema.xml:162
+#: data/io.github.sachesi.spiral.gschema.xml:167
 msgid ""
 "Extension without the dot: zip, tar.xz, tar.zst, 7z or tar.gz; the last one "
 "used."
@@ -226,15 +238,15 @@ msgstr ""
 "Розширення без крапки: zip, tar.xz, tar.zst, 7z або tar.gz; останнє "
 "використане."
 
-#: data/io.github.sachesi.spiral.gschema.xml:166
+#: data/io.github.sachesi.spiral.gschema.xml:171
 msgid "Show hidden files"
 msgstr "Показувати приховані файли"
 
-#: data/io.github.sachesi.spiral.gschema.xml:170
+#: data/io.github.sachesi.spiral.gschema.xml:175
 msgid "Captions under icons in grid view"
 msgstr "Підписи під піктограмами у вигляді сітки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:171
+#: data/io.github.sachesi.spiral.gschema.xml:176
 msgid ""
 "Up to three of: size, date_modified, permissions, type, mime_type, owner, "
 "group, none."
@@ -242,11 +254,11 @@ msgstr ""
 "До трьох значень із: size, date_modified, permissions, type, mime_type, "
 "owner, group, none."
 
-#: data/io.github.sachesi.spiral.gschema.xml:175
+#: data/io.github.sachesi.spiral.gschema.xml:180
 msgid "Columns shown in list view besides the name"
 msgstr "Стовпчики, які показуються у вигляді списку, крім назви"
 
-#: data/io.github.sachesi.spiral.gschema.xml:176
+#: data/io.github.sachesi.spiral.gschema.xml:181
 msgid ""
 "Any of: size, type, modified, accessed, created, owner, group, permissions, "
 "star."
@@ -254,31 +266,31 @@ msgstr ""
 "Будь-які з: size, type, modified, accessed, created, owner, group, "
 "permissions, star."
 
-#: data/io.github.sachesi.spiral.gschema.xml:181
+#: data/io.github.sachesi.spiral.gschema.xml:186
 msgid "Icon size in grid view"
 msgstr "Розмір піктограм у вигляді сітки"
 
-#: data/io.github.sachesi.spiral.gschema.xml:186
+#: data/io.github.sachesi.spiral.gschema.xml:191
 msgid "Icon size in list view"
 msgstr "Розмір піктограм у вигляді списку"
 
-#: data/io.github.sachesi.spiral.gschema.xml:190
+#: data/io.github.sachesi.spiral.gschema.xml:195
 msgid "Window size"
 msgstr "Розмір вікна"
 
-#: data/io.github.sachesi.spiral.gschema.xml:194
+#: data/io.github.sachesi.spiral.gschema.xml:199
 msgid "Window maximized"
 msgstr "Вікно розгорнуто"
 
-#: data/io.github.sachesi.spiral.gschema.xml:198
+#: data/io.github.sachesi.spiral.gschema.xml:203
 msgid "Show places sidebar"
 msgstr "Показувати бічну панель"
 
-#: data/io.github.sachesi.spiral.gschema.xml:202
+#: data/io.github.sachesi.spiral.gschema.xml:207
 msgid "Ask whether to copy or move dropped files"
 msgstr "Питати, копіювати чи перемістити перетягнуті файли"
 
-#: data/io.github.sachesi.spiral.gschema.xml:206
+#: data/io.github.sachesi.spiral.gschema.xml:211
 msgid "Show two folder panes side by side"
 msgstr "Показувати дві панелі тек поруч"
 
@@ -393,7 +405,8 @@ msgid ""
 "not connected connects it first, so a bookmark or an address typed into the "
 "path bar reaches the server without the dialog being opened at all. Without "
 "gvfs there are no network locations, and Spiral says so rather than offer an "
-"address it has no way to open."
+"address it has no way to open, and \"Network Locations\" in Preferences "
+"takes the whole of it away for those who have no server to reach."
 msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:36
@@ -703,7 +716,7 @@ msgstr "_Розпакувати"
 msgid "Archive"
 msgstr "Архів"
 
-#: src/browser_actions.rs:761 src/places_sidebar.rs:462
+#: src/browser_actions.rs:761 src/places_sidebar.rs:468
 #, no-c-format
 msgid "Could not tag “%s”"
 msgstr "Не вдалося позначити «%s»"
@@ -762,7 +775,7 @@ msgstr "Остаточно вилучені об’єкти неможливо �
 #: src/dialogs/open_with.rs:59 src/dialogs/select_pattern.rs:44
 #: src/dialogs/tags.rs:36 src/ops/archive.rs:351 src/ops/conflict.rs:63
 #: src/ops/conflict.rs:314 src/ops/mod.rs:30 src/ops/walk.rs:263
-#: src/places_sidebar.rs:873 src/places_sidebar.rs:1234
+#: src/places_sidebar.rs:879 src/places_sidebar.rs:1240
 #: src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
@@ -825,34 +838,34 @@ msgstr "Вилучити з вибраного"
 msgid "Add to Starred"
 msgstr "Додати до вибраного"
 
-#: src/browser_view.rs:1488 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1491 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
-#: src/ops/walk.rs:46 src/places_sidebar.rs:902
+#: src/ops/walk.rs:46 src/places_sidebar.rs:908
 #, no-c-format
 msgid "_OK"
 msgstr "_Гаразд"
 
-#: src/browser_view.rs:1510
+#: src/browser_view.rs:1513
 #, no-c-format
 msgid "No Results Found"
 msgstr "Нічого не знайдено"
 
-#: src/browser_view.rs:1512 ui/browser_view.ui:103
+#: src/browser_view.rs:1515 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Тека порожня"
 
-#: src/browser_view.rs:1563
+#: src/browser_view.rs:1566
 #, no-c-format
 msgid "Loading…"
 msgstr "Завантаження…"
 
-#: src/browser_view.rs:1579
+#: src/browser_view.rs:1582
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Вибрано «%s»"
 
-#: src/browser_view.rs:1584
+#: src/browser_view.rs:1587
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -861,17 +874,17 @@ msgstr[1] "%d інші об’єкти вибрано"
 msgstr[2] "%d інших об’єктів вибрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1590
+#: src/browser_view.rs:1593
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:2325 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2328 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:2425 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2428 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -921,7 +934,7 @@ msgstr[1] "%d файли для перейменування"
 msgstr[2] "%d файлів для перейменування"
 
 #: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:71
-#: src/places_sidebar.rs:1260
+#: src/places_sidebar.rs:1266
 #, no-c-format
 msgid "_Rename"
 msgstr "Пере_йменувати"
@@ -1026,7 +1039,9 @@ msgstr "Адреса сервера"
 #, no-c-format
 msgid ""
 "This system has no network backends installed, so no server can be reached."
-msgstr "У системі не встановлено мережевих модулів, тож підключитися до сервера неможливо."
+msgstr ""
+"У системі не встановлено мережевих модулів, тож підключитися до сервера "
+"неможливо."
 
 #: src/dialogs/connect_server.rs:27
 #, no-c-format
@@ -1054,19 +1069,19 @@ msgid "Forget This Server"
 msgstr "Забути цей сервер"
 
 #: src/dialogs/folder_chooser.rs:32 src/portal/chooser_window.rs:129
-#: ui/shortcuts_dialog.ui:81 ui/window.ui:262 ui/window.ui:500
+#: ui/shortcuts_dialog.ui:81 ui/window.ui:263 ui/window.ui:501
 #, no-c-format
 msgid "Back"
 msgstr "Назад"
 
 #: src/dialogs/folder_chooser.rs:37 src/portal/chooser_window.rs:134
-#: ui/shortcuts_dialog.ui:87 ui/window.ui:270 ui/window.ui:508
+#: ui/shortcuts_dialog.ui:87 ui/window.ui:271 ui/window.ui:509
 #, no-c-format
 msgid "Forward"
 msgstr "Вперед"
 
 #: src/dialogs/folder_chooser.rs:63 src/portal/chooser_window.rs:289
-#: ui/shortcuts_dialog.ui:182 ui/window.ui:252
+#: ui/shortcuts_dialog.ui:182 ui/window.ui:253
 #, no-c-format
 msgid "Show Sidebar"
 msgstr "Показувати бічну панель"
@@ -1181,22 +1196,47 @@ msgstr ""
 "Якщо вимкнено, Ctrl копіює, а перетягування всередині Spiral переміщує без "
 "питань"
 
-#: src/dialogs/preferences.rs:63 src/dialogs/preferences.rs:68
+#: src/dialogs/preferences.rs:62 src/file_utils.rs:316
+#: src/places_sidebar.rs:706
+#, no-c-format
+msgid "Network"
+msgstr "Мережа"
+
+#: src/dialogs/preferences.rs:64
+#, no-c-format
+msgid ""
+"Shares on other machines are reached through gvfs, and nothing here works "
+"without it."
+msgstr "Спільні ресурси на інших машинах доступні через gvfs, і без нього тут нічого не працює."
+
+#: src/dialogs/preferences.rs:68
+#, no-c-format
+msgid "Network Locations"
+msgstr "Мережеві розташування"
+
+#: src/dialogs/preferences.rs:70
+#, no-c-format
+msgid ""
+"“Connect to Server…” in the main menu, the network in the sidebar, and "
+"shares opened by address"
+msgstr "«Підключитися до сервера…» у головному меню, мережа на бічній панелі та спільні ресурси, відкриті за адресою"
+
+#: src/dialogs/preferences.rs:79 src/dialogs/preferences.rs:84
 #, no-c-format
 msgid "Views"
 msgstr "Перегляд"
 
-#: src/dialogs/preferences.rs:71
+#: src/dialogs/preferences.rs:87
 #, no-c-format
 msgid "Sort Folders Before Files"
 msgstr "Теки перед файлами"
 
-#: src/dialogs/preferences.rs:78 src/enums.rs:57 ui/shortcuts_dialog.ui:152
+#: src/dialogs/preferences.rs:94 src/enums.rs:57 ui/shortcuts_dialog.ui:152
 #, no-c-format
 msgid "Column View"
 msgstr "У вигляді стовпчиків"
 
-#: src/dialogs/preferences.rs:80
+#: src/dialogs/preferences.rs:96
 #, no-c-format
 msgid ""
 "A third view drawing the path as a strip of lists, one folder per column"
@@ -1204,65 +1244,65 @@ msgstr ""
 "Третій режим перегляду, що малює шлях смугою списків, по одній теці на "
 "стовпчик"
 
-#: src/dialogs/preferences.rs:86
+#: src/dialogs/preferences.rs:102
 #, no-c-format
 msgid "Grid View for Media Folders"
 msgstr "Сітка для тек із медіафайлами"
 
-#: src/dialogs/preferences.rs:88
+#: src/dialogs/preferences.rs:104
 #, no-c-format
 msgid "Folders that are mostly images and videos open in grid view"
 msgstr ""
 "Теки, що складаються переважно із зображень і відео, відкриваються у вигляді "
 "сітки"
 
-#: src/dialogs/preferences.rs:94
+#: src/dialogs/preferences.rs:110
 #, no-c-format
 msgid "Remember View per Folder"
 msgstr "Запам’ятовувати вигляд для кожної теки"
 
-#: src/dialogs/preferences.rs:96
+#: src/dialogs/preferences.rs:112
 #, no-c-format
 msgid "Switching the view or the sort order applies to the current folder only"
 msgstr "Перемикання вигляду та впорядкування діють лише для поточної теки"
 
-#: src/dialogs/preferences.rs:103
+#: src/dialogs/preferences.rs:119
 #, no-c-format
 msgid "Expandable Folders in List View"
 msgstr "Розгортувані теки у вигляді списку"
 
-#: src/dialogs/preferences.rs:111
+#: src/dialogs/preferences.rs:127
 #, no-c-format
 msgid "Sidebar"
 msgstr "Бічна панель"
 
-#: src/dialogs/preferences.rs:114 src/places_sidebar.rs:618
+#: src/dialogs/preferences.rs:130 src/places_sidebar.rs:624
 #, no-c-format
 msgid "Root"
 msgstr "Корінь"
 
-#: src/dialogs/preferences.rs:115
+#: src/dialogs/preferences.rs:131
 #, no-c-format
 msgid "The top of the filesystem, above the bookmarks"
 msgstr "Вершина файлової системи, над закладками"
 
-#: src/dialogs/preferences.rs:120 src/file_utils.rs:319 src/path_bar.rs:326
-#: src/places_sidebar.rs:626
+#: src/dialogs/preferences.rs:136 src/file_utils.rs:319 src/path_bar.rs:326
+#: src/places_sidebar.rs:632
 #, no-c-format
 msgid "Favorites"
 msgstr "Улюблене"
 
-#: src/dialogs/preferences.rs:121
+#: src/dialogs/preferences.rs:137
 #, no-c-format
 msgid "The starred files and folders"
 msgstr "Файли й теки, позначені зірочкою"
 
-#: src/dialogs/preferences.rs:130 src/file_utils.rs:322
+#: src/dialogs/preferences.rs:146 src/file_utils.rs:322
 #, no-c-format
 msgid "Tags"
 msgstr "Мітки"
 
-#: src/dialogs/preferences.rs:132
+#: src/dialogs/preferences.rs:148
 #, no-c-format
 msgid ""
 "Tags are written to the files themselves, so they follow a file wherever it "
@@ -1271,12 +1311,12 @@ msgstr ""
 "Мітки записуються в самі файли, тому залишаються з файлом, куди б він не "
 "перемістився, і інші програми можуть їх читати."
 
-#: src/dialogs/preferences.rs:136
+#: src/dialogs/preferences.rs:152
 #, no-c-format
 msgid "Colour Tags"
 msgstr "Кольорові мітки"
 
-#: src/dialogs/preferences.rs:138
+#: src/dialogs/preferences.rs:154
 #, no-c-format
 msgid ""
 "A row of colours in the context menu, a dot on each tagged file and the tags "
@@ -1285,17 +1325,17 @@ msgstr ""
 "Ряд кольорів у контекстному меню, крапка на кожному позначеному файлі та "
 "список міток у бічній панелі"
 
-#: src/dialogs/preferences.rs:147
+#: src/dialogs/preferences.rs:163
 #, no-c-format
 msgid "Menus"
 msgstr "Меню"
 
-#: src/dialogs/preferences.rs:152
+#: src/dialogs/preferences.rs:168
 #, no-c-format
 msgid "Optional Context Menu Actions"
 msgstr "Додаткові дії контекстного меню"
 
-#: src/dialogs/preferences.rs:154
+#: src/dialogs/preferences.rs:170
 #, no-c-format
 msgid ""
 "A middle click still opens a folder in a new tab, Shift+Delete still deletes "
@@ -1304,136 +1344,136 @@ msgstr ""
 "Клацання середньою кнопкою так само відкриває теку в новій вкладці, "
 "Shift+Delete так само вилучає остаточно, а посилання завжди можна вставити."
 
-#: src/dialogs/preferences.rs:158
+#: src/dialogs/preferences.rs:174
 #, no-c-format
 msgid "Open in New Tab"
 msgstr "Відкрити в новій вкладці"
 
-#: src/dialogs/preferences.rs:159
+#: src/dialogs/preferences.rs:175
 #, no-c-format
 msgid "Open in New Window"
 msgstr "Відкрити в новому вікні"
 
-#: src/dialogs/preferences.rs:160 ui/browser_view.ui:207
+#: src/dialogs/preferences.rs:176 ui/browser_view.ui:207
 #, no-c-format
 msgid "Copy to…"
 msgstr "Копіювати до…"
 
-#: src/dialogs/preferences.rs:161 ui/browser_view.ui:212
+#: src/dialogs/preferences.rs:177 ui/browser_view.ui:212
 #, no-c-format
 msgid "Move to…"
 msgstr "Пересунути до…"
 
-#: src/dialogs/preferences.rs:168
+#: src/dialogs/preferences.rs:184
 #, no-c-format
 msgid "Create Link"
 msgstr "Створити посилання"
 
-#: src/dialogs/preferences.rs:175 ui/shortcuts_dialog.ui:259
+#: src/dialogs/preferences.rs:191 ui/shortcuts_dialog.ui:259
 #, no-c-format
 msgid "Delete Permanently"
 msgstr "Вилучити остаточно"
 
-#: src/dialogs/preferences.rs:185
+#: src/dialogs/preferences.rs:201
 #, no-c-format
-msgid "Performance"
-msgstr "Швидкодія"
+msgid "Speed"
+msgstr "Швидкість"
 
-#: src/dialogs/preferences.rs:191
+#: src/dialogs/preferences.rs:207
 #, no-c-format
 msgid "Reading every file on a network share or a slow disk can take a while."
 msgstr ""
 "Читання всіх файлів на мережевому ресурсі або повільному диску може тривати "
 "довго."
 
-#: src/dialogs/preferences.rs:195
+#: src/dialogs/preferences.rs:211
 #, no-c-format
 msgid "Local Files Only"
 msgstr "Лише локальні файли"
 
-#: src/dialogs/preferences.rs:196
+#: src/dialogs/preferences.rs:212
 #, no-c-format
 msgid "All Files"
 msgstr "Усі файли"
 
-#: src/dialogs/preferences.rs:197
+#: src/dialogs/preferences.rs:213
 #, no-c-format
 msgid "Never"
 msgstr "Ніколи"
 
-#: src/dialogs/preferences.rs:202
+#: src/dialogs/preferences.rs:218
 #, no-c-format
 msgid "Show Thumbnails"
 msgstr "Показувати мініатюри"
 
-#: src/dialogs/preferences.rs:209
+#: src/dialogs/preferences.rs:225
 #, no-c-format
 msgid "Count Items in Folders"
 msgstr "Підраховувати об’єкти в теках"
 
-#: src/dialogs/preferences.rs:216
+#: src/dialogs/preferences.rs:232
 #, no-c-format
 msgid "Search in Subfolders"
 msgstr "Пошук у підтеках"
 
-#: src/dialogs/preferences.rs:239
+#: src/dialogs/preferences.rs:255
 #, no-c-format
 msgid "A-Z"
 msgstr "А-Я"
 
-#: src/dialogs/preferences.rs:240
+#: src/dialogs/preferences.rs:256
 #, no-c-format
 msgid "Z-A"
 msgstr "Я-А"
 
-#: src/dialogs/preferences.rs:241
+#: src/dialogs/preferences.rs:257
 #, no-c-format
 msgid "Last Modified"
 msgstr "За датою зміни"
 
-#: src/dialogs/preferences.rs:242
+#: src/dialogs/preferences.rs:258
 #, no-c-format
 msgid "First Modified"
 msgstr "Спочатку старі"
 
-#: src/dialogs/preferences.rs:243 src/dialogs/properties.rs:251
+#: src/dialogs/preferences.rs:259 src/dialogs/properties.rs:251
 #: src/file_utils.rs:153 src/file_utils.rs:168
 #, no-c-format
 msgid "Size"
 msgstr "Розмір"
 
-#: src/dialogs/preferences.rs:244 src/dialogs/properties.rs:243
-#: src/file_utils.rs:154 src/file_utils.rs:170 ui/window.ui:364
+#: src/dialogs/preferences.rs:260 src/dialogs/properties.rs:243
+#: src/file_utils.rs:154 src/file_utils.rs:170 ui/window.ui:365
 #, no-c-format
 msgid "Type"
 msgstr "Тип"
 
-#: src/dialogs/preferences.rs:255
+#: src/dialogs/preferences.rs:271
 #, no-c-format
 msgid "Sort Order"
 msgstr "Упорядкування"
 
-#: src/dialogs/preferences.rs:257
+#: src/dialogs/preferences.rs:273
 #, no-c-format
 msgid "How folders without an order of their own are sorted"
 msgstr "Як упорядковуються теки, що не мають власного порядку"
 
-#: src/dialogs/preferences.rs:312
+#: src/dialogs/preferences.rs:328
 #, no-c-format
 msgid "Automatic"
 msgstr "Автоматично"
 
-#: src/dialogs/preferences.rs:320
+#: src/dialogs/preferences.rs:336
 #, no-c-format
 msgid "Automatic uses %s"
 msgstr "Автоматично: %s"
 
-#: src/dialogs/preferences.rs:321
+#: src/dialogs/preferences.rs:337
 #, no-c-format
 msgid "No terminal emulator found in PATH"
 msgstr "У PATH не знайдено емулятора термінала"
 
-#: src/dialogs/preferences.rs:324
+#: src/dialogs/preferences.rs:340
 #, no-c-format
 msgid "Terminal"
 msgstr "Термінал"
@@ -1458,8 +1498,8 @@ msgstr "Наступна сторінка"
 msgid "Fit"
 msgstr "Вмістити"
 
-#: src/dialogs/preview.rs:611 ui/shortcuts_dialog.ui:164 ui/window.ui:452
-#: ui/window.ui:536
+#: src/dialogs/preview.rs:611 ui/shortcuts_dialog.ui:164 ui/window.ui:453
+#: ui/window.ui:537
 #, no-c-format
 msgid "Zoom Out"
 msgstr "Зменшити"
@@ -1469,8 +1509,8 @@ msgstr "Зменшити"
 msgid "Fit to Window"
 msgstr "Вмістити у вікно"
 
-#: src/dialogs/preview.rs:613 ui/shortcuts_dialog.ui:158 ui/window.ui:462
-#: ui/window.ui:546
+#: src/dialogs/preview.rs:613 ui/shortcuts_dialog.ui:158 ui/window.ui:463
+#: ui/window.ui:547
 #, no-c-format
 msgid "Zoom In"
 msgstr "Збільшити"
@@ -1530,7 +1570,7 @@ msgstr "Тип MIME"
 msgid "Calculating…"
 msgstr "Обчислення…"
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:155 ui/window.ui:385
+#: src/dialogs/properties.rs:259 src/file_utils.rs:155 ui/window.ui:386
 #, no-c-format
 msgid "Modified"
 msgstr "Змінено"
@@ -1545,7 +1585,7 @@ msgstr "Останній доступ"
 msgid "Default Application"
 msgstr "Типовий застосунок"
 
-#: src/dialogs/properties.rs:296 ui/window.ui:371
+#: src/dialogs/properties.rs:296 ui/window.ui:372
 #, no-c-format
 msgid "Images"
 msgstr "Зображення"
@@ -1674,12 +1714,12 @@ msgstr "Нова мітка"
 msgid "_Add"
 msgstr "_Додати"
 
-#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1158
+#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1164
 #, no-c-format
 msgid "Custom…"
 msgstr "Власний колір…"
 
-#: src/dialogs/tags.rs:177 src/places_sidebar.rs:952
+#: src/dialogs/tags.rs:177 src/places_sidebar.rs:958
 #, no-c-format
 msgid "Tag Colour"
 msgstr "Колір мітки"
@@ -1690,7 +1730,7 @@ msgid "Grid View"
 msgstr "У вигляді сітки"
 
 #: src/enums.rs:56 src/portal/chooser_window.rs:159 ui/shortcuts_dialog.ui:146
-#: ui/window.ui:441 ui/window.ui:525
+#: ui/window.ui:442 ui/window.ui:526
 #, no-c-format
 msgid "List View"
 msgstr "У вигляді списку"
@@ -1780,27 +1820,22 @@ msgstr[0] "%d об’єкт"
 msgstr[1] "%d об’єкти"
 msgstr[2] "%d об’єктів"
 
-#: src/file_utils.rs:310 src/path_bar.rs:320 src/places_sidebar.rs:600
+#: src/file_utils.rs:310 src/path_bar.rs:320 src/places_sidebar.rs:606
 #, no-c-format
 msgid "Home"
 msgstr "Домівка"
 
-#: src/file_utils.rs:313 src/path_bar.rs:323 src/places_sidebar.rs:633
+#: src/file_utils.rs:313 src/path_bar.rs:323 src/places_sidebar.rs:639
 #, no-c-format
 msgid "Trash"
 msgstr "Смітник"
-
-#: src/file_utils.rs:316 src/places_sidebar.rs:700
-#, no-c-format
-msgid "Network"
-msgstr "Мережа"
 
 #: src/file_utils.rs:327 src/path_bar.rs:334
 #, no-c-format
 msgid "System"
 msgstr "Система"
 
-#: src/location_entry.rs:153 src/progress_indicator.rs:296 ui/window.ui:324
+#: src/location_entry.rs:153 src/progress_indicator.rs:296 ui/window.ui:325
 #, no-c-format
 msgid "Cancel"
 msgstr "Скасувати"
@@ -2373,7 +2408,7 @@ msgstr "Спорожнити смітник?"
 msgid "All items in the Trash will be permanently deleted."
 msgstr "Усі об’єкти у смітнику буде остаточно вилучено."
 
-#: src/ops/mod.rs:31 src/places_sidebar.rs:875 ui/browser_view.ui:356
+#: src/ops/mod.rs:31 src/places_sidebar.rs:881 ui/browser_view.ui:356
 #, no-c-format
 msgid "_Empty Trash"
 msgstr "_Спорожнити смітник"
@@ -2466,52 +2501,52 @@ msgstr "копія"
 msgid "Edit Location"
 msgstr "Змінити адресу"
 
-#: src/places_sidebar.rs:610
+#: src/places_sidebar.rs:616
 #, no-c-format
 msgid "Desktop"
 msgstr "Стільниця"
 
-#: src/places_sidebar.rs:754
+#: src/places_sidebar.rs:760
 #, no-c-format
 msgid "Disconnect"
 msgstr "Відключити"
 
-#: src/places_sidebar.rs:756
+#: src/places_sidebar.rs:762
 #, no-c-format
 msgid "Eject"
 msgstr "Витягнути"
 
-#: src/places_sidebar.rs:791
+#: src/places_sidebar.rs:797
 #, no-c-format
 msgid "Could Not Mount"
 msgstr "Не вдалося змонтувати"
 
-#: src/places_sidebar.rs:830
+#: src/places_sidebar.rs:836
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr "Запис даних на «%s»"
 
-#: src/places_sidebar.rs:832
+#: src/places_sidebar.rs:838
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr "Не від’єднуйте до завершення"
 
-#: src/places_sidebar.rs:851
+#: src/places_sidebar.rs:857
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr "Тепер «%s» можна від’єднати"
 
-#: src/places_sidebar.rs:857
+#: src/places_sidebar.rs:863
 #, no-c-format
 msgid "Could Not Eject"
 msgstr "Не вдалося витягнути"
 
-#: src/places_sidebar.rs:868
+#: src/places_sidebar.rs:874
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr "Спорожнити смітник перед демонтуванням?"
 
-#: src/places_sidebar.rs:870
+#: src/places_sidebar.rs:876
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
@@ -2520,22 +2555,22 @@ msgstr ""
 "Щоб звільнити місце на цьому томі, потрібно спорожнити смітник. Усі об’єкти "
 "у смітнику цього тому буде остаточно втрачено."
 
-#: src/places_sidebar.rs:874
+#: src/places_sidebar.rs:880
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr "_Не спорожняти"
 
-#: src/places_sidebar.rs:1219
+#: src/places_sidebar.rs:1225
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr "Вилучити мітку «%s»?"
 
-#: src/places_sidebar.rs:1221
+#: src/places_sidebar.rs:1227
 #, no-c-format
 msgid "No file carries it."
 msgstr "Її немає на жодному файлі."
 
-#: src/places_sidebar.rs:1224
+#: src/places_sidebar.rs:1230
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
@@ -2543,42 +2578,42 @@ msgstr[0] "Її буде знято з %d файлу, на якому вона �
 msgstr[1] "Її буде знято з %d файлів, на яких вона стоїть."
 msgstr[2] "Її буде знято з %d файлів, на яких вона стоїть."
 
-#: src/places_sidebar.rs:1235 ui/places_sidebar.ui:28
+#: src/places_sidebar.rs:1241 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr "В_илучити"
 
-#: src/portal/chooser_window.rs:202 ui/window.ui:90
+#: src/portal/chooser_window.rs:202 ui/window.ui:91
 #, no-c-format
 msgid "_A-Z"
 msgstr "_А-Я"
 
-#: src/portal/chooser_window.rs:203 ui/window.ui:95
+#: src/portal/chooser_window.rs:203 ui/window.ui:96
 #, no-c-format
 msgid "_Z-A"
 msgstr "_Я-А"
 
-#: src/portal/chooser_window.rs:204 ui/window.ui:100
+#: src/portal/chooser_window.rs:204 ui/window.ui:101
 #, no-c-format
 msgid "Last _Modified"
 msgstr "За датою _зміни"
 
-#: src/portal/chooser_window.rs:205 ui/window.ui:105
+#: src/portal/chooser_window.rs:205 ui/window.ui:106
 #, no-c-format
 msgid "_First Modified"
 msgstr "Спочатку _старі"
 
-#: src/portal/chooser_window.rs:206 ui/window.ui:110
+#: src/portal/chooser_window.rs:206 ui/window.ui:111
 #, no-c-format
 msgid "_Size"
 msgstr "За _розміром"
 
-#: src/portal/chooser_window.rs:207 ui/window.ui:115
+#: src/portal/chooser_window.rs:207 ui/window.ui:116
 #, no-c-format
 msgid "_Type"
 msgstr "За _типом"
 
-#: src/portal/chooser_window.rs:215 ui/window.ui:88
+#: src/portal/chooser_window.rs:215 ui/window.ui:89
 #, no-c-format
 msgid "Sort"
 msgstr "Упорядкування"
@@ -2588,7 +2623,7 @@ msgstr "Упорядкування"
 msgid "Search this folder"
 msgstr "Пошук у цій теці"
 
-#: src/portal/chooser_window.rs:231 ui/window.ui:343
+#: src/portal/chooser_window.rs:231 ui/window.ui:344
 #, no-c-format
 msgid "Search"
 msgstr "Пошук"
@@ -2681,12 +2716,12 @@ msgstr "Не вдалося прочитати командний рядок п�
 msgid "No terminal emulator found"
 msgstr "Емулятор термінала не знайдено"
 
-#: src/window.rs:673 ui/shortcuts_dialog.ui:283
+#: src/window.rs:684 ui/shortcuts_dialog.ui:283
 #, no-c-format
 msgid "Undo"
 msgstr "Повернути"
 
-#: src/window.rs:1099 ui/window.ui:72
+#: src/window.rs:1110 ui/window.ui:73
 #, no-c-format
 msgid "_Columns"
 msgstr "Ст_овпчики"
@@ -2888,7 +2923,7 @@ msgstr "Вийти"
 msgid "Navigation"
 msgstr "Навігація"
 
-#: ui/shortcuts_dialog.ui:93 ui/window.ui:278 ui/window.ui:516
+#: ui/shortcuts_dialog.ui:93 ui/window.ui:279 ui/window.ui:517
 msgid "Parent Folder"
 msgstr "Батьківська тека"
 
@@ -2896,7 +2931,7 @@ msgstr "Батьківська тека"
 msgid "Home Folder"
 msgstr "Домашня тека"
 
-#: ui/shortcuts_dialog.ui:111 ui/window.ui:431
+#: ui/shortcuts_dialog.ui:111 ui/window.ui:432
 msgid "Search Current Folder"
 msgstr "Пошук у поточній теці"
 
@@ -2932,7 +2967,7 @@ msgstr "Двопанельний режим"
 msgid "Switch Pane"
 msgstr "Перемкнути панель"
 
-#: ui/shortcuts_dialog.ui:202 ui/window.ui:174 ui/window.ui:210
+#: ui/shortcuts_dialog.ui:202 ui/window.ui:175 ui/window.ui:211
 msgid "Files"
 msgstr "Файли"
 
@@ -2992,161 +3027,165 @@ msgstr "Відновити _закриту вкладку"
 msgid "Connect to _Server…"
 msgstr "Підключитися до _сервера…"
 
-#: ui/window.ui:36
+#: ui/window.ui:37
 msgid "_Undo"
 msgstr "_Повернути"
 
-#: ui/window.ui:40
+#: ui/window.ui:41
 msgid "_Redo"
 msgstr "Пов_торити"
 
-#: ui/window.ui:46
+#: ui/window.ui:47
 msgid "_Preferences"
 msgstr "_Параметри"
 
-#: ui/window.ui:50
+#: ui/window.ui:51
 msgid "_Keyboard Shortcuts"
 msgstr "_Клавіатурні скорочення"
 
-#: ui/window.ui:54
+#: ui/window.ui:55
 msgid "_About Spiral"
 msgstr "_Про Spiral"
 
-#: ui/window.ui:62
+#: ui/window.ui:63
 msgid "_Grid"
 msgstr "_Сітка"
 
-#: ui/window.ui:67
+#: ui/window.ui:68
 msgid "_List"
 msgstr "Сп_исок"
 
-#: ui/window.ui:78
+#: ui/window.ui:79
 msgid "Icon Size"
 msgstr "Розмір піктограм"
 
-#: ui/window.ui:122
+#: ui/window.ui:123
 msgid "_Visible Columns…"
 msgstr "_Видимі стовпчики…"
 
-#: ui/window.ui:127
+#: ui/window.ui:128
 msgid "Ca_ptions…"
 msgstr "Пі_дписи…"
 
-#: ui/window.ui:134
+#: ui/window.ui:135
 msgid "Show _Hidden Files"
 msgstr "Показувати _приховані файли"
 
-#: ui/window.ui:138
+#: ui/window.ui:139
 msgid "Show _Sidebar"
 msgstr "Показувати _бічну панель"
 
-#: ui/window.ui:142
+#: ui/window.ui:143
 msgid "Spl_it View"
 msgstr "Дв_опанельний режим"
 
-#: ui/window.ui:150
+#: ui/window.ui:151
 msgid "Move Tab _Left"
 msgstr "Перемістити вкладку _ліворуч"
 
-#: ui/window.ui:154
+#: ui/window.ui:155
 msgid "Move Tab _Right"
 msgstr "Перемістити вкладку _праворуч"
 
-#: ui/window.ui:158
+#: ui/window.ui:159
 msgid "Move Tab to New _Window"
 msgstr "Перемістити вкладку в нове _вікно"
 
-#: ui/window.ui:164
+#: ui/window.ui:165
 msgid "Close _Other Tabs"
 msgstr "Закрити _інші вкладки"
 
-#: ui/window.ui:168
+#: ui/window.ui:169
 msgid "_Close Tab"
 msgstr "_Закрити вкладку"
 
-#: ui/window.ui:218
+#: ui/window.ui:219
 msgid "Main Menu"
 msgstr "Головне меню"
 
-#: ui/window.ui:351
+#: ui/window.ui:352
 msgid "Search Filters"
 msgstr "Фільтри пошуку"
 
-#: ui/window.ui:368
+#: ui/window.ui:369
 msgid "Anything"
 msgstr "Будь-який"
 
-#: ui/window.ui:369
+#: ui/window.ui:370
 msgid "Folders"
 msgstr "Теки"
 
-#: ui/window.ui:370
+#: ui/window.ui:371
 msgid "Documents"
 msgstr "Документи"
 
-#: ui/window.ui:372
+#: ui/window.ui:373
 msgid "Audio"
 msgstr "Звук"
 
-#: ui/window.ui:373
+#: ui/window.ui:374
 msgid "Videos"
 msgstr "Відео"
 
-#: ui/window.ui:374
+#: ui/window.ui:375
 msgid "PDF"
 msgstr "PDF"
 
-#: ui/window.ui:375
+#: ui/window.ui:376
 msgid "Text"
 msgstr "Текст"
 
-#: ui/window.ui:376
+#: ui/window.ui:377
 msgid "Spreadsheets"
 msgstr "Електронні таблиці"
 
-#: ui/window.ui:389
+#: ui/window.ui:390
 msgid "Any Time"
 msgstr "Будь-коли"
 
-#: ui/window.ui:390
+#: ui/window.ui:391
 msgid "Today"
 msgstr "Сьогодні"
 
-#: ui/window.ui:391
+#: ui/window.ui:392
 msgid "Yesterday"
 msgstr "Учора"
 
-#: ui/window.ui:392
+#: ui/window.ui:393
 msgid "Past Week"
 msgstr "За останній тиждень"
 
-#: ui/window.ui:393
+#: ui/window.ui:394
 msgid "Past Month"
 msgstr "За останній місяць"
 
-#: ui/window.ui:394
+#: ui/window.ui:395
 msgid "Past Year"
 msgstr "За останній рік"
 
-#: ui/window.ui:403
+#: ui/window.ui:404
 msgid "Match"
 msgstr "Відповідність"
 
-#: ui/window.ui:407
+#: ui/window.ui:408
 msgid "Only Filename"
 msgstr "Лише назва файла"
 
-#: ui/window.ui:408
+#: ui/window.ui:409
 msgid "Content & Filename"
 msgstr "Вміст і назва файла"
 
-#: ui/window.ui:409
+#: ui/window.ui:410
 msgid "Only Contents"
 msgstr "Лише вміст"
 
-#: ui/window.ui:442 ui/window.ui:526
+#: ui/window.ui:443 ui/window.ui:527
 msgid "View Options"
 msgstr "Параметри перегляду"
+
+#, no-c-format
+#~ msgid "Performance"
+#~ msgstr "Швидкодія"
 
 #, no-c-format
 #~ msgid "_Terminal"

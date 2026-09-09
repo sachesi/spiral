@@ -125,6 +125,12 @@ pub fn use_tags() -> bool {
     SETTINGS.with(|s| s.boolean("use-tags"))
 }
 
+/// Locations on other machines: connecting to a server, the network in the sidebar and
+/// shares opened by address. On for those who have any, off for those who have none.
+pub fn use_network() -> bool {
+    SETTINGS.with(|s| s.boolean("use-network"))
+}
+
 /// The column view is off unless it is asked for: it is a third way of reading a folder,
 /// not one everybody wants in the view button.
 pub fn column_view() -> bool {

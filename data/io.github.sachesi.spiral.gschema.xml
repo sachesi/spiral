@@ -69,6 +69,11 @@
       <default>false</default>
       <summary>Show “Move to…” in context menus</summary>
     </key>
+    <key name="use-network" type="b">
+      <default>true</default>
+      <summary>Offer locations on other machines</summary>
+      <description>Connecting to a server, the network in the sidebar, and shares opened by address. Nothing of it works without gvfs.</description>
+    </key>
     <key name="network-servers" type="as">
       <default>[]</default>
       <summary>Servers connected to before, the most recent first</summary>

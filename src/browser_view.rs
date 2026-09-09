@@ -1453,6 +1453,9 @@ impl BrowserView {
     /// connect dialog having to be opened first.
     fn mount_location(&self) {
         let imp = self.imp();
+        if !crate::prefs::use_network() {
+            return;
+        }
         let Some(error) = imp.model.error() else {
             return;
         };
