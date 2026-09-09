@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 23:47+0300\n"
+"POT-Creation-Date: 2026-09-10 00:23+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -704,63 +704,63 @@ msgstr "sachesi"
 msgid "_Empty Document"
 msgstr "_Пустой документ"
 
-#: src/browser_actions.rs:675
+#: src/browser_actions.rs:678
 #, no-c-format
 msgid "Extract To"
 msgstr "Распаковать в"
 
-#: src/browser_actions.rs:676 src/ops/archive.rs:352
+#: src/browser_actions.rs:679 src/ops/archive.rs:352
 #, no-c-format
 msgid "_Extract"
 msgstr "_Распаковать"
 
-#: src/browser_actions.rs:694
+#: src/browser_actions.rs:697
 #, no-c-format
 msgid "Archive"
 msgstr "Архив"
 
-#: src/browser_actions.rs:761 src/places_sidebar.rs:468
+#: src/browser_actions.rs:764 src/places_sidebar.rs:468
 #, no-c-format
 msgid "Could not tag “%s”"
 msgstr "Не удалось пометить «%s»"
 
-#: src/browser_actions.rs:962
+#: src/browser_actions.rs:965
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr "Не удалось вставить изображение"
 
-#: src/browser_actions.rs:975
+#: src/browser_actions.rs:978
 #, no-c-format
 msgid "Move To"
 msgstr "Переместить в"
 
-#: src/browser_actions.rs:975
+#: src/browser_actions.rs:978
 #, no-c-format
 msgid "_Move"
 msgstr "_Переместить"
 
-#: src/browser_actions.rs:977
+#: src/browser_actions.rs:980
 #, no-c-format
 msgid "Copy To"
 msgstr "Копировать в"
 
-#: src/browser_actions.rs:977 ui/browser_view.ui:203
+#: src/browser_actions.rs:980 ui/browser_view.ui:203
 #, no-c-format
 msgid "_Copy"
 msgstr "_Копировать"
 
-#: src/browser_actions.rs:1070 src/browser_view.rs:1438
-#: src/browser_view.rs:1445 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1072 src/browser_view.rs:1471
+#: src/browser_view.rs:1478 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не удалось открыть"
 
-#: src/browser_actions.rs:1080
+#: src/browser_actions.rs:1082
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Безвозвратно удалить «%s»?"
 
-#: src/browser_actions.rs:1082
+#: src/browser_actions.rs:1084
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -768,49 +768,49 @@ msgstr[0] "Безвозвратно удалить %d объект?"
 msgstr[1] "Безвозвратно удалить %d объекта?"
 msgstr[2] "Безвозвратно удалить %d объектов?"
 
-#: src/browser_actions.rs:1090
+#: src/browser_actions.rs:1092
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Безвозвратно удалённые объекты нельзя восстановить."
 
-#: src/browser_actions.rs:1095 src/dialogs/batch_rename.rs:108
+#: src/browser_actions.rs:1097 src/dialogs/batch_rename.rs:108
 #: src/dialogs/compress.rs:70 src/dialogs/connect_server.rs:66
 #: src/dialogs/open_with.rs:59 src/dialogs/select_pattern.rs:44
-#: src/dialogs/tags.rs:36 src/ops/archive.rs:351 src/ops/conflict.rs:63
-#: src/ops/conflict.rs:314 src/ops/mod.rs:30 src/ops/walk.rs:263
+#: src/dialogs/tags.rs:36 src/ops/archive.rs:351 src/ops/conflict.rs:64
+#: src/ops/conflict.rs:315 src/ops/mod.rs:30 src/ops/walk.rs:263
 #: src/places_sidebar.rs:879 src/places_sidebar.rs:1240
 #: src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
 msgstr "_Отмена"
 
-#: src/browser_actions.rs:1096
+#: src/browser_actions.rs:1098
 #, no-c-format
 msgid "_Delete"
 msgstr "_Удалить"
 
-#: src/browser_actions.rs:1149
+#: src/browser_actions.rs:1151
 #, no-c-format
 msgid "Untitled Document"
 msgstr "Безымянный документ"
 
-#: src/browser_actions.rs:1183 ui/path_bar.ui:32 ui/path_bar.ui:63
+#: src/browser_actions.rs:1185 ui/path_bar.ui:32 ui/path_bar.ui:63
 #: ui/places_sidebar.ui:16 ui/places_sidebar.ui:58
 #, no-c-format
 msgid "Open in New _Tab"
 msgstr "Открыть в новой _вкладке"
 
-#: src/browser_actions.rs:1184 ui/path_bar.ui:36 ui/path_bar.ui:67
+#: src/browser_actions.rs:1186 ui/path_bar.ui:36 ui/path_bar.ui:67
 #, no-c-format
 msgid "Open in New _Window"
 msgstr "Открыть в новом ок_не"
 
-#: src/browser_actions.rs:1185 ui/browser_view.ui:342
+#: src/browser_actions.rs:1187 ui/browser_view.ui:342
 #, no-c-format
 msgid "Open in _Terminal"
 msgstr "Открыть в _терминале"
 
-#: src/browser_actions.rs:1211 ui/path_bar.ui:16
+#: src/browser_actions.rs:1213 ui/path_bar.ui:16
 #, no-c-format
 msgid "New _Document"
 msgstr "Создать _документ"
@@ -831,44 +831,51 @@ msgstr[0] "Выбран %d объект"
 msgstr[1] "Выбрано %d объекта"
 msgstr[2] "Выбрано %d объектов"
 
-#: src/browser_view.rs:953
+#: src/browser_view.rs:952
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Удалить из избранного"
 
-#: src/browser_view.rs:955
+#: src/browser_view.rs:954
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Добавить в избранное"
 
-#: src/browser_view.rs:1491 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1524 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:908
 #, no-c-format
 msgid "_OK"
 msgstr "_ОК"
 
-#: src/browser_view.rs:1513
+#: src/browser_view.rs:1547
 #, no-c-format
 msgid "No Results Found"
 msgstr "Ничего не найдено"
 
-#: src/browser_view.rs:1515 ui/browser_view.ui:103
+#: src/browser_view.rs:1549 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Папка пуста"
 
-#: src/browser_view.rs:1566
+#: src/browser_view.rs:1584
+#, no-c-format
+msgid ""
+"Nothing installed here can open “%s” addresses. They are read by a gvfs "
+"backend of their own."
+msgstr "В системе нет ничего, что открывало бы адреса «%s». Для них нужен отдельный модуль gvfs."
+
+#: src/browser_view.rs:1614
 #, no-c-format
 msgid "Loading…"
 msgstr "Загрузка…"
 
-#: src/browser_view.rs:1582
+#: src/browser_view.rs:1630
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Выбран объект «%s»"
 
-#: src/browser_view.rs:1587
+#: src/browser_view.rs:1635
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -877,17 +884,17 @@ msgstr[1] "%d других объекта выбрано"
 msgstr[2] "%d других объектов выбрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1593
+#: src/browser_view.rs:1641
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:2333 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2381 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:2433 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2481 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -936,7 +943,7 @@ msgstr[0] "%d файл для переименования"
 msgstr[1] "%d файла для переименования"
 msgstr[2] "%d файлов для переименования"
 
-#: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:71
+#: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:72
 #: src/places_sidebar.rs:1266
 #, no-c-format
 msgid "_Rename"
@@ -1199,7 +1206,7 @@ msgstr ""
 "Если выключено, Ctrl копирует, а перетаскивание внутри Spiral перемещает без "
 "вопросов"
 
-#: src/dialogs/preferences.rs:62 src/file_utils.rs:316
+#: src/dialogs/preferences.rs:62 src/file_utils.rs:363
 #: src/places_sidebar.rs:706
 #, no-c-format
 msgid "Network"
@@ -1292,7 +1299,7 @@ msgstr "Корень"
 msgid "The top of the filesystem, above the bookmarks"
 msgstr "Вершина файловой системы, над закладками"
 
-#: src/dialogs/preferences.rs:136 src/file_utils.rs:319 src/path_bar.rs:326
+#: src/dialogs/preferences.rs:136 src/file_utils.rs:366 src/path_bar.rs:326
 #: src/places_sidebar.rs:632
 #, no-c-format
 msgid "Favorites"
@@ -1303,7 +1310,7 @@ msgstr "Избранное"
 msgid "The starred files and folders"
 msgstr "Файлы и папки, отмеченные звёздочкой"
 
-#: src/dialogs/preferences.rs:146 src/file_utils.rs:322
+#: src/dialogs/preferences.rs:146 src/file_utils.rs:369
 #, no-c-format
 msgid "Tags"
 msgstr "Метки"
@@ -1443,13 +1450,13 @@ msgid "First Modified"
 msgstr "Сначала старые"
 
 #: src/dialogs/preferences.rs:259 src/dialogs/properties.rs:251
-#: src/file_utils.rs:153 src/file_utils.rs:168
+#: src/file_utils.rs:200 src/file_utils.rs:215
 #, no-c-format
 msgid "Size"
 msgstr "Размер"
 
 #: src/dialogs/preferences.rs:260 src/dialogs/properties.rs:243
-#: src/file_utils.rs:154 src/file_utils.rs:170 ui/window.ui:365
+#: src/file_utils.rs:201 src/file_utils.rs:217 ui/window.ui:365
 #, no-c-format
 msgid "Type"
 msgstr "Тип"
@@ -1489,46 +1496,46 @@ msgstr "Терминал"
 msgid "Preview"
 msgstr "Просмотр"
 
-#: src/dialogs/preview.rs:533
+#: src/dialogs/preview.rs:535
 #, no-c-format
 msgid "Previous Page"
 msgstr "Предыдущая страница"
 
-#: src/dialogs/preview.rs:535
+#: src/dialogs/preview.rs:537
 #, no-c-format
 msgid "Next Page"
 msgstr "Следующая страница"
 
-#: src/dialogs/preview.rs:609 src/dialogs/preview.rs:662
+#: src/dialogs/preview.rs:611 src/dialogs/preview.rs:664
 #, no-c-format
 msgid "Fit"
 msgstr "Вписать"
 
-#: src/dialogs/preview.rs:611 ui/shortcuts_dialog.ui:164 ui/window.ui:453
+#: src/dialogs/preview.rs:613 ui/shortcuts_dialog.ui:164 ui/window.ui:453
 #: ui/window.ui:537
 #, no-c-format
 msgid "Zoom Out"
 msgstr "Уменьшить"
 
-#: src/dialogs/preview.rs:612
+#: src/dialogs/preview.rs:614
 #, no-c-format
 msgid "Fit to Window"
 msgstr "Вписать в окно"
 
-#: src/dialogs/preview.rs:613 ui/shortcuts_dialog.ui:158 ui/window.ui:463
+#: src/dialogs/preview.rs:615 ui/shortcuts_dialog.ui:158 ui/window.ui:463
 #: ui/window.ui:547
 #, no-c-format
 msgid "Zoom In"
 msgstr "Увеличить"
 
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:881
+#: src/dialogs/preview.rs:883
 #, no-c-format
 msgid "%t, %s"
 msgstr "%t, %s"
 
 #. Translators: %p is the page being shown, %n the number of pages in the document.
-#: src/dialogs/preview.rs:886
+#: src/dialogs/preview.rs:888
 #, no-c-format
 msgid "%p of %n"
 msgstr "%p из %n"
@@ -1538,7 +1545,7 @@ msgstr "%p из %n"
 msgid "Properties"
 msgstr "Свойства"
 
-#: src/dialogs/properties.rs:99 src/file_utils.rs:160 src/file_utils.rs:172
+#: src/dialogs/properties.rs:99 src/file_utils.rs:207 src/file_utils.rs:219
 #, no-c-format
 msgid "Permissions"
 msgstr "Права"
@@ -1566,7 +1573,7 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/dialogs/properties.rs:247 src/file_utils.rs:171
+#: src/dialogs/properties.rs:247 src/file_utils.rs:218
 #, no-c-format
 msgid "MIME Type"
 msgstr "Тип MIME"
@@ -1576,12 +1583,12 @@ msgstr "Тип MIME"
 msgid "Calculating…"
 msgstr "Вычисление…"
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:155 ui/window.ui:386
+#: src/dialogs/properties.rs:259 src/file_utils.rs:202 ui/window.ui:386
 #, no-c-format
 msgid "Modified"
 msgstr "Изменён"
 
-#: src/dialogs/properties.rs:263 src/file_utils.rs:156
+#: src/dialogs/properties.rs:263 src/file_utils.rs:203
 #, no-c-format
 msgid "Accessed"
 msgstr "Последний доступ"
@@ -1612,7 +1619,7 @@ msgid "You are not the owner, so you cannot change these permissions."
 msgstr "Вы не владелец, поэтому не можете изменить эти права."
 
 #: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
-#: src/file_utils.rs:167 src/tags.rs:38
+#: src/file_utils.rs:214 src/tags.rs:38
 #, no-c-format
 msgid "None"
 msgstr "Нет"
@@ -1647,12 +1654,12 @@ msgstr "Чтение и запись"
 msgid "Could Not Change Permissions"
 msgstr "Не удалось изменить права"
 
-#: src/dialogs/properties.rs:452 src/file_utils.rs:158 src/file_utils.rs:173
+#: src/dialogs/properties.rs:452 src/file_utils.rs:205 src/file_utils.rs:220
 #, no-c-format
 msgid "Owner"
 msgstr "Владелец"
 
-#: src/dialogs/properties.rs:453 src/file_utils.rs:159 src/file_utils.rs:174
+#: src/dialogs/properties.rs:453 src/file_utils.rs:206 src/file_utils.rs:221
 #, no-c-format
 msgid "Group"
 msgstr "Группа"
@@ -1741,32 +1748,32 @@ msgstr "В виде сетки"
 msgid "List View"
 msgstr "В виде списка"
 
-#: src/file_utils.rs:89 src/file_utils.rs:101
+#: src/file_utils.rs:136 src/file_utils.rs:148
 #, no-c-format
 msgid "Folder"
 msgstr "Папка"
 
-#: src/file_utils.rs:157
+#: src/file_utils.rs:204
 #, no-c-format
 msgid "Created"
 msgstr "Создан"
 
-#: src/file_utils.rs:169
+#: src/file_utils.rs:216
 #, no-c-format
 msgid "Date Modified"
 msgstr "Дата изменения"
 
-#: src/file_utils.rs:198
+#: src/file_utils.rs:245
 #, no-c-format
 msgid "Today, %s"
 msgstr "Сегодня, %s"
 
-#: src/file_utils.rs:199
+#: src/file_utils.rs:246
 #, no-c-format
 msgid "Yesterday, %s"
 msgstr "Вчера, %s"
 
-#: src/file_utils.rs:200
+#: src/file_utils.rs:247
 #, no-c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
@@ -1774,12 +1781,12 @@ msgstr[0] "%d день назад"
 msgstr[1] "%d дня назад"
 msgstr[2] "%d дней назад"
 
-#: src/file_utils.rs:201
+#: src/file_utils.rs:248
 #, no-c-format
 msgid "Last week"
 msgstr "На прошлой неделе"
 
-#: src/file_utils.rs:203
+#: src/file_utils.rs:250
 #, no-c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
@@ -1787,12 +1794,12 @@ msgstr[0] "%d неделю назад"
 msgstr[1] "%d недели назад"
 msgstr[2] "%d недель назад"
 
-#: src/file_utils.rs:205
+#: src/file_utils.rs:252
 #, no-c-format
 msgid "Last month"
 msgstr "В прошлом месяце"
 
-#: src/file_utils.rs:208
+#: src/file_utils.rs:255
 #, no-c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
@@ -1800,12 +1807,12 @@ msgstr[0] "%d месяц назад"
 msgstr[1] "%d месяца назад"
 msgstr[2] "%d месяцев назад"
 
-#: src/file_utils.rs:210
+#: src/file_utils.rs:257
 #, no-c-format
 msgid "Last year"
 msgstr "В прошлом году"
 
-#: src/file_utils.rs:213
+#: src/file_utils.rs:260
 #, no-c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
@@ -1813,12 +1820,12 @@ msgstr[0] "%d год назад"
 msgstr[1] "%d года назад"
 msgstr[2] "%d лет назад"
 
-#: src/file_utils.rs:282
+#: src/file_utils.rs:329
 #, no-c-format
 msgid "Empty"
 msgstr "Пусто"
 
-#: src/file_utils.rs:283
+#: src/file_utils.rs:330
 #, no-c-format
 msgid "%d item"
 msgid_plural "%d items"
@@ -1826,17 +1833,17 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/file_utils.rs:310 src/path_bar.rs:320 src/places_sidebar.rs:606
+#: src/file_utils.rs:357 src/path_bar.rs:320 src/places_sidebar.rs:606
 #, no-c-format
 msgid "Home"
 msgstr "Домашняя папка"
 
-#: src/file_utils.rs:313 src/path_bar.rs:323 src/places_sidebar.rs:639
+#: src/file_utils.rs:360 src/path_bar.rs:323 src/places_sidebar.rs:639
 #, no-c-format
 msgid "Trash"
 msgstr "Корзина"
 
-#: src/file_utils.rs:327 src/path_bar.rs:334
+#: src/file_utils.rs:374 src/path_bar.rs:334
 #, no-c-format
 msgid "System"
 msgstr "Система"
@@ -2013,22 +2020,22 @@ msgstr "Сжатие…"
 msgid "Size: %s"
 msgstr "Размер: %s"
 
-#: src/ops/conflict.rs:32
+#: src/ops/conflict.rs:33
 #, no-c-format
 msgid "Last modified: %s"
 msgstr "Последнее изменение: %s"
 
-#: src/ops/conflict.rs:49
+#: src/ops/conflict.rs:50
 #, no-c-format
 msgid "Merge Folder “%s”?"
 msgstr "Объединить папку «%s»?"
 
-#: src/ops/conflict.rs:51
+#: src/ops/conflict.rs:52
 #, no-c-format
 msgid "Replace File “%s”?"
 msgstr "Заменить файл «%s»?"
 
-#: src/ops/conflict.rs:56
+#: src/ops/conflict.rs:57
 #, no-c-format
 msgid ""
 "Merging will ask for confirmation before replacing any files in the folder "
@@ -2037,7 +2044,7 @@ msgstr ""
 "При объединении будет запрошено подтверждение перед заменой каждого файла в "
 "папке, конфликтующего с копируемыми файлами."
 
-#: src/ops/conflict.rs:59
+#: src/ops/conflict.rs:60
 #, no-c-format
 msgid ""
 "Another file with the same name already exists in “%s”. Replacing it will "
@@ -2046,62 +2053,62 @@ msgstr ""
 "Файл с таким именем уже существует в «%s». При замене его содержимое будет "
 "перезаписано."
 
-#: src/ops/conflict.rs:67 src/ops/conflict.rs:316
+#: src/ops/conflict.rs:68 src/ops/conflict.rs:317
 #, no-c-format
 msgid "_Skip"
 msgstr "_Пропустить"
 
-#: src/ops/conflict.rs:78
+#: src/ops/conflict.rs:79
 #, no-c-format
 msgid "_Merge"
 msgstr "_Объединить"
 
-#: src/ops/conflict.rs:80 src/portal/chooser_window.rs:853
+#: src/ops/conflict.rs:81 src/portal/chooser_window.rs:853
 #, no-c-format
 msgid "_Replace"
 msgstr "_Заменить"
 
-#: src/ops/conflict.rs:132
+#: src/ops/conflict.rs:133
 #, no-c-format
 msgid "Original folder"
 msgstr "Исходная папка"
 
-#: src/ops/conflict.rs:134
+#: src/ops/conflict.rs:135
 #, no-c-format
 msgid "Original file"
 msgstr "Исходный файл"
 
-#: src/ops/conflict.rs:140
+#: src/ops/conflict.rs:141
 #, no-c-format
 msgid "Merge with"
 msgstr "Объединить с"
 
-#: src/ops/conflict.rs:142
+#: src/ops/conflict.rs:143
 #, no-c-format
 msgid "Replace with"
 msgstr "Заменить на"
 
-#: src/ops/conflict.rs:166
+#: src/ops/conflict.rs:167
 #, no-c-format
 msgid "Re_set"
 msgstr "С_бросить"
 
-#: src/ops/conflict.rs:173
+#: src/ops/conflict.rs:174
 #, no-c-format
 msgid "Select a _new name for the destination"
 msgstr "Выбрать _новое имя для назначения"
 
-#: src/ops/conflict.rs:180
+#: src/ops/conflict.rs:181
 #, no-c-format
 msgid "Apply this action to all files and folders"
 msgstr "Применить это действие ко всем файлам и папкам"
 
-#: src/ops/conflict.rs:305
+#: src/ops/conflict.rs:306
 #, no-c-format
 msgid "Error While %v “%s”"
 msgstr "Ошибка при %v «%s»"
 
-#: src/ops/conflict.rs:315
+#: src/ops/conflict.rs:316
 #, no-c-format
 msgid "_Retry"
 msgstr "_Повторить"

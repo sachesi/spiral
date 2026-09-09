@@ -37,6 +37,16 @@ pub fn address_schemes() -> Vec<&'static str> {
         .collect()
 }
 
+/// Whether the virtual filesystem can open addresses of this scheme at all. Local files
+/// always work; everything else is a gvfs backend that is installed or is not.
+pub fn supports(scheme: &str) -> bool {
+    scheme == "file"
+        || gio::Vfs::default()
+            .supported_uri_schemes()
+            .iter()
+            .any(|s| s == scheme)
+}
+
 /// Whether network browsing is on offer, `network:///` being a backend like any other.
 pub fn can_browse() -> bool {
     gio::Vfs::default()
