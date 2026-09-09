@@ -1,7 +1,7 @@
 //! Places sidebar: home, starred, trash, XDG dirs and GTK bookmarks (reorderable, renamable),
 //! plus drives and mounts from `gio::VolumeMonitor`.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
@@ -23,6 +23,10 @@ mod imp {
         /// Handlers on the monitor, which is shared by every window and outlives them.
         pub monitor_handlers: RefCell<Vec<glib::SignalHandlerId>>,
         pub bookmarks_monitor: RefCell<Option<gio::FileMonitor>>,
+        pub trash_monitor: RefCell<Option<gio::FileMonitor>>,
+        /// Whether the trash is known to hold nothing, so emptying it is not offered.
+        /// Read from the trash and kept, since a right click cannot wait for the answer.
+        pub trash_empty: Cell<bool>,
         pub current: RefCell<Option<gio::File>>,
         pub actions: gio::SimpleActionGroup,
         /// Row the context menu was opened on.
@@ -38,6 +42,8 @@ mod imp {
                 monitor: gio::VolumeMonitor::get(),
                 monitor_handlers: Default::default(),
                 bookmarks_monitor: Default::default(),
+                trash_monitor: Default::default(),
+                trash_empty: Default::default(),
                 current: Default::default(),
                 actions: gio::SimpleActionGroup::new(),
                 menu_row: Default::default(),
@@ -173,6 +179,20 @@ mod imp {
                 ));
                 self.bookmarks_monitor.replace(Some(m));
             }
+
+            // What the trash holds decides whether emptying it is offered.
+            let trash = gio::File::for_uri("trash:///");
+            if let Ok(m) =
+                trash.monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
+            {
+                m.connect_changed(glib::clone!(
+                    #[weak]
+                    obj,
+                    move |_, _, _, _| obj.read_trash_state()
+                ));
+                self.trash_monitor.replace(Some(m));
+            }
+            obj.read_trash_state();
 
             // Middle click opens in a new tab.
             let click = gtk::GestureClick::builder().button(2).build();
@@ -830,6 +850,30 @@ impl PlacesSidebar {
         self.insert_action_group("sidebar", Some(group));
     }
 
+    /// Ask the trash how much it holds, and keep the answer for the next context menu.
+    /// An unreadable trash counts as one with something in it: emptying it is then offered
+    /// and does nothing, which is better than refusing to offer it at all.
+    fn read_trash_state(&self) {
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = sidebar)]
+            self,
+            async move {
+                let empty = gio::File::for_uri("trash:///")
+                    .query_info_future(
+                        "trash::item-count",
+                        gio::FileQueryInfoFlags::NONE,
+                        glib::Priority::DEFAULT,
+                    )
+                    .await
+                    .is_ok_and(|info| {
+                        info.has_attribute("trash::item-count")
+                            && info.attribute_uint32("trash::item-count") == 0
+                    });
+                sidebar.imp().trash_empty.set(empty);
+            }
+        ));
+    }
+
     fn popup_row_menu(&self, row: &gtk::ListBoxRow, x: f64, y: f64) {
         let imp = self.imp();
         imp.menu_row.replace(Some(row.clone()));
@@ -849,7 +893,7 @@ impl PlacesSidebar {
         enable("eject", row_eject(row).is_some());
         enable(
             "empty-trash",
-            row_file(row).is_some_and(|f| f.uri().starts_with("trash:")),
+            !imp.trash_empty.get() && row_file(row).is_some_and(|f| f.uri().starts_with("trash:")),
         );
         let existing = imp.popover.borrow().clone();
         let popover = existing.unwrap_or_else(|| {
