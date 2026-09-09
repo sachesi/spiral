@@ -108,6 +108,18 @@ async fn run(
 
     // ---- widgets --------------------------------------------------------------------------
     let view = BrowserView::new_chooser(&start);
+    // Picking items out by pattern belongs to a dialog that opens them. Where a name is
+    // being saved, Ctrl+S is the key of the application the dialog was opened for, so the
+    // action goes with it -- the view carries the key itself, so turning the action off is
+    // what silences it.
+    if !matches!(mode, Mode::Open { .. })
+        && let Some(pattern) = view
+            .action_group()
+            .lookup_action("select-pattern")
+            .and_downcast::<gio::SimpleAction>()
+    {
+        pattern.set_enabled(false);
+    }
     let model = view.model();
     let sidebar: PlacesSidebar = glib::Object::new();
     let location_bar = crate::location_entry::LocationBar::new(&view);
