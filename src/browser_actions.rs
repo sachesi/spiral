@@ -966,7 +966,7 @@ impl BrowserView {
             glib::clone!(
                 #[weak(rename_to = view)]
                 self,
-                move || view.model().reload()
+                move || view.reload()
             ),
         );
     }

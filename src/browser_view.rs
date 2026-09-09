@@ -302,7 +302,7 @@ mod imp {
                         #[weak]
                         obj,
                         move |_, _| {
-                            obj.model().reload();
+                            obj.reload();
                             obj.refresh_columns();
                         }
                     ),
@@ -1081,8 +1081,78 @@ impl BrowserView {
         }
     }
 
+    /// Read the folder again, leaving the view where it was. The listing is thrown away
+    /// and read from the start, which empties the model: the selection goes with it and
+    /// every view below it comes back at the first row. Both are put back once the
+    /// folder is in again, so a reload shows what was on screen before it.
     pub fn reload(&self) {
-        self.imp().model.reload();
+        let imp = self.imp();
+        let offset = self.view_adjustment().map_or(0.0, |adj| adj.value());
+        let selected = imp.model.selected_files();
+        let focused = self.view_has_focus();
+        imp.model.reload();
+        if offset == 0.0 && selected.is_empty() {
+            return;
+        }
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                let model = view.model();
+                let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+                while model.loading() && std::time::Instant::now() < deadline {
+                    glib::timeout_future(std::time::Duration::from_millis(50)).await;
+                }
+                let sel = model.selection();
+                let found = model.positions_of(&selected);
+                for &pos in &found {
+                    sel.select_item(pos, false);
+                }
+                // The rows are new widgets, so the keyboard was left outside the view
+                // while the folder was away; it belongs where it was.
+                if focused && let Some(&pos) = found.first() {
+                    view.reveal_position(pos, gtk::ListScrollFlags::FOCUS);
+                    view.grab_view_focus();
+                }
+                view.restore_offset(offset).await;
+            }
+        ));
+    }
+
+    /// Scroll back to `offset`. A view only works out how tall it is once the rows that
+    /// arrived have been laid out, so until then the value is clamped to the little it
+    /// believes it has and has to be given again.
+    async fn restore_offset(&self, offset: f64) {
+        for _ in 0..20 {
+            let Some(adj) = self.view_adjustment() else {
+                return;
+            };
+            adj.set_value(offset);
+            if adj.value() >= offset {
+                return;
+            }
+            glib::timeout_future(std::time::Duration::from_millis(25)).await;
+        }
+    }
+
+    /// The vertical adjustment of whichever view is on screen; the others have no model
+    /// and nothing to scroll.
+    fn view_adjustment(&self) -> Option<gtk::Adjustment> {
+        let imp = self.imp();
+        if imp.grid_view.model().is_some() {
+            imp.grid_view.vadjustment()
+        } else if imp.miller_list.model().is_some() {
+            imp.miller_list.vadjustment()
+        } else {
+            imp.column_view.vadjustment()
+        }
+    }
+
+    /// Whether the keyboard is on something inside this view.
+    fn view_has_focus(&self) -> bool {
+        self.root()
+            .and_then(|root| root.focus())
+            .is_some_and(|widget| widget.is_ancestor(self))
     }
 
     /// Open the item at `pos`: descend into folders, launch files.
