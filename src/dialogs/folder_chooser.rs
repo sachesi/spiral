@@ -125,6 +125,10 @@ pub async fn folder_chooser_dialog(
         .build();
     let dialog = adw::Dialog::builder()
         .title(title)
+        // A dialog with a breakpoint has to say how small it may get, as the chooser
+        // window does.
+        .width_request(360)
+        .height_request(348)
         .content_width(820)
         .content_height(540)
         .child(&split)
