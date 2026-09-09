@@ -220,6 +220,21 @@ mod imp {
             klass.install_action("win.switch-pane", None, |win, _, _| win.switch_pane());
             klass.install_action("win.zoom-in", None, |win, _, _| win.zoom(1));
             klass.install_action("win.zoom-out", None, |win, _, _| win.zoom(-1));
+            klass.install_action("win.zoom-reset", None, |win, _, _| win.zoom_reset());
+            klass.install_action("win.stop", None, |win, _, _| {
+                if let Some(v) = win.current_view() {
+                    v.model().stop_loading();
+                }
+            });
+            klass.install_action(
+                "win.go-to-tab",
+                Some(glib::VariantTy::INT32),
+                |win, _, param| {
+                    if let Some(n) = param.and_then(|p| p.get::<i32>()) {
+                        win.go_to_tab(n);
+                    }
+                },
+            );
 
             use gtk::gdk::{Key, ModifierType as M};
             klass.add_binding_action(Key::Left, M::ALT_MASK, "win.back");
@@ -243,6 +258,34 @@ mod imp {
             klass.add_binding_action(Key::plus, M::CONTROL_MASK, "win.zoom-in");
             klass.add_binding_action(Key::equal, M::CONTROL_MASK, "win.zoom-in");
             klass.add_binding_action(Key::minus, M::CONTROL_MASK, "win.zoom-out");
+            klass.add_binding_action(Key::_0, M::CONTROL_MASK, "win.zoom-reset");
+            klass.add_binding_action(Key::KP_0, M::CONTROL_MASK, "win.zoom-reset");
+            // Only bound while something is loading: the action is disabled otherwise, and
+            // Escape goes on to whatever else wants it.
+            klass.add_binding_action(Key::Escape, M::empty(), "win.stop");
+            // Alt and a digit for the first nine tabs.
+            for (i, key) in [
+                Key::_1,
+                Key::_2,
+                Key::_3,
+                Key::_4,
+                Key::_5,
+                Key::_6,
+                Key::_7,
+                Key::_8,
+                Key::_9,
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                klass.add_shortcut(
+                    &gtk::Shortcut::builder()
+                        .trigger(&gtk::KeyvalTrigger::new(key, M::ALT_MASK))
+                        .action(&gtk::NamedAction::new("win.go-to-tab"))
+                        .arguments(&(i as i32).to_variant())
+                        .build(),
+                );
+            }
             for (key, mode) in [
                 (Key::_1, ViewMode::Grid),
                 (Key::_2, ViewMode::List),
@@ -278,6 +321,7 @@ mod imp {
             for key in ["show-hidden", "sidebar-visible", "split-view"] {
                 obj.add_action(&self.settings.create_action(key));
             }
+            obj.action_set_enabled("win.stop", false);
             self.settings.connect_changed(
                 Some("split-view"),
                 glib::clone!(
@@ -667,6 +711,10 @@ impl SpiralWindow {
 
     /// The pane everything outside the view acts on: the active one when it belongs to the
     /// tab on screen, else that tab's left pane.
+    pub(crate) fn sidebar(&self) -> PlacesSidebar {
+        self.imp().sidebar.clone()
+    }
+
     pub fn current_view(&self) -> Option<BrowserView> {
         let page = self.imp().tab_view.selected_page()?;
         let paned = page.child().downcast::<gtk::Paned>().ok()?;
@@ -935,6 +983,19 @@ impl SpiralWindow {
                 win.sync_header();
             }
         };
+        // Escape stops a folder or a search that is still coming in; with nothing loading
+        // the action is off and the key goes elsewhere.
+        view.model().connect_loading_notify(glib::clone!(
+            #[weak]
+            view,
+            move |model| {
+                if let Some(win) = Self::of(&view)
+                    && win.current_view().as_ref() == Some(&view)
+                {
+                    win.action_set_enabled("win.stop", model.loading());
+                }
+            }
+        ));
         view.connect_can_go_back_notify(sync);
         view.connect_can_go_forward_notify(sync);
         view.connect_view_mode_notify(|v| {
@@ -962,6 +1023,24 @@ impl SpiralWindow {
         imp.toolbar_switcher.set_visible_child_name("location");
         imp.location_entry.grab_focus();
         imp.location_entry.set_position(-1);
+    }
+
+    /// Back to the zoom the preference starts at, for the view on screen.
+    fn zoom_reset(&self) {
+        let grid = self
+            .current_view()
+            .is_none_or(|v| v.view_mode() == ViewMode::Grid);
+        self.imp()
+            .settings
+            .reset(if grid { "grid-zoom" } else { "list-zoom" });
+        self.zoom(0);
+    }
+
+    fn go_to_tab(&self, index: i32) {
+        let tabs = &self.imp().tab_view;
+        if index >= 0 && index < tabs.n_pages() {
+            tabs.set_selected_page(&tabs.nth_page(index));
+        }
     }
 
     fn zoom(&self, step: i32) {
@@ -1054,6 +1133,7 @@ impl SpiralWindow {
         imp.path_bar.set_location(loc.as_ref());
         imp.sidebar.set_selected_location(loc.as_ref());
         self.action_set_enabled("win.back", view.can_go_back());
+        self.action_set_enabled("win.stop", view.model().loading());
         self.action_set_enabled("win.forward", view.can_go_forward());
         self.set_title(Some(
             &loc.map(|l| file_utils::location_name(&l))

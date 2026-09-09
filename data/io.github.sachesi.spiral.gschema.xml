@@ -116,6 +116,15 @@
       <default>false</default>
       <summary>Reverse sort order</summary>
     </key>
+    <key name="chooser-sort-key" enum="io.github.sachesi.spiral.SortKey">
+      <default>'name'</default>
+      <summary>Sort key of file chooser dialogs</summary>
+      <description>Kept apart from the file manager's own order, as the view mode is.</description>
+    </key>
+    <key name="chooser-sort-reversed" type="b">
+      <default>false</default>
+      <summary>Reverse sort order of file chooser dialogs</summary>
+    </key>
     <key name="compression-format" type="s">
       <default>'zip'</default>
       <summary>Format the Create Archive dialog starts with</summary>

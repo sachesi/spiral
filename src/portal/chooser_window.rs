@@ -166,6 +166,94 @@ async fn run(
             move |_| view.toggle_view_mode()
         ));
     }
+    // Sorting, in the dialog's own order: the file manager's windows keep theirs.
+    let sort_action = gio::SimpleAction::new_stateful(
+        "sort",
+        Some(glib::VariantTy::STRING),
+        &sort_state(&settings).to_variant(),
+    );
+    sort_action.connect_activate(glib::clone!(
+        #[weak]
+        view,
+        move |action, value| {
+            let Some((key, dir)) = value.and_then(|v| v.str()).and_then(|v| v.split_once('-'))
+            else {
+                return;
+            };
+            if let Some(key) = crate::enums::SortKey::from_nick(key) {
+                view.set_sort(key, dir == "desc");
+                action.set_state(&format!("{}-{dir}", key.nick()).to_variant());
+            }
+        }
+    ));
+    let sort_menu = gio::Menu::new();
+    for (label, target) in [
+        (gettext("_A-Z"), "name-asc"),
+        (gettext("_Z-A"), "name-desc"),
+        (gettext("Last _Modified"), "modified-desc"),
+        (gettext("_First Modified"), "modified-asc"),
+        (gettext("_Size"), "size-desc"),
+        (gettext("_Type"), "type-asc"),
+    ] {
+        let item = gio::MenuItem::new(Some(&label), None);
+        item.set_action_and_target_value(Some("chooser.sort"), Some(&target.to_variant()));
+        sort_menu.append_item(&item);
+    }
+    let sort_button = gtk::MenuButton::builder()
+        .icon_name("view-sort-descending-symbolic")
+        .tooltip_text(gettext("Sort"))
+        .valign(gtk::Align::Center)
+        .menu_model(&sort_menu)
+        .build();
+
+    // Search: the folder being shown, nothing under it.
+    let search_entry = gtk::SearchEntry::builder()
+        .placeholder_text(gettext("Search this folder"))
+        .hexpand(true)
+        .build();
+    let search_bar = gtk::SearchBar::builder()
+        .child(&search_entry)
+        .show_close_button(false)
+        .build();
+    let search_button = gtk::ToggleButton::builder()
+        .icon_name("system-search-symbolic")
+        .tooltip_text(gettext("Search"))
+        .valign(gtk::Align::Center)
+        .build();
+    search_button
+        .bind_property("active", &search_bar, "search-mode-enabled")
+        .bidirectional()
+        .sync_create()
+        .build();
+    search_entry.connect_search_changed(glib::clone!(
+        #[weak]
+        model,
+        move |entry| model.set_search_text(entry.text().as_str())
+    ));
+    search_bar.connect_search_mode_enabled_notify(glib::clone!(
+        #[weak]
+        search_entry,
+        #[weak]
+        model,
+        #[weak]
+        view,
+        move |bar| {
+            if bar.is_search_mode() {
+                search_entry.grab_focus();
+            } else {
+                search_entry.set_text("");
+                model.set_search_text("");
+                view.grab_view_focus();
+            }
+        }
+    ));
+    // A search belongs to the folder it was typed in; leaving ends it.
+    view.connect_location_notify(glib::clone!(
+        #[weak]
+        search_button,
+        move |_| search_button.set_active(false)
+    ));
+
     let new_folder = gtk::Button::builder()
         .icon_name("folder-new-symbolic")
         .tooltip_text(gettext("New Folder"))
@@ -187,6 +275,8 @@ async fn run(
     header.pack_start(&nav);
     header.pack_end(&view_button);
     header.pack_end(&new_folder);
+    header.pack_end(&sort_button);
+    header.pack_end(&search_button);
 
     // Bottom bar: filters | file name | choices + accept.
     let accept = gtk::Button::builder()
@@ -284,6 +374,7 @@ async fn run(
 
     let content_toolbar = adw::ToolbarView::new();
     content_toolbar.add_top_bar(&header);
+    content_toolbar.add_top_bar(&search_bar);
     content_toolbar.set_content(Some(&view));
     content_toolbar.add_bottom_bar(&bottom);
 
@@ -322,6 +413,12 @@ async fn run(
         .css_classes(["spiral-file-chooser"])
         .build();
     window.insert_action_group("view", Some(view.action_group()));
+    let chooser_actions = gio::SimpleActionGroup::new();
+    chooser_actions.add_action(&sort_action);
+    window.insert_action_group("chooser", Some(&chooser_actions));
+    // Typing in the view starts a search, as it does in the file manager; the search bar
+    // leaves the keys alone while they are going into the name entry.
+    search_bar.set_key_capture_widget(Some(&window));
     let bp = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
         adw::BreakpointConditionLengthType::MaxWidth,
         682.0,
@@ -544,6 +641,22 @@ async fn run(
         Some(gtk::NamedAction::new("window.close")),
     ));
     window.add_controller(esc);
+    let find = gtk::ShortcutController::new();
+    find.set_scope(gtk::ShortcutScope::Managed);
+    find.add_shortcut(gtk::Shortcut::new(
+        gtk::ShortcutTrigger::parse_string("<Control>f"),
+        Some(gtk::CallbackAction::new(glib::clone!(
+            #[weak]
+            search_button,
+            #[upgrade_or]
+            glib::Propagation::Proceed,
+            move |_, _| {
+                search_button.set_active(true);
+                glib::Propagation::Stop
+            }
+        ))),
+    ));
+    window.add_controller(find);
 
     window.present();
     if let Some(WindowIdentifierType::Wayland(handle)) = parent
@@ -561,9 +674,7 @@ async fn run(
         view.grab_view_focus();
     } else {
         name_entry.grab_focus();
-        let t = name_entry.text();
-        let stem = t.rfind('.').filter(|&i| i > 0).unwrap_or(t.len());
-        name_entry.select_region(0, stem as i32);
+        name_entry.select_region(0, crate::naming::stem_end(&name_entry.text(), false));
     }
 
     // Wait for the user, or for the portal to close the request.
@@ -581,6 +692,17 @@ async fn run(
         .unwrap_or(Err(PortalError::Cancelled(
             "chooser closed without a selection".into(),
         )))
+}
+
+/// The order the dialog was left in, as the "key-direction" the sort action takes.
+fn sort_state(settings: &gio::Settings) -> String {
+    let key = settings.string("chooser-sort-key");
+    let dir = if settings.boolean("chooser-sort-reversed") {
+        "desc"
+    } else {
+        "asc"
+    };
+    format!("{key}-{dir}")
 }
 
 /// Folders always pass; files must match a glob or MIME type of the filter.

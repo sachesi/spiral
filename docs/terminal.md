@@ -1,7 +1,7 @@
 # Open in Terminal
 
-Right-click the background for the current folder, or a single folder for that one.
-Local folders only.
+Right-click the background for the current folder, or a single folder and pick it under
+"Open In" for that one. Local folders only.
 
 Terminals are found in `PATH`, like the archive tools. Preferences lists the installed
 ones under "Terminal" and says which one "Automatic" would use. The setting stores the

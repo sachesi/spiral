@@ -257,6 +257,17 @@ mod imp {
                         }
                     ));
                     button.add_controller(target);
+                    // A drag held on a crumb goes there, the same as one held on a folder.
+                    crate::browser_view::open_on_hover(
+                        &button,
+                        glib::clone!(
+                            #[weak]
+                            obj,
+                            #[strong(rename_to = crumb)]
+                            f,
+                            move || obj.emit_by_name::<()>("navigate", &[&crumb])
+                        ),
+                    );
                 }
                 if i == last {
                     button.add_css_class("current-dir");

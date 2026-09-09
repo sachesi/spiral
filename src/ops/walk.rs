@@ -112,11 +112,34 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 delete_recursive(job, mgr, &f).await?;
             }
         }
-        JobKind::Rename { file, new_name } => {
-            let old = name(&file);
-            match file.set_display_name_future(&new_name, PRIO).await {
-                Ok(new_file) => job.imp().outcome.borrow_mut().renamed = Some((new_file, old)),
-                Err(e) => return Err(Fail::Failed(e.message().to_string())),
+        JobKind::Rename { renames } => {
+            let single = renames.len() == 1;
+            job.set_files_total(renames.len() as u64);
+            for (file, new_name) in renames {
+                let old = name(&file);
+                loop {
+                    match file.set_display_name_future(&new_name, PRIO).await {
+                        Ok(new_file) => {
+                            job.imp().outcome.borrow_mut().renamed.push((new_file, old));
+                            break;
+                        }
+                        // One name was typed for one file, so its answer is the whole
+                        // job's; a batch asks, so the rest of it can go on.
+                        Err(e) if single => return Err(Fail::Failed(e.message().to_string())),
+                        Err(e) => {
+                            // Translators: fills %v in “Error While %v “%s””.
+                            match ask_error(&mgr.parent_window(), &gettext("Renaming"), &file, &e)
+                                .await
+                            {
+                                ErrorChoice::Skip => break,
+                                ErrorChoice::Retry => continue,
+                                ErrorChoice::Cancel => return Err(Fail::Cancelled),
+                            }
+                        }
+                    }
+                }
+                job.set_files_done(job.files_done() + 1);
+                job.report(true);
             }
         }
         JobKind::CreateFolder { parent, name } => {
@@ -126,13 +149,29 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 .map_err(|e| Fail::Failed(e.message().to_string()))?;
             job.imp().outcome.borrow_mut().created.push(dir);
         }
-        JobKind::CreateFile { parent, name } => {
+        JobKind::CreateFile {
+            parent,
+            name,
+            template,
+        } => {
             let file = parent.child(&name);
-            let stream = file
-                .create_future(gio::FileCreateFlags::NONE, PRIO)
-                .await
-                .map_err(|e| Fail::Failed(e.message().to_string()))?;
-            let _ = stream.close_future(PRIO).await;
+            match template {
+                Some(template) => {
+                    // Templates are documents to start from, so what the copy leaves is a
+                    // file of its own: none of the source's times or permissions follow it.
+                    let (copy, progress) =
+                        template.copy_future(&file, gio::FileCopyFlags::NONE, PRIO);
+                    let (result, ()) = futures_util::join!(copy, progress.for_each(|_| async {}));
+                    result.map_err(|e| Fail::Failed(e.message().to_string()))?;
+                }
+                None => {
+                    let stream = file
+                        .create_future(gio::FileCreateFlags::NONE, PRIO)
+                        .await
+                        .map_err(|e| Fail::Failed(e.message().to_string()))?;
+                    let _ = stream.close_future(PRIO).await;
+                }
+            }
             job.imp().outcome.borrow_mut().created.push(file);
         }
         JobKind::SaveImage { parent, image } => {

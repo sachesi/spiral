@@ -397,6 +397,34 @@ fn collate(info: &gio::FileInfo) -> String {
     }
 }
 
+/// Whether `name` matches a shell pattern: `*` stands for any run of characters, `?` for
+/// exactly one, and everything else for itself. The whole name has to match.
+pub fn matches_pattern(name: &str, pattern: &str) -> bool {
+    let name: Vec<char> = name.chars().collect();
+    let pattern: Vec<char> = pattern.chars().collect();
+    // A star is remembered rather than recursed on: when what follows it stops matching,
+    // the star takes one more character and the comparison goes on from there.
+    let (mut i, mut j) = (0, 0);
+    let (mut star, mut taken) = (None, 0);
+    while i < name.len() {
+        if j < pattern.len() && (pattern[j] == '?' || pattern[j] == name[i]) {
+            i += 1;
+            j += 1;
+        } else if j < pattern.len() && pattern[j] == '*' {
+            star = Some(j);
+            j += 1;
+            taken = i;
+        } else if let Some(s) = star {
+            taken += 1;
+            i = taken;
+            j = s + 1;
+        } else {
+            return false;
+        }
+    }
+    pattern[j..].iter().all(|&c| c == '*')
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -429,6 +457,25 @@ mod tests {
                 // Again, now that both infos carry the key.
                 assert_eq!(name_cmp(&ia, &ib), want, "{a} vs {b}, cached");
             }
+        }
+    }
+
+    #[test]
+    fn patterns() {
+        for (name, pattern, want) in [
+            ("photo.png", "*.png", true),
+            ("photo.png", "*.jpg", false),
+            ("file01.txt", "file??.txt", true),
+            ("file1.txt", "file??.txt", false),
+            ("pict.001", "pict*.???", true),
+            ("anything", "*", true),
+            ("", "*", true),
+            ("plain", "plain", true),
+            ("plain", "plai", false),
+            ("a.tar.gz", "*.gz", true),
+            ("\u{e4}pfel.txt", "?pfel.txt", true),
+        ] {
+            assert_eq!(matches_pattern(name, pattern), want, "{name} vs {pattern}");
         }
     }
 

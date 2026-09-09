@@ -254,9 +254,8 @@ fn undo_for(job: &Job) -> Option<JobKind> {
         JobKind::Trash { .. } => (!out.trashed.is_empty()).then(|| JobKind::Trash {
             files: out.trashed.clone(),
         }),
-        JobKind::Rename { .. } => out.renamed.as_ref().map(|(file, old)| JobKind::Rename {
-            file: file.clone(),
-            new_name: old.clone(),
+        JobKind::Rename { .. } => (!out.renamed.is_empty()).then(|| JobKind::Rename {
+            renames: out.renamed.clone(),
         }),
         JobKind::Restore { .. } => {
             let files: Vec<_> = out.moved.iter().map(|(_, orig)| orig.clone()).collect();
@@ -279,10 +278,16 @@ fn redo_for(undo_kind: &JobKind) -> Option<JobKind> {
                 .collect(),
             is_move: true,
         }),
-        JobKind::Rename { file, new_name } => file.parent().map(|p| JobKind::Rename {
-            file: p.child(new_name),
-            new_name: super::job::name(file),
-        }),
+        JobKind::Rename { renames } => {
+            let again: Vec<(gio::File, String)> = renames
+                .iter()
+                .filter_map(|(file, new_name)| {
+                    let parent = file.parent()?;
+                    Some((parent.child(new_name), super::job::name(file)))
+                })
+                .collect();
+            (!again.is_empty()).then_some(JobKind::Rename { renames: again })
+        }
         JobKind::Restore { pairs } => Some(JobKind::Trash {
             files: pairs.iter().map(|(_, o)| o.clone()).collect(),
         }),
