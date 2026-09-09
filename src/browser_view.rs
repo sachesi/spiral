@@ -1530,7 +1530,8 @@ impl BrowserView {
         let empty = !imp.model.loading() && imp.model.n_items() == 0;
         let name = if imp.model.error_message().is_some() {
             if let Some(msg) = imp.model.error_message() {
-                imp.error_page.set_description(Some(&msg));
+                imp.error_page
+                    .set_description(Some(&self.why_not_opened(&msg)));
             }
             "error"
         } else if imp.view_mode.get() == ViewMode::Columns
@@ -1568,6 +1569,20 @@ impl BrowserView {
             imp.miller_list
                 .set_model((name == "columns").then_some(&sel));
         }
+    }
+
+    /// What to say under "Could Not Open Folder". The listing's own message as a rule, but
+    /// a location whose scheme has no backend answers that it is not supported, which
+    /// tells the reader nothing about what is missing.
+    fn why_not_opened(&self, message: &str) -> String {
+        let Some(scheme) = self.location().and_then(|f| f.uri_scheme()) else {
+            return message.to_string();
+        };
+        if crate::network::supports(&scheme) {
+            return message.to_string();
+        }
+        gettext("Nothing installed here can open “%s” addresses. They are read by a gvfs backend of their own.")
+            .replace("%s", &format!("{scheme}://"))
     }
 
     /// A rubber band changes the selection with every motion event, and reading it out
