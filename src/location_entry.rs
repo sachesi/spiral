@@ -5,6 +5,8 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
+use gettextrs::gettext;
+
 use crate::gtk::prelude::*;
 use crate::{gio, glib, gtk};
 
@@ -148,7 +150,7 @@ impl LocationBar {
         attach(&entry);
         let cancel = gtk::Button::builder()
             .icon_name("window-close-symbolic")
-            .tooltip_text(gettextrs::gettext("Cancel"))
+            .tooltip_text(gettext("Cancel"))
             .build();
         let entry_box = gtk::Box::builder().css_classes(["linked"]).build();
         entry_box.append(&entry);
