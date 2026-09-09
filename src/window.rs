@@ -211,6 +211,17 @@ mod imp {
                     v.action_group().activate_action("bookmark", None);
                 }
             });
+            klass.install_action("win.connect-server", None, |win, _, _| {
+                glib::spawn_future_local(glib::clone!(
+                    #[weak]
+                    win,
+                    async move {
+                        if let Some(file) = crate::dialogs::connect_server_dialog(&win).await {
+                            win.open_location(&file);
+                        }
+                    }
+                ));
+            });
             klass.install_action("win.visible-columns", None, |win, _, _| {
                 crate::dialogs::columns_dialog().present(Some(win));
             });

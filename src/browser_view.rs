@@ -122,6 +122,9 @@ mod imp {
 
         pub history: RefCell<Vec<gio::File>>,
         pub history_pos: Cell<usize>,
+        /// The address a mount was already asked for, so a server that turns it down is
+        /// not asked again each time the folder is listed.
+        pub mount_tried: RefCell<Option<String>>,
         pub settings: gio::Settings,
         /// The handler on the display's clipboard, which outlives the view.
         pub clipboard_handler: RefCell<Option<glib::SignalHandlerId>>,
@@ -213,6 +216,7 @@ mod imp {
                 nav_gen: Default::default(),
                 location: Default::default(),
                 history: Default::default(),
+                mount_tried: Default::default(),
                 history_pos: Default::default(),
                 settings: gio::Settings::new(crate::config::APP_ID),
                 clipboard_handler: Default::default(),
@@ -476,6 +480,11 @@ mod imp {
             );
             self.model.connect_loading_notify(update.clone());
             self.model.connect_error_message_notify(update.clone());
+            self.model.connect_error_message_notify(glib::clone!(
+                #[weak]
+                obj,
+                move |_| obj.mount_location()
+            ));
             self.model.selection().connect_items_changed(glib::clone!(
                 #[weak]
                 obj,
@@ -1247,6 +1256,7 @@ impl BrowserView {
 
     fn set_location_internal(&self, file: &gio::File) {
         let imp = self.imp();
+        imp.mount_tried.replace(None);
         imp.model.set_search_text("");
         imp.model.set_location(Some(file));
         imp.location.replace(Some(file.clone()));
@@ -1325,6 +1335,9 @@ impl BrowserView {
     /// folder is in again, so a reload shows what was on screen before it.
     pub fn reload(&self) {
         let imp = self.imp();
+        // Asked for again by hand: a share whose password was turned down is worth another
+        // try, and so is one that has since come back.
+        imp.mount_tried.replace(None);
         let offset = self.view_adjustment().map_or(0.0, |adj| adj.value());
         let selected = imp.model.selected_files();
         let focused = self.view_has_focus();
@@ -1430,6 +1443,38 @@ impl BrowserView {
                 if let Err(e) = gio::AppInfo::launch_default_for_uri_future(&uri, Some(&ctx)).await
                 {
                     view.show_error(&gettext("Could Not Open"), e.message());
+                }
+            }
+        ));
+    }
+
+    /// A folder on a share that is not mounted yet: mount it, then list it again. This is
+    /// how a bookmark or an address typed into the bar reaches a server, without the
+    /// connect dialog having to be opened first.
+    fn mount_location(&self) {
+        let imp = self.imp();
+        let Some(error) = imp.model.error() else {
+            return;
+        };
+        if !error.matches(gio::IOErrorEnum::NotMounted) {
+            return;
+        }
+        let Some(file) = self.location() else {
+            return;
+        };
+        let uri = file.uri().to_string();
+        if imp.mount_tried.borrow().as_deref() == Some(uri.as_str()) {
+            return;
+        }
+        imp.mount_tried.replace(Some(uri));
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                if crate::network::mount(&file, &view).await.is_ok() {
+                    // Mounted: the address is worth trying again if it is ever lost.
+                    view.imp().mount_tried.replace(None);
+                    view.reload();
                 }
             }
         ));

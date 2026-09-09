@@ -660,6 +660,12 @@ impl FolderModel {
         self.imp().search_recursive.set(recursive);
     }
 
+    /// Why the listing stopped, where it did. The message alone is on the property; this
+    /// is for the one caller that has to tell one failure from another.
+    pub fn error(&self) -> Option<glib::Error> {
+        self.imp().dir_list.error()
+    }
+
     pub fn reload(&self) {
         let imp = self.imp();
         if imp.searching.get() {

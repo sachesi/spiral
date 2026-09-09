@@ -383,7 +383,8 @@ fn row_volume(row: &gtk::ListBoxRow) -> Option<gio::Volume> {
 const SECTION_PLACES: u8 = 0;
 const SECTION_BOOKMARKS: u8 = 1;
 const SECTION_DEVICES: u8 = 2;
-const SECTION_TAGS: u8 = 3;
+const SECTION_NETWORK: u8 = 3;
+const SECTION_TAGS: u8 = 4;
 
 fn make_row(icon: &gio::Icon, title: &str, section: u8) -> (gtk::ListBoxRow, gtk::Box) {
     let image = gtk::Image::builder().gicon(icon).build();
@@ -485,6 +486,10 @@ fn add_drop_target(row: &gtk::ListBoxRow, file: &gio::File) {
     }
     if file.uri().starts_with("trash:") {
         add_trash_drop_target(row);
+        return;
+    }
+    // The network is a list of machines, not a place anything can be put.
+    if file.uri().starts_with("network:") {
         return;
     }
     let target = gtk::DropTarget::new(
@@ -671,15 +676,34 @@ impl PlacesSidebar {
             seen.push(file);
         }
 
-        // Devices: every volume (mounted or not), then mounts without a volume.
+        // Devices: every volume (mounted or not), then mounts without a volume. What is
+        // mounted from another machine is not a device, and waits for the section below.
         for volume in imp.monitor.volumes() {
             list.append(&self.volume_row(&volume));
         }
+        let mut servers = Vec::new();
         for mount in imp.monitor.mounts() {
             if mount.is_shadowed() || mount.volume().is_some() {
                 continue;
             }
-            list.append(&self.mount_row(&mount));
+            if crate::network::is_network(&mount.root()) {
+                servers.push(mount);
+            } else {
+                list.append(&self.mount_row(&mount, SECTION_DEVICES));
+            }
+        }
+
+        // Network: where the machines around are listed, and the servers connected to.
+        if crate::network::can_browse() {
+            list.append(&place_row(
+                "network-workgroup-symbolic",
+                &gettext("Network"),
+                &gio::File::for_uri(crate::network::NETWORK_URI),
+                SECTION_NETWORK,
+            ));
+        }
+        for mount in servers {
+            list.append(&self.mount_row(&mount, SECTION_NETWORK));
         }
 
         if crate::tags::enabled() {
@@ -709,8 +733,8 @@ impl PlacesSidebar {
         row
     }
 
-    fn mount_row(&self, mount: &gio::Mount) -> gtk::ListBoxRow {
-        let (row, content) = make_row(&mount.symbolic_icon(), &mount.name(), SECTION_DEVICES);
+    fn mount_row(&self, mount: &gio::Mount, section: u8) -> gtk::ListBoxRow {
+        let (row, content) = make_row(&mount.symbolic_icon(), &mount.name(), section);
         unsafe { row.set_data("file", mount.default_location()) };
         add_drop_target(&row, &mount.default_location());
         if mount.can_unmount() || mount.can_eject() {
@@ -726,7 +750,11 @@ impl PlacesSidebar {
             .valign(gtk::Align::Center)
             .halign(gtk::Align::Center)
             .margin_start(4)
-            .tooltip_text(gettext("Eject"))
+            .tooltip_text(if target.is_network() {
+                gettext("Disconnect")
+            } else {
+                gettext("Eject")
+            })
             .css_classes(["flat"])
             .build();
         button.connect_clicked(glib::clone!(
@@ -969,11 +997,15 @@ impl PlacesSidebar {
             }
         ));
         group.add_action(&color);
-        add("eject", |s, row| {
+        // The same thing under the two names a row can call it: a disk is ejected, a
+        // server is disconnected from.
+        let leave: fn(&PlacesSidebar, &gtk::ListBoxRow) = |s, row| {
             if let Some(target) = row_eject(row) {
                 s.eject(target);
             }
-        });
+        };
+        add("eject", leave);
+        add("disconnect", leave);
         add("empty-trash", |s, _| {
             glib::spawn_future_local(glib::clone!(
                 #[weak(rename_to = sidebar)]
@@ -1035,7 +1067,12 @@ impl PlacesSidebar {
         enable("rename", bookmark || tag.is_some());
         enable("remove", bookmark || tag.is_some());
         enable("new-tag", crate::tags::all().len() < crate::tags::MAX);
-        enable("eject", row_eject(row).is_some());
+        let leaving = row_eject(row);
+        enable("eject", leaving.as_ref().is_some_and(|t| !t.is_network()));
+        enable(
+            "disconnect",
+            leaving.as_ref().is_some_and(EjectTarget::is_network),
+        );
         enable(
             "empty-trash",
             !imp.trash_empty.get() && row_file(row).is_some_and(|f| f.uri().starts_with("trash:")),
@@ -1366,4 +1403,14 @@ pub(crate) fn mount_of(file: &gio::File) -> Option<gio::Mount> {
 enum EjectTarget {
     Mount(gio::Mount),
     Volume(gio::Volume),
+}
+
+impl EjectTarget {
+    /// Whether it stands for a server rather than for something plugged in.
+    fn is_network(&self) -> bool {
+        match self {
+            EjectTarget::Mount(m) => crate::network::is_network(&m.root()),
+            EjectTarget::Volume(_) => false,
+        }
+    }
 }

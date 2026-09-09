@@ -59,6 +59,7 @@ pub mod folder_model;
 pub mod location_entry;
 pub mod miller;
 pub mod naming;
+pub mod network;
 pub mod ops;
 pub mod path_bar;
 pub mod places_sidebar;

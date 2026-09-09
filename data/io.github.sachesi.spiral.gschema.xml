@@ -69,6 +69,11 @@
       <default>false</default>
       <summary>Show “Move to…” in context menus</summary>
     </key>
+    <key name="network-servers" type="as">
+      <default>[]</default>
+      <summary>Servers connected to before, the most recent first</summary>
+      <description>Offered again by the Connect to Server dialog. Ten at most; the oldest goes when an eleventh is added.</description>
+    </key>
     <key name="use-tree-view" type="b">
       <default>false</default>
       <summary>Expandable folders in list view</summary>

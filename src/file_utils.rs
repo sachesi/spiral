@@ -312,6 +312,9 @@ pub fn location_name(file: &gio::File) -> String {
     if file.uri() == "trash:///" {
         return gettext("Trash");
     }
+    if file.uri() == crate::network::NETWORK_URI {
+        return gettext("Network");
+    }
     if crate::starred::is_starred_location(file) {
         return gettext("Favorites");
     }
@@ -327,7 +330,11 @@ pub fn location_name(file: &gio::File) -> String {
         Some(b) if !b.as_os_str().is_empty() && b.as_os_str() != "/" => {
             b.to_string_lossy().into_owned()
         }
-        _ => file.uri().to_string(),
+        // The root of a share has no name of its own; the mount it is the root of has.
+        _ => match crate::places_sidebar::mount_of(file) {
+            Some(mount) => mount.name().to_string(),
+            None => file.uri().to_string(),
+        },
     }
 }
 
