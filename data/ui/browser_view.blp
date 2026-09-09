@@ -27,6 +27,11 @@ template $SpiralBrowserView : Box {
           styles ["spiral-grid-view"]
           child: GridView grid_view {
             enable-rubberband: true;
+            // Tab leaves the view instead of walking the files, so a row that loses the
+            // keyboard -- deleted, renamed, written to -- hands it back to the row that
+            // took its place rather than to the first one, which would scroll the view
+            // to the top.
+            tab-behavior: item;
             // The most a wide window at the smallest zoom can hold; the view lowers it
             // to what fits, since the grid keeps thirty rows of cells bound per column.
             max-columns: 20;
@@ -42,6 +47,7 @@ template $SpiralBrowserView : Box {
           child: ColumnView column_view {
             enable-rubberband: true;
             reorderable: false;
+            tab-behavior: item;
           };
         };
       }
@@ -59,6 +65,7 @@ template $SpiralBrowserView : Box {
               styles ["spiral-miller-column", "spiral-miller-current"]
               child: ListView miller_list {
                 enable-rubberband: true;
+                tab-behavior: item;
               };
             }
           };

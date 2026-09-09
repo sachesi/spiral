@@ -383,6 +383,7 @@ impl BrowserView {
             .factory(&self.miller_factory(false))
             // One click is how a column view is walked, whatever opening a file takes.
             .single_click_activate(true)
+            .tab_behavior(gtk::ListTabBehavior::Item)
             .build();
         list.connect_activate(glib::clone!(
             #[weak(rename_to = view)]
