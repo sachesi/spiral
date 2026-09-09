@@ -14,14 +14,14 @@
     src/folder_model.rs    list model of a folder: monitoring, sorting, filtering
     src/places_sidebar.rs  sidebar, mounts, eject, bookmark drag and drop
     src/path_bar.rs        breadcrumbs
-    src/location_entry.rs  inline completion
+    src/location_entry.rs  inline completion, and the path bar the choosers type in
     src/ops/               jobs: job.rs, manager.rs (queue and undo), walk.rs (copy, move,
                            trash, delete), conflict.rs (dialogs), archive.rs
     src/thumbnails.rs      thumbnail lookup and generation, the bwrap sandbox, seccomp
     src/terminal.rs        terminal discovery
     src/portal/            the chooser backend: backend.rs (ashpd), chooser_window.rs
     src/dbus/              FileManager1
-    src/dialogs/           preferences, properties, open with, compress
+    src/dialogs/           preferences, properties, open with, compress, folder chooser
     src/prefs.rs           settings that affect formatting and loading
     src/naming.rs          name validation, rename popover, new folder dialog
     src/file_utils.rs      names, dates, sizes, icons

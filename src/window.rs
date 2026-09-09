@@ -502,14 +502,7 @@ mod imp {
             if text.is_empty() {
                 return;
             }
-            let file = if text.contains("://") {
-                gio::File::for_uri(text)
-            } else if let Some(rest) = text.strip_prefix('~') {
-                gio::File::for_path(glib::home_dir())
-                    .resolve_relative_path(rest.trim_start_matches('/'))
-            } else {
-                gio::File::for_commandline_arg(text)
-            };
+            let file = crate::location_entry::resolve(text);
             self.toolbar_switcher.set_visible_child_name("pathbar");
             if let Some(v) = self.obj().current_view() {
                 v.go_to(&file);

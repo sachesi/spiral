@@ -20,7 +20,7 @@ The sidebar lists Home, Desktop, Root, Favorites and Trash, then the XDG user fo
 bookmarks from `~/.config/gtk-3.0/bookmarks` (the same file the GTK file chooser uses), then
 every volume and mount the system knows about. Bookmarks can be renamed, removed and
 reordered by dragging; drop a folder on the empty area below the list to bookmark it, and
-files on Trash to trash them. Root is
+files on Trash to trash them. The Trash entry's own menu empties it. Root is
 the top of the filesystem; it and Favorites can each be turned off in Preferences, under
 Sidebar. Unmounted volumes mount when activated. Mounted ones get an eject button, and if a
 removable drive has files in its trash you are asked whether to empty it first. A mounted
@@ -170,9 +170,13 @@ there are no templates. The name starts as the template's own, with everything b
 extension selected, so typing replaces the name and Return alone takes it as it is; a
 document started from a template is a copy of it.
 
-"Copy to…" and "Move to…" ask for a folder instead of using the clipboard. "Paste as
-Link" and, when turned on in Preferences, "Create Link" make symbolic links; a link
-beside its target is called "Link to name".
+"Copy to…" and "Move to…" ask for a folder instead of using the clipboard, in a picker
+attached to the window: the sidebar, the folders of the location and nothing else, with
+New Folder in the header for a destination that does not exist yet. Ctrl+L or a click on
+the current folder types a location, Ctrl+R reads it again, and the button takes the
+folder selected, or the one on screen when nothing is. "Extract To…" asks the same way.
+"Paste as Link" and, when turned on in Preferences, "Create Link" make symbolic links; a
+link beside its target is called "Link to name".
 
 F2 renames. With one file selected it is a popover over the file, with the name selected
 up to its extension; with several, it is a dialog that renames them all by one rule —

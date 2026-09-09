@@ -1756,7 +1756,12 @@ impl BrowserView {
             #[upgrade_or]
             false,
             move |t, value, x, y| {
-                let Some(folder) = view.cell_folder(&cell) else {
+                // What the cell shows can change under a resting drag: a spring-loaded
+                // folder opens and the cell is bound to whatever the new folder has in
+                // that place. The pointer has not moved, so this target is still the one
+                // the drop reaches, and refusing it would lose the files; they go into the
+                // folder on screen instead, which is where the drop landed.
+                let Some(folder) = view.cell_folder(&cell).or_else(|| view.location()) else {
                     return false;
                 };
                 view.drop_files(t, value, &folder, x, y)

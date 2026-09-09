@@ -13,7 +13,9 @@ bottom bar with the filter dropdown, the name entry in save mode, a button for t
 application's extra options, and the accept button. Trash, delete, cut and paste, rename
 and drag and drop are off. New Folder is there in save mode and when a folder is being
 asked for. Opening a file accepts; pressing Open with a folder selected enters it; Esc
-cancels.
+cancels. The keys of the file manager that a dialog has a use for are there: Ctrl+L, or a
+click on the current folder in the path bar, types a location; Ctrl+R and F5 read the
+folder again; Ctrl+S selects the items matching a pattern.
 
 The dialog remembers how it was left, in keys of its own: `chooser-view-mode` (list by
 default) for the view and `chooser-sort-key` with `chooser-sort-reversed` for the order,

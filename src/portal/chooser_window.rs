@@ -110,8 +110,7 @@ async fn run(
     let view = BrowserView::new_chooser(&start);
     let model = view.model();
     let sidebar: PlacesSidebar = glib::Object::new();
-    let path_bar: crate::path_bar::PathBar = glib::Object::new();
-    path_bar.set_location(Some(&start));
+    let location_bar = crate::location_entry::LocationBar::new(&view);
 
     let back = gtk::Button::builder()
         .icon_name("go-previous-symbolic")
@@ -271,7 +270,9 @@ async fn run(
         )
         .build();
 
-    let header = adw::HeaderBar::builder().title_widget(&path_bar).build();
+    let header = adw::HeaderBar::builder()
+        .title_widget(location_bar.widget())
+        .build();
     header.pack_start(&nav);
     header.pack_end(&view_button);
     header.pack_end(&new_folder);
@@ -433,20 +434,10 @@ async fn run(
         view,
         move |_, f, _| view.go_to(f)
     ));
-    path_bar.connect_navigate(glib::clone!(
-        #[weak]
-        view,
-        move |_, f| view.go_to(f)
-    ));
     view.connect_location_notify(glib::clone!(
         #[weak]
-        path_bar,
-        #[weak]
         sidebar,
-        move |v| {
-            path_bar.set_location(v.location().as_ref());
-            sidebar.set_selected_location(v.location().as_ref());
-        }
+        move |v| sidebar.set_selected_location(v.location().as_ref())
     ));
     sidebar.set_selected_location(Some(&start));
     if let Mode::Save = mode {
@@ -634,29 +625,54 @@ async fn run(
             glib::Propagation::Proceed
         }
     ));
-    let esc = gtk::ShortcutController::new();
-    esc.set_scope(gtk::ShortcutScope::Managed);
-    esc.add_shortcut(gtk::Shortcut::new(
+    // The keys the file manager's windows answer to, for the ones the dialog has. The
+    // view carries its own -- Ctrl+A, Delete and the rest -- but only while the keyboard
+    // is in it, so the shortcuts a dialog needs from anywhere sit on the window.
+    let keys = gtk::ShortcutController::new();
+    keys.set_scope(gtk::ShortcutScope::Managed);
+    keys.add_shortcut(gtk::Shortcut::new(
         gtk::ShortcutTrigger::parse_string("Escape"),
         Some(gtk::NamedAction::new("window.close")),
     ));
-    window.add_controller(esc);
-    let find = gtk::ShortcutController::new();
-    find.set_scope(gtk::ShortcutScope::Managed);
-    find.add_shortcut(gtk::Shortcut::new(
-        gtk::ShortcutTrigger::parse_string("<Control>f"),
-        Some(gtk::CallbackAction::new(glib::clone!(
+    let add_key = |trigger: &str, f: Box<dyn Fn()>| {
+        keys.add_shortcut(gtk::Shortcut::new(
+            gtk::ShortcutTrigger::parse_string(trigger),
+            Some(gtk::CallbackAction::new(move |_, _| {
+                f();
+                glib::Propagation::Stop
+            })),
+        ));
+    };
+    add_key(
+        "<Control>f",
+        Box::new(glib::clone!(
             #[weak]
             search_button,
-            #[upgrade_or]
-            glib::Propagation::Proceed,
-            move |_, _| {
-                search_button.set_active(true);
-                glib::Propagation::Stop
+            move || search_button.set_active(true)
+        )),
+    );
+    for trigger in ["<Control>r", "F5"] {
+        add_key(
+            trigger,
+            Box::new(glib::clone!(
+                #[weak]
+                view,
+                move || view.reload()
+            )),
+        );
+    }
+    add_key(
+        "<Control>s",
+        Box::new(glib::clone!(
+            #[weak]
+            view,
+            move || {
+                gtk::prelude::WidgetExt::activate_action(&view, "view.select-pattern", None).ok();
             }
-        ))),
-    ));
-    window.add_controller(find);
+        )),
+    );
+    add_key("<Control>l", Box::new(move || location_bar.edit()));
+    window.add_controller(keys);
 
     window.present();
     if let Some(WindowIdentifierType::Wayland(handle)) = parent
