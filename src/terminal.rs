@@ -114,11 +114,23 @@ const TERMINALS: &[Terminal] = &[
 ];
 
 /// Terminals present in `PATH`, in preference order.
+/// Which of the terminals are on the system, looked up once: `PATH` does not change under
+/// a running process, and this is asked again for every change of the selection.
 pub fn installed() -> Vec<&'static Terminal> {
-    TERMINALS
-        .iter()
-        .filter(|t| glib::find_program_in_path(t.exec).is_some())
-        .collect()
+    thread_local! {
+        static FOUND: std::cell::OnceCell<Vec<&'static Terminal>> =
+            const { std::cell::OnceCell::new() };
+    }
+    FOUND.with(|found| {
+        found
+            .get_or_init(|| {
+                TERMINALS
+                    .iter()
+                    .filter(|t| glib::find_program_in_path(t.exec).is_some())
+                    .collect()
+            })
+            .clone()
+    })
 }
 
 /// The preferred terminal if still installed, else the first one found.

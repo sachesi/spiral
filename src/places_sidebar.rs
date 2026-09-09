@@ -164,7 +164,12 @@ mod imp {
                 m.connect_changed(glib::clone!(
                     #[strong]
                     rebuild,
-                    move |_, _, _, _| rebuild()
+                    move |_, _, _, _| {
+                        // Written by another program, or by us: either way what is held in
+                        // memory is out of date.
+                        crate::bookmarks::forget();
+                        rebuild();
+                    }
                 ));
                 self.bookmarks_monitor.replace(Some(m));
             }
@@ -216,9 +221,26 @@ mod imp {
                     if let Ok(drag) = value.get::<BookmarkDrag>() {
                         crate::bookmarks::move_to(&gio::File::for_uri(&drag.0), None);
                     } else if let Ok(files) = value.get::<gdk::FileList>() {
-                        for f in files.files().iter().filter(|f| is_dir(f)) {
-                            crate::bookmarks::add(f);
-                        }
+                        // Whether each one is a folder is a question for the filesystem,
+                        // which may be a share that has stopped answering: ask it off the
+                        // main loop and bookmark what comes back.
+                        glib::spawn_future_local(glib::clone!(
+                            #[weak]
+                            obj,
+                            async move {
+                                let mut added = false;
+                                for f in files.files() {
+                                    if is_dir_future(&f).await {
+                                        crate::bookmarks::add(&f);
+                                        added = true;
+                                    }
+                                }
+                                if added {
+                                    obj.rebuild();
+                                }
+                            }
+                        ));
+                        return true;
                     } else {
                         return false;
                     }
@@ -267,9 +289,14 @@ fn row_eject(row: &gtk::ListBoxRow) -> Option<EjectTarget> {
     unsafe { row.data::<EjectTarget>("eject").map(|p| p.as_ref().clone()) }
 }
 
-fn is_dir(file: &gio::File) -> bool {
-    file.query_file_type(gio::FileQueryInfoFlags::NONE, gio::Cancellable::NONE)
-        == gio::FileType::Directory
+async fn is_dir_future(file: &gio::File) -> bool {
+    file.query_info_future(
+        "standard::type",
+        gio::FileQueryInfoFlags::NONE,
+        glib::Priority::DEFAULT,
+    )
+    .await
+    .is_ok_and(|info| info.file_type() == gio::FileType::Directory)
 }
 
 /// Drag payload for reordering bookmarks.

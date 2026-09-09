@@ -83,16 +83,30 @@ pub fn tree_view() -> bool {
 /// only where gvfs runs its metadata backend. Without it nothing can be stored per folder,
 /// so the global default takes over instead of the choice quietly going nowhere.
 pub fn per_folder_available() -> bool {
-    thread_local! {
-        static AVAILABLE: std::cell::OnceCell<bool> = const { std::cell::OnceCell::new() };
-    }
-    AVAILABLE.with(|a| {
-        *a.get_or_init(|| {
-            gio::File::for_path(glib::home_dir())
-                .query_writable_namespaces(gio::Cancellable::NONE)
-                .is_ok_and(|list| list.lookup("metadata").is_some())
-        })
-    })
+    METADATA.with(|a| *a.get_or_init(metadata_writable))
+}
+
+thread_local! {
+    static METADATA: std::cell::OnceCell<bool> = const { std::cell::OnceCell::new() };
+}
+
+/// The question goes to gvfs over the bus, which may have to be started to answer it, so
+/// it is asked off the main loop before anything wants the answer. Every later ask is the
+/// cached one; only an ask that beats this home does the work itself, on the main loop.
+pub fn warm_per_folder_available() {
+    glib::spawn_future_local(async {
+        if let Ok(writable) = gio::spawn_blocking(metadata_writable).await {
+            METADATA.with(|a| {
+                let _ = a.set(writable);
+            });
+        }
+    });
+}
+
+fn metadata_writable() -> bool {
+    gio::File::for_path(glib::home_dir())
+        .query_writable_namespaces(gio::Cancellable::NONE)
+        .is_ok_and(|list| list.lookup("metadata").is_some())
 }
 
 /// Sidebar places that not everyone wants: the top of the filesystem, and the starred
