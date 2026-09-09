@@ -11,5 +11,6 @@
     <file preprocess="xml-stripblanks" alias="icons/symbolic/apps/io.github.sachesi.spiral-symbolic.svg">icons/hicolor/symbolic/apps/io.github.sachesi.spiral-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="icons/scalable/actions/filter-symbolic.svg">icons/hicolor/scalable/actions/filter-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="icons/scalable/actions/view-columns-symbolic.svg">icons/hicolor/scalable/actions/view-columns-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="icons/scalable/actions/tag-symbolic.svg">icons/hicolor/scalable/actions/tag-symbolic.svg</file>
   </gresource>
 </gresources>

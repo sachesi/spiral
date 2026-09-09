@@ -38,6 +38,78 @@ menu row_menu {
   }
 }
 
+menu tag_menu {
+  section {
+    item {
+      label: _("_Open");
+      action: "sidebar.open";
+    }
+    item {
+      label: _("Open in New _Tab");
+      action: "sidebar.open-new-tab";
+    }
+  }
+  section {
+    submenu {
+      label: _("_Colour");
+      item {
+        label: _("Red");
+        action: "sidebar.tag-color";
+        target: "red";
+      }
+      item {
+        label: _("Orange");
+        action: "sidebar.tag-color";
+        target: "orange";
+      }
+      item {
+        label: _("Yellow");
+        action: "sidebar.tag-color";
+        target: "yellow";
+      }
+      item {
+        label: _("Green");
+        action: "sidebar.tag-color";
+        target: "green";
+      }
+      item {
+        label: _("Blue");
+        action: "sidebar.tag-color";
+        target: "blue";
+      }
+      item {
+        label: _("Purple");
+        action: "sidebar.tag-color";
+        target: "purple";
+      }
+      item {
+        label: _("Grey");
+        action: "sidebar.tag-color";
+        target: "gray";
+      }
+      item {
+        label: _("None");
+        action: "sidebar.tag-color";
+        target: "";
+      }
+    }
+    item {
+      label: _("Rena_me…");
+      action: "sidebar.rename";
+    }
+    item {
+      label: _("_Remove…");
+      action: "sidebar.remove";
+    }
+  }
+  section {
+    item {
+      label: _("New _Tag…");
+      action: "sidebar.new-tag";
+    }
+  }
+}
+
 template $SpiralPlacesSidebar : Box {
   orientation: vertical;
 

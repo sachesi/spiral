@@ -8,6 +8,7 @@ mod preferences;
 mod preview;
 mod properties;
 mod select_pattern;
+mod tags;
 
 pub use batch_rename::batch_rename_dialog;
 pub use captions::captions_dialog;
@@ -19,3 +20,4 @@ pub use preferences::preferences_dialog;
 pub use preview::PreviewDialog;
 pub use properties::PropertiesDialog;
 pub use select_pattern::select_pattern_dialog;
+pub use tags::{TagState, new_tag_dialog, tags_dialog};

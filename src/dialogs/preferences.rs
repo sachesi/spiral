@@ -117,6 +117,22 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     sidebar.add(&favorites);
     page.add(&sidebar);
 
+    let tags = adw::PreferencesGroup::builder()
+        .title(gettext("Tags"))
+        .description(gettext(
+            "Tags are written to the files themselves, so they follow a file wherever it goes and other programs can read them.",
+        ))
+        .build();
+    let use_tags = adw::SwitchRow::builder()
+        .title(gettext("Colour Tags"))
+        .subtitle(gettext(
+            "A row of colours in the context menu, a dot on each tagged file and the tags listed in the sidebar",
+        ))
+        .build();
+    settings.bind("use-tags", &use_tags, "active").build();
+    tags.add(&use_tags);
+    page.add(&tags);
+
     let optional = adw::PreferencesGroup::builder()
         .title(gettext("Optional Context Menu Actions"))
         .description(gettext(

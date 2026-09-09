@@ -119,6 +119,12 @@ pub fn show_favorites() -> bool {
     SETTINGS.with(|s| s.boolean("show-favorites"))
 }
 
+/// Colour tags are off until asked for: they add a row of dots to the context menu, a
+/// list to the sidebar and a mark to every tagged file, for those who label their files.
+pub fn use_tags() -> bool {
+    SETTINGS.with(|s| s.boolean("use-tags"))
+}
+
 /// The column view is off unless it is asked for: it is a third way of reading a folder,
 /// not one everybody wants in the view button.
 pub fn column_view() -> bool {

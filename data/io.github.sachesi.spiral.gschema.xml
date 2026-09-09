@@ -65,6 +65,16 @@
       <default>true</default>
       <summary>Show Favorites in the sidebar</summary>
     </key>
+    <key name="use-tags" type="b">
+      <default>false</default>
+      <summary>Offer colour tags</summary>
+      <description>Tags are kept on the files themselves, in the user.xdg.tags extended attribute, and listed in the sidebar.</description>
+    </key>
+    <key name="tags" type="a(ss)">
+      <default>[]</default>
+      <summary>The tags on offer, each a name and a colour</summary>
+      <description>The colour is one of red, orange, yellow, green, blue, purple and gray, or empty for none. An empty list stands for the seven colours.</description>
+    </key>
     <key name="use-column-view" type="b">
       <default>false</default>
       <summary>Offer the column view</summary>
