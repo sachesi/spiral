@@ -451,6 +451,10 @@ impl Player {
         }
         if playing {
             self.play();
+        } else {
+            // A video with autoplay starts its stream the moment it is prepared, and this
+            // prepares it again: a file the viewer had paused would start up by itself.
+            self.pause();
         }
     }
 }
