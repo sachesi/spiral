@@ -18,7 +18,8 @@ remembered, tabs are not.
 
 The sidebar lists Home, Desktop, Root, Favorites and Trash, then the XDG user folders and the
 bookmarks from `~/.config/gtk-3.0/bookmarks` (the same file the GTK file chooser uses), then
-every volume and mount the system knows about, then the tags if they are turned on (see
+every volume and mount the system knows about, then the network (see
+[Network locations](#network-locations)), then the tags if they are turned on (see
 [Tags](#tags)). Bookmarks can be renamed, removed and
 reordered by dragging; drop a folder on the empty area below the list to bookmark it, and
 files on Trash to trash them. The Trash entry's own menu empties it. Root is
@@ -57,6 +58,33 @@ Alt+Left and Alt+Right go through the history. Escape stops a folder or a search
 still coming in and keeps what has arrived; with nothing loading it does nothing. A folder
 stopped that way is a list of what had been read, and stops following what happens in the
 folder until F5 reads it again.
+
+## Network locations
+
+Shares on other machines are reached through gvfs, so what Spiral can open is whatever
+gvfs has a backend for: SMB, SFTP and SSH, FTP and FTPS, NFS, WebDAV and the rest. Without
+gvfs installed there are no network locations at all, and Spiral says so instead of
+offering them.
+
+"Connect to Server…" in the main menu asks for an address: a scheme, `://` and the host,
+as in `smb://server/share`, `sftp://user@host` or `davs://host/dav`. The dialog names the
+schemes this system can actually use, so an address it will not take is one there is no
+backend for. A share over HTTPS is WebDAV, which is `davs://`. Passwords, anonymous logins
+and whether to remember either are asked for by the system's own dialog. The servers
+connected to are offered again the next time the dialog is opened, most recent first, and
+can be taken off that list one by one.
+
+A share that answers opens in a tab and joins the sidebar under Network, where its button
+disconnects it again; the context menu of the row calls it "Disconnect" rather than
+"Eject". "Network" itself, above them, lists the machines gvfs can find. Everything else
+works as it does on a disk: bookmarks, drag and drop, copying, renaming, search. Reading a
+folder over a share is slower than reading one on a disk, which is why thumbnails, item
+counts and searching subfolders are limited to local files unless you say otherwise (see
+[Settings](settings.md)).
+
+Going to a share that is not connected connects it: a bookmark, an address typed into the
+path bar, or a folder on it opened from somewhere else all ask for the password and then
+open. Turning that question down leaves the folder unopened; going there again asks again.
 
 ## Search
 

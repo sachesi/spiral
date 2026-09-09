@@ -23,6 +23,7 @@ Changes apply immediately to open windows.
 | `visible-columns` | list of `size`, `type`, `modified`, `accessed`, `created`, `owner`, `group`, `permissions`, `star` | size, type, modified, star | List view columns (Visible Columns…) |
 | `show-create-link` | bool | false | Create Link in context menus |
 | `show-delete-permanently` | bool | false | Delete Permanently in context menus |
+| `network-servers` | list of URIs | empty | offered again by Connect to Server… |
 | `date-format` | `relative`, `full` | `relative` | Date Format |
 | `terminal` | executable name or empty | empty | Terminal (see [terminal.md](terminal.md)) |
 | `remember-view` | bool | true | Remember View per Folder |

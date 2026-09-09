@@ -18,8 +18,10 @@ sink from gst-plugins-rs: on Fedora `gstreamer1-plugins-base
 gstreamer1-plugin-gtk4`, on Debian `libgstreamer-plugins-base1.0-0 gstreamer1.0-gtk4`, on
 Arch `gst-plugins-base gst-plugin-gtk4`. The plugins for the formats themselves come from
 `gstreamer1-plugins-good` and its siblings; a file whose format has no plugin shows its
-icon instead. Everything else is optional and picked up from `PATH` when present: archive
-tools, a terminal emulator.
+icon instead. Network locations need gvfs and a backend for the protocol wanted: on Fedora
+`gvfs` plus `gvfs-smb` or `gvfs-nfs`, on Debian `gvfs-backends`. Without gvfs Spiral opens
+local files only, and says as much where it would otherwise offer a server. Everything else
+is optional and picked up from `PATH` when present: archive tools, a terminal emulator.
 
 Installing the sink after Spiral has run once may leave a stale GStreamer plugin registry
 behind, and the preview then reports the sink missing until the registry is rebuilt:

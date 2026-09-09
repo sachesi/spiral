@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.13.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 22:30+0300\n"
+"POT-Creation-Date: 2026-09-09 23:05+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -78,80 +78,90 @@ msgid "Show “Move to…” in context menus"
 msgstr ""
 
 #: data/io.github.sachesi.spiral.gschema.xml:74
+msgid "Servers connected to before, the most recent first"
+msgstr ""
+
+#: data/io.github.sachesi.spiral.gschema.xml:75
+msgid ""
+"Offered again by the Connect to Server dialog. Ten at most; the oldest goes "
+"when an eleventh is added."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.gschema.xml:79
 msgid "Expandable folders in list view"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:78
+#: data/io.github.sachesi.spiral.gschema.xml:83
 msgid "Show the root of the filesystem in the sidebar"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:82
+#: data/io.github.sachesi.spiral.gschema.xml:87
 msgid "Show Favorites in the sidebar"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:86
+#: data/io.github.sachesi.spiral.gschema.xml:91
 msgid "Offer colour tags"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:87
+#: data/io.github.sachesi.spiral.gschema.xml:92
 msgid ""
 "Tags are kept on the files themselves, in the user.xdg.tags extended "
 "attribute, and listed in the sidebar."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:91
+#: data/io.github.sachesi.spiral.gschema.xml:96
 msgid "The tags on offer, each a name and a colour"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:92
+#: data/io.github.sachesi.spiral.gschema.xml:97
 msgid ""
 "Seven at most. The colour is one of red, orange, yellow, green, blue, purple "
 "and gray, or a #rrggbb of your own. An empty list stands for the seven "
 "colours."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:96
+#: data/io.github.sachesi.spiral.gschema.xml:101
 msgid "Offer the column view"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:97
+#: data/io.github.sachesi.spiral.gschema.xml:102
 msgid ""
 "Adds the columns to the views the view button and the menu switch between."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:101
+#: data/io.github.sachesi.spiral.gschema.xml:106
 msgid "Remember the view mode of each folder"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:105
+#: data/io.github.sachesi.spiral.gschema.xml:110
 msgid "Open folders that are mostly images and videos in grid view"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:109
+#: data/io.github.sachesi.spiral.gschema.xml:114
 msgid "Terminal emulator for “Open in Terminal”"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:110
+#: data/io.github.sachesi.spiral.gschema.xml:115
 msgid "Executable name; empty picks the first installed one."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:114
+#: data/io.github.sachesi.spiral.gschema.xml:119
 msgid "Which files get thumbnails"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:118
+#: data/io.github.sachesi.spiral.gschema.xml:123
 msgid "Where searches look into subfolders"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:122
+#: data/io.github.sachesi.spiral.gschema.xml:127
 msgid "Which folders get their items counted"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:126
+#: data/io.github.sachesi.spiral.gschema.xml:131
 msgid "Largest picture to make a thumbnail of, in megabytes"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:127
+#: data/io.github.sachesi.spiral.gschema.xml:132
 msgid ""
 "Pictures larger than this are shown with their icon instead: decoding one "
 "costs time and memory out of proportion to a thumbnail. A thumbnail that "
@@ -160,93 +170,93 @@ msgid ""
 "file."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:131
+#: data/io.github.sachesi.spiral.gschema.xml:136
 msgid "Default view mode"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:135
+#: data/io.github.sachesi.spiral.gschema.xml:140
 msgid "View mode of file chooser dialogs"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:139
+#: data/io.github.sachesi.spiral.gschema.xml:144
 msgid "Sort key"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:143
+#: data/io.github.sachesi.spiral.gschema.xml:148
 msgid "Reverse sort order"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:147
+#: data/io.github.sachesi.spiral.gschema.xml:152
 msgid "Sort key of file chooser dialogs"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:148
+#: data/io.github.sachesi.spiral.gschema.xml:153
 msgid "Kept apart from the file manager's own order, as the view mode is."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:152
+#: data/io.github.sachesi.spiral.gschema.xml:157
 msgid "Reverse sort order of file chooser dialogs"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:156
+#: data/io.github.sachesi.spiral.gschema.xml:161
 msgid "Format the Create Archive dialog starts with"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:157
+#: data/io.github.sachesi.spiral.gschema.xml:162
 msgid ""
 "Extension without the dot: zip, tar.xz, tar.zst, 7z or tar.gz; the last one "
 "used."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:161
+#: data/io.github.sachesi.spiral.gschema.xml:166
 msgid "Show hidden files"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:165
+#: data/io.github.sachesi.spiral.gschema.xml:170
 msgid "Captions under icons in grid view"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:166
+#: data/io.github.sachesi.spiral.gschema.xml:171
 msgid ""
 "Up to three of: size, date_modified, permissions, type, mime_type, owner, "
 "group, none."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:170
+#: data/io.github.sachesi.spiral.gschema.xml:175
 msgid "Columns shown in list view besides the name"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:171
+#: data/io.github.sachesi.spiral.gschema.xml:176
 msgid ""
 "Any of: size, type, modified, accessed, created, owner, group, permissions, "
 "star."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:176
+#: data/io.github.sachesi.spiral.gschema.xml:181
 msgid "Icon size in grid view"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:181
+#: data/io.github.sachesi.spiral.gschema.xml:186
 msgid "Icon size in list view"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:185
+#: data/io.github.sachesi.spiral.gschema.xml:190
 msgid "Window size"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:189
+#: data/io.github.sachesi.spiral.gschema.xml:194
 msgid "Window maximized"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:193
+#: data/io.github.sachesi.spiral.gschema.xml:198
 msgid "Show places sidebar"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:197
+#: data/io.github.sachesi.spiral.gschema.xml:202
 msgid "Ask whether to copy or move dropped files"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:201
+#: data/io.github.sachesi.spiral.gschema.xml:206
 msgid "Show two folder panes side by side"
 msgstr ""
 
@@ -341,7 +351,20 @@ msgid ""
 "and a middle click still opens a folder in a new tab whatever the menu shows."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:35
+#: data/io.github.sachesi.spiral.metainfo.xml:31
+msgid ""
+"Servers, wherever gvfs has a backend for one. \"Connect to Server…\" in the "
+"main menu takes an address, names the schemes the system can actually use, "
+"and offers the servers connected to before. A share that answers opens in a "
+"tab and joins the sidebar under Network, above it the machines gvfs can find "
+"and beside it a button that disconnects it again. Going to a share that is "
+"not connected connects it first, so a bookmark or an address typed into the "
+"path bar reaches the server without the dialog being opened at all. Without "
+"gvfs there are no network locations, and Spiral says so rather than offer an "
+"address it has no way to open."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:36
 msgid ""
 "Renaming takes a whole selection: F2 on several files opens a dialog that "
 "gives them all a shared name with numbers after it, or replaces some text of "
@@ -353,7 +376,7 @@ msgid ""
 "with everything but the extension selected."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:36
+#: data/io.github.sachesi.spiral.metainfo.xml:37
 msgid ""
 "A drag held for a moment over a folder, a breadcrumb or a sidebar entry "
 "opens it, so files can be carried somewhere that is not on screen when the "
@@ -368,7 +391,7 @@ msgid ""
 "item instead of moving the menu out from under the pointer."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:37
+#: data/io.github.sachesi.spiral.metainfo.xml:38
 msgid ""
 "The file chooser searches the folder it is showing, and only that one, and "
 "sorts from its header; it keeps the view and the order it was left in apart "
@@ -379,7 +402,7 @@ msgid ""
 "off the thread drawing the window."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:42
+#: data/io.github.sachesi.spiral.metainfo.xml:43
 msgid ""
 "Big folders open in a fraction of the time and scroll without stutter. A "
 "folder that does not fit in one batch of its listing is shown once, complete "
@@ -392,7 +415,7 @@ msgid ""
 "takes a fifth of the processor time it took on the thread drawing the window."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:43
+#: data/io.github.sachesi.spiral.metainfo.xml:44
 msgid ""
 "Thumbnails are asked for only once their cell is on screen and the folder is "
 "in order, and a screenful is made from the top down rather than in the order "
@@ -406,7 +429,7 @@ msgid ""
 "every request."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:44
+#: data/io.github.sachesi.spiral.metainfo.xml:45
 msgid ""
 "Text in the preview has line numbers, on the colour of the page. A video "
 "opens in its own proportions, read from the header of its container when the "
@@ -415,7 +438,7 @@ msgid ""
 "Preferences, so a terminal editor works as a default."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:49
+#: data/io.github.sachesi.spiral.metainfo.xml:50
 msgid ""
 "Bubblewrap is now required. Thumbnailers, the PDF previewer and the archive "
 "tools are decoders fed files nobody here wrote, and all three used to run "
@@ -427,7 +450,7 @@ msgid ""
 "seconds instead of holding a slot for the rest of the session."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:50
+#: data/io.github.sachesi.spiral.metainfo.xml:51
 msgid ""
 "Big folders open in about half the processor time they took. A folder is put "
 "in order once, when its listing ends, instead of after each batch of files "
@@ -441,7 +464,7 @@ msgid ""
 "and generation uses the cores there are."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:55
+#: data/io.github.sachesi.spiral.metainfo.xml:56
 msgid ""
 "The sidebar gained Root, the top of the filesystem, and a switch in "
 "Preferences for it and for Favorites. The order folders open in can be "
@@ -454,7 +477,7 @@ msgid ""
 "empty under any icon theme."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:60
+#: data/io.github.sachesi.spiral.metainfo.xml:61
 msgid ""
 "The column view is now optional and starts turned off: with it off the view "
 "button and the view menu offer the grid and the list alone. Pasted files, "
@@ -467,7 +490,7 @@ msgid ""
 "longer takes the focus away from a half-typed path."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:65
+#: data/io.github.sachesi.spiral.metainfo.xml:66
 msgid ""
 "Column view no longer decides the view of every folder after it: a folder "
 "that remembers a view of its own gets it back, while columns still survive a "
@@ -478,7 +501,7 @@ msgid ""
 "is half the size it was."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:70
+#: data/io.github.sachesi.spiral.metainfo.xml:71
 msgid ""
 "A quick preview on the Space key: images, PDFs a page at a time, video, "
 "sound and text with source code among it, drawn by Spiral itself in a window "
@@ -494,7 +517,7 @@ msgid ""
 "Windows, tabs and dialogs let go of everything they held when they close."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:75
+#: data/io.github.sachesi.spiral.metainfo.xml:76
 msgid ""
 "A column view, the third way to look at a folder: the path drawn as a strip "
 "of lists, one folder per column, with the folder you are in at the right and "
@@ -506,7 +529,7 @@ msgid ""
 "say, gets its thumbnail without a restart."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:80
+#: data/io.github.sachesi.spiral.metainfo.xml:81
 msgid ""
 "A click on empty space in a folder takes the keyboard and clears the "
 "selection, so Ctrl+A and the other file keys no longer wait for a file to be "
@@ -516,7 +539,7 @@ msgid ""
 "again."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:85
+#: data/io.github.sachesi.spiral.metainfo.xml:86
 msgid ""
 "Two folder panes side by side, off by default and turned on with F3: F6 "
 "moves between them, the pane in charge is outlined, and everything outside "
@@ -526,7 +549,7 @@ msgid ""
 "portal deadlock, and opens a window of its own with the file selected."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:90
+#: data/io.github.sachesi.spiral.metainfo.xml:91
 msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
@@ -536,7 +559,7 @@ msgid ""
 "as the file extension, and a star toggle that follows the favourites."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:95
+#: data/io.github.sachesi.spiral.metainfo.xml:96
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -547,14 +570,14 @@ msgid ""
 "pastes paths into terminals."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:100
+#: data/io.github.sachesi.spiral.metainfo.xml:101
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
 "calls no longer block the interface on slow mounts."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:104
+#: data/io.github.sachesi.spiral.metainfo.xml:105
 msgid "First release."
 msgstr ""
 
@@ -609,7 +632,7 @@ msgstr ""
 msgid "Archive"
 msgstr ""
 
-#: src/browser_actions.rs:761 src/places_sidebar.rs:461
+#: src/browser_actions.rs:761 src/places_sidebar.rs:462
 #, no-c-format
 msgid "Could not tag “%s”"
 msgstr ""
@@ -639,8 +662,8 @@ msgstr ""
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:1070 src/browser_view.rs:1425
-#: src/browser_view.rs:1432 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1070 src/browser_view.rs:1438
+#: src/browser_view.rs:1445 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
@@ -663,11 +686,12 @@ msgid "Permanently deleted items cannot be restored."
 msgstr ""
 
 #: src/browser_actions.rs:1095 src/dialogs/batch_rename.rs:108
-#: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
-#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:36
-#: src/ops/archive.rs:351 src/ops/conflict.rs:63 src/ops/conflict.rs:314
-#: src/ops/mod.rs:30 src/ops/walk.rs:263 src/places_sidebar.rs:845
-#: src/places_sidebar.rs:1197 src/portal/chooser_window.rs:852
+#: src/dialogs/compress.rs:70 src/dialogs/connect_server.rs:66
+#: src/dialogs/open_with.rs:59 src/dialogs/select_pattern.rs:44
+#: src/dialogs/tags.rs:36 src/ops/archive.rs:351 src/ops/conflict.rs:63
+#: src/ops/conflict.rs:314 src/ops/mod.rs:30 src/ops/walk.rs:263
+#: src/places_sidebar.rs:873 src/places_sidebar.rs:1234
+#: src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
 msgstr ""
@@ -683,7 +707,7 @@ msgid "Untitled Document"
 msgstr ""
 
 #: src/browser_actions.rs:1183 ui/path_bar.ui:32 ui/path_bar.ui:63
-#: ui/places_sidebar.ui:16 ui/places_sidebar.ui:53
+#: ui/places_sidebar.ui:16 ui/places_sidebar.ui:58
 #, no-c-format
 msgid "Open in New _Tab"
 msgstr ""
@@ -703,58 +727,58 @@ msgstr ""
 msgid "New _Document"
 msgstr ""
 
-#: src/browser_view.rs:566
+#: src/browser_view.rs:575
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:570
+#: src/browser_view.rs:579
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:944
+#: src/browser_view.rs:953
 #, no-c-format
 msgid "Remove from Starred"
 msgstr ""
 
-#: src/browser_view.rs:946
+#: src/browser_view.rs:955
 #, no-c-format
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view.rs:1443 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1488 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
-#: src/ops/walk.rs:46 src/places_sidebar.rs:874
+#: src/ops/walk.rs:46 src/places_sidebar.rs:902
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view.rs:1465
+#: src/browser_view.rs:1510
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:1467 ui/browser_view.ui:103
+#: src/browser_view.rs:1512 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:1518
+#: src/browser_view.rs:1563
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:1534
+#: src/browser_view.rs:1579
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:1539
+#: src/browser_view.rs:1584
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -762,17 +786,17 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1545
+#: src/browser_view.rs:1590
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:2280 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2325 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:2380 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2425 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -821,7 +845,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:71
-#: src/places_sidebar.rs:1223
+#: src/places_sidebar.rs:1260
 #, no-c-format
 msgid "_Rename"
 msgstr ""
@@ -915,20 +939,56 @@ msgstr ""
 msgid "C_reate"
 msgstr ""
 
+#: src/dialogs/connect_server.rs:18
+#, no-c-format
+msgid "Server Address"
+msgstr ""
+
+#: src/dialogs/connect_server.rs:25
+#, no-c-format
+msgid ""
+"This system has no network backends installed, so no server can be reached."
+msgstr ""
+
+#: src/dialogs/connect_server.rs:27
+#, no-c-format
+msgid "For example: smb://server/share. Schemes this system can use: %s"
+msgstr ""
+
+#: src/dialogs/connect_server.rs:48
+#, no-c-format
+msgid "Recent Servers"
+msgstr ""
+
+#: src/dialogs/connect_server.rs:70
+#, no-c-format
+msgid "C_onnect"
+msgstr ""
+
+#: src/dialogs/connect_server.rs:86
+#, no-c-format
+msgid "Connect to Server"
+msgstr ""
+
+#: src/dialogs/connect_server.rs:220
+#, no-c-format
+msgid "Forget This Server"
+msgstr ""
+
 #: src/dialogs/folder_chooser.rs:32 src/portal/chooser_window.rs:129
-#: ui/shortcuts_dialog.ui:81 ui/window.ui:256 ui/window.ui:494
+#: ui/shortcuts_dialog.ui:81 ui/window.ui:262 ui/window.ui:500
 #, no-c-format
 msgid "Back"
 msgstr ""
 
 #: src/dialogs/folder_chooser.rs:37 src/portal/chooser_window.rs:134
-#: ui/shortcuts_dialog.ui:87 ui/window.ui:264 ui/window.ui:502
+#: ui/shortcuts_dialog.ui:87 ui/window.ui:270 ui/window.ui:508
 #, no-c-format
 msgid "Forward"
 msgstr ""
 
 #: src/dialogs/folder_chooser.rs:63 src/portal/chooser_window.rs:289
-#: ui/shortcuts_dialog.ui:182 ui/window.ui:246
+#: ui/shortcuts_dialog.ui:182 ui/window.ui:252
 #, no-c-format
 msgid "Show Sidebar"
 msgstr ""
@@ -945,7 +1005,7 @@ msgid "Open With"
 msgstr ""
 
 #: src/dialogs/open_with.rs:69 src/portal/chooser_window.rs:306
-#: ui/browser_view.ui:173 ui/places_sidebar.ui:12 ui/places_sidebar.ui:49
+#: ui/browser_view.ui:173 ui/places_sidebar.ui:12 ui/places_sidebar.ui:54
 #, no-c-format
 msgid "_Open"
 msgstr ""
@@ -1092,7 +1152,7 @@ msgstr ""
 msgid "Sidebar"
 msgstr ""
 
-#: src/dialogs/preferences.rs:114 src/places_sidebar.rs:613
+#: src/dialogs/preferences.rs:114 src/places_sidebar.rs:618
 #, no-c-format
 msgid "Root"
 msgstr ""
@@ -1102,8 +1162,8 @@ msgstr ""
 msgid "The top of the filesystem, above the bookmarks"
 msgstr ""
 
-#: src/dialogs/preferences.rs:120 src/file_utils.rs:316 src/path_bar.rs:326
-#: src/places_sidebar.rs:621
+#: src/dialogs/preferences.rs:120 src/file_utils.rs:319 src/path_bar.rs:326
+#: src/places_sidebar.rs:626
 #, no-c-format
 msgid "Favorites"
 msgstr ""
@@ -1113,7 +1173,7 @@ msgstr ""
 msgid "The starred files and folders"
 msgstr ""
 
-#: src/dialogs/preferences.rs:130 src/file_utils.rs:319
+#: src/dialogs/preferences.rs:130 src/file_utils.rs:322
 #, no-c-format
 msgid "Tags"
 msgstr ""
@@ -1251,7 +1311,7 @@ msgid "Size"
 msgstr ""
 
 #: src/dialogs/preferences.rs:244 src/dialogs/properties.rs:243
-#: src/file_utils.rs:154 src/file_utils.rs:170 ui/window.ui:358
+#: src/file_utils.rs:154 src/file_utils.rs:170 ui/window.ui:364
 #, no-c-format
 msgid "Type"
 msgstr ""
@@ -1306,8 +1366,8 @@ msgstr ""
 msgid "Fit"
 msgstr ""
 
-#: src/dialogs/preview.rs:611 ui/shortcuts_dialog.ui:164 ui/window.ui:446
-#: ui/window.ui:530
+#: src/dialogs/preview.rs:611 ui/shortcuts_dialog.ui:164 ui/window.ui:452
+#: ui/window.ui:536
 #, no-c-format
 msgid "Zoom Out"
 msgstr ""
@@ -1317,8 +1377,8 @@ msgstr ""
 msgid "Fit to Window"
 msgstr ""
 
-#: src/dialogs/preview.rs:613 ui/shortcuts_dialog.ui:158 ui/window.ui:456
-#: ui/window.ui:540
+#: src/dialogs/preview.rs:613 ui/shortcuts_dialog.ui:158 ui/window.ui:462
+#: ui/window.ui:546
 #, no-c-format
 msgid "Zoom In"
 msgstr ""
@@ -1377,7 +1437,7 @@ msgstr ""
 msgid "Calculating…"
 msgstr ""
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:155 ui/window.ui:379
+#: src/dialogs/properties.rs:259 src/file_utils.rs:155 ui/window.ui:385
 #, no-c-format
 msgid "Modified"
 msgstr ""
@@ -1392,7 +1452,7 @@ msgstr ""
 msgid "Default Application"
 msgstr ""
 
-#: src/dialogs/properties.rs:296 ui/window.ui:365
+#: src/dialogs/properties.rs:296 ui/window.ui:371
 #, no-c-format
 msgid "Images"
 msgstr ""
@@ -1520,12 +1580,12 @@ msgstr ""
 msgid "_Add"
 msgstr ""
 
-#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1121
+#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1158
 #, no-c-format
 msgid "Custom…"
 msgstr ""
 
-#: src/dialogs/tags.rs:177 src/places_sidebar.rs:924
+#: src/dialogs/tags.rs:177 src/places_sidebar.rs:952
 #, no-c-format
 msgid "Tag Colour"
 msgstr ""
@@ -1536,7 +1596,7 @@ msgid "Grid View"
 msgstr ""
 
 #: src/enums.rs:56 src/portal/chooser_window.rs:159 ui/shortcuts_dialog.ui:146
-#: ui/window.ui:435 ui/window.ui:519
+#: ui/window.ui:441 ui/window.ui:525
 #, no-c-format
 msgid "List View"
 msgstr ""
@@ -1621,22 +1681,27 @@ msgid_plural "%d items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:310 src/path_bar.rs:320 src/places_sidebar.rs:595
+#: src/file_utils.rs:310 src/path_bar.rs:320 src/places_sidebar.rs:600
 #, no-c-format
 msgid "Home"
 msgstr ""
 
-#: src/file_utils.rs:313 src/path_bar.rs:323 src/places_sidebar.rs:628
+#: src/file_utils.rs:313 src/path_bar.rs:323 src/places_sidebar.rs:633
 #, no-c-format
 msgid "Trash"
 msgstr ""
 
-#: src/file_utils.rs:324 src/path_bar.rs:334
+#: src/file_utils.rs:316 src/places_sidebar.rs:700
+#, no-c-format
+msgid "Network"
+msgstr ""
+
+#: src/file_utils.rs:327 src/path_bar.rs:334
 #, no-c-format
 msgid "System"
 msgstr ""
 
-#: src/location_entry.rs:153 src/progress_indicator.rs:296 ui/window.ui:318
+#: src/location_entry.rs:153 src/progress_indicator.rs:296 ui/window.ui:324
 #, no-c-format
 msgid "Cancel"
 msgstr ""
@@ -2182,7 +2247,7 @@ msgstr ""
 msgid "All items in the Trash will be permanently deleted."
 msgstr ""
 
-#: src/ops/mod.rs:31 src/places_sidebar.rs:847 ui/browser_view.ui:356
+#: src/ops/mod.rs:31 src/places_sidebar.rs:875 ui/browser_view.ui:356
 #, no-c-format
 msgid "_Empty Trash"
 msgstr ""
@@ -2275,111 +2340,116 @@ msgstr ""
 msgid "Edit Location"
 msgstr ""
 
-#: src/places_sidebar.rs:605
+#: src/places_sidebar.rs:610
 #, no-c-format
 msgid "Desktop"
 msgstr ""
 
-#: src/places_sidebar.rs:729
+#: src/places_sidebar.rs:754
+#, no-c-format
+msgid "Disconnect"
+msgstr ""
+
+#: src/places_sidebar.rs:756
 #, no-c-format
 msgid "Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:763
+#: src/places_sidebar.rs:791
 #, no-c-format
 msgid "Could Not Mount"
 msgstr ""
 
-#: src/places_sidebar.rs:802
+#: src/places_sidebar.rs:830
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:804
+#: src/places_sidebar.rs:832
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr ""
 
-#: src/places_sidebar.rs:823
+#: src/places_sidebar.rs:851
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:829
+#: src/places_sidebar.rs:857
 #, no-c-format
 msgid "Could Not Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:840
+#: src/places_sidebar.rs:868
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr ""
 
-#: src/places_sidebar.rs:842
+#: src/places_sidebar.rs:870
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
 "trashed items on the volume will be permanently lost."
 msgstr ""
 
-#: src/places_sidebar.rs:846
+#: src/places_sidebar.rs:874
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr ""
 
-#: src/places_sidebar.rs:1182
+#: src/places_sidebar.rs:1219
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr ""
 
-#: src/places_sidebar.rs:1184
+#: src/places_sidebar.rs:1221
 #, no-c-format
 msgid "No file carries it."
 msgstr ""
 
-#: src/places_sidebar.rs:1187
+#: src/places_sidebar.rs:1224
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/places_sidebar.rs:1198 ui/places_sidebar.ui:28
+#: src/places_sidebar.rs:1235 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr ""
 
-#: src/portal/chooser_window.rs:202 ui/window.ui:84
+#: src/portal/chooser_window.rs:202 ui/window.ui:90
 #, no-c-format
 msgid "_A-Z"
 msgstr ""
 
-#: src/portal/chooser_window.rs:203 ui/window.ui:89
+#: src/portal/chooser_window.rs:203 ui/window.ui:95
 #, no-c-format
 msgid "_Z-A"
 msgstr ""
 
-#: src/portal/chooser_window.rs:204 ui/window.ui:94
+#: src/portal/chooser_window.rs:204 ui/window.ui:100
 #, no-c-format
 msgid "Last _Modified"
 msgstr ""
 
-#: src/portal/chooser_window.rs:205 ui/window.ui:99
+#: src/portal/chooser_window.rs:205 ui/window.ui:105
 #, no-c-format
 msgid "_First Modified"
 msgstr ""
 
-#: src/portal/chooser_window.rs:206 ui/window.ui:104
+#: src/portal/chooser_window.rs:206 ui/window.ui:110
 #, no-c-format
 msgid "_Size"
 msgstr ""
 
-#: src/portal/chooser_window.rs:207 ui/window.ui:109
+#: src/portal/chooser_window.rs:207 ui/window.ui:115
 #, no-c-format
 msgid "_Type"
 msgstr ""
 
-#: src/portal/chooser_window.rs:215 ui/window.ui:82
+#: src/portal/chooser_window.rs:215 ui/window.ui:88
 #, no-c-format
 msgid "Sort"
 msgstr ""
@@ -2389,7 +2459,7 @@ msgstr ""
 msgid "Search this folder"
 msgstr ""
 
-#: src/portal/chooser_window.rs:231 ui/window.ui:337
+#: src/portal/chooser_window.rs:231 ui/window.ui:343
 #, no-c-format
 msgid "Search"
 msgstr ""
@@ -2481,12 +2551,12 @@ msgstr ""
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:662 ui/shortcuts_dialog.ui:283
+#: src/window.rs:673 ui/shortcuts_dialog.ui:283
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:1088 ui/window.ui:66
+#: src/window.rs:1099 ui/window.ui:72
 #, no-c-format
 msgid "_Columns"
 msgstr ""
@@ -2555,7 +2625,7 @@ msgstr ""
 msgid "_Restore From Trash"
 msgstr ""
 
-#: ui/browser_view.ui:264 ui/places_sidebar.ui:23 ui/places_sidebar.ui:64
+#: ui/browser_view.ui:264 ui/places_sidebar.ui:23 ui/places_sidebar.ui:69
 msgid "Rena_me…"
 msgstr ""
 
@@ -2620,7 +2690,7 @@ msgstr ""
 msgid "R_eload"
 msgstr ""
 
-#: ui/path_bar.ui:44 ui/places_sidebar.ui:40
+#: ui/path_bar.ui:44 ui/places_sidebar.ui:45
 msgid "_Empty Trash…"
 msgstr ""
 
@@ -2632,11 +2702,15 @@ msgstr ""
 msgid "Current Folder Menu"
 msgstr ""
 
-#: ui/places_sidebar.ui:68
+#: ui/places_sidebar.ui:40
+msgid "_Disconnect"
+msgstr ""
+
+#: ui/places_sidebar.ui:73
 msgid "_Remove…"
 msgstr ""
 
-#: ui/places_sidebar.ui:74
+#: ui/places_sidebar.ui:79
 msgid "New _Tag…"
 msgstr ""
 
@@ -2684,7 +2758,7 @@ msgstr ""
 msgid "Navigation"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:93 ui/window.ui:272 ui/window.ui:510
+#: ui/shortcuts_dialog.ui:93 ui/window.ui:278 ui/window.ui:516
 msgid "Parent Folder"
 msgstr ""
 
@@ -2692,7 +2766,7 @@ msgstr ""
 msgid "Home Folder"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:111 ui/window.ui:425
+#: ui/shortcuts_dialog.ui:111 ui/window.ui:431
 msgid "Search Current Folder"
 msgstr ""
 
@@ -2728,7 +2802,7 @@ msgstr ""
 msgid "Switch Pane"
 msgstr ""
 
-#: ui/shortcuts_dialog.ui:202 ui/window.ui:168 ui/window.ui:204
+#: ui/shortcuts_dialog.ui:202 ui/window.ui:174 ui/window.ui:210
 msgid "Files"
 msgstr ""
 
@@ -2785,157 +2859,161 @@ msgid "Re_store Closed Tab"
 msgstr ""
 
 #: ui/window.ui:30
+msgid "Connect to _Server…"
+msgstr ""
+
+#: ui/window.ui:36
 msgid "_Undo"
 msgstr ""
 
-#: ui/window.ui:34
+#: ui/window.ui:40
 msgid "_Redo"
 msgstr ""
 
-#: ui/window.ui:40
+#: ui/window.ui:46
 msgid "_Preferences"
 msgstr ""
 
-#: ui/window.ui:44
+#: ui/window.ui:50
 msgid "_Keyboard Shortcuts"
 msgstr ""
 
-#: ui/window.ui:48
+#: ui/window.ui:54
 msgid "_About Spiral"
 msgstr ""
 
-#: ui/window.ui:56
+#: ui/window.ui:62
 msgid "_Grid"
 msgstr ""
 
-#: ui/window.ui:61
+#: ui/window.ui:67
 msgid "_List"
 msgstr ""
 
-#: ui/window.ui:72
+#: ui/window.ui:78
 msgid "Icon Size"
 msgstr ""
 
-#: ui/window.ui:116
+#: ui/window.ui:122
 msgid "_Visible Columns…"
 msgstr ""
 
-#: ui/window.ui:121
+#: ui/window.ui:127
 msgid "Ca_ptions…"
 msgstr ""
 
-#: ui/window.ui:128
+#: ui/window.ui:134
 msgid "Show _Hidden Files"
 msgstr ""
 
-#: ui/window.ui:132
+#: ui/window.ui:138
 msgid "Show _Sidebar"
 msgstr ""
 
-#: ui/window.ui:136
+#: ui/window.ui:142
 msgid "Spl_it View"
 msgstr ""
 
-#: ui/window.ui:144
+#: ui/window.ui:150
 msgid "Move Tab _Left"
 msgstr ""
 
-#: ui/window.ui:148
+#: ui/window.ui:154
 msgid "Move Tab _Right"
 msgstr ""
 
-#: ui/window.ui:152
+#: ui/window.ui:158
 msgid "Move Tab to New _Window"
 msgstr ""
 
-#: ui/window.ui:158
+#: ui/window.ui:164
 msgid "Close _Other Tabs"
 msgstr ""
 
-#: ui/window.ui:162
+#: ui/window.ui:168
 msgid "_Close Tab"
 msgstr ""
 
-#: ui/window.ui:212
+#: ui/window.ui:218
 msgid "Main Menu"
 msgstr ""
 
-#: ui/window.ui:345
+#: ui/window.ui:351
 msgid "Search Filters"
 msgstr ""
 
-#: ui/window.ui:362
+#: ui/window.ui:368
 msgid "Anything"
 msgstr ""
 
-#: ui/window.ui:363
+#: ui/window.ui:369
 msgid "Folders"
 msgstr ""
 
-#: ui/window.ui:364
+#: ui/window.ui:370
 msgid "Documents"
 msgstr ""
 
-#: ui/window.ui:366
+#: ui/window.ui:372
 msgid "Audio"
 msgstr ""
 
-#: ui/window.ui:367
+#: ui/window.ui:373
 msgid "Videos"
 msgstr ""
 
-#: ui/window.ui:368
+#: ui/window.ui:374
 msgid "PDF"
 msgstr ""
 
-#: ui/window.ui:369
+#: ui/window.ui:375
 msgid "Text"
 msgstr ""
 
-#: ui/window.ui:370
+#: ui/window.ui:376
 msgid "Spreadsheets"
 msgstr ""
 
-#: ui/window.ui:383
+#: ui/window.ui:389
 msgid "Any Time"
 msgstr ""
 
-#: ui/window.ui:384
+#: ui/window.ui:390
 msgid "Today"
 msgstr ""
 
-#: ui/window.ui:385
+#: ui/window.ui:391
 msgid "Yesterday"
 msgstr ""
 
-#: ui/window.ui:386
+#: ui/window.ui:392
 msgid "Past Week"
 msgstr ""
 
-#: ui/window.ui:387
+#: ui/window.ui:393
 msgid "Past Month"
 msgstr ""
 
-#: ui/window.ui:388
+#: ui/window.ui:394
 msgid "Past Year"
 msgstr ""
 
-#: ui/window.ui:397
+#: ui/window.ui:403
 msgid "Match"
 msgstr ""
 
-#: ui/window.ui:401
+#: ui/window.ui:407
 msgid "Only Filename"
 msgstr ""
 
-#: ui/window.ui:402
+#: ui/window.ui:408
 msgid "Content & Filename"
 msgstr ""
 
-#: ui/window.ui:403
+#: ui/window.ui:409
 msgid "Only Contents"
 msgstr ""
 
-#: ui/window.ui:436 ui/window.ui:520
+#: ui/window.ui:442 ui/window.ui:526
 msgid "View Options"
 msgstr ""
