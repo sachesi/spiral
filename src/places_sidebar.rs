@@ -451,15 +451,14 @@ fn tag_row(tag: &crate::tags::Tag) -> gtk::ListBoxRow {
                     break;
                 }
             }
-            if let Some((file, e)) = failed
-                && let Some(win) = row.root().and_downcast::<crate::window::SpiralWindow>()
-            {
-                win.show_toast(
-                    &gettext("Could not tag “%s”: %m")
-                        .replace("%s", &crate::ops::name(&file))
-                        .replace("%m", e.message()),
-                    false,
-                );
+            if let Some((file, e)) = failed {
+                glib::g_debug!("spiral", "cannot tag {}: {e}", file.uri());
+                if let Some(win) = row.root().and_downcast::<crate::window::SpiralWindow>() {
+                    win.show_toast(
+                        &gettext("Could not tag “%s”").replace("%s", &crate::ops::name(&file)),
+                        false,
+                    );
+                }
             }
             // The dots on the files are read as their cells are bound; make them look.
             if let Some(view) = row

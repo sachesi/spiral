@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 16:07+0300\n"
+"POT-Creation-Date: 2026-09-09 16:28+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -81,7 +81,9 @@ msgstr "Предлагать цветные метки"
 msgid ""
 "Tags are kept on the files themselves, in the user.xdg.tags extended "
 "attribute, and listed in the sidebar."
-msgstr "Метки хранятся в самих файлах, в расширенном атрибуте user.xdg.tags, и перечислены в боковой панели."
+msgstr ""
+"Метки хранятся в самих файлах, в расширенном атрибуте user.xdg.tags, и "
+"перечислены в боковой панели."
 
 #: data/io.github.sachesi.spiral.gschema.xml:75
 msgid "The tags on offer, each a name and a colour"
@@ -91,7 +93,9 @@ msgstr "Доступные метки, каждая с именем и цвет�
 msgid ""
 "The colour is one of red, orange, yellow, green, blue, purple and gray, or "
 "empty for none. An empty list stands for the seven colours."
-msgstr "Цвет — один из red, orange, yellow, green, blue, purple, gray или пустая строка, если цвета нет. Пустой список означает семь цветов."
+msgstr ""
+"Цвет — один из red, orange, yellow, green, blue, purple, gray или пустая "
+"строка, если цвета нет. Пустой список означает семь цветов."
 
 #: data/io.github.sachesi.spiral.gschema.xml:80
 msgid "Offer the column view"
@@ -592,68 +596,63 @@ msgstr "sachesi"
 msgid "_Empty Document"
 msgstr "_Пустой документ"
 
-#: src/browser_actions.rs:662
+#: src/browser_actions.rs:666
 #, no-c-format
 msgid "Extract To"
 msgstr "Распаковать в"
 
-#: src/browser_actions.rs:663 src/ops/archive.rs:352
+#: src/browser_actions.rs:667 src/ops/archive.rs:352
 #, no-c-format
 msgid "_Extract"
 msgstr "_Распаковать"
 
-#: src/browser_actions.rs:681
+#: src/browser_actions.rs:685
 #, no-c-format
 msgid "Archive"
 msgstr "Архив"
 
-#: src/browser_actions.rs:732 src/places_sidebar.rs:458
+#: src/browser_actions.rs:752 src/places_sidebar.rs:458
 #, no-c-format
-msgid "Could not tag “%s”: %m"
-msgstr "Не удалось пометить «%s»: %m"
+msgid "Could not tag “%s”"
+msgstr "Не удалось пометить «%s»"
 
-#: src/browser_actions.rs:802
-#, no-c-format
-msgid "_Tags…"
-msgstr "_Метки…"
-
-#: src/browser_actions.rs:954
+#: src/browser_actions.rs:931
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr "Не удалось вставить изображение"
 
-#: src/browser_actions.rs:967
+#: src/browser_actions.rs:944
 #, no-c-format
 msgid "Move To"
 msgstr "Переместить в"
 
-#: src/browser_actions.rs:967
+#: src/browser_actions.rs:944
 #, no-c-format
 msgid "_Move"
 msgstr "_Переместить"
 
-#: src/browser_actions.rs:969
+#: src/browser_actions.rs:946
 #, no-c-format
 msgid "Copy To"
 msgstr "Копировать в"
 
-#: src/browser_actions.rs:969 ui/browser_view.ui:203
+#: src/browser_actions.rs:946 ui/browser_view.ui:203
 #, no-c-format
 msgid "_Copy"
 msgstr "_Копировать"
 
-#: src/browser_actions.rs:1062 src/browser_view.rs:1434
-#: src/browser_view.rs:1441 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1039 src/browser_view.rs:1428
+#: src/browser_view.rs:1435 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не удалось открыть"
 
-#: src/browser_actions.rs:1072
+#: src/browser_actions.rs:1049
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Безвозвратно удалить «%s»?"
 
-#: src/browser_actions.rs:1074
+#: src/browser_actions.rs:1051
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -661,52 +660,52 @@ msgstr[0] "Безвозвратно удалить %d объект?"
 msgstr[1] "Безвозвратно удалить %d объекта?"
 msgstr[2] "Безвозвратно удалить %d объектов?"
 
-#: src/browser_actions.rs:1082
+#: src/browser_actions.rs:1059
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Безвозвратно удалённые объекты нельзя восстановить."
 
-#: src/browser_actions.rs:1087 src/dialogs/batch_rename.rs:108
+#: src/browser_actions.rs:1064 src/dialogs/batch_rename.rs:108
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
-#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:164
+#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:35
 #: src/ops/archive.rs:351 src/ops/conflict.rs:63 src/ops/conflict.rs:314
-#: src/ops/mod.rs:30 src/ops/walk.rs:263 src/places_sidebar.rs:843
-#: src/places_sidebar.rs:1108 src/portal/chooser_window.rs:852
+#: src/ops/mod.rs:30 src/ops/walk.rs:263 src/places_sidebar.rs:842
+#: src/places_sidebar.rs:1107 src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
 msgstr "_Отмена"
 
-#: src/browser_actions.rs:1088
+#: src/browser_actions.rs:1065
 #, no-c-format
 msgid "_Delete"
 msgstr "_Удалить"
 
-#: src/browser_actions.rs:1141
+#: src/browser_actions.rs:1118
 #, no-c-format
 msgid "Untitled Document"
 msgstr "Безымянный документ"
 
-#: src/browser_actions.rs:1175 ui/window.ui:16
+#: src/browser_actions.rs:1152 ui/window.ui:16
 #, no-c-format
 msgid "New _Tab"
 msgstr "Новая _вкладка"
 
-#: src/browser_actions.rs:1176 ui/window.ui:12
+#: src/browser_actions.rs:1153 ui/window.ui:12
 #, no-c-format
 msgid "New _Window"
 msgstr "Новое _окно"
 
-#: src/browser_actions.rs:1177
+#: src/browser_actions.rs:1154
 #, no-c-format
 msgid "_Terminal"
 msgstr "_Терминал"
 
-#: src/browser_actions.rs:1192
+#: src/browser_actions.rs:1169
 #, no-c-format
 msgid "Open _In"
 msgstr "Открыть _в"
 
-#: src/browser_actions.rs:1205 ui/path_bar.ui:16
+#: src/browser_actions.rs:1182 ui/path_bar.ui:16
 #, no-c-format
 msgid "New _Document"
 msgstr "Создать _документ"
@@ -727,44 +726,44 @@ msgstr[0] "Выбран %d объект"
 msgstr[1] "Выбрано %d объекта"
 msgstr[2] "Выбрано %d объектов"
 
-#: src/browser_view.rs:953
+#: src/browser_view.rs:947
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Удалить из избранного"
 
-#: src/browser_view.rs:955
+#: src/browser_view.rs:949
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Добавить в избранное"
 
-#: src/browser_view.rs:1452 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1446 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
-#: src/ops/walk.rs:46 src/places_sidebar.rs:872
+#: src/ops/walk.rs:46 src/places_sidebar.rs:871
 #, no-c-format
 msgid "_OK"
 msgstr "_ОК"
 
-#: src/browser_view.rs:1474
+#: src/browser_view.rs:1468
 #, no-c-format
 msgid "No Results Found"
 msgstr "Ничего не найдено"
 
-#: src/browser_view.rs:1476 ui/browser_view.ui:103
+#: src/browser_view.rs:1470 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Папка пуста"
 
-#: src/browser_view.rs:1527
+#: src/browser_view.rs:1521
 #, no-c-format
 msgid "Loading…"
 msgstr "Загрузка…"
 
-#: src/browser_view.rs:1543
+#: src/browser_view.rs:1537
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Выбран объект «%s»"
 
-#: src/browser_view.rs:1548
+#: src/browser_view.rs:1542
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -773,17 +772,17 @@ msgstr[1] "%d других объекта выбрано"
 msgstr[2] "%d других объектов выбрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1554
+#: src/browser_view.rs:1548
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:2296 src/dialogs/tags.rs:147
+#: src/browser_view.rs:2295 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:2396 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2395 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -833,7 +832,7 @@ msgstr[1] "%d файла для переименования"
 msgstr[2] "%d файлов для переименования"
 
 #: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:71
-#: src/places_sidebar.rs:1134
+#: src/places_sidebar.rs:1133
 #, no-c-format
 msgid "_Rename"
 msgstr "_Переименовать"
@@ -1111,7 +1110,7 @@ msgstr "Раскрывающиеся папки в виде списка"
 msgid "Sidebar"
 msgstr "Боковая панель"
 
-#: src/dialogs/preferences.rs:105 src/places_sidebar.rs:611
+#: src/dialogs/preferences.rs:105 src/places_sidebar.rs:610
 #, no-c-format
 msgid "Root"
 msgstr "Корень"
@@ -1122,7 +1121,7 @@ msgid "The top of the filesystem, above the bookmarks"
 msgstr "Вершина файловой системы, над закладками"
 
 #: src/dialogs/preferences.rs:111 src/file_utils.rs:316 src/path_bar.rs:326
-#: src/places_sidebar.rs:619
+#: src/places_sidebar.rs:618
 #, no-c-format
 msgid "Favorites"
 msgstr "Избранное"
@@ -1132,7 +1131,7 @@ msgstr "Избранное"
 msgid "The starred files and folders"
 msgstr "Файлы и папки, отмеченные звёздочкой"
 
-#: src/dialogs/preferences.rs:121 src/dialogs/tags.rs:91 src/file_utils.rs:319
+#: src/dialogs/preferences.rs:121 src/file_utils.rs:319
 #, no-c-format
 msgid "Tags"
 msgstr "Метки"
@@ -1142,7 +1141,9 @@ msgstr "Метки"
 msgid ""
 "Tags are written to the files themselves, so they follow a file wherever it "
 "goes and other programs can read them."
-msgstr "Метки записываются в сами файлы, поэтому остаются с файлом, куда бы он ни переместился, и другие программы могут их читать."
+msgstr ""
+"Метки записываются в сами файлы, поэтому остаются с файлом, куда бы он ни "
+"переместился, и другие программы могут их читать."
 
 #: src/dialogs/preferences.rs:127
 #, no-c-format
@@ -1154,7 +1155,9 @@ msgstr "Цветные метки"
 msgid ""
 "A row of colours in the context menu, a dot on each tagged file and the tags "
 "listed in the sidebar"
-msgstr "Ряд цветов в контекстном меню, точка на каждом помеченном файле и список меток в боковой панели"
+msgstr ""
+"Ряд цветов в контекстном меню, точка на каждом помеченном файле и список "
+"меток в боковой панели"
 
 #: src/dialogs/preferences.rs:137
 #, no-c-format
@@ -1509,17 +1512,12 @@ msgstr "_Выделить"
 msgid "Select Items Matching"
 msgstr "Выделить по шаблону"
 
-#: src/dialogs/tags.rs:69 ui/places_sidebar.ui:112
-#, no-c-format
-msgid "New _Tag…"
-msgstr "Новая _метка…"
-
-#: src/dialogs/tags.rs:159
+#: src/dialogs/tags.rs:30
 #, no-c-format
 msgid "New Tag"
 msgstr "Новая метка"
 
-#: src/dialogs/tags.rs:164
+#: src/dialogs/tags.rs:35
 #, no-c-format
 msgid "_Add"
 msgstr "_Добавить"
@@ -1620,12 +1618,12 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/file_utils.rs:310 src/path_bar.rs:320 src/places_sidebar.rs:593
+#: src/file_utils.rs:310 src/path_bar.rs:320 src/places_sidebar.rs:592
 #, no-c-format
 msgid "Home"
 msgstr "Домашняя папка"
 
-#: src/file_utils.rs:313 src/path_bar.rs:323 src/places_sidebar.rs:626
+#: src/file_utils.rs:313 src/path_bar.rs:323 src/places_sidebar.rs:625
 #, no-c-format
 msgid "Trash"
 msgstr "Корзина"
@@ -2208,7 +2206,7 @@ msgstr "Очистить корзину?"
 msgid "All items in the Trash will be permanently deleted."
 msgstr "Все объекты в корзине будут безвозвратно удалены."
 
-#: src/ops/mod.rs:31 src/places_sidebar.rs:845 ui/browser_view.ui:354
+#: src/ops/mod.rs:31 src/places_sidebar.rs:844 ui/browser_view.ui:354
 #, no-c-format
 msgid "_Empty Trash"
 msgstr "_Очистить корзину"
@@ -2301,47 +2299,47 @@ msgstr "копия"
 msgid "Edit Location"
 msgstr "Изменить адрес"
 
-#: src/places_sidebar.rs:603
+#: src/places_sidebar.rs:602
 #, no-c-format
 msgid "Desktop"
 msgstr "Рабочий стол"
 
-#: src/places_sidebar.rs:727
+#: src/places_sidebar.rs:726
 #, no-c-format
 msgid "Eject"
 msgstr "Извлечь"
 
-#: src/places_sidebar.rs:761
+#: src/places_sidebar.rs:760
 #, no-c-format
 msgid "Could Not Mount"
 msgstr "Не удалось подключить"
 
-#: src/places_sidebar.rs:800
+#: src/places_sidebar.rs:799
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr "Запись данных на «%s»"
 
-#: src/places_sidebar.rs:802
+#: src/places_sidebar.rs:801
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr "Не отключайте до завершения"
 
-#: src/places_sidebar.rs:821
+#: src/places_sidebar.rs:820
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr "Теперь «%s» можно отключить"
 
-#: src/places_sidebar.rs:827
+#: src/places_sidebar.rs:826
 #, no-c-format
 msgid "Could Not Eject"
 msgstr "Не удалось извлечь"
 
-#: src/places_sidebar.rs:838
+#: src/places_sidebar.rs:837
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr "Очистить корзину перед отключением?"
 
-#: src/places_sidebar.rs:840
+#: src/places_sidebar.rs:839
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
@@ -2350,22 +2348,22 @@ msgstr ""
 "Чтобы освободить место на этом томе, нужно очистить корзину. Все удалённые в "
 "корзину объекты на этом томе будут безвозвратно потеряны."
 
-#: src/places_sidebar.rs:844
+#: src/places_sidebar.rs:843
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr "_Не очищать"
 
-#: src/places_sidebar.rs:1093
+#: src/places_sidebar.rs:1092
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr "Удалить метку «%s»?"
 
-#: src/places_sidebar.rs:1095
+#: src/places_sidebar.rs:1094
 #, no-c-format
 msgid "No file carries it."
 msgstr "Её нет ни на одном файле."
 
-#: src/places_sidebar.rs:1098
+#: src/places_sidebar.rs:1097
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
@@ -2373,7 +2371,7 @@ msgstr[0] "Она будет снята с %d файла, на котором с
 msgstr[1] "Она будет снята с %d файлов, на которых стоит."
 msgstr[2] "Она будет снята с %d файлов, на которых стоит."
 
-#: src/places_sidebar.rs:1109 ui/places_sidebar.ui:28
+#: src/places_sidebar.rs:1108 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr "_Удалить"
@@ -2687,6 +2685,10 @@ msgstr "_Цвет"
 msgid "_Remove…"
 msgstr "_Удалить…"
 
+#: ui/places_sidebar.ui:112
+msgid "New _Tag…"
+msgstr "Новая _метка…"
+
 #: ui/shortcuts_dialog.ui:15
 msgid "New Window"
 msgstr "Новое окно"
@@ -2978,6 +2980,10 @@ msgstr "Только содержимое"
 #: ui/window.ui:436 ui/window.ui:520
 msgid "View Options"
 msgstr "Параметры просмотра"
+
+#, no-c-format
+#~ msgid "_Tags…"
+#~ msgstr "_Метки…"
 
 #~ msgid "Switch Between Grid and List"
 #~ msgstr "Переключить сетку и список"

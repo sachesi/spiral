@@ -702,38 +702,21 @@ pub(crate) fn tag_dot(color: &str) -> gtk::Image {
         .build()
 }
 
-/// The column of dots a cell shows its tags in, stacked at the top left of the icon the
-/// way the lock sits at the top right; empty until the cell is bound.
+/// The row of dots a cell shows its tags in, in front of the name the way Finder puts
+/// them; empty until the cell is bound.
 pub(crate) fn tag_dots() -> gtk::Box {
     gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(2)
-        .halign(gtk::Align::Center)
-        .valign(gtk::Align::Start)
+        .spacing(3)
+        .valign(gtk::Align::Center)
         .css_classes(["spiral-tags"])
         .build()
 }
 
-/// A small icon with its tag dots laid over its top left corner, for the views whose
-/// icons have no margin to keep them in.
-pub(crate) fn icon_with_tags(image: &gtk::Image) -> gtk::Overlay {
-    let overlay = gtk::Overlay::builder().child(image).build();
-    let dots = tag_dots();
-    dots.set_halign(gtk::Align::Start);
-    overlay.add_overlay(&dots);
-    overlay
-}
-
-/// The icon and the dots of a cell that keeps them in an overlay.
-pub(crate) fn overlay_parts(overlay: &gtk::Overlay) -> (gtk::Image, gtk::Box) {
-    let image = overlay.child().and_downcast::<gtk::Image>().unwrap();
-    let dots = overlay.last_child().and_downcast::<gtk::Box>().unwrap();
-    (image, dots)
-}
-
 /// A dot per tag of the file with a colour, reusing the dots that are there: cells are
-/// bound far more often than tags change. A file that carries tags is made known to the
-/// index while it is here, in case it was tagged elsewhere or moved by another program.
+/// bound far more often than tags change. The row the cell sits in takes the first
+/// colour as a tint, which the list views paint across the row. A file that carries tags
+/// is made known to the index while it is here, in case it was tagged elsewhere or moved
+/// by another program.
 pub(crate) fn set_tags(dots: &gtk::Box, info: &gio::FileInfo) {
     let names = if crate::tags::enabled() {
         crate::tags::of_info(info)
@@ -742,10 +725,12 @@ pub(crate) fn set_tags(dots: &gtk::Box, info: &gio::FileInfo) {
     };
     let mut child = dots.first_child();
     let mut shown = 0;
+    let mut tint = None;
     for name in &names {
         let Some(color) = crate::tags::color_of(name).filter(|c| !c.is_empty()) else {
             continue;
         };
+        tint.get_or_insert_with(|| color.clone());
         let class = format!("spiral-tag-{color}");
         match child.take() {
             Some(dot) => {
@@ -761,8 +746,36 @@ pub(crate) fn set_tags(dots: &gtk::Box, info: &gio::FileInfo) {
         dots.remove(&dot);
     }
     dots.set_tooltip_text((shown > 0).then(|| names.join(", ")).as_deref());
+    tint_row(dots, tint);
     if !names.is_empty() {
         crate::tags::note(&file_utils::file_of(info), &names);
+    }
+}
+
+/// Give the row the cell sits in the class of `color`, or none. A cell bound before it
+/// is in the window belongs to a row widget GTK is still holding as a floating reference,
+/// and walking up to it from here would sink that reference and drop the row; such a
+/// cell is done once the main loop comes round, by which time the row is in the list.
+fn tint_row(dots: &gtk::Box, color: Option<String>) {
+    let apply = move |dots: &gtk::Box| {
+        let Some(row) = row_widget(dots.upcast_ref()) else {
+            return;
+        };
+        for c in crate::tags::COLORS {
+            row.remove_css_class(&format!("spiral-tag-row-{c}"));
+        }
+        if let Some(c) = &color {
+            row.add_css_class(&format!("spiral-tag-row-{c}"));
+        }
+    };
+    if dots.root().is_some() {
+        apply(dots);
+    } else {
+        glib::idle_add_local_once(glib::clone!(
+            #[weak]
+            dots,
+            move || apply(&dots)
+        ));
     }
 }
 
@@ -2154,22 +2167,26 @@ impl BrowserView {
             view.bind_property("icon-size", &captions, "width-request")
                 .sync_create()
                 .build();
+            // The tag dots lead the name, the pair centred under the icon.
+            let name_row = gtk::Box::builder()
+                .spacing(4)
+                .halign(gtk::Align::Center)
+                .build();
+            name_row.append(&tag_dots());
+            name_row.append(&label);
             let labels = gtk::Box::builder()
                 .orientation(gtk::Orientation::Vertical)
                 .build();
-            labels.append(&label);
+            labels.append(&name_row);
             labels.append(&captions);
             // Icon between two emblem-wide margins, the lock stacked at the top of the
-            // right one, the tags at the top of the left one: the Nautilus grid cell
-            // geometry, with the margin it leaves empty put to use.
-            let dots = tag_dots();
-            dots.set_width_request(EMBLEM_MARGIN);
+            // right one: the Nautilus grid cell geometry.
+            image.set_margin_start(EMBLEM_MARGIN);
             image.set_hexpand(true);
             let emblem = emblem_image();
             emblem.set_width_request(EMBLEM_MARGIN);
             emblem.set_valign(gtk::Align::Start);
             let icon_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-            icon_row.append(&dots);
             icon_row.append(&image);
             icon_row.append(&emblem);
             let bx = gtk::Box::builder()
@@ -2192,11 +2209,12 @@ impl BrowserView {
             };
             let bx = item.child().unwrap();
             let icon_row = bx.first_child().unwrap();
-            let dots = icon_row.first_child().and_downcast::<gtk::Box>().unwrap();
-            let image = dots.next_sibling().and_downcast::<gtk::Image>().unwrap();
+            let image = icon_row.first_child().and_downcast::<gtk::Image>().unwrap();
             let emblem = icon_row.last_child().and_downcast::<gtk::Image>().unwrap();
             let labels = bx.last_child().unwrap();
-            let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
+            let name_row = labels.first_child().unwrap();
+            let dots = name_row.first_child().and_downcast::<gtk::Box>().unwrap();
+            let label = dots.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let captions = labels.last_child().and_downcast::<gtk::Label>().unwrap();
             view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
@@ -2211,7 +2229,6 @@ impl BrowserView {
             if let Some(image) = bx
                 .first_child()
                 .and_then(|row| row.first_child())
-                .and_then(|dots| dots.next_sibling())
                 .and_downcast::<gtk::Image>()
             {
                 unbind_icon(&image);
@@ -2245,7 +2262,8 @@ impl BrowserView {
             view.bind_property("list-icon-size", &image, "pixel-size")
                 .sync_create()
                 .build();
-            bx.append(&icon_with_tags(&image));
+            bx.append(&image);
+            bx.append(&tag_dots());
             let label = gtk::Label::builder()
                 .xalign(0.0)
                 .ellipsize(gtk::pango::EllipsizeMode::Middle)
@@ -2270,9 +2288,9 @@ impl BrowserView {
             expander.set_list_row(item.item().and_downcast::<gtk::TreeListRow>().as_ref());
             expander.set_hide_expander(!crate::prefs::tree_view());
             let bx = expander.child().unwrap();
-            let overlay = bx.first_child().and_downcast::<gtk::Overlay>().unwrap();
-            let (image, dots) = overlay_parts(&overlay);
-            let label = overlay.next_sibling().and_downcast::<gtk::Label>().unwrap();
+            let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
+            let dots = image.next_sibling().and_downcast::<gtk::Box>().unwrap();
+            let label = dots.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
             view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
@@ -2285,12 +2303,12 @@ impl BrowserView {
                 return;
             };
             expander.set_list_row(None);
-            if let Some(overlay) = expander
+            if let Some(image) = expander
                 .child()
                 .and_then(|b| b.first_child())
-                .and_downcast::<gtk::Overlay>()
+                .and_downcast::<gtk::Image>()
             {
-                unbind_icon(&overlay_parts(&overlay).0);
+                unbind_icon(&image);
             }
         });
         let name_col = gtk::ColumnViewColumn::new(Some(&gettext("Name")), Some(name_factory));

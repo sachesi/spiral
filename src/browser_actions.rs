@@ -62,6 +62,16 @@ fn templates_menu(entries: &[crate::templates::Entry]) -> gio::Menu {
     menu
 }
 
+/// Where a selection stands with a tag.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TagState {
+    /// On every selected file.
+    All,
+    /// On some of them.
+    Some,
+    None,
+}
+
 /// A file name shown as a menu label: an underscore in it is a character, not a mnemonic.
 fn mnemonic_safe(name: &str) -> String {
     name.replace('_', "__")
@@ -148,7 +158,6 @@ impl BrowserView {
         add("preview", |v| v.show_preview());
         add("star", |v| v.set_selection_starred(true));
         add("unstar", |v| v.set_selection_starred(false));
-        add("tags", |v| v.show_tags());
         add("open-item-location", |v| v.open_item_location());
         add("bookmark", |v| {
             if let Some(dir) = v.location() {
@@ -288,7 +297,7 @@ impl BrowserView {
             }
         ));
         imp.clipboard_handler.replace(Some(clipboard_handler));
-        for key in ["show-delete-permanently", "show-create-link", "use-tags"] {
+        for key in ["show-delete-permanently", "show-create-link"] {
             imp.settings.connect_changed(
                 Some(key),
                 glib::clone!(
@@ -585,11 +594,6 @@ impl BrowserView {
             .count();
         self.set_enabled("star", !in_trash && starred < n);
         self.set_enabled("unstar", starred > 0);
-        // Tags live in an extended attribute, which is the local filesystems' to keep.
-        self.set_enabled(
-            "tags",
-            crate::tags::enabled() && n > 0 && local && !in_trash && !self.chooser_mode(),
-        );
         self.set_enabled(
             "bookmark",
             !virtual_dir
@@ -707,17 +711,30 @@ impl BrowserView {
     }
 
     /// How the selection stands with a tag: on every file, on some, or on none.
-    fn tag_state(&self, name: &str) -> crate::dialogs::TagState {
+    fn tag_state(&self, name: &str) -> TagState {
         let infos = self.model().selected_infos();
         let with = infos
             .iter()
             .filter(|i| crate::tags::of_info(i).iter().any(|t| t == name))
             .count();
         match with {
-            0 => crate::dialogs::TagState::None,
-            n if n == infos.len() => crate::dialogs::TagState::All,
-            _ => crate::dialogs::TagState::Some,
+            0 => TagState::None,
+            n if n == infos.len() => TagState::All,
+            _ => TagState::Some,
         }
+    }
+
+    /// Whether the selection can be tagged: tags are on, and the files are local, since
+    /// the extended attribute is the local filesystems' to keep, and not in the trash.
+    fn can_tag(&self) -> bool {
+        let infos = self.model().selected_infos();
+        crate::tags::enabled()
+            && !self.chooser_mode()
+            && !infos.is_empty()
+            && infos.iter().all(|i| {
+                let file = file_utils::file_of(i);
+                file.is_native() && !file.uri().starts_with("trash:")
+            })
     }
 
     /// Put a tag on the whole selection or take it off the whole selection. The infos
@@ -727,11 +744,12 @@ impl BrowserView {
         for info in self.model().selected_infos() {
             let file = file_utils::file_of(&info);
             if let Err(e) = crate::tags::set(&file, name, on) {
+                // The reason is nearly always that the filesystem keeps no extended
+                // attributes, which GIO says at length; the log gets its wording.
+                glib::g_debug!("spiral", "cannot tag {}: {e}", file.uri());
                 if let Some(win) = self.root().and_downcast::<crate::window::SpiralWindow>() {
                     win.show_toast(
-                        &gettext("Could not tag “%s”: %m")
-                            .replace("%s", &info.display_name())
-                            .replace("%m", e.message()),
+                        &gettext("Could not tag “%s”").replace("%s", &info.display_name()),
                         false,
                     );
                 }
@@ -750,44 +768,14 @@ impl BrowserView {
         self.refresh_cells();
     }
 
-    /// Every tag by name, with a box each, and a way to make a new one.
-    fn show_tags(&self) {
-        let mut carried: Vec<String> = Vec::new();
-        for info in self.model().selected_infos() {
-            for name in crate::tags::of_info(&info) {
-                if !carried.contains(&name) {
-                    carried.push(name);
-                }
-            }
-        }
-        let view = self.clone();
-        crate::dialogs::tags_dialog(
-            self,
-            carried,
-            move |name| view.tag_state(name),
-            glib::clone!(
-                #[weak(rename_to = view)]
-                self,
-                move |name, on| view.set_selection_tag(name, on)
-            ),
-        );
-    }
-
     /// The tags section of the item menu: the coloured tags as a row of dots to click,
-    /// then the dialog, while tags are on; nothing while they are off. It is only touched
-    /// when that changes: the popover loses the slot the dots go in when the item is
-    /// taken out and put back, and would not take them again.
+    /// while tags are on and the selection can take one; nothing otherwise. It is only
+    /// touched when that changes: the popover loses the slot the dots go in when the
+    /// item is taken out and put back, and would not take them again.
     fn sync_tags_menu(&self) {
-        let imp = self.imp();
-        let section = &imp.tags_section;
-        let picker =
-            self.tag_action_enabled() && crate::tags::all().iter().any(|t| !t.color.is_empty());
-        let wanted = match (self.tag_action_enabled(), picker) {
-            (false, _) => 0,
-            (true, false) => 1,
-            (true, true) => 2,
-        };
-        if section.n_items() == wanted {
+        let section = &self.imp().tags_section;
+        let picker = self.can_tag() && crate::tags::all().iter().any(|t| !t.color.is_empty());
+        if section.n_items() == i32::from(picker) {
             return;
         }
         while section.n_items() > 0 {
@@ -798,17 +786,6 @@ impl BrowserView {
             item.set_attribute_value("custom", Some(&"tags".to_variant()));
             section.append_item(&item);
         }
-        if wanted > 0 {
-            section.append(Some(&gettext("_Tags…")), Some("view.tags"));
-        }
-    }
-
-    fn tag_action_enabled(&self) -> bool {
-        self.imp()
-            .actions
-            .lookup_action("tags")
-            .and_downcast::<gio::SimpleAction>()
-            .is_some_and(|a| a.is_enabled())
     }
 
     /// The row of dots for the menu on show: one per coloured tag, marked where the
@@ -816,7 +793,7 @@ impl BrowserView {
     /// builds a menu again, and it goes back in the slot the section leaves for it.
     fn attach_tag_picker(&self) {
         let imp = self.imp();
-        if !self.tag_action_enabled() {
+        if !self.can_tag() {
             return;
         }
         let existing = imp.tag_picker.borrow().clone();
@@ -834,19 +811,19 @@ impl BrowserView {
         for tag in crate::tags::all().iter().filter(|t| !t.color.is_empty()) {
             let dot = crate::browser_view::tag_dot(&tag.color);
             match self.tag_state(&tag.name) {
-                crate::dialogs::TagState::All => dot.set_icon_name(Some("object-select-symbolic")),
-                crate::dialogs::TagState::Some => {
+                TagState::All => dot.set_icon_name(Some("object-select-symbolic")),
+                TagState::Some => {
                     dot.set_icon_name(Some("object-select-symbolic"));
                     dot.add_css_class("spiral-tag-some");
                 }
-                crate::dialogs::TagState::None => {}
+                TagState::None => {}
             }
             let button = gtk::Button::builder()
                 .child(&dot)
                 .tooltip_text(&tag.name)
                 .css_classes(["flat", "circular"])
                 .build();
-            let on = !matches!(self.tag_state(&tag.name), crate::dialogs::TagState::All);
+            let on = !matches!(self.tag_state(&tag.name), TagState::All);
             let name = tag.name.clone();
             button.connect_clicked(glib::clone!(
                 #[weak(rename_to = view)]

@@ -226,35 +226,80 @@ rubberband {
   opacity: 0.35;
 }
 
-/* Tags: a dot per tag beside the name, in the sidebar, and in the row the menu offers.
-   The colours are the libadwaita palette. */
+/* Tags: a dot per tag before the name, in the sidebar, and in the row the menu offers;
+   the list views wash the row with the first one. The colours are the libadwaita
+   palette, taken darker on a light page and lighter on a dark one, so that the dot and
+   the wash both read against the page. */
+window {
+  --spiral-tag-red: var(--red-4);
+  --spiral-tag-orange: var(--orange-4);
+  --spiral-tag-yellow: var(--yellow-5);
+  --spiral-tag-green: var(--green-5);
+  --spiral-tag-blue: var(--blue-4);
+  --spiral-tag-purple: var(--purple-4);
+  --spiral-tag-gray: var(--dark-1);
+}
+@media (prefers-color-scheme: dark) {
+  window {
+    --spiral-tag-red: var(--red-2);
+    --spiral-tag-orange: var(--orange-2);
+    --spiral-tag-yellow: var(--yellow-3);
+    --spiral-tag-green: var(--green-3);
+    --spiral-tag-blue: var(--blue-2);
+    --spiral-tag-purple: var(--purple-2);
+    --spiral-tag-gray: var(--light-5);
+  }
+}
 .spiral-tag-dot {
   min-width: 10px;
   min-height: 10px;
   border-radius: 999px;
-  background-color: var(--light-5);
+  background-color: var(--spiral-tag-gray);
   color: white;
   -gtk-icon-size: 10px;
 }
-.spiral-tag-red { background-color: var(--red-3); }
-.spiral-tag-orange { background-color: var(--orange-3); }
-.spiral-tag-yellow { background-color: var(--yellow-3); }
-.spiral-tag-green { background-color: var(--green-3); }
-.spiral-tag-blue { background-color: var(--blue-3); }
-.spiral-tag-purple { background-color: var(--purple-3); }
-.spiral-tag-gray { background-color: var(--light-5); }
+.spiral-tag-red { background-color: var(--spiral-tag-red); }
+.spiral-tag-orange { background-color: var(--spiral-tag-orange); }
+.spiral-tag-yellow { background-color: var(--spiral-tag-yellow); }
+.spiral-tag-green { background-color: var(--spiral-tag-green); }
+.spiral-tag-blue { background-color: var(--spiral-tag-blue); }
+.spiral-tag-purple { background-color: var(--spiral-tag-purple); }
+.spiral-tag-gray { background-color: var(--spiral-tag-gray); }
 .spiral-tag-none {
   background: none;
   box-shadow: inset 0 0 0 1px currentColor;
   color: currentColor;
   opacity: 0.55;
 }
-/* On a list icon the dots share the icon's corner, so they are kept small */
-.spiral-list-view .spiral-tags .spiral-tag-dot,
-.spiral-miller-column .spiral-tags .spiral-tag-dot {
-  min-width: 8px;
-  min-height: 8px;
-  -gtk-icon-size: 8px;
+/* The row of a tagged file, washed with its first colour; a selected row keeps the
+   selection colour, which says more. */
+.spiral-list-view columnview > listview > row.spiral-tag-row-red:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-row-red:not(:selected) {
+  background-color: color-mix(in srgb, var(--spiral-tag-red) 18%, transparent);
+}
+.spiral-list-view columnview > listview > row.spiral-tag-row-orange:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-row-orange:not(:selected) {
+  background-color: color-mix(in srgb, var(--spiral-tag-orange) 18%, transparent);
+}
+.spiral-list-view columnview > listview > row.spiral-tag-row-yellow:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-row-yellow:not(:selected) {
+  background-color: color-mix(in srgb, var(--spiral-tag-yellow) 22%, transparent);
+}
+.spiral-list-view columnview > listview > row.spiral-tag-row-green:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-row-green:not(:selected) {
+  background-color: color-mix(in srgb, var(--spiral-tag-green) 18%, transparent);
+}
+.spiral-list-view columnview > listview > row.spiral-tag-row-blue:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-row-blue:not(:selected) {
+  background-color: color-mix(in srgb, var(--spiral-tag-blue) 18%, transparent);
+}
+.spiral-list-view columnview > listview > row.spiral-tag-row-purple:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-row-purple:not(:selected) {
+  background-color: color-mix(in srgb, var(--spiral-tag-purple) 18%, transparent);
+}
+.spiral-list-view columnview > listview > row.spiral-tag-row-gray:not(:selected),
+.spiral-miller-column listview > row.spiral-tag-row-gray:not(:selected) {
+  background-color: color-mix(in srgb, var(--spiral-tag-gray) 18%, transparent);
 }
 .spiral-tag-picker {
   padding: 2px 6px;

@@ -11,8 +11,8 @@ use std::time::Duration;
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
 use crate::browser_view::{
-    BrowserView, emblem_image, icon_with_tags, overlay_parts, preferred_action, remember_list_item,
-    set_cut, set_tags, unbind_icon,
+    BrowserView, emblem_image, preferred_action, remember_list_item, set_cut, set_tags, tag_dots,
+    unbind_icon,
 };
 use crate::enums::ViewMode;
 use crate::file_utils;
@@ -502,7 +502,8 @@ impl BrowserView {
             view.bind_property("list-icon-size", &image, "pixel-size")
                 .sync_create()
                 .build();
-            bx.append(&icon_with_tags(&image));
+            bx.append(&image);
+            bx.append(&tag_dots());
             let label = gtk::Label::builder()
                 .xalign(0.0)
                 .hexpand(true)
@@ -527,9 +528,9 @@ impl BrowserView {
                 return;
             };
             let bx = item.child().unwrap();
-            let overlay = bx.first_child().and_downcast::<gtk::Overlay>().unwrap();
-            let (image, dots) = overlay_parts(&overlay);
-            let label = overlay.next_sibling().and_downcast::<gtk::Label>().unwrap();
+            let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
+            let dots = image.next_sibling().and_downcast::<gtk::Box>().unwrap();
+            let label = dots.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
             view.bind_icon(&image, &emblem, &info, item.position());
             set_cut(&bx, &info);
@@ -539,12 +540,12 @@ impl BrowserView {
         });
         factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            if let Some(overlay) = item
+            if let Some(image) = item
                 .child()
                 .and_then(|bx| bx.first_child())
-                .and_downcast::<gtk::Overlay>()
+                .and_downcast::<gtk::Image>()
             {
-                unbind_icon(&overlay_parts(&overlay).0);
+                unbind_icon(&image);
             }
         });
         factory

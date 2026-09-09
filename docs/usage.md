@@ -242,14 +242,15 @@ and quietly drops entries that no longer exist. The list is a plain file,
 ## Tags
 
 Off by default; "Colour Tags" in Preferences turns them on. Seven tags named after their
-colours come with it, and "New Tag…" makes more, with a name and a colour or none. A tagged
-file shows a dot per tag at the top left of its icon, where the lock sits at the top right.
+colours come with it, and "New Tag…" in the menu of a tag in the sidebar makes more, with
+a name and a colour or none. A tagged file shows a dot per tag in front of its name, and
+in the list and column views its row is washed with the colour of the first one.
 
 The context menu of a selection shows the coloured tags as a row of dots: a click puts the
 tag on every selected file, or takes it off when they all have it; a dot with a tick is on
-all of them, a faded tick on some. "Tags…" below the row lists every tag by name with a box
-each, the tags a file carries that Spiral does not know about included, and makes new ones.
-Dropping files on a tag in the sidebar gives them that tag.
+all of them, a faded tick on some. Dropping files on a tag in the sidebar gives them that
+tag. A tag without a colour is only on the sidebar, and comes off a file when the tag is
+removed or given a colour.
 
 Each tag in the sidebar opens the list of what carries it; the "Tags" crumb above it lists
 every tagged file. A tag's own menu there renames it, changes its colour, removes it, or
