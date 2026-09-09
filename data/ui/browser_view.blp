@@ -170,10 +170,12 @@ menu item_menu {
     item {
       label: _("Copy to…");
       action: "view.copy-to";
+      hidden-when: "action-disabled";
     }
     item {
       label: _("Move to…");
       action: "view.move-to";
+      hidden-when: "action-disabled";
     }
     item {
       label: _("_Paste Into Folder");
