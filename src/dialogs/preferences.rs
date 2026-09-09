@@ -57,6 +57,22 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     settings.bind("ask-on-drop", &ask_on_drop, "active").build();
     behaviour.add(&ask_on_drop);
     page.add(&behaviour);
+
+    let network = adw::PreferencesGroup::builder()
+        .title(gettext("Network"))
+        .description(gettext(
+            "Shares on other machines are reached through gvfs, and nothing here works without it.",
+        ))
+        .build();
+    let use_network = adw::SwitchRow::builder()
+        .title(gettext("Network Locations"))
+        .subtitle(gettext(
+            "“Connect to Server…” in the main menu, the network in the sidebar, and shares opened by address",
+        ))
+        .build();
+    settings.bind("use-network", &use_network, "active").build();
+    network.add(&use_network);
+    page.add(&network);
     dialog.add(&page);
 
     let page = adw::PreferencesPage::builder()
@@ -182,7 +198,7 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     dialog.add(&page);
 
     let page = adw::PreferencesPage::builder()
-        .title(gettext("Performance"))
+        .title(gettext("Speed"))
         .icon_name("power-profile-performance-symbolic")
         .build();
 

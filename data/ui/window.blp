@@ -24,6 +24,7 @@ menu primary_menu {
     item {
       label: _("Connect to _Server…");
       action: "win.connect-server";
+      hidden-when: "action-disabled";
     }
   }
   section {

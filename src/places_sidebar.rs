@@ -157,7 +157,13 @@ mod imp {
             self.monitor_handlers.replace(handlers.into());
 
             // Both places are the user's to keep or drop, and so are the tags.
-            for key in ["show-root", "show-favorites", "use-tags", "tags"] {
+            for key in [
+                "show-root",
+                "show-favorites",
+                "use-network",
+                "use-tags",
+                "tags",
+            ] {
                 crate::prefs::settings().connect_changed(
                     Some(key),
                     glib::clone!(
@@ -686,7 +692,7 @@ impl PlacesSidebar {
             if mount.is_shadowed() || mount.volume().is_some() {
                 continue;
             }
-            if crate::network::is_network(&mount.root()) {
+            if crate::prefs::use_network() && crate::network::is_network(&mount.root()) {
                 servers.push(mount);
             } else {
                 list.append(&self.mount_row(&mount, SECTION_DEVICES));
@@ -694,7 +700,7 @@ impl PlacesSidebar {
         }
 
         // Network: where the machines around are listed, and the servers connected to.
-        if crate::network::can_browse() {
+        if crate::prefs::use_network() && crate::network::can_browse() {
             list.append(&place_row(
                 "network-workgroup-symbolic",
                 &gettext("Network"),

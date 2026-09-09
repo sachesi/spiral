@@ -392,6 +392,17 @@ mod imp {
             ));
             obj.add_action(&self.view_mode_action);
             obj.action_set_enabled("win.restore-tab", false);
+            obj.action_set_enabled("win.connect-server", crate::prefs::use_network());
+            self.settings.connect_changed(
+                Some("use-network"),
+                glib::clone!(
+                    #[weak(rename_to = win)]
+                    obj,
+                    move |_, _| {
+                        win.action_set_enabled("win.connect-server", crate::prefs::use_network());
+                    }
+                ),
+            );
             obj.sync_columns_item();
             self.settings.connect_changed(
                 Some("use-column-view"),
