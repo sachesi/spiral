@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-09 18:26+0300\n"
+"POT-Creation-Date: 2026-09-09 21:50+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -94,7 +94,9 @@ msgid ""
 "Seven at most. The colour is one of red, orange, yellow, green, blue, purple "
 "and gray, or a #rrggbb of your own. An empty list stands for the seven "
 "colours."
-msgstr "Не більше семи. Колір — один із red, orange, yellow, green, blue, purple, gray або власний #rrggbb. Порожній список означає сім кольорів."
+msgstr ""
+"Не більше семи. Колір — один із red, orange, yellow, green, blue, purple, "
+"gray або власний #rrggbb. Порожній список означає сім кольорів."
 
 #: data/io.github.sachesi.spiral.gschema.xml:80
 msgid "Offer the column view"
@@ -304,6 +306,47 @@ msgstr "sachesi"
 
 #: data/io.github.sachesi.spiral.metainfo.xml:27
 msgid ""
+"Colour tags, off until \"Colour Tags\" in Preferences turns them on. A tag "
+"is a name and a colour; seven come by default, and the ones you make take a "
+"colour from the palette or one of your own. A file's tags live in its "
+"user.xdg.tags attribute, so they survive renames, moves and copies and are "
+"the tags Dolphin and Baloo read; an index under the user data dir says which "
+"files carry each tag, since nothing can ask every file on the disk, and it "
+"is corrected as listings show what is true. The context menu tags a "
+"selection from a row of coloured dots, the tags of a file lead its name in "
+"every view, the list and the columns wash the row with the first colour "
+"while the grid washes the name, and the sidebar lists the tags, opens what "
+"carries one, takes drops to tag files, and renames, recolours and removes "
+"them."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:28
+msgid ""
+"\"Copy to…\", \"Move to…\" and \"Extract To…\" ask in a dialog attached to "
+"the window instead of a file chooser window of its own: folders and nothing "
+"else, \"New Folder\" in the header for a destination that does not exist "
+"yet, and the button takes the folder selected or the one on screen. The "
+"dialog folds its sidebar away in a narrow window and has a button to ask it "
+"back, as the portal chooser now does at its own width. Ctrl+L types a "
+"location in the dialogs as well as in the window, and the portal chooser "
+"answers Ctrl+R, F5 and Ctrl+S from anywhere in it. A drop on a folder in the "
+"list or the columns goes into the folder under the pointer, which is tinted "
+"while the drag is over it, and files dropped on Trash are trashed whether "
+"the drag arrived as a move or a copy."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:29
+msgid ""
+"A video preview goes on playing when the arrows step to the next file, and a "
+"sound file whose length is only known once the pipeline has read into it "
+"gets its timeline and the seeking that comes with it. Ctrl+S no longer picks "
+"files out by pattern in a save dialog, where that key belongs to the "
+"application the dialog was opened for, and \"Empty Trash…\" does not ask its "
+"question over an empty trash."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:34
+msgid ""
 "Renaming takes a whole selection: F2 on several files opens a dialog that "
 "gives them all a shared name with numbers after it, or replaces some text of "
 "the old names with other text, listing the names it would give as the rule "
@@ -314,7 +357,7 @@ msgid ""
 "with everything but the extension selected."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:28
+#: data/io.github.sachesi.spiral.metainfo.xml:35
 msgid ""
 "A drag held for a moment over a folder, a breadcrumb or a sidebar entry "
 "opens it, so files can be carried somewhere that is not on screen when the "
@@ -329,7 +372,7 @@ msgid ""
 "item instead of moving the menu out from under the pointer."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:29
+#: data/io.github.sachesi.spiral.metainfo.xml:36
 msgid ""
 "The file chooser searches the folder it is showing, and only that one, and "
 "sorts from its header; it keeps the view and the order it was left in apart "
@@ -340,7 +383,7 @@ msgid ""
 "off the thread drawing the window."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:34
+#: data/io.github.sachesi.spiral.metainfo.xml:41
 msgid ""
 "Big folders open in a fraction of the time and scroll without stutter. A "
 "folder that does not fit in one batch of its listing is shown once, complete "
@@ -353,7 +396,7 @@ msgid ""
 "takes a fifth of the processor time it took on the thread drawing the window."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:35
+#: data/io.github.sachesi.spiral.metainfo.xml:42
 msgid ""
 "Thumbnails are asked for only once their cell is on screen and the folder is "
 "in order, and a screenful is made from the top down rather than in the order "
@@ -367,7 +410,7 @@ msgid ""
 "every request."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:36
+#: data/io.github.sachesi.spiral.metainfo.xml:43
 msgid ""
 "Text in the preview has line numbers, on the colour of the page. A video "
 "opens in its own proportions, read from the header of its container when the "
@@ -376,7 +419,7 @@ msgid ""
 "Preferences, so a terminal editor works as a default."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:41
+#: data/io.github.sachesi.spiral.metainfo.xml:48
 msgid ""
 "Bubblewrap is now required. Thumbnailers, the PDF previewer and the archive "
 "tools are decoders fed files nobody here wrote, and all three used to run "
@@ -388,7 +431,7 @@ msgid ""
 "seconds instead of holding a slot for the rest of the session."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:42
+#: data/io.github.sachesi.spiral.metainfo.xml:49
 msgid ""
 "Big folders open in about half the processor time they took. A folder is put "
 "in order once, when its listing ends, instead of after each batch of files "
@@ -402,7 +445,7 @@ msgid ""
 "and generation uses the cores there are."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:47
+#: data/io.github.sachesi.spiral.metainfo.xml:54
 msgid ""
 "The sidebar gained Root, the top of the filesystem, and a switch in "
 "Preferences for it and for Favorites. The order folders open in can be "
@@ -415,7 +458,7 @@ msgid ""
 "empty under any icon theme."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:52
+#: data/io.github.sachesi.spiral.metainfo.xml:59
 msgid ""
 "The column view is now optional and starts turned off: with it off the view "
 "button and the view menu offer the grid and the list alone. Pasted files, "
@@ -428,7 +471,7 @@ msgid ""
 "longer takes the focus away from a half-typed path."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:57
+#: data/io.github.sachesi.spiral.metainfo.xml:64
 msgid ""
 "Column view no longer decides the view of every folder after it: a folder "
 "that remembers a view of its own gets it back, while columns still survive a "
@@ -439,7 +482,7 @@ msgid ""
 "is half the size it was."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:62
+#: data/io.github.sachesi.spiral.metainfo.xml:69
 msgid ""
 "A quick preview on the Space key: images, PDFs a page at a time, video, "
 "sound and text with source code among it, drawn by Spiral itself in a window "
@@ -455,7 +498,7 @@ msgid ""
 "Windows, tabs and dialogs let go of everything they held when they close."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:67
+#: data/io.github.sachesi.spiral.metainfo.xml:74
 msgid ""
 "A column view, the third way to look at a folder: the path drawn as a strip "
 "of lists, one folder per column, with the folder you are in at the right and "
@@ -475,7 +518,7 @@ msgstr ""
 "записують після створення, наприклад вставлений з буфера знімок екрана, "
 "отримує мініатюру без перезапуску."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:72
+#: data/io.github.sachesi.spiral.metainfo.xml:79
 msgid ""
 "A click on empty space in a folder takes the keyboard and clears the "
 "selection, so Ctrl+A and the other file keys no longer wait for a file to be "
@@ -491,7 +534,7 @@ msgstr ""
 "позначення, а відкрите ним меню діє на теку. Кнопка фільтрів пошуку знову "
 "має піктограму."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:77
+#: data/io.github.sachesi.spiral.metainfo.xml:84
 msgid ""
 "Two folder panes side by side, off by default and turned on with F3: F6 "
 "moves between them, the pane in charge is outlined, and everything outside "
@@ -508,7 +551,7 @@ msgstr ""
 "двадцять п’ять секунд через взаємне блокування портала й відкриває власне "
 "вікно з позначеним файлом."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:82
+#: data/io.github.sachesi.spiral.metainfo.xml:89
 msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
@@ -525,7 +568,7 @@ msgstr ""
 "Компактні стовпці списку зі змінною шириною, тип показано як розширення "
 "файла, перемикач зірочки стежить за вибраним."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:87
+#: data/io.github.sachesi.spiral.metainfo.xml:94
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -543,7 +586,7 @@ msgstr ""
 "та недоступні дії для файлів лише для читання, теки стежать за змінами "
 "ззовні, а буфер обміну вставляє шляхи в термінали."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:92
+#: data/io.github.sachesi.spiral.metainfo.xml:99
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
@@ -554,7 +597,7 @@ msgstr ""
 "виклик, -w, -s, -q. Звернення до файлової системи більше не блокують "
 "інтерфейс на повільних точках монтування."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:96
+#: data/io.github.sachesi.spiral.metainfo.xml:103
 msgid "First release."
 msgstr "Перший випуск."
 
@@ -614,43 +657,43 @@ msgstr "Архів"
 msgid "Could not tag “%s”"
 msgstr "Не вдалося позначити «%s»"
 
-#: src/browser_actions.rs:953
+#: src/browser_actions.rs:983
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr "Не вдалося вставити зображення"
 
-#: src/browser_actions.rs:966
+#: src/browser_actions.rs:996
 #, no-c-format
 msgid "Move To"
 msgstr "Пересунути до"
 
-#: src/browser_actions.rs:966
+#: src/browser_actions.rs:996
 #, no-c-format
 msgid "_Move"
 msgstr "_Пересунути"
 
-#: src/browser_actions.rs:968
+#: src/browser_actions.rs:998
 #, no-c-format
 msgid "Copy To"
 msgstr "Копіювати до"
 
-#: src/browser_actions.rs:968 ui/browser_view.ui:203
+#: src/browser_actions.rs:998 ui/browser_view.ui:203
 #, no-c-format
 msgid "_Copy"
 msgstr "_Копіювати"
 
-#: src/browser_actions.rs:1061 src/browser_view.rs:1425
+#: src/browser_actions.rs:1091 src/browser_view.rs:1425
 #: src/browser_view.rs:1432 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не вдалося відкрити"
 
-#: src/browser_actions.rs:1071
+#: src/browser_actions.rs:1101
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Остаточно вилучити «%s»?"
 
-#: src/browser_actions.rs:1073
+#: src/browser_actions.rs:1103
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -658,12 +701,12 @@ msgstr[0] "Остаточно вилучити %d об’єкт?"
 msgstr[1] "Остаточно вилучити %d об’єкти?"
 msgstr[2] "Остаточно вилучити %d об’єктів?"
 
-#: src/browser_actions.rs:1081
+#: src/browser_actions.rs:1111
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Остаточно вилучені об’єкти неможливо відновити."
 
-#: src/browser_actions.rs:1086 src/dialogs/batch_rename.rs:108
+#: src/browser_actions.rs:1116 src/dialogs/batch_rename.rs:108
 #: src/dialogs/compress.rs:70 src/dialogs/open_with.rs:59
 #: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:36
 #: src/ops/archive.rs:351 src/ops/conflict.rs:63 src/ops/conflict.rs:314
@@ -673,37 +716,37 @@ msgstr "Остаточно вилучені об’єкти неможливо �
 msgid "_Cancel"
 msgstr "_Скасувати"
 
-#: src/browser_actions.rs:1087
+#: src/browser_actions.rs:1117
 #, no-c-format
 msgid "_Delete"
 msgstr "В_илучити"
 
-#: src/browser_actions.rs:1140
+#: src/browser_actions.rs:1170
 #, no-c-format
 msgid "Untitled Document"
 msgstr "Документ без назви"
 
-#: src/browser_actions.rs:1174 ui/window.ui:16
+#: src/browser_actions.rs:1204 ui/window.ui:16
 #, no-c-format
 msgid "New _Tab"
 msgstr "Нова в_кладка"
 
-#: src/browser_actions.rs:1175 ui/window.ui:12
+#: src/browser_actions.rs:1205 ui/window.ui:12
 #, no-c-format
 msgid "New _Window"
 msgstr "Нове _вікно"
 
-#: src/browser_actions.rs:1176
+#: src/browser_actions.rs:1206
 #, no-c-format
 msgid "_Terminal"
 msgstr "_Термінал"
 
-#: src/browser_actions.rs:1191
+#: src/browser_actions.rs:1221
 #, no-c-format
 msgid "Open _In"
 msgstr "Відкрити _у"
 
-#: src/browser_actions.rs:1204 ui/path_bar.ui:16
+#: src/browser_actions.rs:1234 ui/path_bar.ui:16
 #, no-c-format
 msgid "New _Document"
 msgstr "Створити _документ"
@@ -1290,46 +1333,46 @@ msgstr "Термінал"
 msgid "Preview"
 msgstr "Перегляд"
 
-#: src/dialogs/preview.rs:523
+#: src/dialogs/preview.rs:533
 #, no-c-format
 msgid "Previous Page"
 msgstr "Попередня сторінка"
 
-#: src/dialogs/preview.rs:525
+#: src/dialogs/preview.rs:535
 #, no-c-format
 msgid "Next Page"
 msgstr "Наступна сторінка"
 
-#: src/dialogs/preview.rs:599 src/dialogs/preview.rs:652
+#: src/dialogs/preview.rs:609 src/dialogs/preview.rs:662
 #, no-c-format
 msgid "Fit"
 msgstr "Вмістити"
 
-#: src/dialogs/preview.rs:601 ui/shortcuts_dialog.ui:164 ui/window.ui:446
+#: src/dialogs/preview.rs:611 ui/shortcuts_dialog.ui:164 ui/window.ui:446
 #: ui/window.ui:530
 #, no-c-format
 msgid "Zoom Out"
 msgstr "Зменшити"
 
-#: src/dialogs/preview.rs:602
+#: src/dialogs/preview.rs:612
 #, no-c-format
 msgid "Fit to Window"
 msgstr "Вмістити у вікно"
 
-#: src/dialogs/preview.rs:603 ui/shortcuts_dialog.ui:158 ui/window.ui:456
+#: src/dialogs/preview.rs:613 ui/shortcuts_dialog.ui:158 ui/window.ui:456
 #: ui/window.ui:540
 #, no-c-format
 msgid "Zoom In"
 msgstr "Збільшити"
 
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:871
+#: src/dialogs/preview.rs:881
 #, no-c-format
 msgid "%t, %s"
 msgstr "%t, %s"
 
 #. Translators: %p is the page being shown, %n the number of pages in the document.
-#: src/dialogs/preview.rs:876
+#: src/dialogs/preview.rs:886
 #, no-c-format
 msgid "%p of %n"
 msgstr "%p з %n"
