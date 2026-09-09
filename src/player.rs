@@ -72,6 +72,9 @@ mod imp {
         pub pending: RefCell<Option<Option<gio::File>>>,
         /// Between the file being set and the pipeline reporting itself ready or failed.
         pub starting: Cell<bool>,
+        /// Set while the stream is being prepared again with a length it has just learnt,
+        /// so that the pause that comes with that is not passed on to the pipeline.
+        pub redating: Cell<bool>,
         pub seeking: Cell<bool>,
         pub has_audio: Cell<bool>,
         pub has_video: Cell<bool>,
@@ -104,6 +107,9 @@ mod imp {
         }
 
         fn pause(&self) {
+            if self.redating.get() {
+                return;
+            }
             if self.file.borrow().is_some() {
                 let _ = self.playbin().set_state(gst::State::Paused);
             }
@@ -345,6 +351,7 @@ impl Player {
                     self.no_decoder();
                 }
             }
+            MessageView::DurationChanged(_) => self.redate(),
             MessageView::Eos(_) => self.stream_ended(),
             MessageView::StreamCollection(c) => {
                 for stream in c.stream_collection().iter() {
@@ -383,13 +390,7 @@ impl Player {
     /// where it is.
     fn prepare(&self) {
         let imp = self.imp();
-        let playbin = imp.playbin();
-        let duration = playbin
-            .query_duration::<gst::ClockTime>()
-            .map(|d| d.useconds() as i64)
-            .unwrap_or(0);
-        let mut seeking = gst::query::Seeking::new(gst::Format::Time);
-        let seekable = playbin.query(&mut seeking) && seeking.result().0;
+        let (seekable, duration) = self.facts();
         self.stream_prepared(imp.has_audio.get(), imp.has_video.get(), seekable, duration);
         self.invalidate_size();
         imp.tick.replace(Some(glib::timeout_add_local(
@@ -409,6 +410,41 @@ impl Player {
                 }
             ),
         )));
+    }
+
+    /// Whether the file can be seeked in and how long it is, as the pipeline has it now.
+    fn facts(&self) -> (bool, i64) {
+        let playbin = self.imp().playbin();
+        let duration = playbin
+            .query_duration::<gst::ClockTime>()
+            .map(|d| d.useconds() as i64)
+            .unwrap_or(0);
+        let mut seeking = gst::query::Seeking::new(gst::Format::Time);
+        let seekable = playbin.query(&mut seeking) && seeking.result().0;
+        (seekable, duration)
+    }
+
+    /// How long some files are is not known until the pipeline has read into them, and it
+    /// says so when it finds out. A stream is only told its length as it is prepared, so
+    /// it is prepared again with the length in it: without one the controls have no
+    /// timeline to show.
+    fn redate(&self) {
+        let imp = self.imp();
+        if !self.is_prepared() || imp.starting.get() {
+            return;
+        }
+        let (seekable, duration) = self.facts();
+        if duration == self.duration() {
+            return;
+        }
+        let playing = self.is_playing();
+        imp.redating.set(true);
+        self.stream_unprepared();
+        self.stream_prepared(imp.has_audio.get(), imp.has_video.get(), seekable, duration);
+        imp.redating.set(false);
+        if playing {
+            self.play();
+        }
     }
 }
 
