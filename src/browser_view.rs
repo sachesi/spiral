@@ -2149,7 +2149,12 @@ impl BrowserView {
         match imp.stack.visible_child_name().as_deref() {
             Some("grid") => imp.grid_view.grab_focus(),
             Some("columns") => imp.miller_list.grab_focus(),
-            _ => imp.column_view.grab_focus(),
+            Some("list") => imp.column_view.grab_focus(),
+            // The empty and the error page have no view to hand the keyboard to. Handing
+            // it to one that is not on screen leaves it on a widget outside everything the
+            // window looks at, and the keys bound to the window stop working until
+            // something else is clicked.
+            _ => false,
         };
     }
 
