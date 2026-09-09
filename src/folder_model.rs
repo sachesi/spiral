@@ -71,6 +71,9 @@ mod imp {
         sort_deferred: Cell<bool>,
         /// Root of the pipeline: `dir_list`, or `starred_store` for `starred:///`.
         filtered: gtk::FilterListModel,
+        /// Holds what a stopped listing had read, since a directory list drops its items
+        /// the moment it is told to stop.
+        pub stopped_store: gio::ListStore,
         pub starred_store: gio::ListStore,
         pub starred_gen: Cell<u64>,
         starred_handler: RefCell<Option<glib::SignalHandlerId>>,
@@ -78,6 +81,9 @@ mod imp {
         /// settings -- and a column view makes and drops models as it walks, so they have
         /// to come off again.
         tree_handler: RefCell<Option<glib::SignalHandlerId>>,
+        /// Whether a search walks the folders below this one. A file chooser searches the
+        /// folder it is showing and nothing else: it is picking a file, not looking for one.
+        pub search_recursive: Cell<bool>,
         /// Root of the pipeline while searching; filled by `search::run`.
         pub search_store: gio::ListStore,
         pub search_gen: Cell<u64>,
@@ -153,10 +159,12 @@ mod imp {
                 listing_shown: Default::default(),
                 sort_deferred: Default::default(),
                 filtered,
+                stopped_store: gio::ListStore::new::<gio::FileInfo>(),
                 starred_store: gio::ListStore::new::<gio::FileInfo>(),
                 starred_gen: Default::default(),
                 starred_handler: Default::default(),
                 tree_handler: Default::default(),
+                search_recursive: Cell::new(true),
                 search_store: gio::ListStore::new::<gio::FileInfo>(),
                 search_gen: Default::default(),
                 hidden_filter,
@@ -282,6 +290,18 @@ mod imp {
             }
         }
 
+        /// Show `model` instead of the listing and let the directory list go. What was
+        /// read stays on screen, in order: a listing shown before its end may still be
+        /// waiting for its sorter.
+        pub(super) fn freeze(&self, model: &impl IsA<gio::ListModel>) {
+            if self.sort_deferred.replace(false) {
+                self.sorted.set_sorter(Some(&self.sorter));
+            }
+            self.listing_shown.set(true);
+            self.filtered.set_model(Some(model));
+            self.dir_list.set_file(gio::File::NONE);
+        }
+
         /// List `file`, or nothing, from the start. The old listing comes off the
         /// pipeline first, so the views empty once rather than once per batch of the new
         /// folder, and go on again through `show_listing`.
@@ -289,6 +309,11 @@ mod imp {
             self.listing_shown.set(false);
             if !self.searching.get() {
                 self.filtered.set_model(gio::ListModel::NONE);
+            }
+            // What a stopped listing had read is off the pipeline now, and a folder of a
+            // hundred thousand files is a lot to go on holding.
+            if self.stopped_store.n_items() > 0 {
+                self.stopped_store.remove_all();
             }
             if self.sort_deferred.replace(false) {
                 self.sorted.set_sorter(Some(&self.sorter));
@@ -565,6 +590,37 @@ impl FolderModel {
             .collect()
     }
 
+    /// Stop reading, keeping what has arrived. A search only has to be abandoned; a
+    /// listing has to be copied out of the directory list first, which empties itself as
+    /// soon as it is told to stop.
+    pub fn stop_loading(&self) {
+        let imp = self.imp();
+        if !self.loading() {
+            return;
+        }
+        if imp.searching.get() || imp.is_starred() {
+            imp.search_gen.set(imp.search_gen.get() + 1);
+            imp.starred_gen.set(imp.starred_gen.get() + 1);
+            imp.set_loading(false);
+            return;
+        }
+        let read: Vec<gio::FileInfo> = imp
+            .dir_list
+            .iter::<glib::Object>()
+            .flatten()
+            .filter_map(|o| o.downcast::<gio::FileInfo>().ok())
+            .collect();
+        imp.stopped_store
+            .splice(0, imp.stopped_store.n_items(), &read);
+        imp.freeze(&imp.stopped_store);
+        imp.set_loading(false);
+    }
+
+    /// Keep a search inside the folder being shown, wherever the preference stands.
+    pub fn set_search_recursive(&self, recursive: bool) {
+        self.imp().search_recursive.set(recursive);
+    }
+
     pub fn reload(&self) {
         let imp = self.imp();
         if imp.searching.get() {
@@ -596,7 +652,9 @@ impl FolderModel {
             },
             kind: imp.search_kind.borrow().clone(),
             since: crate::search::since_for(&imp.search_date.borrow()),
-            recursive: !imp.is_starred() && crate::prefs::recursive_search_for(&root),
+            recursive: imp.search_recursive.get()
+                && !imp.is_starred()
+                && crate::prefs::recursive_search_for(&root),
             show_hidden: imp.show_hidden.get(),
         };
         glib::spawn_future_local(glib::clone!(

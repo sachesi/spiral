@@ -44,6 +44,17 @@ pub fn validate(name: &str, original: Option<&str>, is_folder: bool) -> Verdict 
     Verdict::Ok
 }
 
+/// Where the name ends and the extension begins, counted in characters: a selection in an
+/// entry is counted in those, not in bytes, and a Cyrillic name is longer in bytes than it
+/// looks. -1 selects to the end, for a name with no extension to leave out. A leading dot
+/// belongs to the name.
+pub(crate) fn stem_end(name: &str, is_folder: bool) -> i32 {
+    match name.rfind('.').filter(|&i| i > 0 && !is_folder) {
+        Some(dot) => name[..dot].chars().count() as i32,
+        None => -1,
+    }
+}
+
 fn taken_message(is_folder: bool) -> String {
     if is_folder {
         gettext("A folder with that name already exists.")
@@ -222,20 +233,55 @@ pub async fn rename_popover(
         }
     ));
     popover.popup();
-    let stem = old
-        .rfind('.')
-        .filter(|&i| i > 0 && !is_folder)
-        .unwrap_or(old.len());
     entry.grab_focus();
-    entry.select_region(0, stem as i32);
+    entry.select_region(0, stem_end(old, is_folder));
     rx.await.ok().flatten()
 }
 
 /// "New Folder" dialog. Resolves to the folder name or None.
 pub async fn new_folder_dialog(parent: &impl IsA<gtk::Widget>, dir: &gio::File) -> Option<String> {
+    name_dialog(
+        parent,
+        dir,
+        &gettext("New Folder"),
+        &gettext("_Folder Name"),
+        "",
+        true,
+    )
+    .await
+}
+
+/// "New Document" dialog, starting from `suggested`: the name of the template the document
+/// comes from, or the one an empty document is given. Resolves to the file name or None.
+pub async fn new_file_dialog(
+    parent: &impl IsA<gtk::Widget>,
+    dir: &gio::File,
+    suggested: &str,
+) -> Option<String> {
+    name_dialog(
+        parent,
+        dir,
+        &gettext("New Document"),
+        &gettext("_File Name"),
+        suggested,
+        false,
+    )
+    .await
+}
+
+/// Ask for a name for something about to be made in `dir`, and check it as it is typed.
+async fn name_dialog(
+    parent: &impl IsA<gtk::Widget>,
+    dir: &gio::File,
+    title: &str,
+    entry_title: &str,
+    suggested: &str,
+    is_folder: bool,
+) -> Option<String> {
     let entry = adw::EntryRow::builder()
-        .title(gettext("_Folder Name"))
+        .title(entry_title)
         .use_underline(true)
+        .text(suggested)
         .build();
     let feedback = gtk::Label::builder()
         .xalign(0.0)
@@ -263,7 +309,7 @@ pub async fn new_folder_dialog(parent: &impl IsA<gtk::Widget>, dir: &gio::File) 
     toolbar.add_top_bar(&adw::HeaderBar::new());
     toolbar.set_content(Some(&page));
     let dialog = adw::Dialog::builder()
-        .title(gettext("New Folder"))
+        .title(title)
         .content_width(450)
         .child(&toolbar)
         .focus_widget(&entry)
@@ -275,7 +321,7 @@ pub async fn new_folder_dialog(parent: &impl IsA<gtk::Widget>, dir: &gio::File) 
         &create,
         dir.clone(),
         None,
-        true,
+        is_folder,
     );
 
     let (tx, rx) = oneshot::channel::<Option<String>>();
@@ -311,5 +357,34 @@ pub async fn new_folder_dialog(parent: &impl IsA<gtk::Widget>, dir: &gio::File) 
         }
     });
     dialog.present(Some(parent));
+    // A suggested name is there to be replaced, all but the extension: the name is what
+    // the document is about, the extension what it is.
+    let stem = stem_end(suggested, is_folder);
+    // The row selects all of its text as it takes the keyboard, and takes it again when
+    // the window itself is given focus, so the narrower selection is put back after each
+    // of those -- until the name has been typed into, when the selection is the user's.
+    let suggested = suggested.to_string();
+    let reselect = std::rc::Rc::new(move |entry: &adw::EntryRow| {
+        if entry.text() != suggested {
+            return;
+        }
+        // An idle later, because the selection it makes for itself comes after this.
+        let entry = entry.clone();
+        glib::idle_add_local_once(move || entry.select_region(0, stem));
+    });
+    entry.connect_map(glib::clone!(
+        #[strong]
+        reselect,
+        move |entry| reselect(entry)
+    ));
+    if let Some(text) = entry.delegate().and_downcast::<gtk::Text>() {
+        let focus = gtk::EventControllerFocus::new();
+        focus.connect_enter(glib::clone!(
+            #[weak]
+            entry,
+            move |_| reselect(&entry)
+        ));
+        text.add_controller(focus);
+    }
     rx.await.ok().flatten()
 }

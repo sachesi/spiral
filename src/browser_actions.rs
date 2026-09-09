@@ -36,6 +36,37 @@ fn is_editing(view: &BrowserView) -> bool {
         .is_some_and(|w| w.is::<gtk::Editable>())
 }
 
+/// A menu of the templates found, each starting a document from one of them, ending in
+/// the empty document the menu has when there are no templates at all.
+fn templates_menu(entries: &[crate::templates::Entry]) -> gio::Menu {
+    use crate::templates::Entry;
+    let menu = gio::Menu::new();
+    for entry in entries {
+        match entry {
+            Entry::File { name, file } => {
+                let item = gio::MenuItem::new(Some(&mnemonic_safe(name)), None);
+                item.set_action_and_target_value(
+                    Some("view.new-from-template"),
+                    Some(&file.uri().to_variant()),
+                );
+                menu.append_item(&item);
+            }
+            Entry::Folder { name, children } => {
+                menu.append_submenu(Some(&mnemonic_safe(name)), &templates_menu(children));
+            }
+        }
+    }
+    let empty = gio::Menu::new();
+    empty.append(Some(&gettext("_Empty Document")), Some("view.new-file"));
+    menu.append_section(None, &empty);
+    menu
+}
+
+/// A file name shown as a menu label: an underscore in it is a character, not a mnemonic.
+fn mnemonic_safe(name: &str) -> String {
+    name.replace('_', "__")
+}
+
 impl BrowserView {
     fn manager(&self) -> Option<JobManager> {
         self.root()
@@ -81,9 +112,31 @@ impl BrowserView {
                 v.emit_by_name::<()>("open-in-new-tab", &[&f]);
             }
         });
+        let open_new_window = add("open-new-window", |v| {
+            let Some(app) = v
+                .root()
+                .and_downcast::<gtk::Window>()
+                .and_then(|w| w.application())
+                .and_downcast::<SpiralApplication>()
+            else {
+                return;
+            };
+            // A window each, the way GNOME Files opens them.
+            for f in v.selected() {
+                app.open_window(std::slice::from_ref(&f));
+            }
+        });
         add("select-all", |v| {
             v.model().selection().select_all();
         });
+        add("invert-selection", |v| {
+            let model = v.model();
+            let all = gtk::Bitset::new_range(0, model.n_items());
+            let inverted = all.copy();
+            inverted.subtract(&model.selection().selection());
+            model.selection().set_selection(&inverted, &all);
+        });
+        add("select-pattern", |v| v.select_pattern());
         add("context-menu", |v| v.popup_menu_for_selection());
         add("drop-copy", |v| v.finish_drop(gtk::gdk::DragAction::COPY));
         add("drop-move", |v| v.finish_drop(gtk::gdk::DragAction::MOVE));
@@ -132,14 +185,7 @@ impl BrowserView {
             add("move-to", |v| v.transfer_to(true)),
             add("run", |v| v.run_selected()),
             add("rename", |v| v.rename_selected()),
-            add("new-file", |v| {
-                if let Some(parent) = v.location() {
-                    v.submit(JobKind::CreateFile {
-                        parent,
-                        name: gettext("Untitled Document"),
-                    });
-                }
-            }),
+            add("new-file", |v| v.new_document(None)),
             add("empty-trash", |v| v.empty_trash()),
             add("extract", |v| {
                 if let Some(dest) = v.location() {
@@ -151,14 +197,31 @@ impl BrowserView {
             }),
             add("extract-to", |v| v.extract_to()),
             add("compress", |v| v.compress()),
+            add("unmount", |v| v.unmount_selected()),
+            add("eject", |v| v.unmount_selected()),
             add("open-terminal", |v| v.open_terminal(false)),
             add("folder-terminal", |v| v.open_terminal(true)),
         ];
+        // The only action here with a target: which template to start the document from.
+        let from_template =
+            gio::SimpleAction::new("new-from-template", Some(glib::VariantTy::STRING));
+        from_template.connect_activate(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |_, param| {
+                if let Some(uri) = param.and_then(glib::Variant::str) {
+                    view.new_document(Some(gio::File::for_uri(uri)));
+                }
+            }
+        ));
+        group.add_action(&from_template);
         if chooser {
             for a in &destructive {
                 a.set_enabled(false);
             }
+            from_template.set_enabled(false);
             open_new_tab.set_enabled(false);
+            open_new_window.set_enabled(false);
         }
         self.insert_action_group("view", Some(group));
 
@@ -426,10 +489,9 @@ impl BrowserView {
         let dir_writable = single_dir && file_utils::allows(&infos[0], "access::can-write");
         self.set_enabled("open", n > 0);
         self.set_enabled("preview", n > 0);
-        self.set_enabled(
-            "open-new-tab",
-            n > 0 && infos.iter().all(file_utils::is_dir),
-        );
+        let all_folders = n > 0 && infos.iter().all(file_utils::is_dir);
+        self.set_enabled("open-new-tab", all_folders);
+        self.set_enabled("open-new-window", all_folders);
         self.set_enabled("open-with", n > 0 && !infos.iter().any(file_utils::is_dir));
         let has_terminal = crate::terminal::chosen().is_some();
         self.set_enabled(
@@ -448,7 +510,7 @@ impl BrowserView {
         let has_clip = has_files || clipboard::has_image(&cb);
         self.set_enabled("paste", can_write && !in_trash && has_clip);
         self.set_enabled("paste-into", dir_writable && !in_trash && has_clip);
-        self.set_enabled("rename", n == 1 && !in_trash && can_rename);
+        self.set_enabled("rename", n > 0 && !in_trash && can_rename);
         self.set_enabled("trash", n > 0 && !in_trash && can_trash);
         self.set_enabled("delete", n > 0 && can_delete);
         let show_delete = self.imp().settings.boolean("show-delete-permanently");
@@ -472,8 +534,26 @@ impl BrowserView {
         self.set_enabled("copy-to", n > 0 && !in_trash);
         self.set_enabled("move-to", n > 0 && !in_trash && can_delete);
         self.set_enabled("run", n == 1 && file_utils::is_program(&infos[0]));
+        // A device listed in the folder can be sent away from here, as it can from the
+        // sidebar; a drive that takes its medium back is ejected, the rest unmounted.
+        let mount = (n == 1)
+            .then(|| crate::places_sidebar::mount_of(&file_utils::file_of(&infos[0])))
+            .flatten();
+        self.set_enabled(
+            "eject",
+            mount
+                .as_ref()
+                .is_some_and(gio::prelude::MountExt::can_eject),
+        );
+        self.set_enabled(
+            "unmount",
+            mount
+                .as_ref()
+                .is_some_and(|m| m.can_unmount() && !m.can_eject()),
+        );
         self.set_enabled("new-folder", can_write && !in_trash);
         self.set_enabled("new-file", can_write && !in_trash);
+        self.set_enabled("new-from-template", can_write && !in_trash);
         self.set_enabled("empty-trash", in_trash && self.model().n_items() > 0);
         self.set_enabled("properties", n > 0 || self.location().is_some());
         self.set_enabled("folder-properties", self.location().is_some());
@@ -514,6 +594,19 @@ impl BrowserView {
                     .location()
                     .is_some_and(|l| !crate::bookmarks::contains(&l)),
         );
+    }
+
+    /// Unmount the device the selection is the root of, or eject it where the drive takes
+    /// the medium away; the sidebar does the work, since it is the same for its own rows.
+    fn unmount_selected(&self) {
+        let files = self.selected();
+        let ([file], Some(win)) = (
+            files.as_slice(),
+            self.root().and_downcast::<crate::window::SpiralWindow>(),
+        ) else {
+            return;
+        };
+        win.sidebar().eject_file(file);
     }
 
     /// The selected folder, or the current one when nothing is selected; local only.
@@ -891,14 +984,102 @@ impl BrowserView {
             self,
             async move {
                 if let Some(name) = crate::naming::new_folder_dialog(&view, &parent).await {
-                    view.submit(JobKind::CreateFolder { parent, name });
+                    // Selected and given the keyboard once it appears: a folder is made to
+                    // be used, and what follows -- opening it, renaming it, dragging into
+                    // it -- starts from there.
+                    view.submit_and_select(JobKind::CreateFolder { parent, name });
                 }
             }
         ));
     }
 
+    /// A document is named before it is made, as a folder is. The name starts as the
+    /// template's own, or as the one an empty document is given, and what lands in the
+    /// folder is selected.
+    fn new_document(&self, template: Option<gio::File>) {
+        let Some(parent) = self.location() else {
+            return;
+        };
+        let suggested = match &template {
+            Some(file) => crate::ops::name(file),
+            None => gettext("Untitled Document"),
+        };
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                if let Some(name) = crate::naming::new_file_dialog(&view, &parent, &suggested).await
+                {
+                    view.submit_and_select(JobKind::CreateFile {
+                        parent,
+                        name,
+                        template,
+                    });
+                }
+            }
+        ));
+    }
+
+    /// "Open In" gathers the ways of opening the selection other than the plain one: a
+    /// tab, a window, a terminal. It holds the ones on offer and is left out when none of
+    /// them are, since a submenu of nothing is worse than no submenu.
+    fn sync_open_menu(&self) {
+        let imp = self.imp();
+        let section = &imp.open_section;
+        if imp.open_items.get() == 0 {
+            imp.open_items.set(section.n_items() as u32);
+        }
+        // Ours sits after the two the template starts with; what the template puts there
+        // is counted once, so the entries below it can be moved without touching this.
+        let ours = 2;
+        if section.n_items() as u32 > imp.open_items.get() {
+            section.remove(ours);
+        }
+        let ways = [
+            (gettext("New _Tab"), "view.open-new-tab"),
+            (gettext("New _Window"), "view.open-new-window"),
+            (gettext("_Terminal"), "view.open-terminal"),
+        ];
+        let menu = gio::Menu::new();
+        for (label, action) in ways {
+            let name = action.trim_start_matches("view.");
+            if imp
+                .actions
+                .lookup_action(name)
+                .and_downcast::<gio::SimpleAction>()
+                .is_some_and(|a| a.is_enabled())
+            {
+                menu.append(Some(&label), Some(action));
+            }
+        }
+        if menu.n_items() > 0 {
+            section.insert_submenu(ours, Some(&gettext("Open _In")), &menu);
+        }
+    }
+
+    /// The document entry of the background menu: an item on its own where the templates
+    /// folder is empty or missing, and what is in that folder where it is not.
+    fn sync_new_menu(&self) {
+        let section = &self.imp().new_section;
+        // Everything after "New Folder…", which the template puts there.
+        while section.n_items() > 1 {
+            section.remove(1);
+        }
+        let entries = crate::templates::entries();
+        let label = gettext("New _Document");
+        if entries.is_empty() {
+            section.append(Some(&label), Some("view.new-file"));
+        } else {
+            section.append_submenu(Some(&label), &templates_menu(&entries));
+        }
+    }
+
     fn rename_selected(&self) {
         let infos = self.model().selected_infos();
+        if infos.len() > 1 {
+            self.rename_many();
+            return;
+        }
         let [info] = infos.as_slice() else { return };
         let file = file_utils::file_of(info);
         let Some(dir) = file.parent() else { return };
@@ -917,8 +1098,44 @@ impl BrowserView {
                     crate::naming::rename_popover(&view, &anchor, &dir, &old, is_folder).await
                     && new_name != old
                 {
-                    view.submit(JobKind::Rename { file, new_name });
+                    view.submit(JobKind::Rename {
+                        renames: vec![(file, new_name)],
+                    });
                 }
+            }
+        ));
+    }
+
+    /// Rename the whole selection by one rule. The names already in the folder are handed
+    /// to the dialog, so a clash is shown while the rule is typed rather than met as a
+    /// conflict once the job runs.
+    fn rename_many(&self) {
+        let files = self.selected();
+        let model = self.model();
+        let names: Vec<String> = model
+            .selected_infos()
+            .iter()
+            .map(|i| i.display_name().to_string())
+            .collect();
+        let renamed: std::collections::HashSet<&String> = names.iter().collect();
+        let others: std::collections::HashSet<String> = (0..model.n_items())
+            .filter_map(|pos| model.info_at(pos))
+            .map(|i| i.display_name().to_string())
+            .filter(|n| !renamed.contains(n))
+            .collect();
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                let Some(new_names) =
+                    crate::dialogs::batch_rename_dialog(&view, names, others).await
+                else {
+                    return;
+                };
+                let renames: Vec<(gio::File, String)> = files.into_iter().zip(new_names).collect();
+                // The renamed files are picked out again where the new names put them,
+                // which is rarely where the old ones were.
+                view.submit_and_select(JobKind::Rename { renames });
             }
         ));
     }
@@ -982,7 +1199,7 @@ impl BrowserView {
     }
 
     /// Model position of the item cell under (x, y) in `stack` coordinates.
-    fn item_at(&self, x: f64, y: f64) -> Option<u32> {
+    pub(crate) fn item_at(&self, x: f64, y: f64) -> Option<u32> {
         let stack = &self.imp().stack;
         let mut w = stack.pick(x, y, gtk::PickFlags::DEFAULT)?;
         loop {
@@ -1005,16 +1222,25 @@ impl BrowserView {
     fn popup_menu_at(&self, x: f64, y: f64) {
         let imp = self.imp();
         let selection = self.model().selection();
-        let model: &gio::MenuModel = match self.item_at(x, y) {
+        let on_item = match self.item_at(x, y) {
             Some(pos) => {
                 if !selection.is_selected(pos) {
                     selection.select_item(pos, true);
                 }
-                &imp.item_menu
+                true
             }
-            None => &imp.background_menu,
+            None => false,
         };
+        // The menus that are built rather than laid out follow what the actions say, so
+        // they are made once the selection has been taken in.
         self.update_action_state();
+        let model: &gio::MenuModel = if on_item {
+            self.sync_open_menu();
+            &imp.item_menu
+        } else {
+            self.sync_new_menu();
+            &imp.background_menu
+        };
         let point = imp
             .stack
             .compute_point(self, &gtk::graphene::Point::new(x as f32, y as f32));
@@ -1032,6 +1258,10 @@ impl BrowserView {
             Some(p) => p,
             None => {
                 let p = gtk::PopoverMenu::from_model(gio::MenuModel::NONE);
+                // Submenus open beside their item instead of sliding into the menu: a
+                // sliding one resizes the popover, which then has to move to stay on
+                // screen, and the whole menu jumps out from under the pointer.
+                p.set_flags(gtk::PopoverMenuFlags::NESTED);
                 p.set_parent(self);
                 p.set_has_arrow(false);
                 p.set_halign(gtk::Align::Start);
@@ -1057,6 +1287,38 @@ impl BrowserView {
         popover.set_menu_model(Some(model));
         popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
         popover.popup();
+    }
+
+    /// Select every name in the folder matching a shell pattern, the way Nautilus does:
+    /// the pattern replaces the selection rather than adding to it.
+    fn select_pattern(&self) {
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                let Some(pattern) = crate::dialogs::select_pattern_dialog(&view).await else {
+                    return;
+                };
+                let pattern = pattern.trim();
+                if pattern.is_empty() {
+                    return;
+                }
+                let model = view.model();
+                let matched = gtk::Bitset::new_empty();
+                for pos in 0..model.n_items() {
+                    if let Some(info) = model.info_at(pos)
+                        && file_utils::matches_pattern(&info.display_name(), pattern)
+                    {
+                        matched.add(pos);
+                    }
+                }
+                let all = gtk::Bitset::new_range(0, model.n_items());
+                model.selection().set_selection(&matched, &all);
+                if let Some(first) = (!matched.is_empty()).then(|| matched.nth(0)) {
+                    view.reveal_position(first, gtk::ListScrollFlags::FOCUS);
+                }
+            }
+        ));
     }
 
     fn popup_menu_for_selection(&self) {

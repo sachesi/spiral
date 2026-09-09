@@ -32,17 +32,19 @@ pub enum JobKind {
     Delete {
         files: Vec<gio::File>,
     },
+    /// (file, its new name); one entry for the rename popover, many for a batch.
     Rename {
-        file: gio::File,
-        new_name: String,
+        renames: Vec<(gio::File, String)>,
     },
     CreateFolder {
         parent: gio::File,
         name: String,
     },
+    /// An empty document, or a copy of `template` under a name of its own.
     CreateFile {
         parent: gio::File,
         name: String,
+        template: Option<gio::File>,
     },
     /// Move trashed items back: (item inside trash:///, original location).
     Restore {
@@ -114,9 +116,13 @@ impl JobKind {
                 k => ngettext("Deleting %d file", "Deleting %d files", k as u32)
                     .replace("%d", &k.to_string()),
             },
-            JobKind::Rename { file, new_name } => gettext("Renaming “%s” to “%t”")
-                .replace("%s", &name(file))
-                .replace("%t", new_name),
+            JobKind::Rename { renames } => match renames.as_slice() {
+                [(file, new_name)] => gettext("Renaming “%s” to “%t”")
+                    .replace("%s", &name(file))
+                    .replace("%t", new_name),
+                many => ngettext("Renaming %d file", "Renaming %d files", many.len() as u32)
+                    .replace("%d", &many.len().to_string()),
+            },
             JobKind::CreateFolder { name, .. } => {
                 gettext("Creating folder “%s”").replace("%s", name)
             }
@@ -176,7 +182,11 @@ impl JobKind {
                 k => ngettext("Deleted %d file", "Deleted %d files", k as u32)
                     .replace("%d", &k.to_string()),
             },
-            JobKind::Rename { new_name, .. } => gettext("Renamed to “%s”").replace("%s", new_name),
+            JobKind::Rename { renames } => match renames.as_slice() {
+                [(_, new_name)] => gettext("Renamed to “%s”").replace("%s", new_name),
+                many => ngettext("Renamed %d file", "Renamed %d files", many.len() as u32)
+                    .replace("%d", &many.len().to_string()),
+            },
             JobKind::CreateFolder { name, .. } => {
                 gettext("Created folder “%s”").replace("%s", name)
             }
@@ -238,8 +248,8 @@ pub struct Outcome {
     /// (original source, final destination) of successfully moved top-level items.
     pub moved: Vec<(gio::File, gio::File)>,
     pub trashed: Vec<gio::File>,
-    /// (renamed file, previous name).
-    pub renamed: Option<(gio::File, String)>,
+    /// (renamed file, previous name), one per file the job got through.
+    pub renamed: Vec<(gio::File, String)>,
 }
 
 mod imp {
@@ -303,13 +313,15 @@ impl Job {
         self.imp().kind.borrow().clone().expect("job without kind")
     }
 
-    /// The top-level items the job left where it was aimed: what a paste puts in a folder.
+    /// The top-level items the job left where it was aimed: what a paste puts in a folder,
+    /// and what a rename leaves under its new name.
     pub fn landed(&self) -> Vec<gio::File> {
         let out = self.imp().outcome.borrow();
         out.created
             .iter()
             .cloned()
             .chain(out.moved.iter().map(|(_, dest)| dest.clone()))
+            .chain(out.renamed.iter().map(|(file, _)| file.clone()))
             .collect()
     }
 

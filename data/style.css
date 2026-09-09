@@ -243,3 +243,11 @@ rubberband {
 .spiral-source-view border gutter {
   background-color: @view_bg_color;
 }
+
+/* A submenu opens beside the item it belongs to, as its own popover: without a little air
+   between the two the pair reads as one menu drawn twice. The margin is on both sides so
+   the gap is there whichever way the submenu opens. */
+modelbutton > popover.menu > contents {
+  margin-left: 10px;
+  margin-right: 10px;
+}

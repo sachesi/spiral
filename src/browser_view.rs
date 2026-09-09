@@ -49,11 +49,20 @@ mod imp {
         #[template_child]
         pub item_menu: TemplateChild<gio::MenuModel>,
         #[template_child]
+        pub open_section: TemplateChild<gio::Menu>,
+        /// How many items the template put in `open_section`; what follows is ours.
+        pub open_items: Cell<u32>,
+        #[template_child]
         pub background_menu: TemplateChild<gio::MenuModel>,
+        #[template_child]
+        pub new_section: TemplateChild<gio::Menu>,
         #[template_child]
         pub drop_menu: TemplateChild<gio::MenuModel>,
         /// Files waiting for the drop menu to say what to do with them.
         pub pending_drop: RefCell<Option<(Vec<gio::File>, gio::File)>>,
+        /// The folder a drag is resting on, and the wait before it springs open.
+        pub hover_pos: Cell<Option<u32>>,
+        pub hover_timer: RefCell<Option<glib::SourceId>>,
         /// The columns of the Miller view beside the folder being viewed: the path
         /// that leads to it, then the folder the selection points at.
         pub side_columns: RefCell<Vec<crate::miller::SideColumn>>,
@@ -128,6 +137,12 @@ mod imp {
             klass.add_binding_action(Key::x, M::CONTROL_MASK, "view.cut");
             klass.add_binding_action(Key::v, M::CONTROL_MASK, "view.paste");
             klass.add_binding_action(Key::a, M::CONTROL_MASK, "view.select-all");
+            klass.add_binding_action(Key::s, M::CONTROL_MASK, "view.select-pattern");
+            klass.add_binding_action(
+                Key::i,
+                M::CONTROL_MASK | M::SHIFT_MASK,
+                "view.invert-selection",
+            );
             klass.add_binding_action(Key::n, M::CONTROL_MASK | M::SHIFT_MASK, "view.new-folder");
             klass.add_binding_action(Key::Return, M::ALT_MASK, "view.properties");
             klass.add_binding_action(Key::Menu, M::empty(), "view.context-menu");
@@ -163,9 +178,14 @@ mod imp {
                 floating_primary: Default::default(),
                 floating_details: Default::default(),
                 item_menu: Default::default(),
+                open_section: Default::default(),
+                open_items: Default::default(),
                 background_menu: Default::default(),
+                new_section: Default::default(),
                 drop_menu: Default::default(),
                 pending_drop: Default::default(),
+                hover_pos: Default::default(),
+                hover_timer: Default::default(),
                 chooser_mode: Default::default(),
                 actions: gio::SimpleActionGroup::new(),
                 popover: Default::default(),
@@ -235,14 +255,21 @@ mod imp {
                     gtk::gdk::DragAction::empty(),
                     move |t: &gtk::DropTarget, x: f64, y: f64| {
                         if obj.in_side_column(x, y) {
+                            obj.end_hover();
                             gtk::gdk::DragAction::empty()
                         } else {
+                            obj.hover_folder(x, y);
                             preferred_action(t)
                         }
                     }
                 );
                 target.connect_enter(action.clone());
                 target.connect_motion(action);
+                target.connect_leave(glib::clone!(
+                    #[weak]
+                    obj,
+                    move |_| obj.end_hover()
+                ));
                 target.connect_drop(glib::clone!(
                     #[weak]
                     obj,
@@ -365,7 +392,8 @@ mod imp {
             obj.add_controller(scroll);
             // The global sort order only drives folders without a remembered one.
             obj.apply_global_sort();
-            for key in ["sort-key", "sort-reversed"] {
+            let (sort_key, sort_reversed) = obj.sort_keys();
+            for key in [sort_key, sort_reversed] {
                 self.settings.connect_changed(
                     Some(key),
                     glib::clone!(
@@ -714,6 +742,72 @@ pub fn preferred_action(target: &gtk::DropTarget) -> gtk::gdk::DragAction {
     }
 }
 
+/// How long a drag has to rest on a folder before it springs open, as in GNOME Files.
+const HOVER_OPEN_AFTER: std::time::Duration = std::time::Duration::from_millis(500);
+
+/// Open what `widget` points at when a drag rests on it: a breadcrumb, a sidebar entry.
+/// Folders in the view spring open too, but from the drop target that covers the whole of
+/// it, since a row's cells only cover their own text.
+///
+/// The pointer has to come to rest: the timer only starts once the drag has moved into the
+/// widget, and starts again from every larger movement, so a drag passing over a row on
+/// its way somewhere else leaves it alone.
+pub fn open_on_hover(widget: &impl IsA<gtk::Widget>, open: impl Fn() + 'static) {
+    let widget: gtk::Widget = widget.clone().upcast();
+    let motion = gtk::DropControllerMotion::new();
+    let start = std::rc::Rc::new(std::cell::Cell::new((0.0, 0.0)));
+    let timer: std::rc::Rc<RefCell<Option<glib::SourceId>>> = Default::default();
+    let open = std::rc::Rc::new(open);
+    motion.connect_enter(glib::clone!(
+        #[strong]
+        start,
+        move |_, x, y| start.set((x, y))
+    ));
+    motion.connect_motion(glib::clone!(
+        #[strong]
+        start,
+        #[strong]
+        timer,
+        #[strong]
+        open,
+        #[weak(rename_to = widget)]
+        widget,
+        move |_, x, y| {
+            let (from_x, from_y) = start.get();
+            if !widget.drag_check_threshold(from_x as i32, from_y as i32, x as i32, y as i32) {
+                return;
+            }
+            start.set((x, y));
+            if let Some(id) = timer.borrow_mut().take() {
+                id.remove();
+            }
+            timer.replace(Some(glib::timeout_add_local_once(
+                HOVER_OPEN_AFTER,
+                glib::clone!(
+                    #[strong]
+                    timer,
+                    #[strong]
+                    open,
+                    move || {
+                        timer.replace(None);
+                        open();
+                    }
+                ),
+            )));
+        }
+    ));
+    motion.connect_leave(glib::clone!(
+        #[strong]
+        timer,
+        move |_| {
+            if let Some(id) = timer.borrow_mut().take() {
+                id.remove();
+            }
+        }
+    ));
+    widget.add_controller(motion);
+}
+
 /// Cells keep a weak link to their `ListItem`: its position is live, unlike a cached
 /// number, when items are inserted above it.
 /// A filled star for a favourite, a hollow one otherwise.
@@ -835,6 +929,9 @@ impl BrowserView {
         let view: Self = glib::Object::builder()
             .property("chooser-mode", true)
             .build();
+        // A dialog searches the folder it is showing, not the tree below it: what is being
+        // asked for is a file in a folder, and a walk of the disk is not part of the answer.
+        view.model().set_search_recursive(false);
         view.go_to(location);
         view
     }
@@ -861,22 +958,37 @@ impl BrowserView {
         )
     }
 
+    /// Where the sort order is kept: a chooser has keys of its own, so ordering a dialog
+    /// leaves the file manager's windows as they were, and is there again next time.
+    fn sort_keys(&self) -> (&'static str, &'static str) {
+        if self.chooser_mode() {
+            ("chooser-sort-key", "chooser-sort-reversed")
+        } else {
+            ("sort-key", "sort-reversed")
+        }
+    }
+
     fn apply_global_sort(&self) {
         let imp = self.imp();
-        let key = SortKey::from_nick(&imp.settings.string("sort-key")).unwrap_or_default();
+        let (key_name, reversed_name) = self.sort_keys();
+        let key = SortKey::from_nick(&imp.settings.string(key_name)).unwrap_or_default();
         imp.model.set_sort_key(key);
         imp.model
-            .set_sort_reversed(imp.settings.boolean("sort-reversed"));
+            .set_sort_reversed(imp.settings.boolean(reversed_name));
     }
 
     /// Sort the current folder: remembered for this folder when views are remembered per
-    /// folder, otherwise as the new global order. A chooser sorts for the session only.
+    /// folder, otherwise as the new global order. A chooser keeps its own order instead.
     pub fn set_sort(&self, key: SortKey, reversed: bool) {
         let imp = self.imp();
         imp.model.set_sort_key(key);
         imp.model.set_sort_reversed(reversed);
         match self.location() {
-            _ if self.chooser_mode() => {}
+            _ if self.chooser_mode() => {
+                let (key_name, reversed_name) = self.sort_keys();
+                let _ = imp.settings.set_string(key_name, key.nick());
+                let _ = imp.settings.set_boolean(reversed_name, reversed);
+            }
             Some(dir) if crate::prefs::remember_view() => {
                 imp.folder_sort.set(Some((key, reversed)));
                 let value = format!("{}-{}", key.nick(), if reversed { "desc" } else { "asc" });
@@ -1051,6 +1163,19 @@ impl BrowserView {
         self.notify_can_go_back();
         self.notify_can_go_forward();
         self.notify_location();
+        self.take_keyboard();
+    }
+
+    /// A folder change destroys every row, and with them whatever had the keyboard: the
+    /// window is left with the focus nowhere in particular, and the file keys do nothing
+    /// until something in the view is clicked. Take it back, unless it is in a text entry
+    /// -- the search box, the location bar, a file name -- where typing is the point.
+    fn take_keyboard(&self) {
+        let focus = self.root().and_then(|root| root.focus());
+        if focus.is_some_and(|w| w.is::<gtk::Editable>()) {
+            return;
+        }
+        self.grab_view_focus();
     }
 
     pub fn go_back(&self) {
@@ -1640,6 +1765,57 @@ impl BrowserView {
         cell.add_controller(target);
     }
 
+    /// A drag resting on a folder opens it, so files can be carried into a folder that is
+    /// not on screen when the drag starts. The wait starts again whenever the drag reaches
+    /// a different folder, and is dropped when it leaves the view or lands.
+    fn hover_folder(&self, x: f64, y: f64) {
+        let imp = self.imp();
+        let over = self.item_at(x, y).filter(|&pos| {
+            self.model()
+                .info_at(pos)
+                .as_ref()
+                .is_some_and(file_utils::is_dir)
+        });
+        if over == imp.hover_pos.get() {
+            return;
+        }
+        imp.hover_pos.set(over);
+        if let Some(id) = imp.hover_timer.borrow_mut().take() {
+            id.remove();
+        }
+        let Some(pos) = over else {
+            return;
+        };
+        let id = glib::timeout_add_local_once(
+            HOVER_OPEN_AFTER,
+            glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                move || {
+                    let imp = view.imp();
+                    imp.hover_timer.replace(None);
+                    if imp.hover_pos.get() != Some(pos) {
+                        return;
+                    }
+                    imp.hover_pos.set(None);
+                    if let Some(info) = view.model().info_at(pos).filter(file_utils::is_dir) {
+                        view.go_to(&file_utils::file_of(&info));
+                    }
+                }
+            ),
+        );
+        imp.hover_timer.replace(Some(id));
+    }
+
+    /// Stop waiting for a folder to spring open.
+    fn end_hover(&self) {
+        let imp = self.imp();
+        imp.hover_pos.set(None);
+        if let Some(id) = imp.hover_timer.borrow_mut().take() {
+            id.remove();
+        }
+    }
+
     /// The folder a cell currently shows, if it is one.
     fn cell_folder(&self, cell: &gtk::Widget) -> Option<gio::File> {
         let pos = cell_position(cell)?;
@@ -1658,6 +1834,7 @@ impl BrowserView {
     ) -> bool {
         // The drag is over, whatever comes of it.
         self.end_strip_drag();
+        self.end_hover();
         let Ok(list) = value.get::<gtk::gdk::FileList>() else {
             return false;
         };
@@ -2050,7 +2227,10 @@ impl BrowserView {
         let star_col = self.star_column();
         cv.append_column(&star_col);
         columns.push(("star", star_col));
-        // Search results come from anywhere below the folder; say where.
+        // Search results come from anywhere below the folder; say where. A chooser searches
+        // the one folder, so every result is in it and the column would say the same thing
+        // on every row.
+        let searchable_below = !self.chooser_mode();
         let location_col = text_col(
             gettext("Location"),
             0.0,
@@ -2064,7 +2244,7 @@ impl BrowserView {
         self.imp().model.connect_searching_notify(glib::clone!(
             #[weak]
             location_col,
-            move |m| location_col.set_visible(m.searching())
+            move |m| location_col.set_visible(searchable_below && m.searching())
         ));
         let (size_col, type_col, mod_col) = (
             columns[0].1.clone(),

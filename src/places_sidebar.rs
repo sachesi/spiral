@@ -360,7 +360,11 @@ fn place_row(icon: &str, title: &str, file: &gio::File, section: u8) -> gtk::Lis
 
 /// Files dropped on a sidebar row are copied/moved into that location.
 fn add_drop_target(row: &gtk::ListBoxRow, file: &gio::File) {
-    if file.uri().starts_with("trash:") || crate::starred::is_starred_location(file) {
+    if crate::starred::is_starred_location(file) {
+        return;
+    }
+    if file.uri().starts_with("trash:") {
+        add_trash_drop_target(row);
         return;
     }
     let target = gtk::DropTarget::new(
@@ -369,6 +373,7 @@ fn add_drop_target(row: &gtk::ListBoxRow, file: &gio::File) {
     );
     target.connect_enter(|t, _, _| crate::browser_view::preferred_action(t));
     target.connect_motion(|t, _, _| crate::browser_view::preferred_action(t));
+    let hovered = file.clone();
     let file = file.clone();
     target.connect_drop(glib::clone!(
         #[weak]
@@ -386,6 +391,42 @@ fn add_drop_target(row: &gtk::ListBoxRow, file: &gio::File) {
             }
         }
     ));
+    row.add_controller(target);
+    crate::browser_view::open_on_hover(
+        row,
+        glib::clone!(
+            #[weak]
+            row,
+            move || {
+                if let Some(sidebar) = row
+                    .ancestor(PlacesSidebar::static_type())
+                    .and_downcast::<PlacesSidebar>()
+                {
+                    sidebar.emit_by_name::<()>("open-location", &[&hovered, &false]);
+                }
+            }
+        ),
+    );
+}
+
+/// Files dropped on Trash are trashed. Nothing is asked first: unlike a folder, there is
+/// only one thing a drop on the trash can mean, and undo puts them back.
+fn add_trash_drop_target(row: &gtk::ListBoxRow) {
+    let target = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::MOVE);
+    target.connect_drop(move |_, value, _, _| {
+        let Ok(list) = value.get::<gdk::FileList>() else {
+            return false;
+        };
+        let files = list.files();
+        let app =
+            gio::Application::default().and_downcast::<crate::application::SpiralApplication>();
+        let (Some(app), false) = (app, files.is_empty()) else {
+            return false;
+        };
+        app.job_manager()
+            .submit(crate::ops::JobKind::Trash { files });
+        true
+    });
     row.add_controller(target);
 }
 
@@ -569,6 +610,16 @@ impl PlacesSidebar {
                 }
             }
         ));
+    }
+
+    /// Unmount or eject the device `file` is the root of, if it is the root of one.
+    /// Returns whether there was anything to unmount.
+    pub(crate) fn eject_file(&self, file: &gio::File) -> bool {
+        let Some(mount) = mount_of(file) else {
+            return false;
+        };
+        self.eject(EjectTarget::Mount(mount));
+        true
     }
 
     fn eject(&self, target: EjectTarget) {
@@ -879,6 +930,14 @@ async fn wait_finished(job: &crate::ops::Job) {
     });
     let _ = rx.await;
     job.disconnect(id);
+}
+
+/// The mount `file` is the root of: a device, not a folder that merely lives on one.
+pub(crate) fn mount_of(file: &gio::File) -> Option<gio::Mount> {
+    gio::VolumeMonitor::get()
+        .mounts()
+        .into_iter()
+        .find(|m| m.root().equal(file) || m.default_location().equal(file))
 }
 
 #[derive(Clone)]

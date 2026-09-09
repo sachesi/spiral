@@ -34,6 +34,7 @@ mod imp {
             crate::thumbnails::check_sandbox();
             let app = self.obj();
             self.job_manager.set(JobManager::new(&app)).ok();
+            crate::templates::init();
             app.setup_actions();
         }
 

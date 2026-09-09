@@ -10,11 +10,20 @@ get Spiral's dialog.
 
 The dialog is a trimmed file manager window: sidebar, path bar, the same views, and a
 bottom bar with the filter dropdown, the name entry in save mode, a button for the
-application's extra options, and the accept button. It starts in the view from
-`chooser-view-mode` (list by default) and does not remember views per folder. Trash,
-delete, cut and paste, rename and drag and drop are off. New Folder is there in save mode
-and when a folder is being asked for. Opening a file accepts; pressing Open with a folder
-selected enters it; Esc cancels.
+application's extra options, and the accept button. Trash, delete, cut and paste, rename
+and drag and drop are off. New Folder is there in save mode and when a folder is being
+asked for. Opening a file accepts; pressing Open with a folder selected enters it; Esc
+cancels.
+
+The dialog remembers how it was left, in keys of its own: `chooser-view-mode` (list by
+default) for the view and `chooser-sort-key` with `chooser-sort-reversed` for the order,
+which the header's sort button sets. Nothing it is given changes the file manager's own
+view or order, and folders are not remembered one by one as they are there.
+
+The search button, or Ctrl+F, or simply typing, searches the folder on screen and only
+that one: a dialog is being asked for a file in a folder, not for a walk of the disk, so
+the "Search in Subfolders" preference does not apply and results carry no location column.
+Leaving the folder ends the search.
 
 Honoured request options: title, accept label, modal, multiple, directory, filters and
 current filter (glob and MIME), choices (combos become dropdowns, booleans check boxes),

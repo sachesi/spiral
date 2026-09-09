@@ -5,9 +5,12 @@ knowing and the places where Spiral does something of its own.
 
 ## Windows, tabs, sidebar
 
-Ctrl+T opens a tab at the current folder. "Open in New Tab" on selected folders opens
-them in the background; middle-clicking a folder in the view or an entry in the sidebar
-opens it in a new tab too.
+Ctrl+T opens a tab at the current folder. The ways of opening a folder other than the
+plain one are gathered under "Open In" in its menu: "New Tab" opens the selected folders
+in the background, "New Window" gives each of them a window of its own, and "Terminal"
+opens one there. Middle-clicking a folder in the view or an entry in the sidebar opens it
+in a new tab too. Alt and a digit goes to that tab, wherever the keyboard is in the
+window.
 Right-clicking a tab offers moving it left, right or into a window of its own and closing
 the other tabs; dragging a tab out of the tab bar also gives it a window. Ctrl+Shift+T
 brings back the last closed tab. The last tab leaving closes the window. Window size is
@@ -16,10 +19,14 @@ remembered, tabs are not.
 The sidebar lists Home, Desktop, Root, Favorites and Trash, then the XDG user folders and the
 bookmarks from `~/.config/gtk-3.0/bookmarks` (the same file the GTK file chooser uses), then
 every volume and mount the system knows about. Bookmarks can be renamed, removed and
-reordered by dragging; drop a folder on the empty area below the list to bookmark it. Root is
+reordered by dragging; drop a folder on the empty area below the list to bookmark it, and
+files on Trash to trash them. Root is
 the top of the filesystem; it and Favorites can each be turned off in Preferences, under
 Sidebar. Unmounted volumes mount when activated. Mounted ones get an eject button, and if a
-removable drive has files in its trash you are asked whether to empty it first.
+removable drive has files in its trash you are asked whether to empty it first. A mounted
+device met in a folder of its own — under `/run/media`, say — offers "Unmount", or "Eject"
+where the drive takes its medium back, in the context menu, and asks about its trash the
+same way.
 
 Below roughly 680 px the sidebar folds away behind a button and the navigation controls
 move to a bar at the bottom.
@@ -45,7 +52,10 @@ Right-clicking any crumb offers to open that folder in a new tab or window, book
 copy its location or show its properties; the ⋮ menu has the same for the current folder.
 
 Alt+Up, Backspace and the arrow beside the history buttons go to the parent folder;
-Alt+Left and Alt+Right go through the history.
+Alt+Left and Alt+Right go through the history. Escape stops a folder or a search that is
+still coming in and keeps what has arrived; with nothing loading it does nothing. A folder
+stopped that way is a list of what had been read, and stops following what happens in the
+folder until F5 reads it again.
 
 ## Search
 
@@ -64,7 +74,8 @@ Grid or list, picked from the dropdown in the header or with Ctrl+1 and Ctrl+2; 
 beside it steps through them. "Column View" in Preferences adds the columns as a third,
 on Ctrl+3. The dropdown also has zoom, sort
 order, hidden files and the sidebar toggle. Zoom steps are 48, 64, 96, 168 and 256 px in
-the grid and 16 to 64 in the list and the columns; Ctrl+wheel works too.
+the grid and 16 to 64 in the list and the columns; Ctrl+wheel works too, and Ctrl+0 puts
+the view back to the size the preference starts at.
 
 Which view a folder opens in: the one it was last switched to, if "Remember View per Folder"
 is on (stored in the folder's `metadata::spiral-view` attribute, invisible to other
@@ -76,6 +87,9 @@ is kept in `metadata::spiral-sort`; with it off, it changes the default for ever
 "Sort Order" in Preferences sets that default directly. Both attributes are gvfs's doing:
 where its metadata backend is not running there is nowhere to keep them, so the preference is
 greyed out and the switch changes the global default instead.
+
+A folder opened takes the keyboard with it, so the keys that act on files work as soon as
+it is on screen, without a click first.
 
 Files and folders you cannot read or change carry a small lock, and the actions they do
 not allow (cut, rename, trash, delete) are greyed out. Folders you are looking at update
@@ -127,7 +141,9 @@ their default application; "Open With..." lists the alternatives and can change 
 default. An application whose desktop entry asks for a terminal is given the one from
 Preferences (see [terminal.md](terminal.md)), so a terminal editor works as a default. Rubber-band selection works in both views. The pill in the corner shows what is
 selected and how big it is. A click on empty space clears the selection and gives the
-files the keyboard, so Ctrl+A and the rest of the file keys work right after it.
+files the keyboard, so Ctrl+A and the rest of the file keys work right after it. Ctrl+S
+asks for a pattern — `*.png`, `file??.txt` — and selects the names in the folder that match
+it; Ctrl+Shift+I selects everything the selection leaves out.
 
 Dropping files asks what to do with them: copy, move or link. It always asks, because
 nothing in a drop tells a held modifier apart from a plain drag: under Wayland the
@@ -137,16 +153,33 @@ moves, Ctrl makes it a copy, Ctrl+Shift makes a link, and drags from other appli
 copy.
 A drag starts anywhere on a row or a grid tile, and a folder accepts a drop anywhere on
 its row. Drop targets are folders in the view, breadcrumbs and sidebar entries except
-Trash and Favorites. Cut, copy and paste use the same clipboard format as GNOME Files, so
+Favorites; Trash takes a drop as well, and trashes what lands on it. A drag held for a
+moment over a folder, a breadcrumb or a sidebar entry opens it, so files can be carried
+into a folder that is nowhere on screen when the drag starts. Cut, copy and paste use the same clipboard format as GNOME Files, so
 the two interoperate; files waiting on the clipboard as a cut are shown faded until they
 are pasted. An image on the clipboard with no files behind it — a screenshot, say —
 pastes into the folder as "Pasted Image.png". What a paste leaves in the folder is selected
 once it lands, ready for whatever is done to it next. "Paste Into Folder" pastes into a
 selected folder without entering it.
 
+"New Folder…" and "New Document" both ask for a name before they make anything, and what
+they make is selected once it is there, ready to be opened or renamed. What "New Document"
+offers is what is in the XDG templates folder, `~/Templates` as a rule: a document per
+file, a submenu per folder, and "Empty Document" at the end, which is all it offers where
+there are no templates. The name starts as the template's own, with everything but the
+extension selected, so typing replaces the name and Return alone takes it as it is; a
+document started from a template is a copy of it.
+
 "Copy to…" and "Move to…" ask for a folder instead of using the clipboard. "Paste as
 Link" and, when turned on in Preferences, "Create Link" make symbolic links; a link
 beside its target is called "Link to name".
+
+F2 renames. With one file selected it is a popover over the file, with the name selected
+up to its extension; with several, it is a dialog that renames them all by one rule —
+a shared name with numbers after it, or some text of the old names replaced by other text.
+The names it would give are listed as the rule is typed, and it refuses to rename while
+two of them would collide or take a name the folder already has. One undo puts them all
+back.
 
 Delete moves to trash, Shift+Delete deletes for good after asking; the menu entry for it
 is off by default and lives in Preferences under Optional Context Menu Actions. Locations
