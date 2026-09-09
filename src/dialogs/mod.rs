@@ -20,4 +20,4 @@ pub use preferences::preferences_dialog;
 pub use preview::PreviewDialog;
 pub use properties::PropertiesDialog;
 pub use select_pattern::select_pattern_dialog;
-pub use tags::{TagState, new_tag_dialog, tags_dialog};
+pub use tags::new_tag_dialog;
