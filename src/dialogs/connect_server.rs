@@ -66,8 +66,9 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
         .label(gettext("_Cancel"))
         .use_underline(true)
         .build();
+    let connect_label = gettext("C_onnect");
     let connect = gtk::Button::builder()
-        .label(gettext("C_onnect"))
+        .label(&connect_label)
         .use_underline(true)
         .sensitive(false)
         .css_classes(["suggested-action"])
@@ -109,21 +110,27 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
         #[weak]
         connect,
         #[weak]
+        recent,
+        #[weak]
         failure,
         #[weak]
         dialog,
+        #[strong]
+        connect_label,
         #[strong]
         tx,
         move |address: String| {
             let Some(file) = crate::network::address(&address) else {
                 return;
             };
-            // Reaching a server takes as long as it takes; the dialog says so and refuses
-            // a second address until this one has answered.
-            let label = connect.label().unwrap_or_default();
+            // Reaching a server takes as long as it takes; the dialog says so and takes
+            // no second address, from the button or from the list, until this one has
+            // answered.
+            let label = connect_label.clone();
             connect.set_child(Some(&adw::Spinner::new()));
             connect.set_sensitive(false);
             entry.set_sensitive(false);
+            recent.set_sensitive(false);
             failure.set_visible(false);
             glib::spawn_future_local(glib::clone!(
                 #[strong]
@@ -133,6 +140,7 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
                     connect.set_label(&label);
                     connect.set_sensitive(true);
                     entry.set_sensitive(true);
+                    recent.set_sensitive(true);
                     match result {
                         Ok(()) => {
                             crate::network::remember(&file.uri());
