@@ -5,12 +5,13 @@ knowing and the places where Spiral does something of its own.
 
 ## Windows, tabs, sidebar
 
-Ctrl+T opens a tab at the current folder. The ways of opening a folder other than the
-plain one are gathered under "Open In" in its menu: "New Tab" opens the selected folders
-in the background, "New Window" gives each of them a window of its own, and "Terminal"
-opens one there. Middle-clicking a folder in the view or an entry in the sidebar opens it
-in a new tab too. Alt and a digit goes to that tab, wherever the keyboard is in the
-window.
+Ctrl+T opens a tab at the current folder. A folder's own menu opens it another way: "Open
+in Terminal" is there wherever a terminal emulator is installed, and "Open in New Tab",
+which opens the selected folders in the background, and "Open in New Window", which gives
+each of them a window of its own, are off to begin with and turned on under Menus in
+Preferences. Middle-clicking a folder in the view or an entry in the sidebar opens it in a
+new tab whatever the menu carries. Alt and a digit goes to that tab, wherever the keyboard
+is in the window.
 Right-clicking a tab offers moving it left, right or into a window of its own and closing
 the other tabs; dragging a tab out of the tab bar also gives it a window. Ctrl+Shift+T
 brings back the last closed tab. The last tab leaving closes the window. Window size is
@@ -204,8 +205,8 @@ there are no templates. The name starts as the template's own, with everything b
 extension selected, so typing replaces the name and Return alone takes it as it is; a
 document started from a template is a copy of it.
 
-"Copy to…" and "Move to…" ask for a folder instead of using the clipboard, in a picker
-attached to the window: the sidebar, the folders of the location and nothing else, with
+"Copy to…" and "Move to…", which the Menus page of Preferences turns on, ask for a folder
+instead of using the clipboard, in a picker attached to the window: the sidebar, the folders of the location and nothing else, with
 New Folder in the header for a destination that does not exist yet. Ctrl+L or a click on
 the current folder types a location, Ctrl+R reads it again, and the button takes the
 folder selected, or the one on screen when nothing is. In a window too narrow for both
