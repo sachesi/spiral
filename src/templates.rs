@@ -81,7 +81,7 @@ fn scan(folder: gio::File, depth: u32) -> Scan {
             if info.file_type() == gio::FileType::Directory {
                 // Hidden folders are skipped whatever the setting: a `.git` in there is
                 // not a menu of documents.
-                if depth == 0 || info.is_hidden() {
+                if depth == 0 || crate::file_utils::is_hidden(&info) {
                     continue;
                 }
                 let (children, mut below) = scan(file, depth - 1).await;
@@ -90,7 +90,7 @@ fn scan(folder: gio::File, depth: u32) -> Scan {
                 }
                 monitors.append(&mut below);
                 entries.push(Entry::Folder { name, children });
-            } else if !info.is_backup() {
+            } else if !crate::file_utils::is_hidden(&info) {
                 entries.push(Entry::File { name, file });
             }
         }

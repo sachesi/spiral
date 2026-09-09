@@ -110,7 +110,7 @@ mod imp {
                 hidden_state,
                 move |obj| {
                     let info = obj.downcast_ref::<gio::FileInfo>().unwrap();
-                    hidden_state.get() || !(info.is_hidden() || info.is_backup())
+                    hidden_state.get() || !file_utils::is_hidden(info)
                 }
             ));
             let every_filter = gtk::EveryFilter::new();

@@ -117,7 +117,7 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         .modification_date_time()
         .map(|d| d.to_unix() as u64)
         .unwrap_or(0);
-    let key = (uri.clone(), mtime, info.size().max(0) as u64);
+    let key = (uri.clone(), mtime, crate::file_utils::size_of(info));
     if let Some(cached) = CACHE.with(|c| c.borrow().seen.get(&key).cloned()) {
         return cached;
     }
@@ -127,7 +127,9 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
     // where a thumbnail is decoded anyway.
     // Neither a type nor a local path stops the lookup: a file on a share may still have
     // a thumbnail in the cache, made when it was somewhere else or by something else.
-    let content_type = info.content_type().unwrap_or_default().to_string();
+    let content_type = crate::file_utils::content_type_of(info)
+        .unwrap_or_default()
+        .to_string();
     let source = Source {
         path: file.path(),
         thumbnailers: thumbnailers_for(&content_type),
@@ -137,7 +139,7 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         // the size of the file says nothing about what it will cost. One already in the
         // cache is shown whatever the size, which is why this only stops generation.
         too_large: content_type.starts_with("image/")
-            && info.size().max(0) as u64 > crate::prefs::thumbnail_limit(),
+            && crate::file_utils::size_of(info) > crate::prefs::thumbnail_limit(),
     };
     if source.thumbnailers.is_empty() && !source.own {
         glib::g_debug!(

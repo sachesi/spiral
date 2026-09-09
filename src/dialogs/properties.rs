@@ -241,7 +241,7 @@ impl PropertiesDialog {
         let group = adw::PreferencesGroup::new();
         if let [(_, info)] = infos {
             group.add(&row(&gettext("Type"), &file_utils::type_string(info)));
-            if let Some(ct) = info.content_type()
+            if let Some(ct) = file_utils::content_type_of(info)
                 && !file_utils::is_dir(info)
             {
                 group.add(&row(&gettext("MIME Type"), &ct));
@@ -264,7 +264,7 @@ impl PropertiesDialog {
                 &full_date(info.access_date_time()),
             ));
             if !file_utils::is_dir(info)
-                && let Some(ct) = info.content_type()
+                && let Some(ct) = file_utils::content_type_of(info)
                 && let Some(app) = gio::AppInfo::default_for_type(&ct, false)
             {
                 group.add(&row(&gettext("Default Application"), &app.display_name()));
@@ -554,7 +554,7 @@ async fn du(
     };
     *count += 1;
     if info.file_type() != gio::FileType::Directory {
-        *total += info.size() as u64;
+        *total += file_utils::size_of(&info);
         return;
     }
     let Ok(en) = file
@@ -582,7 +582,7 @@ async fn du(
                 Box::pin(du(&en.child(&i), total, count, row, cancel)).await;
             } else {
                 *count += 1;
-                *total += i.size() as u64;
+                *total += file_utils::size_of(&i);
             }
         }
         row.set_subtitle(&size_text(*total, *count));

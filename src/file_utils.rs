@@ -64,13 +64,60 @@ pub fn is_program(info: &gio::FileInfo) -> bool {
     !is_dir(info)
         && info.has_attribute("access::can-execute")
         && info.boolean("access::can-execute")
-        && info
-            .content_type()
-            .is_some_and(|ct| gio::content_type_can_be_executable(&ct))
+        && content_type_of(info).is_some_and(|ct| gio::content_type_can_be_executable(&ct))
 }
 
 pub fn is_dir(info: &gio::FileInfo) -> bool {
     info.file_type() == gio::FileType::Directory
+}
+
+/// Where an entry that stands for somewhere else points: `network:///` lists a server
+/// this way and `computer:///` a place on the machine. The entry itself holds nothing;
+/// what it points at is the folder.
+pub fn target_of(info: &gio::FileInfo) -> Option<gio::File> {
+    if !matches!(
+        info.file_type(),
+        gio::FileType::Shortcut | gio::FileType::Mountable
+    ) {
+        return None;
+    }
+    info.attribute_string("standard::target-uri")
+        .map(|uri| gio::File::for_uri(&uri))
+}
+
+/// The size of `info`, or nothing where the backend gives none: `network:///`, the online
+/// accounts and other gvfs locations answer with an info that carries only what they know,
+/// and asking one of those for an attribute it has not got is an error in GLib, not a zero.
+pub fn size_of(info: &gio::FileInfo) -> u64 {
+    if !info.has_attribute("standard::size") {
+        return 0;
+    }
+    info.size().max(0) as u64
+}
+
+/// The content type of `info`, where the backend gives one: the same guarded ask, since
+/// a location that knows nothing of its entries fills none in.
+pub fn content_type_of(info: &gio::FileInfo) -> Option<glib::GString> {
+    if !info.has_attribute("standard::content-type") {
+        return None;
+    }
+    info.content_type()
+}
+
+/// Whether `info` is one of the files kept out of sight: hidden, or a backup. Asked the
+/// same guarded way, for the same reason.
+pub fn is_hidden(info: &gio::FileInfo) -> bool {
+    (info.has_attribute("standard::is-hidden") && info.is_hidden())
+        || (info.has_attribute("standard::is-backup") && info.is_backup())
+}
+
+/// Whether a size would mean anything for `info`. A folder has none worth showing, and
+/// neither has an entry that only points somewhere.
+fn sizeless(info: &gio::FileInfo) -> bool {
+    matches!(
+        info.file_type(),
+        gio::FileType::Directory | gio::FileType::Shortcut | gio::FileType::Mountable
+    )
 }
 
 pub fn display_name(info: &gio::FileInfo) -> glib::GString {
@@ -78,17 +125,17 @@ pub fn display_name(info: &gio::FileInfo) -> glib::GString {
 }
 
 pub fn size_string(info: &gio::FileInfo) -> String {
-    if is_dir(info) {
+    if sizeless(info) {
         return String::new();
     }
-    crate::prefs::size(info.size() as u64)
+    crate::prefs::size(size_of(info))
 }
 
 pub fn type_string(info: &gio::FileInfo) -> String {
     if is_dir(info) {
         return gettext("Folder");
     }
-    info.content_type()
+    content_type_of(info)
         .and_then(|ct| gio::content_type_get_description(&ct).into())
         .map(|d: glib::GString| d.to_string())
         .unwrap_or_default()
@@ -266,11 +313,11 @@ pub fn permissions_string(info: &gio::FileInfo) -> Option<String> {
 /// Text for a grid caption. Folder item counts are produced asynchronously by the caller.
 pub fn caption(info: &gio::FileInfo, kind: &str) -> Option<String> {
     match kind {
-        "size" if !is_dir(info) => Some(glib::format_size(info.size() as u64).to_string()),
+        "size" if !sizeless(info) => Some(glib::format_size(size_of(info)).to_string()),
         "date_modified" => Some(modified_string(info)).filter(|s| !s.is_empty()),
         "permissions" => permissions_string(info),
         "type" => Some(type_string(info)),
-        "mime_type" => info.content_type().map(|c| c.to_string()),
+        "mime_type" => content_type_of(info).map(|c| c.to_string()),
         "owner" => info.attribute_string("owner::user").map(|s| s.to_string()),
         "group" => info.attribute_string("owner::group").map(|s| s.to_string()),
         _ => None,
@@ -350,7 +397,7 @@ pub fn compare(a: &gio::FileInfo, b: &gio::FileInfo, key: SortKey, reversed: boo
     let by_name = || name_cmp(a, b);
     let ord = match key {
         SortKey::Name => by_name(),
-        SortKey::Size => a.size().cmp(&b.size()).then_with(by_name),
+        SortKey::Size => size_of(a).cmp(&size_of(b)).then_with(by_name),
         SortKey::Type => sort_key(a, TYPE_KEY, short_type_string)
             .cmp(&sort_key(b, TYPE_KEY, short_type_string))
             .then_with(by_name),

@@ -23,7 +23,8 @@ async fn describe(file: &gio::File, heading: &str) -> (gio::Icon, String) {
     if info.file_type() != gio::FileType::Directory && info.has_attribute("standard::size") {
         text.push_str(&format!(
             "\n{}",
-            gettext("Size: %s").replace("%s", &crate::prefs::size(info.size() as u64))
+            gettext("Size: %s")
+                .replace("%s", &crate::prefs::size(crate::file_utils::size_of(&info)))
         ));
     }
     if info.has_attribute("time::modified") {

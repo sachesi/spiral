@@ -294,13 +294,13 @@ async fn count_one(job: &Job, file: &gio::File, n: &mut u64, bytes: &mut u64) {
                 Box::pin(count_one(job, &child, n, bytes)).await;
             } else {
                 *n += 1;
-                *bytes += cinfo.size() as u64;
+                *bytes += crate::file_utils::size_of(&cinfo);
             }
             job.report_counting(*n);
         }
     } else {
         *n += 1;
-        *bytes += info.size() as u64;
+        *bytes += crate::file_utils::size_of(&info);
     }
 }
 
@@ -447,7 +447,7 @@ async fn transfer_one(
             return Ok(Some(dest));
         }
 
-        let size = info.size() as u64;
+        let size = crate::file_utils::size_of(&info);
         let base = job.bytes_done();
         if !overwrite {
             job.imp().in_flight.replace(Some(dest.clone()));

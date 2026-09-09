@@ -357,12 +357,14 @@ impl PreviewDialog {
 
     async fn build_content(&self, info: &gio::FileInfo) -> gtk::Widget {
         let file = file_utils::file_of(info);
-        let content_type = info.content_type().unwrap_or_default().to_string();
+        let content_type = crate::file_utils::content_type_of(info)
+            .unwrap_or_default()
+            .to_string();
         if file_utils::is_dir(info) {
             return self.info_page(info);
         }
         if content_type.starts_with("image/")
-            && info.size() <= IMAGE_LIMIT
+            && crate::file_utils::size_of(info) <= IMAGE_LIMIT as u64
             && let Some(texture) = load_texture(&file).await
         {
             self.shape_to(&texture);
@@ -1277,7 +1279,9 @@ impl Probe {
     fn of(info: &gio::FileInfo) -> Self {
         Self {
             is_dir: file_utils::is_dir(info),
-            content_type: info.content_type().unwrap_or_default().to_string(),
+            content_type: crate::file_utils::content_type_of(info)
+                .unwrap_or_default()
+                .to_string(),
             path: file_utils::file_of(info).path(),
             uri: file_utils::file_of(info).uri().to_string(),
             mtime: info

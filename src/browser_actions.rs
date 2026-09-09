@@ -112,6 +112,9 @@ impl BrowserView {
                 if file_utils::is_dir(&info) {
                     v.go_to(&file);
                     break;
+                } else if let Some(target) = file_utils::target_of(&info) {
+                    v.open_target(target);
+                    break;
                 } else if !v.chooser_mode() {
                     v.launch(&file);
                 }
@@ -590,7 +593,7 @@ impl BrowserView {
         let archives = n > 0
             && local
             && infos.iter().all(|i| {
-                i.content_type()
+                file_utils::content_type_of(i)
                     .is_some_and(|ct| crate::ops::archive::is_archive(&ct))
             });
         self.set_enabled("extract", archives && can_write);
@@ -1049,8 +1052,7 @@ impl BrowserView {
         let [info] = infos.as_slice() else { return };
         let file = file_utils::file_of(info);
         let Some(path) = file.path() else { return };
-        let is_script = info
-            .content_type()
+        let is_script = file_utils::content_type_of(info)
             .is_some_and(|ct| gio::content_type_is_a(&ct, "text/plain"));
         let result = if is_script {
             let dir = path
@@ -1335,7 +1337,7 @@ impl BrowserView {
         let Some(first) = infos.first() else {
             return;
         };
-        let content_type = first.content_type().map(|s| s.to_string());
+        let content_type = file_utils::content_type_of(first).map(|s| s.to_string());
         let files: Vec<gio::File> = infos.iter().map(file_utils::file_of).collect();
         crate::dialogs::OpenWithDialog::new(&files, content_type).present(Some(self));
     }
