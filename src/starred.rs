@@ -49,6 +49,29 @@ pub fn set_starred(file: &gio::File, starred: bool) {
         (_, true) => return,
         (i, false) => list.remove(i),
     }
+    save(&list);
+}
+
+/// `file` was trashed or deleted, and so was everything below it: none of it stays
+/// starred, and a restore does not star it again. One change, so Favorites loads once.
+pub fn forget_all(file: &gio::File) {
+    let list = list();
+    let uri = file.uri().to_string();
+    let below = format!("{uri}/");
+    let kept: Vec<String> = (0..list.n_items())
+        .filter_map(|i| list.string(i))
+        .map(String::from)
+        .filter(|u| *u != uri && !u.starts_with(&below))
+        .collect();
+    if kept.len() as u32 == list.n_items() {
+        return;
+    }
+    let refs: Vec<&str> = kept.iter().map(String::as_str).collect();
+    list.splice(0, list.n_items(), &refs);
+    save(&list);
+}
+
+fn save(list: &gtk::StringList) {
     let text: String = (0..list.n_items())
         .filter_map(|i| list.string(i))
         .map(|s| format!("{s}\n"))
