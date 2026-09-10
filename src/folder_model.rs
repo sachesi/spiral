@@ -674,6 +674,20 @@ impl FolderModel {
         self.imp().dir_list.error()
     }
 
+    /// The scheme of every entry left out of the listing for want of a backend, one per
+    /// entry, sorted, so a page can say how many were found and what would open them.
+    pub fn unreachable_schemes(&self) -> Vec<String> {
+        let dl = &self.imp().dir_list;
+        let mut schemes: Vec<String> = (0..dl.n_items())
+            .filter_map(|i| dl.item(i).and_downcast::<gio::FileInfo>())
+            .filter(file_utils::is_unreachable)
+            .filter_map(|info| file_utils::target_of(&info)?.uri_scheme())
+            .map(|s| s.to_string())
+            .collect();
+        schemes.sort();
+        schemes
+    }
+
     pub fn reload(&self) {
         let imp = self.imp();
         if imp.searching.get() {

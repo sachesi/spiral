@@ -122,9 +122,9 @@ mod imp {
 
         pub history: RefCell<Vec<gio::File>>,
         pub history_pos: Cell<usize>,
-        /// The address a mount was already asked for, so a server that turns it down is
-        /// not asked again each time the folder is listed.
-        pub mount_tried: RefCell<Option<String>>,
+        /// Where mounting the location stands, so a server that turns it down is not asked
+        /// again each time the folder is listed, and the page can say what goes on meanwhile.
+        pub mounting: RefCell<super::Mounting>,
         pub settings: gio::Settings,
         /// The handler on the display's clipboard, which outlives the view.
         pub clipboard_handler: RefCell<Option<glib::SignalHandlerId>>,
@@ -216,7 +216,7 @@ mod imp {
                 nav_gen: Default::default(),
                 location: Default::default(),
                 history: Default::default(),
-                mount_tried: Default::default(),
+                mounting: Default::default(),
                 history_pos: Default::default(),
                 settings: gio::Settings::new(crate::config::APP_ID),
                 clipboard_handler: Default::default(),
@@ -606,6 +606,16 @@ fn mostly_media(model: &FolderModel) -> bool {
 // every time its row is scrolled back into view.
 thread_local! {
     static COUNTS: RefCell<CountCache> = RefCell::new(CountCache::default());
+}
+
+/// Where mounting the location of a view stands: nothing asked, a server being reached, or
+/// one that answered with the reason it kept in `Failed`.
+#[derive(Default)]
+pub enum Mounting {
+    #[default]
+    Idle,
+    Underway,
+    Failed(String),
 }
 
 #[derive(Default)]
@@ -1255,7 +1265,7 @@ impl BrowserView {
 
     fn set_location_internal(&self, file: &gio::File) {
         let imp = self.imp();
-        imp.mount_tried.replace(None);
+        imp.mounting.replace(Mounting::Idle);
         imp.model.set_search_text("");
         imp.model.set_location(Some(file));
         imp.location.replace(Some(file.clone()));
@@ -1336,7 +1346,7 @@ impl BrowserView {
         let imp = self.imp();
         // Asked for again by hand: a share whose password was turned down is worth another
         // try, and so is one that has since come back.
-        imp.mount_tried.replace(None);
+        imp.mounting.replace(Mounting::Idle);
         let offset = self.view_adjustment().map_or(0.0, |adj| adj.value());
         let selected = imp.model.selected_files();
         let focused = self.view_has_focus();
@@ -1498,22 +1508,37 @@ impl BrowserView {
         let Some(file) = self.location() else {
             return;
         };
-        let uri = file.uri().to_string();
-        if imp.mount_tried.borrow().as_deref() == Some(uri.as_str()) {
+        if !matches!(*imp.mounting.borrow(), Mounting::Idle) {
             return;
         }
-        imp.mount_tried.replace(Some(uri));
+        imp.mounting.replace(Mounting::Underway);
+        self.update_stack();
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
             self,
             async move {
-                if crate::network::mount(&file, &view, &gio::Cancellable::new())
-                    .await
-                    .is_ok()
-                {
-                    // Mounted: the address is worth trying again if it is ever lost.
-                    view.imp().mount_tried.replace(None);
-                    view.reload();
+                let result = crate::network::mount(&file, &view, &gio::Cancellable::new()).await;
+                // The answer is about the location asked for; the view may have moved on.
+                if view.location().is_none_or(|now| !now.equal(&file)) {
+                    return;
+                }
+                match result {
+                    Ok(()) => {
+                        // Mounted: the address is worth trying again if it is ever lost,
+                        // and the location has a mount to be named after now.
+                        view.imp().mounting.replace(Mounting::Idle);
+                        view.notify_location();
+                        view.reload();
+                    }
+                    Err(e) => {
+                        let why = if e.matches(gio::IOErrorEnum::FailedHandled) {
+                            gettext("The password dialog was dismissed.")
+                        } else {
+                            e.message().to_string()
+                        };
+                        view.imp().mounting.replace(Mounting::Failed(why));
+                        view.update_stack();
+                    }
                 }
             }
         ));
@@ -1531,10 +1556,30 @@ impl BrowserView {
     fn update_stack(&self) {
         let imp = self.imp();
         let empty = !imp.model.loading() && imp.model.n_items() == 0;
-        let name = if imp.model.error_message().is_some() {
-            if let Some(msg) = imp.model.error_message() {
-                imp.error_page
-                    .set_description(Some(&self.why_not_opened(&msg)));
+        let name = if let Some(msg) = imp.model.error_message() {
+            match &*imp.mounting.borrow() {
+                // Not mounted yet is not a failure while the server is being reached.
+                Mounting::Underway => {
+                    imp.error_page
+                        .set_icon_name(Some("network-server-symbolic"));
+                    imp.error_page
+                        .set_title(&gettext("Connecting to %s…").replace("%s", &self.host()));
+                    imp.error_page.set_description(None);
+                }
+                Mounting::Failed(why) => {
+                    imp.error_page.set_icon_name(Some("dialog-error-symbolic"));
+                    imp.error_page.set_title(&gettext("Could Not Connect"));
+                    imp.error_page.set_description(Some(&format!(
+                        "{why}\n{}",
+                        gettext("Reloading the folder tries again.")
+                    )));
+                }
+                Mounting::Idle => {
+                    imp.error_page.set_icon_name(Some("dialog-error-symbolic"));
+                    imp.error_page.set_title(&gettext("Could Not Open Folder"));
+                    imp.error_page
+                        .set_description(Some(&self.why_not_opened(&msg)));
+                }
             }
             "error"
         } else if imp.view_mode.get() == ViewMode::Columns
@@ -1546,11 +1591,23 @@ impl BrowserView {
             // reaches past the folder, which no column can draw either.
             "columns"
         } else if empty {
-            imp.empty_page.set_title(&if imp.model.searching() {
-                gettext("No Results Found")
+            let network = self
+                .location()
+                .is_some_and(|f| f.uri() == crate::network::NETWORK_URI);
+            let (icon, title, why) = if imp.model.searching() {
+                ("folder-symbolic", gettext("No Results Found"), None)
+            } else if network {
+                (
+                    "network-workgroup-symbolic",
+                    gettext("No Servers Found"),
+                    Some(self.why_no_servers()),
+                )
             } else {
-                gettext("Folder is Empty")
-            });
+                ("folder-symbolic", gettext("Folder is Empty"), None)
+            };
+            imp.empty_page.set_icon_name(Some(icon));
+            imp.empty_page.set_title(&title);
+            imp.empty_page.set_description(why.as_deref());
             "empty"
         } else {
             match imp.view_mode.get() {
@@ -1572,6 +1629,38 @@ impl BrowserView {
             imp.miller_list
                 .set_model((name == "columns").then_some(&sel));
         }
+    }
+
+    /// The machine the location is on, for a page that names it.
+    fn host(&self) -> String {
+        let uri = self.location().map(|f| f.uri()).unwrap_or_default();
+        glib::Uri::parse(&uri, glib::UriFlags::NONE)
+            .ok()
+            .and_then(|parsed| parsed.host())
+            .map_or_else(|| uri.to_string(), |host| host.to_string())
+    }
+
+    /// What to say under "No Servers Found": where servers would come from, and the ones
+    /// found and left out because nothing installed here can open them.
+    fn why_no_servers(&self) -> String {
+        let mut text = gettext(
+            "Machines that announce themselves on the network appear here. Others are reached with “Connect to Server…”.",
+        );
+        let left_out = self.imp().model.unreachable_schemes();
+        if !left_out.is_empty() {
+            let mut schemes: Vec<String> = left_out.iter().map(|s| format!("{s}://")).collect();
+            schemes.dedup();
+            text.push_str("\n\n");
+            text.push_str(
+                &ngettext(
+                    "One server was found but left out: no gvfs backend for %s addresses is installed.",
+                    "Some servers were found but left out: no gvfs backend for %s addresses is installed.",
+                    left_out.len() as u32,
+                )
+                .replace("%s", &schemes.join(", ")),
+            );
+        }
+        text
     }
 
     /// What to say under "Could Not Open Folder". The listing's own message as a rule, but
