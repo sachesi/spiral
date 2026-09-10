@@ -206,9 +206,24 @@ impl JobManager {
                 },
                 other => other,
             };
-            let redo = redo_for(&kind);
-            mgr.set_undo(None, redo);
-            mgr.submit_inner(kind, false);
+            mgr.set_undo(None, None);
+            let job = mgr.submit_inner(kind, false);
+            // Redo reverses the undo, read from what the undo did: where a move put things
+            // back, and what a restore landed as. Not when something else has been done
+            // since, and not for an undone restore, which would need the trash looked up
+            // again.
+            job.connect_status_notify(glib::clone!(
+                #[weak]
+                mgr,
+                move |job| {
+                    if job.status() == JobStatus::Done
+                        && mgr.imp().undo.borrow().is_none()
+                        && !matches!(job.kind(), JobKind::Trash { .. })
+                    {
+                        mgr.set_undo(None, undo_for(job));
+                    }
+                }
+            ));
         });
     }
 
@@ -262,46 +277,6 @@ fn undo_for(job: &Job) -> Option<JobKind> {
             (!files.is_empty()).then_some(JobKind::Trash { files })
         }
         JobKind::Delete { .. } => None,
-    }
-}
-
-/// What redo should run after undoing with `undo_kind`.
-fn redo_for(undo_kind: &JobKind) -> Option<JobKind> {
-    match undo_kind {
-        JobKind::Transfer {
-            pairs,
-            is_move: true,
-        } => Some(JobKind::Transfer {
-            pairs: pairs
-                .iter()
-                .filter_map(|(f, _)| f.parent().map(|p| (f.clone(), p)))
-                .collect(),
-            is_move: true,
-        }),
-        JobKind::Rename { renames } => {
-            let again: Vec<(gio::File, String)> = renames
-                .iter()
-                .filter_map(|(file, new_name)| {
-                    let parent = file.parent()?;
-                    Some((parent.child(new_name), super::job::name(file)))
-                })
-                .collect();
-            (!again.is_empty()).then_some(JobKind::Rename { renames: again })
-        }
-        JobKind::Restore { pairs } => Some(JobKind::Trash {
-            files: pairs.iter().map(|(_, o)| o.clone()).collect(),
-        }),
-        // Redoing a restore would need another trash lookup; not offered.
-        JobKind::Trash { .. } => None,
-        // Re-copying after deleting the copy, or re-creating, is not offered.
-        JobKind::Delete { .. }
-        | JobKind::Transfer { is_move: false, .. }
-        | JobKind::CreateFolder { .. }
-        | JobKind::CreateFile { .. }
-        | JobKind::SaveImage { .. }
-        | JobKind::Extract { .. }
-        | JobKind::Link { .. }
-        | JobKind::Compress { .. } => None,
     }
 }
 
