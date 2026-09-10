@@ -1507,7 +1507,10 @@ impl BrowserView {
             #[weak(rename_to = view)]
             self,
             async move {
-                if crate::network::mount(&file, &view).await.is_ok() {
+                if crate::network::mount(&file, &view, &gio::Cancellable::new())
+                    .await
+                    .is_ok()
+                {
                     // Mounted: the address is worth trying again if it is ever lost.
                     view.imp().mount_tried.replace(None);
                     view.reload();
