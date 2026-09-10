@@ -1188,6 +1188,15 @@ impl BrowserView {
         imp.model.set_sort_key(key);
         imp.model.set_sort_reversed(reversed);
         match self.location() {
+            // Only the trash has the date to sort by, and every other folder would lose its
+            // order to it: it stays with the trash, for as long as the trash is shown, where
+            // it is not remembered for the trash itself.
+            Some(_)
+                if key == SortKey::Trashed
+                    && (self.chooser_mode() || !crate::prefs::remember_view()) =>
+            {
+                imp.folder_sort.set(Some((key, reversed)));
+            }
             _ if self.chooser_mode() => {
                 let (key_name, reversed_name) = self.sort_keys();
                 let _ = imp.settings.set_string(key_name, key.nick());
@@ -1198,9 +1207,6 @@ impl BrowserView {
                 let value = format!("{}-{}", key.nick(), if reversed { "desc" } else { "asc" });
                 remember(dir, "metadata::spiral-sort", value);
             }
-            // Only the trash has the date to sort by, and every other folder would lose its
-            // order to it: it stays with the trash, for as long as the trash is shown.
-            Some(_) if key == SortKey::Trashed => imp.folder_sort.set(Some((key, reversed))),
             _ => {
                 let _ = imp.settings.set_string("sort-key", key.nick());
                 let _ = imp.settings.set_boolean("sort-reversed", reversed);
@@ -1436,13 +1442,8 @@ impl BrowserView {
         self.grab_view_focus();
     }
 
-    /// Back a step; while searching, out of the search and into the folder it was in.
     pub fn go_back(&self) {
         let imp = self.imp();
-        if imp.model.searching() {
-            self.search_for("");
-            return;
-        }
         let pos = imp.history_pos.get();
         if pos == 0 {
             return;
@@ -1485,13 +1486,12 @@ impl BrowserView {
         self.select_files_when_loaded(selected);
     }
 
-    /// Backspace: out of the search, back to the search this folder was opened from, or
-    /// up.
+    /// Backspace: back to the search this folder was opened from, up otherwise.
     pub fn go_back_or_up(&self) {
         let imp = self.imp();
         let pos = imp.history_pos.get();
         let from_search = pos > 0 && imp.history.borrow()[pos - 1].search.is_some();
-        if from_search || imp.model.searching() {
+        if from_search {
             self.go_back();
         } else {
             self.go_up();
@@ -1551,7 +1551,8 @@ impl BrowserView {
     fn pick_first_result(&self) {
         let imp = self.imp();
         let model = &imp.model;
-        if !model.searching() || model.n_items() == 0 {
+        // Not in a file chooser, where what is selected fills the name to save under.
+        if self.chooser_mode() || !model.searching() || model.n_items() == 0 {
             return;
         }
         let sel = model.selection();

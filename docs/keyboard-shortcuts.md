@@ -15,7 +15,7 @@ Ctrl+? shows this list inside the application.
 | Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
 | Alt+Left, Alt+Right | Back, forward; also the side buttons of a mouse |
 | Alt+Up | Parent folder |
-| Backspace | Parent folder; back to the search in a folder opened from its results; out of a search |
+| Backspace | Parent folder; back to the search in a folder opened from its results |
 | Alt+Home | Home |
 | Ctrl+L | Type a location |
 | F10 | Menu of the current folder |
