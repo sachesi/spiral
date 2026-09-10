@@ -341,8 +341,12 @@ Alt+Return or Ctrl+I. Type, size (folders are summed in the background), locatio
 button beside the location opens the folder the item is in, with the item selected; a
 link also shows its target, with a button to the target's folder, and an item in the trash
 shows the folder it was trashed from, with a button there, and when it was trashed. A
-folder shows how full its disk is, and on a disk device with GNOME Disks installed, "Open
-in Disks". A single folder can be given a custom icon; it is stored as
+folder has a Disk page: how full the disk is; the volume, with its format, label, where
+it is mounted, the device, a btrfs subvolume and compression, and encryption; and the
+drive, with its model, its kind (NVMe SSD, SSD, hard disk and its speed, USB, SD card),
+its size, the partition table (GPT or MBR) and the partition. The volume and the drive
+come from UDisks, and without it the page has what the mount says. On a disk device with
+GNOME Disks installed the page offers "Open in Disks". A single folder can be given a custom icon; it is stored as
 `metadata::custom-icon`, which GNOME Files reads as well. For a single local file there
 is a Permissions page with owner, group and others as dropdowns and an Executable switch;
 it is read-only unless you own the file. A folder you own also gets "Change Permissions

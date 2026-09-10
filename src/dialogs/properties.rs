@@ -46,6 +46,9 @@ const ATTRS: &str = "standard::*,time::modified,time::access,time::created,owner
 owner::group,unix::mode,unix::uid,access::*,selinux::context,metadata::custom-icon,\
 metadata::custom-icon-name,trash::orig-path,trash::deletion-date";
 
+/// What the disk page is told by the filesystem.
+const FS_ATTRS: &str = "filesystem::size,filesystem::free,filesystem::used,filesystem::type";
+
 /// Show a folder in the window the dialog came from, with some of what is in it selected.
 type Reveal = Rc<dyn Fn(&gio::File, Vec<gio::File>)>;
 
@@ -85,15 +88,29 @@ impl PropertiesDialog {
                         }
                     }) as Reveal
                 });
+            // A folder has a page about the disk it is on, where the filesystem says how big
+            // that is.
+            let disk = match infos.as_slice() {
+                [(file, info)] if file_utils::is_dir(info) => file
+                    .query_filesystem_info_future(FS_ATTRS, glib::Priority::DEFAULT)
+                    .await
+                    .ok()
+                    .filter(|fs| fs.attribute_uint64("filesystem::size") > 0),
+                _ => None,
+            };
             if !infos.is_empty() && parent.root().is_some() {
-                let dialog = Self::new(&infos, reveal);
+                let dialog = Self::new(&infos, reveal, disk);
                 dialog.connect_changed(on_changed);
                 dialog.present(Some(&parent));
             }
         });
     }
 
-    fn new(infos: &[(gio::File, gio::FileInfo)], reveal: Option<Reveal>) -> Self {
+    fn new(
+        infos: &[(gio::File, gio::FileInfo)],
+        reveal: Option<Reveal>,
+        disk: Option<gio::FileInfo>,
+    ) -> Self {
         let dialog: Self = glib::Object::builder()
             .property("title", gettext("Properties"))
             .property("content-width", 460)
@@ -103,28 +120,44 @@ impl PropertiesDialog {
         toolbar.add_top_bar(&header);
         dialog.set_child(Some(&toolbar));
         let general = dialog.general_page(infos, reveal);
-        match infos {
-            [(file, info)] if info.has_attribute("unix::mode") => {
-                let stack = adw::ViewStack::new();
-                stack
-                    .add_titled(&general, Some("general"), &gettext("General"))
-                    .set_icon_name(Some("document-properties-symbolic"));
-                stack
-                    .add_titled(
-                        &permissions_page(file, info),
-                        Some("permissions"),
-                        &gettext("Permissions"),
-                    )
-                    .set_icon_name(Some("system-lock-screen-symbolic"));
-                let switcher = adw::ViewSwitcher::builder()
-                    .stack(&stack)
-                    .policy(adw::ViewSwitcherPolicy::Wide)
-                    .build();
-                header.set_title_widget(Some(&switcher));
-                toolbar.set_content(Some(&stack));
+        let mut pages = Vec::new();
+        if let [(file, info)] = infos {
+            if info.has_attribute("unix::mode") {
+                pages.push((
+                    permissions_page(file, info),
+                    "permissions",
+                    gettext("Permissions"),
+                    "system-lock-screen-symbolic",
+                ));
             }
-            _ => toolbar.set_content(Some(&general)),
+            if let Some(fs) = &disk {
+                pages.push((
+                    disk_page(file, fs),
+                    "disk",
+                    gettext("Disk"),
+                    "drive-harddisk-symbolic",
+                ));
+            }
         }
+        if pages.is_empty() {
+            toolbar.set_content(Some(&general));
+            return dialog;
+        }
+        let stack = adw::ViewStack::new();
+        stack
+            .add_titled(&general, Some("general"), &gettext("General"))
+            .set_icon_name(Some("document-properties-symbolic"));
+        for (page, name, title, icon) in pages {
+            stack
+                .add_titled(&page, Some(name), &title)
+                .set_icon_name(Some(icon));
+        }
+        let switcher = adw::ViewSwitcher::builder()
+            .stack(&stack)
+            .policy(adw::ViewSwitcherPolicy::Wide)
+            .build();
+        header.set_title_widget(Some(&switcher));
+        toolbar.set_content(Some(&stack));
         dialog
     }
 
@@ -367,11 +400,6 @@ impl PropertiesDialog {
             group.add(&row(&gettext("Location"), &location_text(&parent)));
         }
         page.add(&group);
-        if let [(file, info)] = infos
-            && file_utils::is_dir(info)
-        {
-            page.add(&disk_group(file));
-        }
 
         // Size is summed in the background; the row updates as folders are walked.
         let files: Vec<gio::File> = infos.iter().map(|(f, _)| f.clone()).collect();
@@ -445,48 +473,110 @@ fn row(label: &str, value: &str) -> adw::ActionRow {
     r
 }
 
-/// How full the disk holding `dir` is, filled in once the filesystem answers, with a way
-/// into Disks where it is installed and the disk is a device of its own.
-fn disk_group(dir: &gio::File) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(gettext("Disk"))
-        .visible(false)
+/// The disk `dir` is on: how full it is, from `fs`, the filesystem's answer; the volume,
+/// from the mount it is under and UDisks; and the drive that holds it, from UDisks, with
+/// a way into Disks where that is installed. What UDisks has is filled in when it answers.
+fn disk_page(dir: &gio::File, fs: &gio::FileInfo) -> adw::PreferencesPage {
+    let page = adw::PreferencesPage::new();
+    let usage = adw::PreferencesGroup::builder()
+        .title(gettext("Usage"))
         .build();
-    let dir = dir.clone();
+    let size = fs.attribute_uint64("filesystem::size");
+    let free = fs.attribute_uint64("filesystem::free");
+    let used = if fs.has_attribute("filesystem::used") {
+        fs.attribute_uint64("filesystem::used")
+    } else {
+        size.saturating_sub(free)
+    };
+    let used_row = row(&gettext("Used"), &prefs::size(used));
+    let bar = gtk::LevelBar::builder()
+        .value(used as f64 / size as f64)
+        .width_request(120)
+        .valign(gtk::Align::Center)
+        .build();
+    used_row.add_suffix(&bar);
+    usage.add(&used_row);
+    usage.add(&row(&gettext("Free"), &prefs::size(free)));
+    usage.add(&row(&gettext("Capacity"), &prefs::size(size)));
+    page.add(&usage);
+
+    let mount = dir.path().and_then(|p| crate::disks::mount_of(&p));
+    let fs_type = fs
+        .attribute_string("filesystem::type")
+        .map(|t| t.to_string());
     glib::spawn_future_local(glib::clone!(
         #[weak]
-        group,
+        page,
         async move {
-            let Ok(fs) = dir
-                .query_filesystem_info_future(
-                    "filesystem::size,filesystem::free,filesystem::used",
-                    glib::Priority::DEFAULT,
-                )
-                .await
-            else {
-                return;
-            };
-            let size = fs.attribute_uint64("filesystem::size");
-            if size == 0 {
-                return;
+            let device = mount
+                .as_ref()
+                .map(|m| m.source.clone())
+                .filter(|s| s.starts_with("/dev/"));
+            let volume = match &device {
+                Some(device) => crate::disks::volume_of(device).await,
+                None => None,
             }
-            let free = fs.attribute_uint64("filesystem::free");
-            let used = if fs.has_attribute("filesystem::used") {
-                fs.attribute_uint64("filesystem::used")
-            } else {
-                size.saturating_sub(free)
-            };
-            let used_row = row(&gettext("Used"), &prefs::size(used));
-            let bar = gtk::LevelBar::builder()
-                .value(used as f64 / size as f64)
-                .width_request(120)
-                .valign(gtk::Align::Center)
+            .unwrap_or_default();
+
+            let group = adw::PreferencesGroup::builder()
+                .title(gettext("Volume"))
                 .build();
-            used_row.add_suffix(&bar);
-            group.add(&used_row);
-            group.add(&row(&gettext("Free"), &prefs::size(free)));
-            group.add(&row(&gettext("Capacity"), &prefs::size(size)));
-            let device = dir.path().and_then(|p| device_of(&p));
+            let format = volume
+                .format
+                .clone()
+                .or_else(|| mount.as_ref().map(|m| m.fstype.clone()))
+                .or(fs_type);
+            if let Some(format) = format {
+                group.add(&row(&gettext("Format"), &format));
+            }
+            if let Some(label) = &volume.label {
+                group.add(&row(&gettext("Label"), label));
+            }
+            if let Some(mount) = &mount {
+                group.add(&row(&gettext("Mounted At"), &mount.point.to_string_lossy()));
+                if let Some(device) = &device {
+                    group.add(&row(&gettext("Device"), device));
+                }
+                if let Some(subvolume) = mount.option("subvol") {
+                    group.add(&row(&gettext("Subvolume"), subvolume));
+                }
+                if let Some(compression) = mount
+                    .option("compress")
+                    .or_else(|| mount.option("compress-force"))
+                {
+                    group.add(&row(&gettext("Compression"), compression));
+                }
+                if mount.read_only() {
+                    group.add(&row(&gettext("Access"), &gettext("Read-only")));
+                }
+            }
+            if let Some(encryption) = &volume.encryption {
+                group.add(&row(&gettext("Encryption"), encryption));
+            }
+            page.add(&group);
+
+            let Some(drive) = &volume.drive else { return };
+            let group = adw::PreferencesGroup::builder()
+                .title(gettext("Drive"))
+                .build();
+            if !drive.model.is_empty() {
+                group.add(&row(&gettext("Model"), &drive.model));
+            }
+            group.add(&row(&gettext("Type"), &drive.kind));
+            if drive.size > 0 {
+                group.add(&row(&gettext("Size"), &prefs::size(drive.size)));
+            }
+            if let Some(table) = &volume.table {
+                group.add(&row(&gettext("Partition Table"), table));
+            }
+            if let Some((number, name)) = &volume.partition {
+                let text = if name.is_empty() {
+                    number.to_string()
+                } else {
+                    format!("{number} ({name})")
+                };
+                group.add(&row(&gettext("Partition"), &text));
+            }
             if let Some(device) = device
                 && glib::find_program_in_path("gnome-disks").is_some()
             {
@@ -498,7 +588,7 @@ fn disk_group(dir: &gio::File) -> adw::PreferencesGroup {
                     let argv = [
                         std::ffi::OsStr::new("gnome-disks"),
                         std::ffi::OsStr::new("--block-device"),
-                        device.as_os_str(),
+                        std::ffi::OsStr::new(&device),
                     ];
                     if let Err(e) = gio::Subprocess::newv(&argv, gio::SubprocessFlags::NONE) {
                         glib::g_warning!("spiral", "cannot start Disks: {e}");
@@ -506,30 +596,10 @@ fn disk_group(dir: &gio::File) -> adw::PreferencesGroup {
                 });
                 group.add(&open);
             }
-            group.set_visible(true);
+            page.add(&group);
         }
     ));
-    group
-}
-
-/// The block device the filesystem holding `path` is on, from the mounts the kernel lists:
-/// the one whose mount point is the longest leading part of `path`. `None` for what is not
-/// on a device, a tmpfs or a network share.
-fn device_of(path: &std::path::Path) -> Option<std::path::PathBuf> {
-    let mounts = std::fs::read_to_string("/proc/self/mounts").ok()?;
-    // Spaces and the like come escaped as octal, "\040" for a space.
-    let unescape = |s: &str| s.replace("\\040", " ").replace("\\011", "\t");
-    mounts
-        .lines()
-        .filter_map(|line| {
-            let mut fields = line.split(' ');
-            let device = fields.next()?;
-            let point = std::path::PathBuf::from(unescape(fields.next()?));
-            path.starts_with(&point).then_some((device, point))
-        })
-        .max_by_key(|(_, point)| point.as_os_str().len())
-        .map(|(device, _)| std::path::PathBuf::from(unescape(device)))
-        .filter(|device| device.starts_with("/dev/"))
+    page
 }
 
 fn location_text(dir: &gio::File) -> String {
