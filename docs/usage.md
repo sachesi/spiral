@@ -159,7 +159,9 @@ narrows the columns are dropped from the right, one after another, rather than t
 squeezed into an ellipsis; they come back as it widens. A name too long for the column it has
 is cut in the middle and shown whole on hover. Type shows the extension — "txt", "tar.gz",
 "Folder" — and falls back to the full description, on a tooltip, for names without one. Every
-column but the name and the star can be resized by dragging its header edge.
+column but the name and the star can be resized by dragging its header edge. In Trash the
+list also shows each item's original location and when it was trashed, and sorts by that
+date; the order stays with the Trash and leaves other folders alone.
 
 ### Columns
 

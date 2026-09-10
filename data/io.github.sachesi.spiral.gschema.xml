@@ -10,6 +10,7 @@
     <value nick="size" value="1"/>
     <value nick="type" value="2"/>
     <value nick="modified" value="3"/>
+    <value nick="trashed" value="4"/>
   </enum>
   <enum id="io.github.sachesi.spiral.SizeUnits">
     <value nick="decimal" value="0"/>

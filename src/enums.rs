@@ -71,6 +71,9 @@ pub enum SortKey {
     Type = 2,
     #[enum_value(name = "Modified", nick = "modified")]
     Modified = 3,
+    /// When an item was put in the trash; only the trash has it to sort by.
+    #[enum_value(name = "Trashed", nick = "trashed")]
+    Trashed = 4,
 }
 
 impl SortKey {
@@ -80,6 +83,7 @@ impl SortKey {
             Self::Size => "size",
             Self::Type => "type",
             Self::Modified => "modified",
+            Self::Trashed => "trashed",
         }
     }
 
@@ -89,6 +93,7 @@ impl SortKey {
             "size" => Some(Self::Size),
             "type" => Some(Self::Type),
             "modified" => Some(Self::Modified),
+            "trashed" => Some(Self::Trashed),
             _ => None,
         }
     }

@@ -15,7 +15,7 @@ use crate::{gio, glib};
 /// actually shows.
 pub const ATTRIBUTES: &str = "standard::*,time::modified,time::access,time::created,\
 access::can-read,access::can-write,access::can-delete,access::can-rename,\
-access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,\
+access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,trash::deletion-date,\
 metadata::custom-icon,metadata::custom-icon-name,xattr::xdg.tags";
 
 /// Icon to draw for `info`, honouring the Nautilus-compatible custom icon metadata.
@@ -364,14 +364,38 @@ pub fn items_string(n: u64) -> String {
 
 /// Folder holding `info`, shortened with "~" under home, for search results.
 pub fn location_of(info: &gio::FileInfo) -> String {
-    let Some(parent) = file_of(info).parent() else {
-        return String::new();
-    };
+    match file_of(info).parent() {
+        Some(parent) => folder_string(&parent),
+        None => String::new(),
+    }
+}
+
+/// The folder an item in the trash was trashed from, written as `location_of` writes one.
+pub fn trashed_from(info: &gio::FileInfo) -> String {
+    info.attribute_byte_string("trash::orig-path")
+        .and_then(|path| gio::File::for_path(path.as_str()).parent())
+        .map(|parent| folder_string(&parent))
+        .unwrap_or_default()
+}
+
+/// When an item in the trash was trashed. The trash keeps it as local time without a zone.
+pub fn trashed_on(info: &gio::FileInfo) -> Option<glib::DateTime> {
+    let date = info.attribute_string("trash::deletion-date")?;
+    glib::DateTime::from_iso8601(&date, Some(&glib::TimeZone::local())).ok()
+}
+
+pub fn trashed_on_string(info: &gio::FileInfo) -> String {
+    trashed_on(info)
+        .map(|d| crate::prefs::date(&d))
+        .unwrap_or_default()
+}
+
+fn folder_string(parent: &gio::File) -> String {
     let home = gio::File::for_path(glib::home_dir());
     if parent.equal(&home) {
         return "~".into();
     }
-    if let Some(rel) = home.relative_path(&parent) {
+    if let Some(rel) = home.relative_path(parent) {
         return format!("~/{}", rel.to_string_lossy());
     }
     match parent.path() {
@@ -428,6 +452,11 @@ pub fn compare(a: &gio::FileInfo, b: &gio::FileInfo, key: SortKey, reversed: boo
     let by_name = || name_cmp(a, b);
     let ord = match key {
         SortKey::Name => by_name(),
+        // The dates are written the same way throughout, so they sort as text.
+        SortKey::Trashed => a
+            .attribute_string("trash::deletion-date")
+            .cmp(&b.attribute_string("trash::deletion-date"))
+            .then_with(by_name),
         SortKey::Size => size_of(a).cmp(&size_of(b)).then_with(by_name),
         SortKey::Type => sort_key(a, TYPE_KEY, short_type_string)
             .cmp(&sort_key(b, TYPE_KEY, short_type_string))
