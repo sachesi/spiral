@@ -275,16 +275,63 @@ pub async fn rename_popover(
 }
 
 /// "New Folder" dialog. Resolves to the folder name or None.
-pub async fn new_folder_dialog(parent: &impl IsA<gtk::Widget>, dir: &gio::File) -> Option<String> {
+/// Ask for the name of a new folder in `dir`, starting from `suggested`.
+pub async fn new_folder_dialog(
+    parent: &impl IsA<gtk::Widget>,
+    dir: &gio::File,
+    suggested: &str,
+) -> Option<String> {
     name_dialog(
         parent,
         dir,
         &gettext("New Folder"),
         &gettext("_Folder Name"),
-        "",
+        suggested,
         true,
     )
     .await
+}
+
+/// What `names` start with in common, as the name for a folder to hold them: their
+/// extensions left out, a word or number the names only share the start of dropped, and
+/// what trails it -- spaces, dashes, dots, an opening bracket -- trimmed off; nothing when
+/// they share less than three characters.
+pub fn common_name(names: &[String]) -> String {
+    let stems: Vec<Vec<char>> = names
+        .iter()
+        .map(|n| match n.rfind('.').filter(|&i| i > 0) {
+            Some(dot) => n[..dot].chars().collect(),
+            None => n.chars().collect(),
+        })
+        .collect();
+    let Some(first) = stems.first() else {
+        return String::new();
+    };
+    let len = stems.iter().fold(first.len(), |len, s| {
+        first[..len]
+            .iter()
+            .zip(s)
+            .take_while(|(a, b)| a == b)
+            .count()
+    });
+    let mut len = len;
+    let cut_short = |len: usize| {
+        stems
+            .iter()
+            .any(|s| s.get(len).is_some_and(|c| c.is_alphanumeric()))
+    };
+    if len > 0 && first[len - 1].is_alphanumeric() && cut_short(len) {
+        len = first[..len]
+            .iter()
+            .rposition(|c| !c.is_alphanumeric())
+            .unwrap_or(0);
+    }
+    let common: String = first[..len].iter().collect();
+    let common = common.trim_end_matches(|c: char| c.is_whitespace() || "-_.([{".contains(c));
+    if common.chars().count() < 3 {
+        return String::new();
+    }
+    common.to_string()
 }
 
 /// "New Document" dialog, starting from `suggested`: the name of the template the document
@@ -447,5 +494,21 @@ mod tests {
             Verdict::Error(_)
         ));
         assert!(matches!(validate(&long, None, false, None), Verdict::Ok));
+    }
+
+    #[test]
+    fn a_folder_for_several_files_is_named_after_what_they_share() {
+        let names = |n: &[&str]| n.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        assert_eq!(
+            common_name(&names(&["Trip 2024 - 01.jpg", "Trip 2024 - 02.jpg"])),
+            "Trip 2024"
+        );
+        assert_eq!(common_name(&names(&["report.pdf", "report.odt"])), "report");
+        assert_eq!(
+            common_name(&names(&["IMG_1234.jpg", "IMG_1256.jpg"])),
+            "IMG"
+        );
+        assert_eq!(common_name(&names(&["ab1.txt", "ab2.txt"])), "");
+        assert_eq!(common_name(&names(&["one", "two"])), "");
     }
 }

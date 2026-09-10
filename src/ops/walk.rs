@@ -164,6 +164,38 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 .map_err(|e| Fail::Failed(e.message().to_string()))?;
             job.imp().outcome.borrow_mut().created.push(dir);
         }
+        JobKind::NewFolderWith {
+            parent,
+            name: folder_name,
+            files,
+        } => {
+            let dir = parent.child(&folder_name);
+            dir.make_directory_future(PRIO)
+                .await
+                .map_err(|e| Fail::Failed(e.message().to_string()))?;
+            job.imp().outcome.borrow_mut().created.push(dir.clone());
+            count(job, files.clone()).await;
+            for src in files {
+                if let Some(dest) =
+                    transfer_one(job, mgr, &src, &dir, &name(&src), true, true).await?
+                {
+                    job.imp().outcome.borrow_mut().moved.push((src, dest));
+                }
+            }
+        }
+        JobKind::Unfold { folder, pairs } => {
+            count(job, pairs.iter().map(|(item, _)| item.clone()).collect()).await;
+            for (item, to) in pairs {
+                if let Some(dest) =
+                    transfer_one(job, mgr, &item, &to, &name(&item), true, true).await?
+                {
+                    job.imp().outcome.borrow_mut().moved.push((item, dest));
+                }
+            }
+            // Only an empty folder can be deleted this way; one given something else since
+            // stays, with that in it.
+            let _ = folder.delete_future(PRIO).await;
+        }
         JobKind::CreateFile {
             parent,
             name,

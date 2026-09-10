@@ -54,6 +54,18 @@ pub enum JobKind {
         archives: Vec<gio::File>,
         dest: gio::File,
     },
+    /// A folder called `name` in `parent`, with `files` moved into it.
+    NewFolderWith {
+        parent: gio::File,
+        name: String,
+        files: Vec<gio::File>,
+    },
+    /// Undo of `NewFolderWith`: (item in `folder`, the folder it goes back to) for each
+    /// item, then `folder` removed, unless something else has been put in it since.
+    Unfold {
+        folder: gio::File,
+        pairs: Vec<(gio::File, gio::File)>,
+    },
     /// Symbolic links to `files`, created in `dest`.
     Link {
         files: Vec<gio::File>,
@@ -71,6 +83,20 @@ pub enum JobKind {
         file_name: String,
         password: Option<String>,
     },
+}
+
+/// "Moving … to “`to`”", for moves whose files all go to one folder.
+fn moving(files: &[gio::File], to: &str) -> String {
+    match files {
+        [file] => gettext("Moving “%s” to “%t”").replace("%s", &name(file)),
+        _ => ngettext(
+            "Moving %d file to “%t”",
+            "Moving %d files to “%t”",
+            files.len() as u32,
+        )
+        .replace("%d", &files.len().to_string()),
+    }
+    .replace("%t", to)
 }
 
 impl JobKind {
@@ -141,6 +167,17 @@ impl JobKind {
             JobKind::Compress { file_name, .. } => {
                 gettext("Compressing to “%s”").replace("%s", file_name)
             }
+            JobKind::NewFolderWith { name, files, .. } => moving(files, name),
+            JobKind::Unfold { pairs, .. } => {
+                let items: Vec<gio::File> = pairs.iter().map(|(item, _)| item.clone()).collect();
+                moving(
+                    &items,
+                    &pairs
+                        .first()
+                        .map(|(_, to)| to.clone())
+                        .map_or_else(String::new, |f| name(&f)),
+                )
+            }
             JobKind::Link { files, .. } => match files.len() {
                 1 => gettext("Creating link to “%s”").replace("%s", &name(&files[0])),
                 k => ngettext("Creating %d link", "Creating %d links", k as u32)
@@ -200,6 +237,13 @@ impl JobKind {
                 gettext("Created folder “%s”").replace("%s", name)
             }
             JobKind::CreateFile { name, .. } => gettext("Created “%s”").replace("%s", name),
+            JobKind::NewFolderWith { name, .. } => {
+                gettext("Created folder “%s”").replace("%s", name)
+            }
+            JobKind::Unfold { pairs, .. } => {
+                ngettext("Moved %d file", "Moved %d files", pairs.len() as u32)
+                    .replace("%d", &pairs.len().to_string())
+            }
             JobKind::SaveImage { .. } => gettext("Saved pasted image"),
             JobKind::Restore { pairs } => match pairs.len() {
                 1 => gettext("Restored “%s”").replace("%s", &name(&pairs[0].1)),
