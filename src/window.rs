@@ -825,6 +825,14 @@ impl SpiralWindow {
         self.imp().toast_overlay.add_toast(toast);
     }
 
+    /// Show `folder` in the pane in charge, with `select` selected in it.
+    pub(crate) fn reveal(&self, folder: &gio::File, select: Vec<gio::File>) {
+        self.navigate(|v| {
+            v.go_to(folder);
+            v.select_files_when_loaded(select.clone());
+        });
+    }
+
     /// A toast whose Undo button runs `undo`, for a change the undo of the operations does
     /// not keep.
     pub fn show_undo_toast(&self, message: &str, undo: impl Fn() + 'static) {

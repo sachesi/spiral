@@ -66,6 +66,13 @@ pub enum JobKind {
         folder: gio::File,
         pairs: Vec<(gio::File, gio::File)>,
     },
+    /// Permissions set on `folder` and everything in it: each `(value, mask)` says which
+    /// bits of `unix::mode` to set, and to what, for the files and for the folders.
+    SetPermissions {
+        folder: gio::File,
+        files: (u32, u32),
+        folders: (u32, u32),
+    },
     /// Symbolic links to `files`, created in `dest`.
     Link {
         files: Vec<gio::File>,
@@ -168,6 +175,9 @@ impl JobKind {
                 gettext("Compressing to “%s”").replace("%s", file_name)
             }
             JobKind::NewFolderWith { name, files, .. } => moving(files, name),
+            JobKind::SetPermissions { folder, .. } => {
+                gettext("Changing permissions in “%s”").replace("%s", &name(folder))
+            }
             JobKind::Unfold { pairs, .. } => {
                 let items: Vec<gio::File> = pairs.iter().map(|(item, _)| item.clone()).collect();
                 moving(
@@ -239,6 +249,9 @@ impl JobKind {
             JobKind::CreateFile { name, .. } => gettext("Created “%s”").replace("%s", name),
             JobKind::NewFolderWith { name, .. } => {
                 gettext("Created folder “%s”").replace("%s", name)
+            }
+            JobKind::SetPermissions { folder, .. } => {
+                gettext("Changed permissions in “%s”").replace("%s", &name(folder))
             }
             JobKind::Unfold { pairs, .. } => {
                 ngettext("Moved %d file", "Moved %d files", pairs.len() as u32)

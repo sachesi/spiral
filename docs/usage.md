@@ -336,11 +336,19 @@ themselves, name and colour each, are the `tags` setting.
 
 ## Properties
 
-Alt+Return. Type, size (folders are summed in the background), location, times, default
-application. A single folder can be given a custom icon; it is stored as
+Alt+Return or Ctrl+I. Type, size (folders are summed in the background), location, times
+(modified, accessed, and created where the filesystem keeps it), default application. The
+button beside the location opens the folder the item is in, with the item selected; a
+link also shows its target, with a button to the target's folder, and an item in the trash
+shows the folder it was trashed from, with a button there, and when it was trashed. A
+folder shows how full its disk is, and on a disk device with GNOME Disks installed, "Open
+in Disks". A single folder can be given a custom icon; it is stored as
 `metadata::custom-icon`, which GNOME Files reads as well. For a single local file there
 is a Permissions page with owner, group and others as dropdowns and an Executable switch;
-it is read-only unless you own the file.
+it is read-only unless you own the file. A folder you own also gets "Change Permissions
+for Enclosed Files…", which sets owner, group and others apart for the files and the
+folders inside it, the folder included, leaving what is left at Unchanged alone; it runs
+as an operation, leaves links alone, and says how many items it could not change.
 
 ## Command line
 

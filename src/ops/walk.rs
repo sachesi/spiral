@@ -1,7 +1,7 @@
 //! The actual I/O of a job: counting, recursive transfer/delete, trash, rename, create, restore.
 
 use futures_util::StreamExt;
-use gettextrs::gettext;
+use gettextrs::{gettext, ngettext};
 
 use crate::adw::prelude::*;
 use crate::gtk::subclass::prelude::ObjectSubclassIsExt;
@@ -181,6 +181,25 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 {
                     job.imp().outcome.borrow_mut().moved.push((src, dest));
                 }
+            }
+        }
+        JobKind::SetPermissions {
+            folder,
+            files,
+            folders,
+        } => {
+            count(job, vec![folder.clone()]).await;
+            let mut failed = 0u32;
+            set_permissions(job, &folder, files, folders, &mut failed).await?;
+            if failed > 0 {
+                return Err(Fail::Failed(
+                    ngettext(
+                        "The permissions of %d item could not be changed.",
+                        "The permissions of %d items could not be changed.",
+                        failed,
+                    )
+                    .replace("%d", &failed.to_string()),
+                ));
             }
         }
         JobKind::Unfold { folder, pairs } => {
@@ -374,6 +393,55 @@ async fn count_one(job: &Job, file: &gio::File, n: &mut u64, bytes: &mut u64) {
 
 /// Items inside trash:/// cannot be modified individually; gvfs deletes a trashed
 /// directory as one unit, so never descend into one.
+/// Set the permissions of `dir`, then of what it holds, folders and files each by their
+/// `(value, mask)`. Links are left alone: changing a link's mode changes its target, which
+/// may be anywhere. What cannot be changed is counted in `failed` and passed over, since
+/// the same refusal tends to come for every file of a tree someone else owns.
+async fn set_permissions(
+    job: &Job,
+    dir: &gio::File,
+    files: (u32, u32),
+    folders: (u32, u32),
+    failed: &mut u32,
+) -> Res<()> {
+    let set = |file: gio::File, mode: u32, (value, mask): (u32, u32)| async move {
+        let info = gio::FileInfo::new();
+        info.set_attribute_uint32("unix::mode", (mode & !mask) | value);
+        file.set_attributes_future(&info, NOFOLLOW, PRIO).await
+    };
+    let mode = match dir.query_info_future("unix::mode", NOFOLLOW, PRIO).await {
+        Ok(info) => info.attribute_uint32("unix::mode"),
+        Err(_) => {
+            *failed += 1;
+            return Ok(());
+        }
+    };
+    if set(dir.clone(), mode, folders).await.is_err() {
+        *failed += 1;
+    }
+    job.set_files_done(job.files_done() + 1);
+    job.report(false);
+    for (child, info) in children(dir, "standard::type,standard::name,unix::mode").await {
+        match info.file_type() {
+            gio::FileType::Directory => {
+                Box::pin(set_permissions(job, &child, files, folders, failed)).await?
+            }
+            gio::FileType::SymbolicLink => {}
+            _ => {
+                if set(child, info.attribute_uint32("unix::mode"), files)
+                    .await
+                    .is_err()
+                {
+                    *failed += 1;
+                }
+                job.set_files_done(job.files_done() + 1);
+                job.report(false);
+            }
+        }
+    }
+    Ok(())
+}
+
 fn in_trash(file: &gio::File) -> bool {
     file.uri_scheme().as_deref() == Some("trash")
 }

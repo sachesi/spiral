@@ -42,8 +42,12 @@ glib::wrapper! {
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
 }
 
-const ATTRS: &str = "standard::*,time::modified,time::access,owner::user,owner::group,unix::mode,\
-unix::uid,access::*,selinux::context,metadata::custom-icon,metadata::custom-icon-name";
+const ATTRS: &str = "standard::*,time::modified,time::access,time::created,owner::user,\
+owner::group,unix::mode,unix::uid,access::*,selinux::context,metadata::custom-icon,\
+metadata::custom-icon-name,trash::orig-path,trash::deletion-date";
+
+/// Show a folder in the window the dialog came from, with some of what is in it selected.
+type Reveal = Rc<dyn Fn(&gio::File, Vec<gio::File>)>;
 
 impl PropertiesDialog {
     /// Query the files in the background, then build and present the dialog. Nothing is
@@ -68,15 +72,28 @@ impl PropertiesDialog {
                     infos.push((f, i));
                 }
             }
+            // The folders the dialog names can be opened where there is a window of folders
+            // to open them in; a file chooser has none.
+            let reveal = parent
+                .root()
+                .and_downcast::<crate::window::SpiralWindow>()
+                .map(|win| {
+                    let win = win.downgrade();
+                    Rc::new(move |folder: &gio::File, select: Vec<gio::File>| {
+                        if let Some(win) = win.upgrade() {
+                            win.reveal(folder, select);
+                        }
+                    }) as Reveal
+                });
             if !infos.is_empty() && parent.root().is_some() {
-                let dialog = Self::new(&infos);
+                let dialog = Self::new(&infos, reveal);
                 dialog.connect_changed(on_changed);
                 dialog.present(Some(&parent));
             }
         });
     }
 
-    fn new(infos: &[(gio::File, gio::FileInfo)]) -> Self {
+    fn new(infos: &[(gio::File, gio::FileInfo)], reveal: Option<Reveal>) -> Self {
         let dialog: Self = glib::Object::builder()
             .property("title", gettext("Properties"))
             .property("content-width", 460)
@@ -85,7 +102,7 @@ impl PropertiesDialog {
         let header = adw::HeaderBar::new();
         toolbar.add_top_bar(&header);
         dialog.set_child(Some(&toolbar));
-        let general = dialog.general_page(infos);
+        let general = dialog.general_page(infos, reveal);
         match infos {
             [(file, info)] if info.has_attribute("unix::mode") => {
                 let stack = adw::ViewStack::new();
@@ -122,7 +139,39 @@ impl PropertiesDialog {
         }
     }
 
-    fn general_page(&self, infos: &[(gio::File, gio::FileInfo)]) -> adw::PreferencesPage {
+    /// A button at the end of `row` that shows `folder`, with `select` selected in it, and
+    /// closes the dialog; nothing where there is no window to show it in.
+    fn add_reveal(
+        &self,
+        row: &adw::ActionRow,
+        tooltip: &str,
+        reveal: &Option<Reveal>,
+        folder: gio::File,
+        select: Vec<gio::File>,
+    ) {
+        let Some(reveal) = reveal.clone() else { return };
+        let button = gtk::Button::builder()
+            .icon_name("folder-open-symbolic")
+            .tooltip_text(tooltip)
+            .valign(gtk::Align::Center)
+            .css_classes(["flat"])
+            .build();
+        button.connect_clicked(glib::clone!(
+            #[weak(rename_to = dialog)]
+            self,
+            move |_| {
+                reveal(&folder, select.clone());
+                dialog.close();
+            }
+        ));
+        row.add_suffix(&button);
+    }
+
+    fn general_page(
+        &self,
+        infos: &[(gio::File, gio::FileInfo)],
+        reveal: Option<Reveal>,
+    ) -> adw::PreferencesPage {
         let page = adw::PreferencesPage::new();
 
         // Header: icon + name. A folder's icon is a button that picks a custom image.
@@ -253,7 +302,49 @@ impl PropertiesDialog {
 
         if let [(file, info)] = infos {
             if let Some(parent) = file.parent() {
-                group.add(&row(&gettext("Location"), &location_text(&parent)));
+                let location = row(&gettext("Location"), &location_text(&parent));
+                self.add_reveal(
+                    &location,
+                    &gettext("Open Parent Folder"),
+                    &reveal,
+                    parent.clone(),
+                    vec![file.clone()],
+                );
+                group.add(&location);
+                if info.is_symlink()
+                    && let Some(target) = info.symlink_target()
+                {
+                    let link = row(&gettext("Link Target"), &target.to_string_lossy());
+                    let target = parent.resolve_relative_path(&target);
+                    if let Some(folder) = target.parent() {
+                        self.add_reveal(
+                            &link,
+                            &gettext("Open Link Target Location"),
+                            &reveal,
+                            folder,
+                            vec![target],
+                        );
+                    }
+                    group.add(&link);
+                }
+            }
+            // An item in the trash: where it was, and since when it has been in the trash.
+            if let Some(orig) = info.attribute_byte_string("trash::orig-path")
+                && let Some(folder) = gio::File::for_path(orig.as_str()).parent()
+            {
+                let original = row(&gettext("Original Folder"), &location_text(&folder));
+                self.add_reveal(
+                    &original,
+                    &gettext("Open Original Folder"),
+                    &reveal,
+                    folder,
+                    Vec::new(),
+                );
+                group.add(&original);
+                group.add(&row(
+                    &gettext("Trashed On"),
+                    &full_date(file_utils::trashed_on(info)),
+                ));
             }
             group.add(&row(
                 &gettext("Modified"),
@@ -263,6 +354,9 @@ impl PropertiesDialog {
                 &gettext("Accessed"),
                 &full_date(info.access_date_time()),
             ));
+            if let Some(created) = info.creation_date_time() {
+                group.add(&row(&gettext("Created"), &full_date(Some(created))));
+            }
             if !file_utils::is_dir(info)
                 && let Some(ct) = file_utils::content_type_of(info)
                 && let Some(app) = gio::AppInfo::default_for_type(&ct, false)
@@ -273,6 +367,11 @@ impl PropertiesDialog {
             group.add(&row(&gettext("Location"), &location_text(&parent)));
         }
         page.add(&group);
+        if let [(file, info)] = infos
+            && file_utils::is_dir(info)
+        {
+            page.add(&disk_group(file));
+        }
 
         // Size is summed in the background; the row updates as folders are walked.
         let files: Vec<gio::File> = infos.iter().map(|(f, _)| f.clone()).collect();
@@ -344,6 +443,93 @@ fn row(label: &str, value: &str) -> adw::ActionRow {
         .build();
     r.add_css_class("property");
     r
+}
+
+/// How full the disk holding `dir` is, filled in once the filesystem answers, with a way
+/// into Disks where it is installed and the disk is a device of its own.
+fn disk_group(dir: &gio::File) -> adw::PreferencesGroup {
+    let group = adw::PreferencesGroup::builder()
+        .title(gettext("Disk"))
+        .visible(false)
+        .build();
+    let dir = dir.clone();
+    glib::spawn_future_local(glib::clone!(
+        #[weak]
+        group,
+        async move {
+            let Ok(fs) = dir
+                .query_filesystem_info_future(
+                    "filesystem::size,filesystem::free,filesystem::used",
+                    glib::Priority::DEFAULT,
+                )
+                .await
+            else {
+                return;
+            };
+            let size = fs.attribute_uint64("filesystem::size");
+            if size == 0 {
+                return;
+            }
+            let free = fs.attribute_uint64("filesystem::free");
+            let used = if fs.has_attribute("filesystem::used") {
+                fs.attribute_uint64("filesystem::used")
+            } else {
+                size.saturating_sub(free)
+            };
+            let used_row = row(&gettext("Used"), &prefs::size(used));
+            let bar = gtk::LevelBar::builder()
+                .value(used as f64 / size as f64)
+                .width_request(120)
+                .valign(gtk::Align::Center)
+                .build();
+            used_row.add_suffix(&bar);
+            group.add(&used_row);
+            group.add(&row(&gettext("Free"), &prefs::size(free)));
+            group.add(&row(&gettext("Capacity"), &prefs::size(size)));
+            let device = dir.path().and_then(|p| device_of(&p));
+            if let Some(device) = device
+                && glib::find_program_in_path("gnome-disks").is_some()
+            {
+                let open = adw::ButtonRow::builder()
+                    .title(gettext("Open in Disks"))
+                    .end_icon_name("adw-external-link-symbolic")
+                    .build();
+                open.connect_activated(move |_| {
+                    let argv = [
+                        std::ffi::OsStr::new("gnome-disks"),
+                        std::ffi::OsStr::new("--block-device"),
+                        device.as_os_str(),
+                    ];
+                    if let Err(e) = gio::Subprocess::newv(&argv, gio::SubprocessFlags::NONE) {
+                        glib::g_warning!("spiral", "cannot start Disks: {e}");
+                    }
+                });
+                group.add(&open);
+            }
+            group.set_visible(true);
+        }
+    ));
+    group
+}
+
+/// The block device the filesystem holding `path` is on, from the mounts the kernel lists:
+/// the one whose mount point is the longest leading part of `path`. `None` for what is not
+/// on a device, a tmpfs or a network share.
+fn device_of(path: &std::path::Path) -> Option<std::path::PathBuf> {
+    let mounts = std::fs::read_to_string("/proc/self/mounts").ok()?;
+    // Spaces and the like come escaped as octal, "\040" for a space.
+    let unescape = |s: &str| s.replace("\\040", " ").replace("\\011", "\t");
+    mounts
+        .lines()
+        .filter_map(|line| {
+            let mut fields = line.split(' ');
+            let device = fields.next()?;
+            let point = std::path::PathBuf::from(unescape(fields.next()?));
+            path.starts_with(&point).then_some((device, point))
+        })
+        .max_by_key(|(_, point)| point.as_os_str().len())
+        .map(|(device, _)| std::path::PathBuf::from(unescape(device)))
+        .filter(|device| device.starts_with("/dev/"))
 }
 
 fn location_text(dir: &gio::File) -> String {
@@ -453,6 +639,10 @@ fn permissions_page(file: &gio::File, info: &gio::FileInfo) -> adw::PreferencesP
         (gettext("Group"), group_name, 3),
         (gettext("Others"), glib::GString::new(), 0),
     ];
+    // Set while the rows are being put back in step with the folder, which is not a choice
+    // to apply.
+    let syncing = Rc::new(Cell::new(false));
+    let mut combos = Vec::new();
     for (title, subtitle, shift) in classes {
         let bits = (mode.get() >> shift) & 7;
         let combo = adw::ComboRow::builder()
@@ -471,7 +661,12 @@ fn permissions_page(file: &gio::File, info: &gio::FileInfo) -> adw::PreferencesP
             apply,
             #[strong]
             mode,
+            #[strong]
+            syncing,
             move |combo| {
+                if syncing.get() {
+                    return;
+                }
                 let i = combo.selected() as usize;
                 let current = mode.get();
                 let class = (current >> shift) & 7;
@@ -485,6 +680,7 @@ fn permissions_page(file: &gio::File, info: &gio::FileInfo) -> adw::PreferencesP
             }
         ));
         group.add(&combo);
+        combos.push((combo, shift));
     }
 
     if !is_dir {
@@ -514,12 +710,151 @@ fn permissions_page(file: &gio::File, info: &gio::FileInfo) -> adw::PreferencesP
     }
     page.add(&group);
 
+    if is_dir && editable {
+        let enclosed = adw::PreferencesGroup::new();
+        let button = adw::ButtonRow::builder()
+            .title(gettext("Change Permissions for Enclosed Files…"))
+            .build();
+        // The folder itself is among what changed; its rows follow once it is done.
+        let resync = glib::clone!(
+            #[strong]
+            file,
+            #[strong]
+            mode,
+            move || {
+                glib::spawn_future_local(glib::clone!(
+                    #[strong]
+                    file,
+                    #[strong]
+                    mode,
+                    #[strong]
+                    combos,
+                    #[strong]
+                    syncing,
+                    async move {
+                        let Ok(info) = file
+                            .query_info_future(
+                                "unix::mode",
+                                gio::FileQueryInfoFlags::NONE,
+                                glib::Priority::DEFAULT,
+                            )
+                            .await
+                        else {
+                            return;
+                        };
+                        mode.set(info.attribute_uint32("unix::mode"));
+                        syncing.set(true);
+                        for (combo, shift) in &combos {
+                            combo.set_selected(dir_level((mode.get() >> shift) & 7));
+                        }
+                        syncing.set(false);
+                    }
+                ));
+            }
+        );
+        let resync = Rc::new(resync);
+        button.connect_activated(glib::clone!(
+            #[strong]
+            file,
+            move |button| enclosed_dialog(button, &file, resync.clone())
+        ));
+        enclosed.add(&button);
+        page.add(&enclosed);
+    }
+
     if let Some(context) = info.attribute_string("selinux::context") {
         let security = adw::PreferencesGroup::new();
         security.add(&row(&gettext("Security Context"), &context));
         page.add(&security);
     }
     page
+}
+
+/// Ask for the permissions of everything in `folder`, files and folders apart, each class
+/// left unchanged unless a level is picked for it, and set them as an operation.
+fn enclosed_dialog(parent: &impl IsA<gtk::Widget>, folder: &gio::File, done: Rc<dyn Fn()>) {
+    let unchanged = gettext("Unchanged");
+    let file_levels = [
+        unchanged.clone(),
+        gettext("None"),
+        gettext("Read-Only"),
+        gettext("Read and Write"),
+    ];
+    let dir_levels = [
+        unchanged,
+        gettext("None"),
+        gettext("List Files Only"),
+        gettext("Access Files"),
+        gettext("Create and Delete Files"),
+    ];
+    let classes = [gettext("Owner"), gettext("Group"), gettext("Others")];
+    let combos = |title: String, levels: &[String]| {
+        let group = adw::PreferencesGroup::builder().title(title).build();
+        let model = gtk::StringList::new(&levels.iter().map(String::as_str).collect::<Vec<_>>());
+        let rows: Vec<adw::ComboRow> = classes
+            .iter()
+            .map(|class| {
+                let combo = adw::ComboRow::builder().title(class).model(&model).build();
+                group.add(&combo);
+                combo
+            })
+            .collect();
+        (group, rows)
+    };
+    let (files_group, file_rows) = combos(gettext("Files"), &file_levels);
+    let (folders_group, folder_rows) = combos(gettext("Folders"), &dir_levels);
+    let content = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(18)
+        .build();
+    content.append(&files_group);
+    content.append(&folders_group);
+    let dialog = adw::AlertDialog::builder()
+        .heading(gettext("Change Permissions for Enclosed Files"))
+        .body(gettext("For “%s” and everything in it.").replace("%s", &crate::ops::name(folder)))
+        .extra_child(&content)
+        .build();
+    dialog.add_response("cancel", &gettext("_Cancel"));
+    dialog.add_response("change", &gettext("_Change"));
+    dialog.set_response_appearance("change", adw::ResponseAppearance::Suggested);
+    dialog.set_default_response(Some("change"));
+    let folder = folder.clone();
+    dialog.connect_response(Some("change"), move |_, _| {
+        // (value, mask) over the three classes, owner first.
+        let bits = |rows: &[adw::ComboRow], levels: &[u32], mask: u32| {
+            rows.iter()
+                .zip([6, 3, 0])
+                .filter(|(row, _)| row.selected() > 0)
+                .fold((0, 0), |(value, all), (row, shift)| {
+                    let level = levels[row.selected() as usize - 1];
+                    (value | level << shift, all | mask << shift)
+                })
+        };
+        // A file keeps its execute bits; the levels only speak of reading and writing.
+        let files = bits(&file_rows, &FILE_LEVELS, 6);
+        let folders = bits(&folder_rows, &DIR_LEVELS, 7);
+        if files.1 == 0 && folders.1 == 0 {
+            return;
+        }
+        if let Some(app) =
+            gio::Application::default().and_downcast::<crate::application::SpiralApplication>()
+        {
+            let job = app
+                .job_manager()
+                .submit(crate::ops::JobKind::SetPermissions {
+                    folder: folder.clone(),
+                    files,
+                    folders,
+                });
+            let done = done.clone();
+            job.connect_status_notify(move |job| {
+                if job.is_finished() {
+                    done();
+                }
+            });
+        }
+    });
+    dialog.present(Some(parent));
 }
 
 // ---- size ----------------------------------------------------------------------------------
