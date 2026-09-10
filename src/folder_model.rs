@@ -423,6 +423,14 @@ mod imp {
                 .is_some_and(is_list_location)
         }
 
+        /// Put the search results on the pipeline, unless they are there already.
+        pub(super) fn show_search(&self) {
+            if !self.searching.replace(true) {
+                self.filtered.set_model(Some(&self.search_store));
+                self.obj().notify_searching();
+            }
+        }
+
         pub(super) fn set_loading(&self, v: bool) {
             if self.loading.replace(v) != v {
                 self.obj().notify_loading();
@@ -664,6 +672,53 @@ impl FolderModel {
             .splice(0, imp.stopped_store.n_items(), &read);
         imp.freeze(&imp.stopped_store);
         imp.set_loading(false);
+    }
+
+    /// What the search on screen has found, in the order it arrived.
+    pub fn search_hits(&self) -> Vec<gio::FileInfo> {
+        self.imp()
+            .search_store
+            .iter::<gio::FileInfo>()
+            .flatten()
+            .collect()
+    }
+
+    /// Show `hits` as the results of searching for `text`, as they were when the folder
+    /// was left, instead of searching again: coming back to them is instant and they stay
+    /// in their order. What has gone since is taken out as it is found missing.
+    pub fn show_search_hits(&self, text: &str, hits: &[gio::FileInfo]) {
+        let imp = self.imp();
+        let generation = imp.search_gen.get() + 1;
+        imp.search_gen.set(generation);
+        imp.search_text.replace(text.to_lowercase());
+        imp.search_store.splice(0, imp.search_store.n_items(), hits);
+        imp.show_search();
+        self.notify_search_text();
+        imp.set_loading(false);
+        let hits = hits.to_vec();
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = model)]
+            self,
+            async move {
+                for info in hits {
+                    let gone = file_utils::file_of(&info)
+                        .query_info_future(
+                            "standard::type",
+                            gio::FileQueryInfoFlags::NOFOLLOW_SYMLINKS,
+                            glib::Priority::LOW,
+                        )
+                        .await
+                        .is_err_and(|e| e.matches(gio::IOErrorEnum::NotFound));
+                    let imp = model.imp();
+                    if imp.search_gen.get() != generation {
+                        return;
+                    }
+                    if gone && let Some(pos) = imp.search_store.find(&info) {
+                        imp.search_store.remove(pos);
+                    }
+                }
+            }
+        ));
     }
 
     /// Keep a search inside the folder being shown, wherever the preference stands.

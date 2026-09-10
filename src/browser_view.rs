@@ -624,13 +624,16 @@ pub struct Visit {
     selected: Vec<gio::File>,
 }
 
-/// A search as it stood: the words and the filters.
+/// A search as it stood: the words, the filters, and what it had found. Only the last
+/// search left in a tab keeps what it found, since that can be a great many files; one
+/// further back searches again.
 #[derive(Clone)]
 struct Search {
     text: String,
     kind: String,
     date: String,
     matching: String,
+    hits: Option<Vec<gio::FileInfo>>,
 }
 
 /// Where mounting the location of a view stands: nothing asked, a server being reached, or
@@ -1307,9 +1310,20 @@ impl BrowserView {
             kind: model.search_kind(),
             date: model.search_date(),
             matching: model.search_match(),
+            // A search still running when left would come back looking finished.
+            hits: (!model.loading()).then(|| model.search_hits()),
         });
         let selected = model.selected_files();
-        if let Some(visit) = imp.history.borrow_mut().get_mut(imp.history_pos.get()) {
+        let pos = imp.history_pos.get();
+        let mut hist = imp.history.borrow_mut();
+        if search.is_some() {
+            for visit in hist.iter_mut() {
+                if let Some(search) = visit.search.as_mut() {
+                    search.hits = None;
+                }
+            }
+        }
+        if let Some(visit) = hist.get_mut(pos) {
             visit.search = search;
             visit.selected = selected;
         }
@@ -1325,7 +1339,10 @@ impl BrowserView {
             imp.model.set_search_kind(search.kind);
             imp.model.set_search_date(search.date);
             imp.model.set_search_match(search.matching);
-            imp.model.set_search_text(search.text);
+            match search.hits {
+                Some(hits) => imp.model.show_search_hits(&search.text, &hits),
+                None => imp.model.set_search_text(search.text),
+            }
         }
         imp.location.replace(Some(file.clone()));
         self.resolve_view_mode(file);
