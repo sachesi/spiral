@@ -34,6 +34,9 @@ mod imp {
         /// Root and name of the mount the location is on, looked up in the background;
         /// None for home and `/`.
         pub mount: RefCell<Option<(gio::File, String)>>,
+        /// Kept for its mount signals: a chain drawn before its share was mounted is drawn
+        /// again from the mount once there is one.
+        pub monitor: RefCell<Option<gio::VolumeMonitor>>,
     }
 
     #[glib::object_subclass]
@@ -68,6 +71,19 @@ mod imp {
 
         fn constructed(&self) {
             self.parent_constructed();
+            let monitor = gio::VolumeMonitor::get();
+            let again = glib::clone!(
+                #[weak(rename_to = bar)]
+                self,
+                move |_: &gio::VolumeMonitor, _: &gio::Mount| {
+                    if let Some(file) = bar.location.borrow().clone() {
+                        bar.look_up_mount(file);
+                    }
+                }
+            );
+            monitor.connect_mount_added(again.clone());
+            monitor.connect_mount_removed(again);
+            self.monitor.replace(Some(monitor));
             // Keep the current folder in view as the bar fills up.
             let adj = self.scrolled.hadjustment();
             adj.connect_changed(glib::clone!(
@@ -128,7 +144,15 @@ mod imp {
             self.rebuild(file.as_ref());
             // The mount lookup can talk to gvfs, so the chain is drawn from `/` first and
             // redrawn from the mount point once known.
-            let Some(file) = file else { return };
+            if let Some(file) = file {
+                self.look_up_mount(file);
+            }
+        }
+
+        /// Find the mount `file` is on and, where that is news, draw the chain again from
+        /// its root. Asked again whenever a mount comes or goes: a share reached from a
+        /// bookmark is mounted after its chain was first drawn.
+        fn look_up_mount(&self, file: gio::File) {
             let home = gio::File::for_path(glib::home_dir());
             if file.equal(&home) || file.has_prefix(&home) {
                 return;
@@ -139,30 +163,36 @@ mod imp {
                 async move {
                     let lookup = file.clone();
                     // Mount objects are not Send; only the root URI and name travel back.
-                    let Ok(Some((root, name))) = gio::spawn_blocking(move || {
+                    let found = gio::spawn_blocking(move || {
                         lookup
                             .find_enclosing_mount(gio::Cancellable::NONE)
                             .ok()
                             .map(|m| (m.root().uri().to_string(), m.name().to_string()))
                     })
                     .await
-                    else {
-                        return;
-                    };
-                    let root = gio::File::for_uri(&root);
-                    if root.path().is_some_and(|p| p.as_os_str() == "/") {
-                        return;
-                    }
+                    .ok()
+                    .flatten()
+                    .map(|(root, name)| (gio::File::for_uri(&root), name))
+                    .filter(|(root, _)| !root.path().is_some_and(|p| p.as_os_str() == "/"));
                     let imp = bar.imp();
-                    if imp
+                    if !imp
                         .location
                         .borrow()
                         .as_ref()
                         .is_some_and(|l| l.equal(&file))
                     {
-                        imp.mount.replace(Some((root, name)));
-                        imp.rebuild(Some(&file));
+                        return;
                     }
+                    let same = match (&*imp.mount.borrow(), &found) {
+                        (Some((a, an)), Some((b, bn))) => a.equal(b) && an == bn,
+                        (None, None) => true,
+                        _ => false,
+                    };
+                    if same {
+                        return;
+                    }
+                    imp.mount.replace(found);
+                    imp.rebuild(Some(&file));
                 }
             ));
         }
