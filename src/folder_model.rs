@@ -685,16 +685,21 @@ impl FolderModel {
 
     /// Show `hits` as the results of searching for `text`, as they were when the folder
     /// was left, instead of searching again: coming back to them is instant and they stay
-    /// in their order. What has gone since is taken out as it is found missing.
-    pub fn show_search_hits(&self, text: &str, hits: &[gio::FileInfo]) {
+    /// in their order. A search that had not `finished` goes on from there, adding what
+    /// it had not found yet. What has gone since is taken out as it is found missing.
+    pub fn show_search_hits(&self, text: &str, hits: &[gio::FileInfo], finished: bool) {
         let imp = self.imp();
-        let generation = imp.search_gen.get() + 1;
-        imp.search_gen.set(generation);
+        imp.search_gen.set(imp.search_gen.get() + 1);
         imp.search_text.replace(text.to_lowercase());
         imp.search_store.splice(0, imp.search_store.n_items(), hits);
         imp.show_search();
         self.notify_search_text();
-        imp.set_loading(false);
+        if finished {
+            imp.set_loading(false);
+        } else {
+            self.search(true);
+        }
+        let generation = imp.search_gen.get();
         let hits = hits.to_vec();
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = model)]
@@ -762,10 +767,34 @@ impl FolderModel {
     /// Drop the results and search again after a short pause, so typing does not start a
     /// walk per keystroke.
     fn restart_search(&self) {
+        self.search(false);
+    }
+
+    /// Search after a short pause. `keep`: what is on screen stays, and only what is not
+    /// there yet is added, for a search that comes back unfinished and goes on.
+    fn search(&self, keep: bool) {
         let imp = self.imp();
         let generation = imp.search_gen.get() + 1;
         imp.search_gen.set(generation);
-        imp.search_store.remove_all();
+        let mut seen = std::collections::HashSet::new();
+        if keep {
+            seen.extend(
+                imp.search_store
+                    .iter::<gio::FileInfo>()
+                    .flatten()
+                    .map(|info| file_utils::file_of(&info).uri().to_string()),
+            );
+        } else {
+            imp.search_store.remove_all();
+        }
+        let mut new = move |hits: Vec<gio::FileInfo>| -> Vec<gio::FileInfo> {
+            if !keep {
+                return hits;
+            }
+            hits.into_iter()
+                .filter(|info| seen.insert(file_utils::file_of(info).uri().to_string()))
+                .collect()
+        };
         let Some(root) = self.location() else { return };
         imp.set_loading(true);
         let query = crate::search::Query {
@@ -799,14 +828,15 @@ impl FolderModel {
                         .flatten()
                         .filter(|i| i.display_name().to_lowercase().contains(&query.text))
                         .collect();
-                    model.imp().search_store.splice(0, 0, &hits);
+                    let search_store = &model.imp().search_store;
+                    search_store.splice(search_store.n_items(), 0, &new(hits));
                 } else {
                     crate::search::run(root, query, alive, |hits| {
-                        model.imp().search_store.splice(
-                            model.imp().search_store.n_items(),
-                            0,
-                            &hits,
-                        );
+                        let hits = new(hits);
+                        if !hits.is_empty() {
+                            let search_store = &model.imp().search_store;
+                            search_store.splice(search_store.n_items(), 0, &hits);
+                        }
                     })
                     .await;
                 }
