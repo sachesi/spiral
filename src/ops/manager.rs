@@ -233,12 +233,7 @@ impl JobManager {
             } else if let Some(folder) = kind.destination()
                 && let Some(win) = self.app().active_window().and_downcast::<SpiralWindow>()
             {
-                let landed = {
-                    let out = job.imp().outcome.borrow();
-                    let moved = out.moved.iter().map(|(_, dest)| dest.clone());
-                    out.created.iter().cloned().chain(moved).collect()
-                };
-                win.show_done_toast(&job.done_message(), &folder, landed, took >= SLOW);
+                win.show_done_toast(&job.done_message(), &folder, job.landed(), took >= SLOW);
             }
         }
 
@@ -360,6 +355,26 @@ fn undo_for(job: &Job) -> Option<JobKind> {
         JobKind::Restore { .. } => {
             let files: Vec<_> = out.moved.iter().map(|(_, orig)| orig.clone()).collect();
             (!files.is_empty()).then_some(JobKind::Trash { files })
+        }
+        JobKind::NewFolderWith { .. } => {
+            let folder = out.created.first()?.clone();
+            let pairs: Vec<_> = out
+                .moved
+                .iter()
+                .filter_map(|(src, dest)| src.parent().map(|p| (dest.clone(), p)))
+                .collect();
+            Some(JobKind::Unfold { folder, pairs })
+        }
+        JobKind::Unfold { folder, .. } => {
+            let files: Vec<_> = out.moved.iter().map(|(_, dest)| dest.clone()).collect();
+            if files.is_empty() {
+                return None;
+            }
+            Some(JobKind::NewFolderWith {
+                parent: folder.parent()?,
+                name: crate::ops::name(&folder),
+                files,
+            })
         }
         JobKind::Delete { .. } => None,
     }

@@ -207,6 +207,9 @@ impl BrowserView {
             }),
             add("extract-to", |v| v.extract_to()),
             add("compress", |v| v.compress()),
+            add("new-folder-with-selection", |v| {
+                v.new_folder_with_selection()
+            }),
             add("unmount", |v| v.unmount_selected()),
             add("eject", |v| v.unmount_selected()),
             add("open-terminal", |v| v.open_terminal(false)),
@@ -590,6 +593,10 @@ impl BrowserView {
         self.set_enabled("extract", archives && can_write);
         self.set_enabled("extract-to", archives);
         self.set_enabled("compress", n > 0 && local && can_write);
+        self.set_enabled(
+            "new-folder-with-selection",
+            n > 1 && can_write && can_delete && !self.model().searching(),
+        );
         let files = self.selected();
         let starred = files
             .iter()
@@ -1167,12 +1174,54 @@ impl BrowserView {
             #[weak(rename_to = view)]
             self,
             async move {
-                if let Some(name) = crate::naming::new_folder_dialog(&view, &parent).await {
+                if let Some(name) = crate::naming::new_folder_dialog(&view, &parent, "").await {
                     // Selected and given the keyboard once it appears: a folder is made to
                     // be used, and what follows -- opening it, renaming it, dragging into
                     // it -- starts from there.
                     view.submit_and_select(JobKind::CreateFolder { parent, name });
                 }
+            }
+        ));
+    }
+
+    /// Ask for a name and make a folder of it holding the selection. The name starts as
+    /// what the selected names have in common, and the folder is selected once made.
+    fn new_folder_with_selection(&self) {
+        let (Some(parent), files) = (self.location(), self.selected()) else {
+            return;
+        };
+        let names: Vec<String> = self
+            .model()
+            .selected_infos()
+            .iter()
+            .map(|i| i.display_name().to_string())
+            .collect();
+        let suggested = crate::naming::common_name(&names);
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                let Some(name) = crate::naming::new_folder_dialog(&view, &parent, &suggested).await
+                else {
+                    return;
+                };
+                let Some(mgr) = view.manager() else { return };
+                let folder = parent.child(&name);
+                let job = mgr.submit(JobKind::NewFolderWith {
+                    parent,
+                    name,
+                    files,
+                });
+                // The folder, not what went into it, which is out of sight.
+                job.connect_status_notify(glib::clone!(
+                    #[weak]
+                    view,
+                    move |job| {
+                        if job.status() == JobStatus::Done {
+                            view.select_files_when_loaded(vec![folder.clone()]);
+                        }
+                    }
+                ));
             }
         ));
     }

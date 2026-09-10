@@ -44,7 +44,8 @@ be `.` or `..`, or already exist; a leading dot gets a warning. New documents ar
 ## Undo
 
 Ctrl+Z, the menu, or the Undo button on the toast shown after trashing. One level. Undoing a copy, extraction, archive
-or new folder deletes what was created; a move moves back; a trash restores from
+or new folder deletes what was created; a move moves back, and a new folder made of a
+selection gives the items back and goes; a trash restores from
 `trash:///` to the original place, recreating a missing parent folder and picking the
 most recently trashed item if several match; a rename renames back. Permanent deletion
 is the one thing that cannot be undone. Redo exists for moves, renames and restores.

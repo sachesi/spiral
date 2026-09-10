@@ -86,8 +86,7 @@ finding a server whose address you do not know; it stays empty unless something 
 network announces itself and gvfs has the backend that hears it, `wsdd` for SMB machines
 or `dns-sd` for the rest. A machine opened from there keeps the name it announced itself
 under, since what gvfs reaches it by is often a bare address. Shares a server keeps out of
-sight, the ones whose name ends in `$`, are hidden files here and show with them.
-Everything else works as it does on a disk: bookmarks, drag and drop, copying, renaming,
+sight, the ones whose name ends in `$`, are hidden files here and show with them. Everything else works as it does on a disk: bookmarks, drag and drop, copying, renaming,
 search. Reading a folder over a share is slower than reading one on a disk, which is why
 thumbnails, item counts and searching subfolders are limited to local files unless you say
 otherwise (see [Settings](settings.md)).
@@ -231,7 +230,9 @@ folder selected, or the one on screen when nothing is. In a window too narrow fo
 panes the sidebar folds away, and the button at the left of the header brings it back
 over the folders. "Extract To…" asks the same way.
 "Paste as Link" and, when turned on in Preferences, "Create Link" make symbolic links; a
-link beside its target is called "Link to name".
+link beside its target is called "Link to name". "New Folder with Selection…", with two or
+more items selected, asks for a name, starting from what the names have in common, and
+moves them into a new folder of that name; one undo moves them back and removes the folder.
 
 F2 renames. With one file selected it is a popover over the file, with the name selected
 up to its extension; with several, it is a dialog that renames them all by one rule —
