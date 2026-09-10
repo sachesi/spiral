@@ -213,6 +213,10 @@ pub fn set_color(name: &str, color: &str) {
 /// Put the tag before or after `anchor`, or last without one; the order is the sidebar's
 /// and the context menu's.
 pub fn move_to(name: &str, anchor: Option<(&str, bool)>) {
+    // Dropped on itself: it stays where it is.
+    if anchor.is_some_and(|(a, _)| a == name) {
+        return;
+    }
     let mut tags = (*all()).clone();
     let Some(pos) = tags.iter().position(|t| t.name == name) else {
         return;
