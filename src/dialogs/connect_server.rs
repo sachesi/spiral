@@ -107,7 +107,6 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
     // The mount under way, called off with the dialog: closed, it must not go on to ask
     // for a password or connect with nobody watching.
     let pending: Rc<RefCell<Option<gio::Cancellable>>> = Rc::new(RefCell::new(None));
-
     let start = Rc::new(glib::clone!(
         #[weak]
         entry,
@@ -136,15 +135,12 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
             // answered. The button keeps its width, so the header does not shift, and the
             // keyboard goes to Cancel, the one thing left to do: an entry made insensitive
             // takes the focus with it, and Escape would reach nothing.
-
             let label = connect_label.clone();
             connect.set_width_request(connect.width());
             connect.set_child(Some(&adw::Spinner::new()));
-
             connect.set_sensitive(false);
             cancel.grab_focus();
             entry.set_sensitive(false);
-
             recent.set_sensitive(false);
             failure.set_visible(false);
             let cancellable = gio::Cancellable::new();
@@ -154,7 +150,6 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
                 tx,
                 async move {
                     let result = crate::network::mount(&file, &dialog, &cancellable).await;
-
                     connect.set_label(&label);
                     connect.set_sensitive(true);
                     entry.set_sensitive(true);
@@ -172,7 +167,6 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
                         Err(e)
                             if e.matches(gio::IOErrorEnum::FailedHandled)
                                 || e.matches(gio::IOErrorEnum::Cancelled) => {}
-
                         Err(e) => {
                             failure.set_label(e.message());
                             failure.set_visible(true);
@@ -212,7 +206,6 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
             if let Some(cancellable) = pending.borrow_mut().take() {
                 cancellable.cancel();
             }
-
             if let Some(tx) = tx.borrow_mut().take() {
                 let _ = tx.send(None);
             }
@@ -245,7 +238,6 @@ fn examples(schemes: &[&str]) -> Vec<&'static str> {
 }
 
 /// The servers connected to before, each a row that connects again and a button that
-
 /// takes it off the list. The group is not there while the list is empty.
 fn fill_recent(
     group: &adw::PreferencesGroup,
