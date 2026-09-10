@@ -117,9 +117,11 @@ on from there; F5 searches again. What was selected when a folder or a search wa
 selected again on the way back.
 
 The first result is selected until you pick another, so Enter in the search box opens it;
-Down goes from the search box to the results. Escape, Back or Backspace while searching
-ends the search and stays in the folder, where the result that was selected is selected
-too, or the folder in it that holds the result.
+Down goes from the search box to the results. Escape or Back while searching ends the
+search and stays in the folder, where the result that was selected is selected too, or the
+folder in it that holds the result; Backspace takes letters off the words, and ends the
+search the same way once none are left. In a file chooser nothing is selected for you,
+since what is selected there is the name to save under.
 
 ## Views
 

@@ -178,15 +178,20 @@ mod imp {
                     !win.imp().closed_tabs.borrow().is_empty(),
                 );
             });
+            // While searching, Back and Backspace end the search and stay in the folder.
             klass.install_action("win.back", None, |win, _, _| {
-                win.navigate(BrowserView::go_back)
+                if !win.end_search() {
+                    win.navigate(BrowserView::go_back);
+                }
             });
             klass.install_action("win.forward", None, |win, _, _| {
                 win.navigate(BrowserView::go_forward)
             });
             klass.install_action("win.up", None, |win, _, _| win.navigate(BrowserView::go_up));
             klass.install_action("win.back-or-up", None, |win, _, _| {
-                win.navigate(BrowserView::go_back_or_up)
+                if !win.end_search() {
+                    win.navigate(BrowserView::go_back_or_up);
+                }
             });
             klass.install_action("win.home", None, |win, _, _| {
                 win.navigate(|v| v.go_to(&gio::File::for_path(glib::home_dir())))
@@ -823,6 +828,16 @@ impl SpiralWindow {
             ));
         }
         self.imp().toast_overlay.add_toast(toast);
+    }
+
+    /// End the search the pane in charge is showing, through the search bar so it goes
+    /// with it. Whether there was one.
+    fn end_search(&self) -> bool {
+        let searching = self.current_view().is_some_and(|v| v.model().searching());
+        if searching {
+            self.imp().search_button.set_active(false);
+        }
+        searching
     }
 
     /// Show `folder` in the pane in charge, with `select` selected in it.
