@@ -141,7 +141,7 @@ impl JobManager {
             }
         };
         match status {
-            JobStatus::Done => job.set_description(job.kind().done_message()),
+            JobStatus::Done => job.set_description(job.done_message()),
             JobStatus::Cancelled => job.set_detail(gettext("Cancelled")),
             JobStatus::Failed => job.set_detail(gettext("Failed")),
             _ => {}
@@ -161,7 +161,7 @@ impl JobManager {
             // gets a toast, so Undo is one click away.
             if matches!(kind, JobKind::Trash { .. }) {
                 let undoable = record_undo && imp.undo.borrow().is_some();
-                self.show_toast(&kind.done_message(), undoable);
+                self.show_toast(&job.done_message(), undoable);
             }
         }
 

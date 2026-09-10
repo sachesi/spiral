@@ -85,6 +85,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                             }
                             delete_allowed = true;
                             delete_recursive(job, mgr, &f).await?;
+                            job.imp().outcome.borrow_mut().deleted.push(f.clone());
                             break;
                         }
                         Err(e) => {
