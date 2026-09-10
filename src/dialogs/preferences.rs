@@ -60,16 +60,20 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
 
     let network = adw::PreferencesGroup::builder()
         .title(gettext("Network"))
-        .description(gettext(
-            "Shares on other machines are reached through gvfs, and nothing here works without it.",
-        ))
         .build();
+    // Worth saying only where it is so: a switch for something that cannot work.
+    if crate::network::address_schemes().is_empty() {
+        network.set_description(Some(&gettext(
+            "gvfs is not installed, so no server can be reached.",
+        )));
+    }
     let use_network = adw::SwitchRow::builder()
         .title(gettext("Network Locations"))
         .subtitle(gettext(
-            "“Connect to Server…” in the main menu, the network in the sidebar, and shares opened by address",
+            "“Connect to Server…”, the Network section of the sidebar, shares opened by address",
         ))
         .build();
+
     settings.bind("use-network", &use_network, "active").build();
     network.add(&use_network);
     page.add(&network);
