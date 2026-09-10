@@ -272,8 +272,10 @@ through a folder without starting a decoder per file.
 
 "Add to Favorites" stars files and folders. They show up under Favorites in the sidebar,
 which is the `starred:///` location; it lists every starred item including hidden ones
-and quietly drops entries that no longer exist. The list is a plain file,
-`~/.local/share/spiral/starred`, one URI per line.
+and quietly drops entries that no longer exist. An item trashed or deleted here loses its
+star at once, along with everything starred inside a folder, and does not get it back
+when restored. The list is a plain file, `~/.local/share/spiral/starred`, one URI per
+line.
 
 ## Tags
 

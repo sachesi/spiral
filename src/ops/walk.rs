@@ -77,6 +77,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                     match f.trash_future(PRIO).await {
                         Ok(()) => {
                             crate::tags::trashed(&f);
+                            crate::starred::forget_all(&f);
                             job.imp().outcome.borrow_mut().trashed.push(f.clone());
                             break;
                         }
@@ -87,6 +88,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                             delete_allowed = true;
                             delete_recursive(job, mgr, &f).await?;
                             crate::tags::forget_all(&f);
+                            crate::starred::forget_all(&f);
                             job.imp().outcome.borrow_mut().deleted.push(f.clone());
                             break;
                         }
@@ -111,6 +113,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
             for f in files {
                 delete_recursive(job, mgr, &f).await?;
                 crate::tags::forget_all(&f);
+                crate::starred::forget_all(&f);
             }
         }
         JobKind::Rename { renames } => {
