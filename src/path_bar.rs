@@ -37,6 +37,9 @@ mod imp {
         /// Kept for its mount signals: a chain drawn before its share was mounted is drawn
         /// again from the mount once there is one.
         pub monitor: RefCell<Option<gio::VolumeMonitor>>,
+        /// A location and the name it was listed under, standing in for the mount it has
+        /// not got: a server reached by a bare address, found on the network.
+        pub given: RefCell<Option<(gio::File, String)>>,
     }
 
     #[glib::object_subclass]
@@ -140,7 +143,8 @@ mod imp {
                 return;
             }
             self.location.replace(file.clone());
-            self.mount.replace(None);
+            self.mount
+                .replace(file.as_ref().and_then(|f| self.given(f)));
             self.rebuild(file.as_ref());
             // The mount lookup can talk to gvfs, so the chain is drawn from `/` first and
             // redrawn from the mount point once known.
@@ -173,7 +177,8 @@ mod imp {
                     .ok()
                     .flatten()
                     .map(|(root, name)| (gio::File::for_uri(&root), name))
-                    .filter(|(root, _)| !root.path().is_some_and(|p| p.as_os_str() == "/"));
+                    .filter(|(root, _)| root.path().is_none_or(|p| p.as_os_str() != "/"))
+                    .or_else(|| bar.imp().given(&file));
                     let imp = bar.imp();
                     if !imp
                         .location
@@ -195,6 +200,11 @@ mod imp {
                     imp.rebuild(Some(&file));
                 }
             ));
+        }
+
+        /// The name `file` was listed under, if it was and it is `file`'s.
+        fn given(&self, file: &gio::File) -> Option<(gio::File, String)> {
+            self.given.borrow().clone().filter(|(f, _)| f.equal(file))
         }
 
         fn rebuild(&self, file: Option<&gio::File>) {
@@ -382,6 +392,12 @@ glib::wrapper! {
 }
 
 impl PathBar {
+    /// Tell the bar what a location was listed under, ahead of setting the location, for
+    /// one that has no mount to be named after.
+    pub fn set_given_name(&self, given: Option<(gio::File, String)>) {
+        self.imp().given.replace(given);
+    }
+
     pub fn connect_navigate<F: Fn(&Self, &gio::File) + 'static>(
         &self,
         f: F,

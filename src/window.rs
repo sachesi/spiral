@@ -796,9 +796,9 @@ impl SpiralWindow {
         imp.active_view.replace(Some(view.downgrade()));
         self.insert_action_group("view", Some(&view.imp().actions));
         if let Some(page) = imp.tab_view.selected_page()
-            && let Some(loc) = view.location()
+            && view.location().is_some()
         {
-            page.set_title(&file_utils::location_name(&loc));
+            page.set_title(&view.location_title());
         }
         self.mark_panes();
         self.sync_header();
@@ -969,8 +969,8 @@ impl SpiralWindow {
                     if win.current_view().as_ref() != Some(v) {
                         return;
                     }
-                    if let Some(loc) = v.location() {
-                        page.set_title(&file_utils::location_name(&loc));
+                    if v.location().is_some() {
+                        page.set_title(&v.location_title());
                     }
                     win.sync_header();
                 }
@@ -1151,15 +1151,13 @@ impl SpiralWindow {
             return;
         };
         let loc = view.location();
+        imp.path_bar.set_given_name(view.given_name());
         imp.path_bar.set_location(loc.as_ref());
         imp.sidebar.set_selected_location(loc.as_ref());
         self.action_set_enabled("win.back", view.can_go_back());
         self.action_set_enabled("win.stop", view.model().loading());
         self.action_set_enabled("win.forward", view.can_go_forward());
-        self.set_title(Some(
-            &loc.map(|l| file_utils::location_name(&l))
-                .unwrap_or_default(),
-        ));
+        self.set_title(Some(&view.location_title()));
         let model = view.model();
         let search = model.search_text();
         if imp.search_entry.text().as_str() != search {

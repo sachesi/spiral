@@ -125,6 +125,10 @@ mod imp {
         /// Where mounting the location stands, so a server that turns it down is not asked
         /// again each time the folder is listed, and the page can say what goes on meanwhile.
         pub mounting: RefCell<super::Mounting>,
+        /// A location and the name it was listed under where it was opened from: a server
+        /// found on the network is reached by an address, and has no name of its own until
+        /// a share on it is mounted.
+        pub given_name: RefCell<Option<(gio::File, String)>>,
         pub settings: gio::Settings,
         /// The handler on the display's clipboard, which outlives the view.
         pub clipboard_handler: RefCell<Option<glib::SignalHandlerId>>,
@@ -217,6 +221,7 @@ mod imp {
                 location: Default::default(),
                 history: Default::default(),
                 mounting: Default::default(),
+                given_name: Default::default(),
                 history_pos: Default::default(),
                 settings: gio::Settings::new(crate::config::APP_ID),
                 clipboard_handler: Default::default(),
@@ -1424,7 +1429,7 @@ impl BrowserView {
         if file_utils::is_dir(&info) {
             self.go_to(&file);
         } else if let Some(target) = file_utils::target_of(&info) {
-            self.open_target(target);
+            self.open_target(target, file_utils::listed_as(&info));
         } else if self.chooser_mode() {
             self.emit_by_name::<()>("file-activated", &[&file]);
         } else {
@@ -1435,8 +1440,9 @@ impl BrowserView {
     /// Follow an entry that stands for somewhere else, as everything in `network:///` and
     /// `computer:///` does: the entry is not a folder and listing it says as much, so what
     /// it points at is opened instead. A share that is not mounted answers nothing about
-    /// itself yet, and going there is what mounts it.
-    pub(crate) fn open_target(&self, target: gio::File) {
+    /// itself yet, and going there is what mounts it. `name` is what the entry was listed
+    /// as, for a target that has no name of its own.
+    pub(crate) fn open_target(&self, target: gio::File, name: Option<String>) {
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
             self,
@@ -1454,6 +1460,9 @@ impl BrowserView {
                     Err(_) => true,
                 };
                 if folder {
+                    if let Some(name) = name {
+                        view.imp().given_name.replace(Some((target.clone(), name)));
+                    }
                     view.go_to(&target);
                 } else if view.chooser_mode() {
                     view.emit_by_name::<()>("file-activated", &[&target]);
@@ -1629,6 +1638,27 @@ impl BrowserView {
             imp.miller_list
                 .set_model((name == "columns").then_some(&sel));
         }
+    }
+
+    /// What the tab and the window are called after: the location's name, or the name a
+    /// server was listed under where its address is all there is to go by.
+    pub fn location_title(&self) -> String {
+        let Some(loc) = self.location() else {
+            return String::new();
+        };
+        match self.given_name() {
+            Some((_, name)) => name,
+            None => file_utils::location_name(&loc),
+        }
+    }
+
+    /// The name the location was listed under, while it is a place on another machine
+    /// with no mount to be named after.
+    pub fn given_name(&self) -> Option<(gio::File, String)> {
+        let loc = self.location()?;
+        let given = self.imp().given_name.borrow().clone()?;
+        (given.0.equal(&loc) && !loc.is_native() && crate::places_sidebar::mount_of(&loc).is_none())
+            .then_some(given)
     }
 
     /// The machine the location is on, for a page that names it.

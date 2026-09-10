@@ -113,7 +113,7 @@ impl BrowserView {
                     v.go_to(&file);
                     break;
                 } else if let Some(target) = file_utils::target_of(&info) {
-                    v.open_target(target);
+                    v.open_target(target, file_utils::listed_as(&info));
                     break;
                 } else if !v.chooser_mode() {
                     v.launch(&file);
