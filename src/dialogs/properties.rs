@@ -122,20 +122,20 @@ impl PropertiesDialog {
         let general = dialog.general_page(infos, reveal);
         let mut pages = Vec::new();
         if let [(file, info)] = infos {
-            if info.has_attribute("unix::mode") {
-                pages.push((
-                    permissions_page(file, info),
-                    "permissions",
-                    gettext("Permissions"),
-                    "system-lock-screen-symbolic",
-                ));
-            }
             if let Some(fs) = &disk {
                 pages.push((
                     disk_page(file, fs),
                     "disk",
                     gettext("Disk"),
                     "drive-harddisk-symbolic",
+                ));
+            }
+            if info.has_attribute("unix::mode") {
+                pages.push((
+                    permissions_page(file, info),
+                    "permissions",
+                    gettext("Permissions"),
+                    "system-lock-screen-symbolic",
                 ));
             }
         }
@@ -152,9 +152,11 @@ impl PropertiesDialog {
                 .add_titled(&page, Some(name), &title)
                 .set_icon_name(Some(icon));
         }
-        let switcher = adw::ViewSwitcher::builder()
+        // Words alone: with an icon beside each, three of them do not fit and the longest
+        // loses its end.
+        let switcher = adw::InlineViewSwitcher::builder()
             .stack(&stack)
-            .policy(adw::ViewSwitcherPolicy::Wide)
+            .display_mode(adw::InlineViewSwitcherDisplayMode::Labels)
             .build();
         header.set_title_widget(Some(&switcher));
         toolbar.set_content(Some(&stack));
@@ -488,16 +490,16 @@ fn disk_page(dir: &gio::File, fs: &gio::FileInfo) -> adw::PreferencesPage {
     } else {
         size.saturating_sub(free)
     };
-    let used_row = row(&gettext("Used"), &prefs::size(used));
+    usage.add(&row(&gettext("Used"), &prefs::size(used)));
+    usage.add(&row(&gettext("Free"), &prefs::size(free)));
+    let capacity = row(&gettext("Capacity"), &prefs::size(size));
     let bar = gtk::LevelBar::builder()
         .value(used as f64 / size as f64)
         .width_request(120)
         .valign(gtk::Align::Center)
         .build();
-    used_row.add_suffix(&bar);
-    usage.add(&used_row);
-    usage.add(&row(&gettext("Free"), &prefs::size(free)));
-    usage.add(&row(&gettext("Capacity"), &prefs::size(size)));
+    capacity.add_suffix(&bar);
+    usage.add(&capacity);
     page.add(&usage);
 
     let mount = dir.path().and_then(|p| crate::disks::mount_of(&p));
@@ -518,56 +520,61 @@ fn disk_page(dir: &gio::File, fs: &gio::FileInfo) -> adw::PreferencesPage {
             }
             .unwrap_or_default();
 
-            let group = adw::PreferencesGroup::builder()
-                .title(gettext("Volume"))
-                .build();
+            let mut fields = Vec::new();
             let format = volume
                 .format
                 .clone()
                 .or_else(|| mount.as_ref().map(|m| m.fstype.clone()))
                 .or(fs_type);
             if let Some(format) = format {
-                group.add(&row(&gettext("Format"), &format));
+                fields.push((gettext("Format"), format));
             }
             if let Some(label) = &volume.label {
-                group.add(&row(&gettext("Label"), label));
+                fields.push((gettext("Label"), label.clone()));
             }
             if let Some(mount) = &mount {
-                group.add(&row(&gettext("Mounted At"), &mount.point.to_string_lossy()));
+                fields.push((
+                    gettext("Mounted At"),
+                    mount.point.to_string_lossy().into_owned(),
+                ));
                 if let Some(device) = &device {
-                    group.add(&row(&gettext("Device"), device));
+                    fields.push((gettext("Device"), device.clone()));
                 }
                 if let Some(subvolume) = mount.option("subvol") {
-                    group.add(&row(&gettext("Subvolume"), subvolume));
+                    fields.push((gettext("Subvolume"), subvolume.to_string()));
                 }
                 if let Some(compression) = mount
                     .option("compress")
                     .or_else(|| mount.option("compress-force"))
                 {
-                    group.add(&row(&gettext("Compression"), compression));
+                    fields.push((gettext("Compression"), compression.to_string()));
                 }
                 if mount.read_only() {
-                    group.add(&row(&gettext("Access"), &gettext("Read-only")));
+                    fields.push((gettext("Access"), gettext("Read-only")));
                 }
             }
             if let Some(encryption) = &volume.encryption {
-                group.add(&row(&gettext("Encryption"), encryption));
+                fields.push((gettext("Encryption"), encryption.clone()));
             }
-            page.add(&group);
+            if !fields.is_empty() {
+                let group = adw::PreferencesGroup::builder()
+                    .title(gettext("Volume"))
+                    .build();
+                group.add(&fields_card(&fields));
+                page.add(&group);
+            }
 
             let Some(drive) = &volume.drive else { return };
-            let group = adw::PreferencesGroup::builder()
-                .title(gettext("Drive"))
-                .build();
+            let mut fields = Vec::new();
             if !drive.model.is_empty() {
-                group.add(&row(&gettext("Model"), &drive.model));
+                fields.push((gettext("Model"), drive.model.clone()));
             }
-            group.add(&row(&gettext("Type"), &drive.kind));
+            fields.push((gettext("Type"), drive.kind.clone()));
             if drive.size > 0 {
-                group.add(&row(&gettext("Size"), &prefs::size(drive.size)));
+                fields.push((gettext("Size"), prefs::size(drive.size)));
             }
             if let Some(table) = &volume.table {
-                group.add(&row(&gettext("Partition Table"), table));
+                fields.push((gettext("Partition Table"), table.clone()));
             }
             if let Some((number, name)) = &volume.partition {
                 let text = if name.is_empty() {
@@ -575,16 +582,21 @@ fn disk_page(dir: &gio::File, fs: &gio::FileInfo) -> adw::PreferencesPage {
                 } else {
                     format!("{number} ({name})")
                 };
-                group.add(&row(&gettext("Partition"), &text));
+                fields.push((gettext("Partition"), text));
             }
+            let group = adw::PreferencesGroup::builder()
+                .title(gettext("Drive"))
+                .build();
+            group.add(&fields_card(&fields));
             if let Some(device) = device
                 && glib::find_program_in_path("gnome-disks").is_some()
             {
-                let open = adw::ButtonRow::builder()
-                    .title(gettext("Open in Disks"))
-                    .end_icon_name("adw-external-link-symbolic")
+                let open = gtk::Button::builder()
+                    .label(gettext("Open in Disks"))
+                    .valign(gtk::Align::Center)
+                    .css_classes(["flat"])
                     .build();
-                open.connect_activated(move |_| {
+                open.connect_clicked(move |_| {
                     let argv = [
                         std::ffi::OsStr::new("gnome-disks"),
                         std::ffi::OsStr::new("--block-device"),
@@ -594,12 +606,53 @@ fn disk_page(dir: &gio::File, fs: &gio::FileInfo) -> adw::PreferencesPage {
                         glib::g_warning!("spiral", "cannot start Disks: {e}");
                     }
                 });
-                group.add(&open);
+                group.set_header_suffix(Some(&open));
             }
             page.add(&group);
         }
     ));
     page
+}
+
+/// Short facts two to a line, each a caption over its value, in a card as wide as a list:
+/// half as tall as a list of rows with one fact each.
+fn fields_card(fields: &[(String, String)]) -> gtk::Widget {
+    let grid = gtk::Grid::builder()
+        .hexpand(true)
+        .column_homogeneous(true)
+        .column_spacing(12)
+        .row_spacing(12)
+        .margin_top(12)
+        .margin_bottom(12)
+        .margin_start(12)
+        .margin_end(12)
+        .build();
+    for (i, (title, value)) in fields.iter().enumerate() {
+        let cell = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .spacing(2)
+            .build();
+        cell.append(
+            &gtk::Label::builder()
+                .label(title)
+                .xalign(0.0)
+                .css_classes(["caption", "dim-label"])
+                .build(),
+        );
+        cell.append(
+            &gtk::Label::builder()
+                .label(value)
+                .xalign(0.0)
+                .ellipsize(gtk::pango::EllipsizeMode::Middle)
+                .tooltip_text(value)
+                .selectable(true)
+                .build(),
+        );
+        grid.attach(&cell, (i % 2) as i32, (i / 2) as i32, 1, 1);
+    }
+    let card = gtk::Box::builder().css_classes(["card"]).build();
+    card.append(&grid);
+    card.upcast()
 }
 
 fn location_text(dir: &gio::File) -> String {
