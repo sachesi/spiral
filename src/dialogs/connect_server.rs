@@ -22,10 +22,10 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
         .build();
     let hint = gtk::Label::builder()
         .label(if schemes.is_empty() {
-            gettext("This system has no network backends installed, so no server can be reached.")
+            gettext("gvfs is not installed, so no server can be reached.")
         } else {
-            gettext("For example: smb://server/share. Schemes this system can use: %s")
-                .replace("%s", &schemes.join(", "))
+            gettext("Addresses this system can open: %s")
+                .replace("%s", &examples(&schemes).join(", "))
         })
         .xalign(0.0)
         .wrap(true)
@@ -197,7 +197,28 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
     rx.await.ok().flatten()
 }
 
+/// What an address looks like, one per protocol this system can use. The secure variant
+/// of a protocol is typed the way the plain one is, `davs://` like `dav://`, and is not
+/// named twice.
+fn examples(schemes: &[&str]) -> Vec<&'static str> {
+    const SHAPES: [(&[&str], &str); 7] = [
+        (&["smb"], "smb://server/share"),
+        (&["sftp", "ssh"], "sftp://user@host"),
+        (&["ftp", "ftps", "ftpis"], "ftp://host"),
+        (&["nfs"], "nfs://host/export"),
+        (&["dav", "davs"], "dav://host/path"),
+        (&["afp"], "afp://server/volume"),
+        (&["http", "https"], "https://host/path"),
+    ];
+    SHAPES
+        .iter()
+        .filter(|(family, _)| family.iter().any(|s| schemes.contains(s)))
+        .map(|(_, shape)| *shape)
+        .collect()
+}
+
 /// The servers connected to before, each a row that connects again and a button that
+
 /// takes it off the list. The group is not there while the list is empty.
 fn fill_recent(
     group: &adw::PreferencesGroup,

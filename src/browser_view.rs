@@ -1581,7 +1581,7 @@ impl BrowserView {
         if crate::network::supports(&scheme) {
             return message.to_string();
         }
-        gettext("Nothing installed here can open “%s” addresses. They are read by a gvfs backend of their own.")
+        gettext("No gvfs backend for %s addresses is installed.")
             .replace("%s", &format!("{scheme}://"))
     }
 
