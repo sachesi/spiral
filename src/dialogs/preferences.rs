@@ -73,7 +73,6 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
             "“Connect to Server…”, the Network section of the sidebar, shares opened by address",
         ))
         .build();
-
     settings.bind("use-network", &use_network, "active").build();
     network.add(&use_network);
     page.add(&network);
