@@ -58,5 +58,7 @@ Stop aborts at the next await; a file being written at that moment is removed. A
 tools are killed and their working directory deleted.
 
 Running jobs keep the application alive, so closing every window while a copy is going
-does not stop it. Dialogs a job needs open a fresh window if none is left, and starting
-`spiral` again brings the operations list up.
+does not stop it. A notification then counts the operations still running, and its "Show
+Details" opens a window with the operations list; when the last one ends another says they
+are all done, and one that fails says what went wrong. Dialogs a job needs open a fresh
+window if none is left, and starting `spiral` again brings the operations list up.
