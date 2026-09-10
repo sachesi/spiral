@@ -173,6 +173,11 @@ menu item_menu {
       action: "view.copy";
     }
     item {
+      label: _("Copy Network _Address");
+      action: "view.copy-network-address";
+      hidden-when: "action-disabled";
+    }
+    item {
       label: _("Copy to…");
       action: "view.copy-to";
       hidden-when: "action-disabled";

@@ -338,6 +338,7 @@ mod imp {
             // Also at window level so the clipboard keys work with the focus anywhere
             // outside a text entry: the sidebar, the path bar, the tab bar.
             klass.add_binding_action(Key::c, M::CONTROL_MASK, "view.copy");
+            klass.add_binding_action(Key::c, M::CONTROL_MASK, "view.copy-network-address");
             klass.add_binding_action(Key::x, M::CONTROL_MASK, "view.cut");
             klass.add_binding_action(Key::v, M::CONTROL_MASK, "view.paste");
             // And from the search box, to the folder of the result that is selected.
