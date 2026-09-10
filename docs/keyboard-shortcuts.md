@@ -13,14 +13,14 @@ Ctrl+? shows this list inside the application.
 | Ctrl+, | Preferences |
 | Ctrl+Q | Quit |
 | Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
-| Alt+Left, Alt+Right | Back, forward |
+| Alt+Left, Alt+Right | Back, forward; also the side buttons of a mouse |
 | Alt+Up | Parent folder |
-| Backspace | Parent folder; back to the search in a folder opened from its results |
+| Backspace | Parent folder; back to the search in a folder opened from its results; out of a search |
 | Alt+Home | Home |
 | Ctrl+L | Type a location |
 | Ctrl+F | Search the folder |
 | F5, Ctrl+R | Reload |
-| Esc | Stop reading the folder, keeping what has arrived |
+| Esc | Stop reading the folder or the search, keeping what has arrived; otherwise end the search |
 | Ctrl+D | Bookmark the folder |
 | Ctrl+1, Ctrl+2, Ctrl+3 | Grid, list or columns; the columns only where they are turned on |
 | Left, Right | In column view: out to the parent, into the selected folder |
@@ -43,6 +43,7 @@ Ctrl+? shows this list inside the application.
 Tab switching with Ctrl+Page Up and Ctrl+Page Down is libadwaita's; Alt and a digit goes to
 that tab from anywhere in the window, the sidebar and the path bar included.
 In the location entry, Tab accepts the completion and Esc cancels. Typing with the view
-focused starts a search. In the preview, Left and Right move to the next file, Page Up and
+focused starts a search; in the search box, Enter opens the selected result and Down goes
+to the results. In the preview, Left and Right move to the next file, Page Up and
 Page Down turn the pages of a PDF, Ctrl++, Ctrl+- and Ctrl+0 zoom a picture or a page,
 Return opens the file in its application, and Space or Esc closes the preview.

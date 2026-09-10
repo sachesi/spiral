@@ -54,10 +54,12 @@ accepts, Esc goes back to the crumbs. Hidden folders only complete if you typed 
 Right-clicking any crumb offers to open that folder in a new tab or window, bookmark it,
 copy its location or show its properties; the ⋮ menu has the same for the current folder.
 
-Alt+Up and the arrow beside the history buttons go to the parent folder, and so does
-Backspace, except in a folder opened from search results, where it goes back to the search;
-Alt+Left and Alt+Right go through the history. Escape stops a folder or a search that is
-still coming in and keeps what has arrived; with nothing loading it does nothing. A folder
+Alt+Up and the arrow beside the history buttons go to the parent folder, with the folder
+you came from selected in it, and so does Backspace, except in a folder opened from search
+results, where it goes back to the search; Alt+Left and Alt+Right, and the back and forward
+buttons of a mouse, go through the history. Going back to a folder above the one you are
+in selects the folder you came through, unless something else was selected there. Escape
+stops a folder or a search that is still coming in and keeps what has arrived. A folder
 stopped that way is a list of what had been read, and stops following what happens in the
 folder until F5 reads it again.
 
@@ -112,6 +114,11 @@ last search left in a tab comes back with what it had found, in the same order a
 starting over, less anything that has gone since, and one left before it finished carries
 on from there; F5 searches again. What was selected when a folder or a search was left is
 selected again on the way back.
+
+The first result is selected until you pick another, so Enter in the search box opens it;
+Down goes from the search box to the results. Escape, Back or Backspace while searching
+ends the search and stays in the folder, where the result that was selected is selected
+too, or the folder in it that holds the result.
 
 ## Views
 

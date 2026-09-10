@@ -201,6 +201,9 @@ mod imp {
                 let b = &win.imp().search_button;
                 b.set_active(!b.is_active());
             });
+            klass.install_action("win.close-search", None, |win, _, _| {
+                win.imp().search_button.set_active(false);
+            });
             klass.install_action("win.tab-overview", None, |win, _, _| {
                 win.imp().tab_overview.set_open(true);
             });
@@ -283,6 +286,9 @@ mod imp {
             // Only bound while something is loading: the action is disabled otherwise, and
             // Escape goes on to whatever else wants it.
             klass.add_binding_action(Key::Escape, M::empty(), "win.stop");
+            // With nothing loading, Escape ends a search from wherever the keyboard is, as
+            // it does in the search box.
+            klass.add_binding_action(Key::Escape, M::empty(), "win.close-search");
             // Alt and a digit for the first nine tabs.
             for (i, key) in [
                 Key::_1,
@@ -342,6 +348,7 @@ mod imp {
                 obj.add_action(&self.settings.create_action(key));
             }
             obj.action_set_enabled("win.stop", false);
+            obj.action_set_enabled("win.close-search", false);
             self.settings.connect_changed(
                 Some("split-view"),
                 glib::clone!(
@@ -475,6 +482,69 @@ mod imp {
                 obj,
                 move |_| win.imp().search_button.set_active(true)
             ));
+            // Down goes from the search box to the result that is selected, where the
+            // arrows go on from; GTK would hand the keyboard to the column headers.
+            let down = gtk::EventControllerKey::new();
+            down.set_propagation_phase(gtk::PropagationPhase::Capture);
+            down.connect_key_pressed(glib::clone!(
+                #[weak(rename_to = win)]
+                obj,
+                #[upgrade_or]
+                glib::Propagation::Proceed,
+                move |_, key, _, state| {
+                    let Some(v) = win.current_view() else {
+                        return glib::Propagation::Proceed;
+                    };
+                    let model = v.model();
+                    if !matches!(key, gtk::gdk::Key::Down | gtk::gdk::Key::KP_Down)
+                        || !state.is_empty()
+                        || model.n_items() == 0
+                    {
+                        return glib::Propagation::Proceed;
+                    }
+                    let selected = model.selection().selection();
+                    let flags = if selected.is_empty() {
+                        gtk::ListScrollFlags::FOCUS | gtk::ListScrollFlags::SELECT
+                    } else {
+                        gtk::ListScrollFlags::FOCUS
+                    };
+                    v.grab_view_focus();
+                    v.reveal_position(selected.minimum().min(model.n_items() - 1), flags);
+                    glib::Propagation::Stop
+                }
+            ));
+            self.search_entry.add_controller(down);
+            // Enter opens the result that is selected, the first one unless another was
+            // picked.
+            self.search_entry.connect_activate(glib::clone!(
+                #[weak(rename_to = win)]
+                obj,
+                move |_| {
+                    if let Some(v) = win.current_view()
+                        && v.model().searching()
+                    {
+                        let _ = v.activate_action("view.open", None);
+                    }
+                }
+            ));
+
+            // The side buttons of a mouse go back and forward, wherever the pointer is.
+            let buttons = gtk::GestureClick::builder().button(0).build();
+            buttons.set_propagation_phase(gtk::PropagationPhase::Capture);
+            buttons.connect_pressed(glib::clone!(
+                #[weak(rename_to = win)]
+                obj,
+                move |gesture, _, _, _| {
+                    let action = match gesture.current_button() {
+                        8 => "win.back",
+                        9 => "win.forward",
+                        _ => return,
+                    };
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
+                    let _ = WidgetExt::activate_action(&win, action, None);
+                }
+            ));
+            obj.add_controller(buttons);
 
             let (w, h) = self.settings.get::<(i32, i32)>("window-size");
             obj.set_default_size(w, h);
@@ -650,7 +720,7 @@ mod imp {
         #[template_callback]
         fn on_search_changed(&self, entry: &gtk::SearchEntry) {
             if let Some(v) = self.obj().current_view() {
-                v.model().set_search_text(entry.text().as_str());
+                v.search_for(entry.text().as_str());
             }
         }
 
@@ -1026,6 +1096,12 @@ impl SpiralWindow {
         ));
         view.connect_can_go_back_notify(sync);
         view.connect_can_go_forward_notify(sync);
+        // A search the view ends itself, going back out of it, takes the search bar with it.
+        view.model().connect_searching_notify(glib::clone!(
+            #[weak]
+            view,
+            move |_| sync(&view)
+        ));
         view.connect_view_mode_notify(|v| {
             if let Some(win) = Self::of(v)
                 && win.current_view().as_ref() == Some(v)
@@ -1161,11 +1237,13 @@ impl SpiralWindow {
         imp.path_bar.set_given_name(view.given_name());
         imp.path_bar.set_location(loc.as_ref());
         imp.sidebar.set_selected_location(loc.as_ref());
-        self.action_set_enabled("win.back", view.can_go_back());
+        // Back also leads out of a search.
+        let model = view.model();
+        self.action_set_enabled("win.back", view.can_go_back() || model.searching());
+        self.action_set_enabled("win.close-search", model.searching());
         self.action_set_enabled("win.stop", view.model().loading());
         self.action_set_enabled("win.forward", view.can_go_forward());
         self.set_title(Some(&view.location_title()));
-        let model = view.model();
         let search = model.search_text();
         if imp.search_entry.text().as_str() != search {
             imp.search_entry.set_text(&search);

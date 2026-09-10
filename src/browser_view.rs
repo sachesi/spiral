@@ -82,6 +82,12 @@ mod imp {
         pub fit_pending: Cell<bool>,
         /// Set while the bar and the actions are waiting to be told the selection changed.
         pub selection_pending: Cell<bool>,
+        /// Whether the selection among search results is the first result, picked by the
+        /// view rather than by hand; set while the view is picking it; set while a pick
+        /// waits for the change of the results to end.
+        pub first_picked: Cell<bool>,
+        pub picking: Cell<bool>,
+        pub pick_pending: Cell<bool>,
         /// Where a drag is hovering over the strip, and the frame callback that pushes
         /// the strip along and marks the column the drop would land in.
         pub drag_at: Cell<(f64, f64)>,
@@ -186,6 +192,9 @@ mod imp {
                 columns_pending: Default::default(),
                 fit_pending: Default::default(),
                 selection_pending: Default::default(),
+                first_picked: Default::default(),
+                picking: Default::default(),
+                pick_pending: Default::default(),
                 drag_at: Default::default(),
                 drag_tick: Default::default(),
                 error_page: Default::default(),
@@ -499,6 +508,7 @@ mod imp {
                 move |_, _, _, _| {
                     obj.update_stack();
                     obj.queue_selection_update();
+                    obj.queue_pick_first_result();
                 }
             ));
             self.model
@@ -506,7 +516,13 @@ mod imp {
                 .connect_selection_changed(glib::clone!(
                     #[weak]
                     obj,
-                    move |_, _, _| obj.queue_selection_update()
+                    move |_, _, _| {
+                        let imp = obj.imp();
+                        if !imp.picking.get() {
+                            imp.first_picked.set(false);
+                        }
+                        obj.queue_selection_update();
+                    }
                 ));
             self.model.connect_loading_notify(glib::clone!(
                 #[weak]
@@ -614,6 +630,19 @@ fn mostly_media(model: &FolderModel) -> bool {
 // every time its row is scrolled back into view.
 thread_local! {
     static COUNTS: RefCell<CountCache> = RefCell::new(CountCache::default());
+}
+
+/// The folder in `dir` that holds `file`, or `file` itself when it is in `dir`; `None`
+/// when `file` is not below `dir`.
+fn child_toward(dir: &gio::File, file: &gio::File) -> Option<gio::File> {
+    let mut child = file.clone();
+    loop {
+        let parent = child.parent()?;
+        if parent.equal(dir) {
+            return Some(child);
+        }
+        child = parent;
+    }
 }
 
 /// A step in a tab's history: the folder, and the search it was showing and what was
@@ -1390,8 +1419,13 @@ impl BrowserView {
         self.grab_view_focus();
     }
 
+    /// Back a step; while searching, out of the search and into the folder it was in.
     pub fn go_back(&self) {
         let imp = self.imp();
+        if imp.model.searching() {
+            self.search_for("");
+            return;
+        }
         let pos = imp.history_pos.get();
         if pos == 0 {
             return;
@@ -1412,8 +1446,10 @@ impl BrowserView {
         self.show_visit(pos + 1);
     }
 
+    /// Show the step at `pos` with what was selected there. A step that had nothing
+    /// selected and leads up from the folder being left selects the folder on the way.
     fn show_visit(&self, pos: usize) {
-        let (file, search, selected) = {
+        let (file, search, mut selected) = {
             let hist = self.imp().history.borrow();
             let visit = &hist[pos];
             (
@@ -1422,26 +1458,95 @@ impl BrowserView {
                 visit.selected.clone(),
             )
         };
+        if selected.is_empty()
+            && search.is_none()
+            && let Some(child) = self.location().and_then(|l| child_toward(&file, &l))
+        {
+            selected.push(child);
+        }
         self.set_location_internal(&file, search);
         self.select_files_when_loaded(selected);
     }
 
-    /// Backspace: back to the search this folder was opened from, up otherwise.
+    /// Backspace: out of the search, back to the search this folder was opened from, or
+    /// up.
     pub fn go_back_or_up(&self) {
         let imp = self.imp();
         let pos = imp.history_pos.get();
         let from_search = pos > 0 && imp.history.borrow()[pos - 1].search.is_some();
-        if from_search {
+        if from_search || imp.model.searching() {
             self.go_back();
         } else {
             self.go_up();
         }
     }
 
+    /// Up to the parent, with the folder just left selected in it.
     pub fn go_up(&self) {
-        if let Some(parent) = self.location().and_then(|l| l.parent()) {
+        let Some(here) = self.location() else { return };
+        if let Some(parent) = here.parent() {
             self.go_to(&parent);
+            self.select_files_when_loaded(vec![here]);
         }
+    }
+
+    /// Search the folder for `text`. With no text the folder comes back, with what was
+    /// selected among the results selected in it: the result itself, or the folder in
+    /// it that holds the result.
+    pub fn search_for(&self, text: &str) {
+        let model = self.model();
+        if !text.is_empty() || !model.searching() {
+            model.set_search_text(text);
+            return;
+        }
+        let mut keep: Vec<gio::File> = Vec::new();
+        if let Some(dir) = self.location() {
+            for file in model.selected_files() {
+                let file = child_toward(&dir, &file).unwrap_or(file);
+                if !keep.iter().any(|f| f.equal(&file)) {
+                    keep.push(file);
+                }
+            }
+        }
+        model.set_search_text("");
+        self.select_files_when_loaded(keep);
+    }
+
+    /// While searching, keep the first result selected until another one is picked, so
+    /// Enter in the search box opens it. The first result changes as results arrive in
+    /// order, and the selection follows it. Not while the results are changing: the views
+    /// are told of the change after the model, and a selection moved before that points
+    /// them at rows they do not have yet.
+    fn queue_pick_first_result(&self) {
+        if self.imp().pick_pending.replace(true) {
+            return;
+        }
+        glib::idle_add_local_once(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move || {
+                view.imp().pick_pending.set(false);
+                view.pick_first_result();
+            }
+        ));
+    }
+
+    fn pick_first_result(&self) {
+        let imp = self.imp();
+        let model = &imp.model;
+        if !model.searching() || model.n_items() == 0 {
+            return;
+        }
+        let sel = model.selection();
+        let set = sel.selection();
+        let only_first = set.size() == 1 && set.contains(0);
+        if !set.is_empty() && (!imp.first_picked.get() || only_first) {
+            return;
+        }
+        imp.picking.set(true);
+        sel.select_item(0, true);
+        imp.picking.set(false);
+        imp.first_picked.set(true);
     }
 
     /// Read the folder again, leaving the view where it was. The listing is thrown away
@@ -1977,13 +2082,13 @@ impl BrowserView {
     }
 
     /// Select `files` and show the first, as soon as the view has them to select (used by
-    /// FileManager1.ShowItems, pasting, "Open Item Location" and going back). A folder
-    /// still listing is waited for, the way Nautilus holds a pending selection until
-    /// loading is done: a big folder is put in order at the end, and a selection made
-    /// before would not survive it. A search is not, since its results only ever go on
-    /// the end. A file written a moment ago reaches the model through the folder
-    /// monitor, which lags behind the operation that made it, so what is missing once
-    /// nothing loads is given a moment more; a change of folder drops the lot.
+    /// FileManager1.ShowItems, pasting, "Open Item Location", going back or up and leaving
+    /// a search). A folder still listing is waited for: a big folder is put in order at
+    /// the end, and a selection made before would not survive it. A search is not, since
+    /// its results only ever go on the end. A file written a moment ago reaches the model
+    /// through the folder monitor, which lags behind the operation that made it, so what
+    /// is missing once nothing loads is given a moment more; a change of folder drops the
+    /// lot.
     pub fn select_files_when_loaded(&self, files: Vec<gio::File>) {
         use futures_util::StreamExt;
         if files.is_empty() {
