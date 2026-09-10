@@ -706,11 +706,49 @@ impl BrowserView {
     }
 
     fn set_selection_starred(&self, starred: bool) {
-        for f in self.selected() {
-            crate::starred::set_starred(&f, starred);
+        let infos: Vec<gio::FileInfo> = self
+            .model()
+            .selected_infos()
+            .into_iter()
+            .filter(|i| crate::starred::is_starred(&file_utils::file_of(i)) != starred)
+            .collect();
+        for info in &infos {
+            crate::starred::set_starred(&file_utils::file_of(info), starred);
         }
         self.update_action_state();
         self.refresh_cells();
+        if !starred {
+            self.offer_to_star_again(&infos);
+        }
+    }
+
+    /// Unstarred in Favorites, items leave the view on the spot; a toast can bring them
+    /// back.
+    pub(crate) fn offer_to_star_again(&self, infos: &[gio::FileInfo]) {
+        let in_favorites = self
+            .location()
+            .is_some_and(|l| crate::starred::is_starred_location(&l));
+        let Some(win) = self.root().and_downcast::<crate::window::SpiralWindow>() else {
+            return;
+        };
+        if !in_favorites || infos.is_empty() {
+            return;
+        }
+        let message = match infos {
+            [info] => gettext("Removed “%s” from Favorites").replace("%s", &info.display_name()),
+            _ => ngettext(
+                "Removed %d item from Favorites",
+                "Removed %d items from Favorites",
+                infos.len() as u32,
+            )
+            .replace("%d", &infos.len().to_string()),
+        };
+        let files: Vec<gio::File> = infos.iter().map(file_utils::file_of).collect();
+        win.show_undo_toast(&message, move || {
+            for file in &files {
+                crate::starred::set_starred(file, true);
+            }
+        });
     }
 
     /// How the selection stands with a tag: on every file, on some, or on none.

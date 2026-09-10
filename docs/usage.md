@@ -293,7 +293,8 @@ through a folder without starting a decoder per file.
 which is the `starred:///` location; it lists every starred item including hidden ones
 and quietly drops entries that no longer exist. An item trashed or deleted here loses its
 star at once, along with everything starred inside a folder, and does not get it back
-when restored. The list is a plain file, `~/.local/share/spiral/starred`, one URI per
+when restored. Removing items from Favorites while looking at it takes them off the list
+at once, and the toast that says so has an Undo button. The list is a plain file, `~/.local/share/spiral/starred`, one URI per
 line.
 
 ## Tags

@@ -3023,7 +3023,7 @@ impl BrowserView {
         }
     }
 
-    /// A star per row that toggles the favourite, like the Nautilus star column.
+    /// A star per row that toggles the favourite.
     fn star_column(&self) -> gtk::ColumnViewColumn {
         let factory = gtk::SignalListItemFactory::new();
         let view = self.downgrade();
@@ -3039,6 +3039,8 @@ impl BrowserView {
             button.connect_clicked(glib::clone!(
                 #[weak]
                 item,
+                #[weak]
+                view,
                 move |button| {
                     let Some(info) = item.item().and_then(|o| crate::folder_model::info_of(&o))
                     else {
@@ -3048,6 +3050,9 @@ impl BrowserView {
                     let starred = !crate::starred::is_starred(&file);
                     crate::starred::set_starred(&file, starred);
                     set_star(button, starred);
+                    if !starred {
+                        view.offer_to_star_again(&[info]);
+                    }
                 }
             ));
             star_tooltip(&button);

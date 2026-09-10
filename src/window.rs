@@ -824,6 +824,15 @@ impl SpiralWindow {
         self.imp().toast_overlay.add_toast(toast);
     }
 
+    /// A toast whose Undo button runs `undo`, for a change the undo of the operations does
+    /// not keep.
+    pub fn show_undo_toast(&self, message: &str, undo: impl Fn() + 'static) {
+        let toast = adw::Toast::new(message);
+        toast.set_button_label(Some(&gettext("Undo")));
+        toast.connect_button_clicked(move |_| undo());
+        self.imp().toast_overlay.add_toast(toast);
+    }
+
     pub fn show_progress(&self) {
         let indicator = self.imp().progress_indicator.clone();
         glib::idle_add_local_once(move || {
