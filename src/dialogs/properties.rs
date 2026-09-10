@@ -116,6 +116,8 @@ impl PropertiesDialog {
         let dialog: Self = glib::Object::builder()
             .property("title", gettext("Properties"))
             .property("search-enabled", false)
+            // A little narrower than the preferences, which have more to say per line.
+            .property("content-width", 616)
             .build();
         let general = dialog.general_page(infos, reveal);
         general.set_title(&gettext("General"));
