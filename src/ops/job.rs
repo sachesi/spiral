@@ -248,6 +248,9 @@ pub struct Outcome {
     /// (original source, final destination) of successfully moved top-level items.
     pub moved: Vec<(gio::File, gio::File)>,
     pub trashed: Vec<gio::File>,
+    /// What a trash job deleted instead, where the trash could not take it; not undone,
+    /// only told.
+    pub deleted: Vec<gio::File>,
     /// (renamed file, previous name), one per file the job got through.
     pub renamed: Vec<(gio::File, String)>,
 }
@@ -311,6 +314,24 @@ impl Job {
 
     pub fn kind(&self) -> JobKind {
         self.imp().kind.borrow().clone().expect("job without kind")
+    }
+
+    /// Text for the finished row and the toast: what was asked for, except after trashing,
+    /// where it names what went to the trash, or what was deleted if nothing did.
+    pub fn done_message(&self) -> String {
+        let kind = self.kind();
+        let out = self.imp().outcome.borrow();
+        match kind {
+            JobKind::Trash { .. } if !out.trashed.is_empty() => JobKind::Trash {
+                files: out.trashed.clone(),
+            }
+            .done_message(),
+            JobKind::Trash { .. } if !out.deleted.is_empty() => JobKind::Delete {
+                files: out.deleted.clone(),
+            }
+            .done_message(),
+            kind => kind.done_message(),
+        }
     }
 
     /// The top-level items the job left where it was aimed: what a paste puts in a folder,
