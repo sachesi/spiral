@@ -616,11 +616,12 @@ thread_local! {
     static COUNTS: RefCell<CountCache> = RefCell::new(CountCache::default());
 }
 
-/// A step in a tab's history: the folder, and the search it was showing when it was left,
-/// which going back to it brings back.
+/// A step in a tab's history: the folder, and the search it was showing and what was
+/// selected when it was left, which going back to it brings back.
 pub struct Visit {
     file: gio::File,
     search: Option<Search>,
+    selected: Vec<gio::File>,
 }
 
 /// A search as it stood: the words and the filters.
@@ -1278,7 +1279,7 @@ impl BrowserView {
         {
             return;
         }
-        self.remember_search();
+        self.remember_state();
         {
             let mut hist = imp.history.borrow_mut();
             let pos = imp.history_pos.get();
@@ -1288,14 +1289,16 @@ impl BrowserView {
             hist.push(Visit {
                 file: file.clone(),
                 search: None,
+                selected: Vec::new(),
             });
             imp.history_pos.set(hist.len() - 1);
         }
         self.set_location_internal(file, None);
     }
 
-    /// Keep the search on screen with the step of the history being left.
-    fn remember_search(&self) {
+    /// Keep the search on screen and the selection with the step of the history being
+    /// left.
+    fn remember_state(&self) {
         let imp = self.imp();
         let model = &imp.model;
         let text = model.search_text();
@@ -1305,8 +1308,10 @@ impl BrowserView {
             date: model.search_date(),
             matching: model.search_match(),
         });
+        let selected = model.selected_files();
         if let Some(visit) = imp.history.borrow_mut().get_mut(imp.history_pos.get()) {
             visit.search = search;
+            visit.selected = selected;
         }
     }
 
@@ -1370,7 +1375,7 @@ impl BrowserView {
         if pos == 0 {
             return;
         }
-        self.remember_search();
+        self.remember_state();
         imp.history_pos.set(pos - 1);
         self.show_visit(pos - 1);
     }
@@ -1381,17 +1386,23 @@ impl BrowserView {
         if pos + 1 >= imp.history.borrow().len() {
             return;
         }
-        self.remember_search();
+        self.remember_state();
         imp.history_pos.set(pos + 1);
         self.show_visit(pos + 1);
     }
 
     fn show_visit(&self, pos: usize) {
-        let (file, search) = {
+        let (file, search, selected) = {
             let hist = self.imp().history.borrow();
-            (hist[pos].file.clone(), hist[pos].search.clone())
+            let visit = &hist[pos];
+            (
+                visit.file.clone(),
+                visit.search.clone(),
+                visit.selected.clone(),
+            )
         };
         self.set_location_internal(&file, search);
+        self.select_files_when_loaded(selected);
     }
 
     /// Backspace: back to the search this folder was opened from, up otherwise.

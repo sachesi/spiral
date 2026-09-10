@@ -107,7 +107,8 @@ time, so it is only as fast as the disk. Each tab keeps its own filters; "Open I
 Location" on a result jumps to its folder, and "Open Item Location in New Tab" opens the
 folder in a tab behind the results, the item selected in both cases. A folder left while
 it showed a search gets the search back, words and filters, when Back or Forward returns
-to it, so Back from a result's folder, or Backspace there, is back at the results.
+to it, so Back from a result's folder, or Backspace there, is back at the results. What
+was selected when a folder or a search was left is selected again on the way back.
 
 ## Views
 
