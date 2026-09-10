@@ -416,7 +416,10 @@ async fn set_permissions(
             return Ok(());
         }
     };
-    if set(dir.clone(), mode, folders).await.is_err() {
+    // A folder whose owner is to lose the way into it is changed after what it holds,
+    // which could not be reached once it is; one they are to be let into, before.
+    let open = ((mode & !folders.1) | folders.0) & 0o500 == 0o500;
+    if open && set(dir.clone(), mode, folders).await.is_err() {
         *failed += 1;
     }
     job.set_files_done(job.files_done() + 1);
@@ -438,6 +441,9 @@ async fn set_permissions(
                 job.report(false);
             }
         }
+    }
+    if !open && set(dir.clone(), mode, folders).await.is_err() {
+        *failed += 1;
     }
     Ok(())
 }
