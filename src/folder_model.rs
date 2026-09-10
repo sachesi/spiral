@@ -343,8 +343,11 @@ mod imp {
                 self.sorted.set_sorter(Some(&self.sorter));
             }
             // The directory list ignores the file it already has, so listing it again
-            // takes a detour through nothing.
-            if self.dir_list.file().as_ref() == file {
+            // takes a detour through nothing. "Has" as GIO sees it: the same path in
+            // another GFile counts.
+            if let (Some(old), Some(new)) = (self.dir_list.file(), file)
+                && old.equal(new)
+            {
                 self.dir_list.set_file(gio::File::NONE);
             }
             self.dir_list.set_file(file);
