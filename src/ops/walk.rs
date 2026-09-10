@@ -76,6 +76,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 loop {
                     match f.trash_future(PRIO).await {
                         Ok(()) => {
+                            crate::tags::trashed(&f);
                             job.imp().outcome.borrow_mut().trashed.push(f.clone());
                             break;
                         }
@@ -85,6 +86,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                             }
                             delete_allowed = true;
                             delete_recursive(job, mgr, &f).await?;
+                            crate::tags::forget_all(&f);
                             job.imp().outcome.borrow_mut().deleted.push(f.clone());
                             break;
                         }
@@ -108,6 +110,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
             count(job, files.clone()).await;
             for f in files {
                 delete_recursive(job, mgr, &f).await?;
+                crate::tags::forget_all(&f);
             }
         }
         JobKind::Rename { renames } => {
@@ -236,6 +239,20 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                     .await?
                     .is_some()
                 {
+                    // The index let it go with the trashing. What it carried then comes
+                    // back, and its own tags are read from it as well, for an item trashed
+                    // before Spiral last started.
+                    crate::tags::restored(&original);
+                    if let Ok(info) = original
+                        .query_info_future(
+                            crate::tags::ATTRIBUTE,
+                            gio::FileQueryInfoFlags::NONE,
+                            PRIO,
+                        )
+                        .await
+                    {
+                        crate::tags::note(&original, &crate::tags::of_info(&info));
+                    }
                     job.imp()
                         .outcome
                         .borrow_mut()

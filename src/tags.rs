@@ -449,6 +449,9 @@ thread_local! {
         )
     };
     static SAVE_QUEUED: Cell<bool> = const { Cell::new(false) };
+    /// The entries the index let go with what was trashed since Spiral started, for a
+    /// restore to put back.
+    static TRASHED: RefCell<Vec<(String, String)>> = const { RefCell::new(Vec::new()) };
 }
 
 pub fn index() -> gtk::StringList {
@@ -543,6 +546,55 @@ pub fn relocate(from: &gio::File, to: &gio::File) {
     });
 }
 
+/// `file` was deleted, and so was everything below it: the index lets them go, and so do
+/// the lists showing them. Returns the entries let go.
+pub fn forget_all(file: &gio::File) -> Vec<(String, String)> {
+    let under = under(file);
+    let gone: Vec<(String, String)> = entries().into_iter().filter(|(_, u)| under(u)).collect();
+    if !gone.is_empty() {
+        rewrite_index(|tag, u| (!under(&u)).then_some((tag, u)));
+    }
+    gone
+}
+
+/// `file` was trashed, with everything below it: gone from the index as if deleted, but
+/// kept to hand for [`restored`].
+pub fn trashed(file: &gio::File) {
+    let gone = forget_all(file);
+    TRASHED.with(|t| t.borrow_mut().extend(gone));
+}
+
+/// `file` is back from the trash: what it and everything below it carried when it was
+/// trashed goes back in the index, in one change so a list showing a tag loads once. As
+/// with [`note`], only tags still on offer.
+pub fn restored(file: &gio::File) {
+    let under = under(file);
+    let back: Vec<(String, String)> = TRASHED.with(|t| {
+        let (back, kept) = t.take().into_iter().partition(|(_, u)| under(u));
+        t.replace(kept);
+        back
+    });
+    let list = index();
+    let lines: Vec<String> = back
+        .iter()
+        .filter(|(tag, _)| exists(tag))
+        .map(|(tag, uri)| line(tag, uri))
+        .filter(|l| list.find(l) == gtk::INVALID_LIST_POSITION)
+        .collect();
+    if !lines.is_empty() {
+        let refs: Vec<&str> = lines.iter().map(String::as_str).collect();
+        list.splice(list.n_items(), 0, &refs);
+        schedule_save();
+    }
+}
+
+/// Whether a URI is `file`'s or one below it.
+fn under(file: &gio::File) -> impl Fn(&str) -> bool + use<> {
+    let uri = file.uri().to_string();
+    let below = format!("{uri}/");
+    move |u| u == uri || u.starts_with(&below)
+}
+
 /// Replace the index with what `f` makes of each entry, in one change.
 fn rewrite_index(f: impl Fn(String, String) -> Option<(String, String)>) {
     let lines: Vec<String> = entries()
@@ -586,6 +638,15 @@ mod tests {
         let raw = escape(&names.join(","));
         assert_eq!(raw, "Gr\\xc3\\xbcn,back\\x5cslash");
         assert_eq!(parse(&unescape(&raw)), names);
+    }
+
+    #[test]
+    fn under_a_folder_is_the_folder_and_what_is_in_it() {
+        let under = under(&gio::File::for_uri("file:///home/u/dir"));
+        assert!(under("file:///home/u/dir"));
+        assert!(under("file:///home/u/dir/a/b.txt"));
+        assert!(!under("file:///home/u/dir2"));
+        assert!(!under("file:///home/u"));
     }
 
     #[test]
