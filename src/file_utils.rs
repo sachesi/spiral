@@ -133,6 +133,13 @@ pub fn display_name(info: &gio::FileInfo) -> glib::GString {
     info.display_name()
 }
 
+/// The name `info` is listed under, where the backend gives one; asked the guarded way,
+/// like the rest of what a gvfs location may leave out.
+pub fn listed_as(info: &gio::FileInfo) -> Option<String> {
+    info.has_attribute("standard::display-name")
+        .then(|| info.display_name().to_string())
+}
+
 pub fn size_string(info: &gio::FileInfo) -> String {
     if sizeless(info) {
         return String::new();
