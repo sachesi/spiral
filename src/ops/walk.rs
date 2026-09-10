@@ -285,7 +285,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
 async fn confirm_permanent_delete(mgr: &JobManager, file: &gio::File, more: bool) -> bool {
     let body = if more {
         gettext(
-            "This location does not support trashing. Delete it and the other items that cannot be trashed permanently instead?",
+            "This location does not support trashing. Delete it permanently instead, along with any other item that cannot be trashed either?",
         )
     } else {
         gettext("This location does not support trashing. Delete it permanently instead?")
