@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-10 09:10+0300\n"
+"POT-Creation-Date: 2026-09-10 09:28+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -724,43 +724,43 @@ msgstr "Архів"
 msgid "Could not tag “%s”"
 msgstr "Не вдалося позначити «%s»"
 
-#: src/browser_actions.rs:965
+#: src/browser_actions.rs:966
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr "Не вдалося вставити зображення"
 
-#: src/browser_actions.rs:978
+#: src/browser_actions.rs:979
 #, no-c-format
 msgid "Move To"
 msgstr "Пересунути до"
 
-#: src/browser_actions.rs:978
+#: src/browser_actions.rs:979
 #, no-c-format
 msgid "_Move"
 msgstr "_Пересунути"
 
-#: src/browser_actions.rs:980
+#: src/browser_actions.rs:981
 #, no-c-format
 msgid "Copy To"
 msgstr "Копіювати до"
 
-#: src/browser_actions.rs:980 ui/browser_view.ui:203
+#: src/browser_actions.rs:981 ui/browser_view.ui:203
 #, no-c-format
 msgid "_Copy"
 msgstr "_Копіювати"
 
-#: src/browser_actions.rs:1072 src/browser_view.rs:1490
+#: src/browser_actions.rs:1073 src/browser_view.rs:1490
 #: src/browser_view.rs:1497 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не вдалося відкрити"
 
-#: src/browser_actions.rs:1082
+#: src/browser_actions.rs:1083
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr "Остаточно вилучити «%s»?"
 
-#: src/browser_actions.rs:1084
+#: src/browser_actions.rs:1085
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
@@ -768,49 +768,49 @@ msgstr[0] "Остаточно вилучити %d об’єкт?"
 msgstr[1] "Остаточно вилучити %d об’єкти?"
 msgstr[2] "Остаточно вилучити %d об’єктів?"
 
-#: src/browser_actions.rs:1092
+#: src/browser_actions.rs:1093
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr "Остаточно вилучені об’єкти неможливо відновити."
 
-#: src/browser_actions.rs:1097 src/dialogs/batch_rename.rs:108
+#: src/browser_actions.rs:1098 src/dialogs/batch_rename.rs:108
 #: src/dialogs/compress.rs:70 src/dialogs/connect_server.rs:66
 #: src/dialogs/open_with.rs:59 src/dialogs/select_pattern.rs:44
 #: src/dialogs/tags.rs:36 src/ops/archive.rs:351 src/ops/conflict.rs:64
 #: src/ops/conflict.rs:315 src/ops/mod.rs:30 src/ops/walk.rs:263
-#: src/places_sidebar.rs:879 src/places_sidebar.rs:1240
+#: src/places_sidebar.rs:879 src/places_sidebar.rs:1241
 #: src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
 msgstr "_Скасувати"
 
-#: src/browser_actions.rs:1098
+#: src/browser_actions.rs:1099
 #, no-c-format
 msgid "_Delete"
 msgstr "В_илучити"
 
-#: src/browser_actions.rs:1151
+#: src/browser_actions.rs:1152
 #, no-c-format
 msgid "Untitled Document"
 msgstr "Документ без назви"
 
-#: src/browser_actions.rs:1185 ui/path_bar.ui:32 ui/path_bar.ui:63
+#: src/browser_actions.rs:1186 ui/path_bar.ui:32 ui/path_bar.ui:63
 #: ui/places_sidebar.ui:16 ui/places_sidebar.ui:58
 #, no-c-format
 msgid "Open in New _Tab"
 msgstr "Відкрити в новій _вкладці"
 
-#: src/browser_actions.rs:1186 ui/path_bar.ui:36 ui/path_bar.ui:67
+#: src/browser_actions.rs:1187 ui/path_bar.ui:36 ui/path_bar.ui:67
 #, no-c-format
 msgid "Open in New _Window"
 msgstr "Відкрити в новому вік_ні"
 
-#: src/browser_actions.rs:1187 ui/browser_view.ui:342
+#: src/browser_actions.rs:1188 ui/browser_view.ui:342
 #, no-c-format
 msgid "Open in _Terminal"
 msgstr "Відкрити в _терміналі"
 
-#: src/browser_actions.rs:1213 ui/path_bar.ui:16
+#: src/browser_actions.rs:1214 ui/path_bar.ui:16
 #, no-c-format
 msgid "New _Document"
 msgstr "Створити _документ"
@@ -996,7 +996,7 @@ msgstr[1] "%d файли для перейменування"
 msgstr[2] "%d файлів для перейменування"
 
 #: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:72
-#: src/places_sidebar.rs:1266
+#: src/places_sidebar.rs:1267
 #, no-c-format
 msgid "_Rename"
 msgstr "Пере_йменувати"
@@ -1255,7 +1255,7 @@ msgstr ""
 "Якщо вимкнено, Ctrl копіює, а перетягування всередині Spiral переміщує без "
 "питань"
 
-#: src/dialogs/preferences.rs:62 src/file_utils.rs:379
+#: src/dialogs/preferences.rs:62 src/file_utils.rs:394
 #: src/places_sidebar.rs:706
 #, no-c-format
 msgid "Network"
@@ -1340,7 +1340,7 @@ msgstr "Корінь"
 msgid "The top of the filesystem, above the bookmarks"
 msgstr "Вершина файлової системи, над закладками"
 
-#: src/dialogs/preferences.rs:139 src/file_utils.rs:382 src/path_bar.rs:366
+#: src/dialogs/preferences.rs:139 src/file_utils.rs:397 src/path_bar.rs:366
 #: src/places_sidebar.rs:632
 #, no-c-format
 msgid "Favorites"
@@ -1351,7 +1351,7 @@ msgstr "Улюблене"
 msgid "The starred files and folders"
 msgstr "Файли й теки, позначені зірочкою"
 
-#: src/dialogs/preferences.rs:149 src/file_utils.rs:385
+#: src/dialogs/preferences.rs:149 src/file_utils.rs:400
 #, no-c-format
 msgid "Tags"
 msgstr "Мітки"
@@ -1491,13 +1491,13 @@ msgid "First Modified"
 msgstr "Спочатку старі"
 
 #: src/dialogs/preferences.rs:262 src/dialogs/properties.rs:251
-#: src/file_utils.rs:216 src/file_utils.rs:231
+#: src/file_utils.rs:231 src/file_utils.rs:246
 #, no-c-format
 msgid "Size"
 msgstr "Розмір"
 
 #: src/dialogs/preferences.rs:263 src/dialogs/properties.rs:243
-#: src/file_utils.rs:217 src/file_utils.rs:233 ui/window.ui:365
+#: src/file_utils.rs:232 src/file_utils.rs:248 ui/window.ui:365
 #, no-c-format
 msgid "Type"
 msgstr "Тип"
@@ -1586,7 +1586,7 @@ msgstr "%p з %n"
 msgid "Properties"
 msgstr "Властивості"
 
-#: src/dialogs/properties.rs:99 src/file_utils.rs:223 src/file_utils.rs:235
+#: src/dialogs/properties.rs:99 src/file_utils.rs:238 src/file_utils.rs:250
 #, no-c-format
 msgid "Permissions"
 msgstr "Права доступу"
@@ -1614,7 +1614,7 @@ msgstr[0] "%d об’єкт"
 msgstr[1] "%d об’єкти"
 msgstr[2] "%d об’єктів"
 
-#: src/dialogs/properties.rs:247 src/file_utils.rs:234
+#: src/dialogs/properties.rs:247 src/file_utils.rs:249
 #, no-c-format
 msgid "MIME Type"
 msgstr "Тип MIME"
@@ -1624,12 +1624,12 @@ msgstr "Тип MIME"
 msgid "Calculating…"
 msgstr "Обчислення…"
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:218 ui/window.ui:386
+#: src/dialogs/properties.rs:259 src/file_utils.rs:233 ui/window.ui:386
 #, no-c-format
 msgid "Modified"
 msgstr "Змінено"
 
-#: src/dialogs/properties.rs:263 src/file_utils.rs:219
+#: src/dialogs/properties.rs:263 src/file_utils.rs:234
 #, no-c-format
 msgid "Accessed"
 msgstr "Останній доступ"
@@ -1660,7 +1660,7 @@ msgid "You are not the owner, so you cannot change these permissions."
 msgstr "Ви не власник, тому не можете змінити ці права доступу."
 
 #: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
-#: src/file_utils.rs:230 src/tags.rs:38
+#: src/file_utils.rs:245 src/tags.rs:38
 #, no-c-format
 msgid "None"
 msgstr "Немає"
@@ -1695,12 +1695,12 @@ msgstr "Читання та запис"
 msgid "Could Not Change Permissions"
 msgstr "Не вдалося змінити права доступу"
 
-#: src/dialogs/properties.rs:452 src/file_utils.rs:221 src/file_utils.rs:236
+#: src/dialogs/properties.rs:452 src/file_utils.rs:236 src/file_utils.rs:251
 #, no-c-format
 msgid "Owner"
 msgstr "Власник"
 
-#: src/dialogs/properties.rs:453 src/file_utils.rs:222 src/file_utils.rs:237
+#: src/dialogs/properties.rs:453 src/file_utils.rs:237 src/file_utils.rs:252
 #, no-c-format
 msgid "Group"
 msgstr "Група"
@@ -1768,7 +1768,7 @@ msgstr "Нова мітка"
 msgid "_Add"
 msgstr "_Додати"
 
-#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1164
+#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1165
 #, no-c-format
 msgid "Custom…"
 msgstr "Власний колір…"
@@ -1789,32 +1789,32 @@ msgstr "У вигляді сітки"
 msgid "List View"
 msgstr "У вигляді списку"
 
-#: src/file_utils.rs:152 src/file_utils.rs:164
+#: src/file_utils.rs:167 src/file_utils.rs:179
 #, no-c-format
 msgid "Folder"
 msgstr "Тека"
 
-#: src/file_utils.rs:220
+#: src/file_utils.rs:235
 #, no-c-format
 msgid "Created"
 msgstr "Створено"
 
-#: src/file_utils.rs:232
+#: src/file_utils.rs:247
 #, no-c-format
 msgid "Date Modified"
 msgstr "Дата зміни"
 
-#: src/file_utils.rs:261
+#: src/file_utils.rs:276
 #, no-c-format
 msgid "Today, %s"
 msgstr "Сьогодні, %s"
 
-#: src/file_utils.rs:262
+#: src/file_utils.rs:277
 #, no-c-format
 msgid "Yesterday, %s"
 msgstr "Учора, %s"
 
-#: src/file_utils.rs:263
+#: src/file_utils.rs:278
 #, no-c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
@@ -1822,12 +1822,12 @@ msgstr[0] "%d день тому"
 msgstr[1] "%d дні тому"
 msgstr[2] "%d днів тому"
 
-#: src/file_utils.rs:264
+#: src/file_utils.rs:279
 #, no-c-format
 msgid "Last week"
 msgstr "Минулого тижня"
 
-#: src/file_utils.rs:266
+#: src/file_utils.rs:281
 #, no-c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
@@ -1835,12 +1835,12 @@ msgstr[0] "%d тиждень тому"
 msgstr[1] "%d тижні тому"
 msgstr[2] "%d тижнів тому"
 
-#: src/file_utils.rs:268
+#: src/file_utils.rs:283
 #, no-c-format
 msgid "Last month"
 msgstr "Минулого місяця"
 
-#: src/file_utils.rs:271
+#: src/file_utils.rs:286
 #, no-c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
@@ -1848,12 +1848,12 @@ msgstr[0] "%d місяць тому"
 msgstr[1] "%d місяці тому"
 msgstr[2] "%d місяців тому"
 
-#: src/file_utils.rs:273
+#: src/file_utils.rs:288
 #, no-c-format
 msgid "Last year"
 msgstr "Торік"
 
-#: src/file_utils.rs:276
+#: src/file_utils.rs:291
 #, no-c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
@@ -1861,12 +1861,12 @@ msgstr[0] "%d рік тому"
 msgstr[1] "%d роки тому"
 msgstr[2] "%d років тому"
 
-#: src/file_utils.rs:345
+#: src/file_utils.rs:360
 #, no-c-format
 msgid "Empty"
 msgstr "Порожньо"
 
-#: src/file_utils.rs:346
+#: src/file_utils.rs:361
 #, no-c-format
 msgid "%d item"
 msgid_plural "%d items"
@@ -1874,17 +1874,17 @@ msgstr[0] "%d об’єкт"
 msgstr[1] "%d об’єкти"
 msgstr[2] "%d об’єктів"
 
-#: src/file_utils.rs:373 src/path_bar.rs:360 src/places_sidebar.rs:606
+#: src/file_utils.rs:388 src/path_bar.rs:360 src/places_sidebar.rs:606
 #, no-c-format
 msgid "Home"
 msgstr "Домівка"
 
-#: src/file_utils.rs:376 src/path_bar.rs:363 src/places_sidebar.rs:639
+#: src/file_utils.rs:391 src/path_bar.rs:363 src/places_sidebar.rs:639
 #, no-c-format
 msgid "Trash"
 msgstr "Смітник"
 
-#: src/file_utils.rs:390 src/path_bar.rs:374
+#: src/file_utils.rs:405 src/path_bar.rs:374
 #, no-c-format
 msgid "System"
 msgstr "Система"
@@ -2614,17 +2614,17 @@ msgstr ""
 msgid "Do _Not Empty"
 msgstr "_Не спорожняти"
 
-#: src/places_sidebar.rs:1225
+#: src/places_sidebar.rs:1226
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr "Вилучити мітку «%s»?"
 
-#: src/places_sidebar.rs:1227
+#: src/places_sidebar.rs:1228
 #, no-c-format
 msgid "No file carries it."
 msgstr "Її немає на жодному файлі."
 
-#: src/places_sidebar.rs:1230
+#: src/places_sidebar.rs:1231
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
@@ -2632,7 +2632,7 @@ msgstr[0] "Її буде знято з %d файлу, на якому вона �
 msgstr[1] "Її буде знято з %d файлів, на яких вона стоїть."
 msgstr[2] "Її буде знято з %d файлів, на яких вона стоїть."
 
-#: src/places_sidebar.rs:1241 ui/places_sidebar.ui:28
+#: src/places_sidebar.rs:1242 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr "В_илучити"
