@@ -290,7 +290,8 @@ them, a faded tick on some. Dropping files on a tag in the sidebar gives them th
 Each tag in the sidebar opens the list of what carries it; the "Tags" crumb above it lists
 every tagged file. A tag's own menu there renames it, changes its colour, removes it, or
 makes a new one. Renaming and removing rewrite every file known to carry the tag, so
-removing asks first. Removing every tag brings the seven colours back.
+removing asks first. Removing every tag brings the seven colours back. Dragging a tag up or
+down the sidebar reorders the tags, there and in the context menu.
 
 A file's tags are the `user.xdg.tags` extended attribute on the file itself, the one Dolphin
 and Baloo use, so they survive a rename, a move or a copy, and other programs see them and

@@ -237,21 +237,32 @@ mod imp {
             self.list.add_controller(click);
             obj.setup_actions();
 
-            // Empty space below the rows: drop a bookmark to move it last, or folders to
-            // bookmark them.
+            // Empty space below the rows: drop a bookmark or a tag to move it last, or
+            // folders to bookmark them.
             let target = gtk::DropTarget::new(
                 glib::Type::INVALID,
                 gdk::DragAction::COPY | gdk::DragAction::MOVE,
             );
-            target.set_types(&[BookmarkDrag::static_type(), gdk::FileList::static_type()]);
+            target.set_types(&[
+                BookmarkDrag::static_type(),
+                TagDrag::static_type(),
+                gdk::FileList::static_type(),
+            ]);
             target.connect_drop(glib::clone!(
                 #[weak]
                 obj,
                 #[upgrade_or]
                 false,
-                move |_, value, _, _| {
+                move |_, value, _, y| {
                     if let Ok(drag) = value.get::<BookmarkDrag>() {
                         crate::bookmarks::move_to(&gio::File::for_uri(&drag.0), None);
+                    } else if let Ok(drag) = value.get::<TagDrag>() {
+                        // Only below the rows, where the tags end: on a place or a device
+                        // there is nothing a tag could mean.
+                        if obj.imp().list.row_at_y(y as i32).is_some() {
+                            return false;
+                        }
+                        crate::tags::move_to(&drag.0, None);
                     } else if let Ok(files) = value.get::<gdk::FileList>() {
                         // Whether each one is a folder is a question for the filesystem,
                         // which may be a share that has stopped answering: ask it off the
@@ -336,17 +347,31 @@ async fn is_dir_future(file: &gio::File) -> bool {
 #[boxed_type(name = "SpiralBookmarkDrag")]
 struct BookmarkDrag(String);
 
+/// Drag payload for reordering tags: the tag's name.
+#[derive(Clone, glib::Boxed)]
+#[boxed_type(name = "SpiralTagDrag")]
+struct TagDrag(String);
+
 /// Bookmark rows can be dragged among themselves; dropping on one inserts before or after it.
 fn add_bookmark_dnd(row: &gtk::ListBoxRow, file: &gio::File) {
-    let uri = file.uri().to_string();
+    let file = file.clone();
+    add_reorder_dnd(row, BookmarkDrag(file.uri().into()), move |drag, after| {
+        crate::bookmarks::move_to(&gio::File::for_uri(&drag.0), Some((&file, after)));
+    });
+}
+
+/// Rows of one section can be dragged among themselves: a drag from `row` carries `payload`,
+/// and `move_to` is given what was dropped on `row` and whether it goes after it.
+fn add_reorder_dnd<T: glib::value::ValueType>(
+    row: &gtk::ListBoxRow,
+    payload: T,
+    move_to: impl Fn(&T, bool) + 'static,
+) {
     let source = gtk::DragSource::builder()
         .actions(gdk::DragAction::MOVE)
         .build();
-    source.connect_prepare(move |_, _, _| {
-        Some(gdk::ContentProvider::for_value(
-            &BookmarkDrag(uri.clone()).to_value(),
-        ))
-    });
+    source
+        .connect_prepare(move |_, _, _| Some(gdk::ContentProvider::for_value(&payload.to_value())));
     source.connect_drag_begin(glib::clone!(
         #[weak]
         row,
@@ -357,19 +382,17 @@ fn add_bookmark_dnd(row: &gtk::ListBoxRow, file: &gio::File) {
     ));
     row.add_controller(source);
 
-    let target = gtk::DropTarget::new(BookmarkDrag::static_type(), gdk::DragAction::MOVE);
-    let file = file.clone();
+    let target = gtk::DropTarget::new(T::Type::static_type(), gdk::DragAction::MOVE);
     target.connect_drop(glib::clone!(
         #[weak]
         row,
         #[upgrade_or]
         false,
         move |_, value, _, y| {
-            let Ok(drag) = value.get::<BookmarkDrag>() else {
+            let Ok(drag) = value.get::<T>() else {
                 return false;
             };
-            let after = y > f64::from(row.height()) / 2.0;
-            crate::bookmarks::move_to(&gio::File::for_uri(&drag.0), Some((&file, after)));
+            move_to(&drag, y > f64::from(row.height()) / 2.0);
             if let Some(sidebar) = row.ancestor(PlacesSidebar::static_type()) {
                 sidebar.downcast::<PlacesSidebar>().unwrap().rebuild();
             }
@@ -443,6 +466,10 @@ fn tag_row(tag: &crate::tags::Tag) -> gtk::ListBoxRow {
     let (row, _) = row_with(&holder, &tag.name, SECTION_TAGS);
     unsafe { row.set_data("file", crate::tags::location(&tag.name)) };
     unsafe { row.set_data("tag", tag.name.clone()) };
+    let anchor = tag.name.clone();
+    add_reorder_dnd(&row, TagDrag(tag.name.clone()), move |drag, after| {
+        crate::tags::move_to(&drag.0, Some((&anchor, after)));
+    });
     let target = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
     let name = tag.name.clone();
     target.connect_drop(glib::clone!(
