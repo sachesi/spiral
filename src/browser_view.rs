@@ -157,6 +157,7 @@ mod imp {
             klass.add_binding_action(Key::Delete, M::SHIFT_MASK, "view.delete");
             klass.add_binding_action(Key::F2, M::empty(), "view.rename");
             klass.add_binding_action(Key::c, M::CONTROL_MASK, "view.copy");
+            klass.add_binding_action(Key::c, M::CONTROL_MASK, "view.copy-network-address");
             klass.add_binding_action(Key::x, M::CONTROL_MASK, "view.cut");
             klass.add_binding_action(Key::v, M::CONTROL_MASK, "view.paste");
             klass.add_binding_action(Key::a, M::CONTROL_MASK, "view.select-all");

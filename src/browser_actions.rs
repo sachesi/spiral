@@ -175,6 +175,13 @@ impl BrowserView {
         let destructive = [
             add("cut", |v| v.copy_to_clipboard(true)),
             add("copy", |v| v.copy_to_clipboard(false)),
+            add("copy-network-address", |v| {
+                if let [info] = v.model().selected_infos().as_slice()
+                    && let Some(target) = file_utils::target_of(info)
+                {
+                    v.clipboard().set_text(&target.uri());
+                }
+            }),
             add("paste", |v| v.paste(None)),
             add("paste-into", |v| {
                 if let Some(dir) = v.selected().first() {
@@ -520,8 +527,16 @@ impl BrowserView {
             "folder-terminal",
             self.folder_dir().is_some() && has_terminal,
         );
-        self.set_enabled("cut", n > 0 && !in_trash && can_delete);
-        self.set_enabled("copy", n > 0);
+        // An entry that only stands for somewhere else, a server or a drive, has nothing to
+        // copy; the address of a server does, and Ctrl+C copies that instead.
+        let pointers = infos.iter().any(|i| file_utils::target_of(i).is_some());
+        self.set_enabled("cut", n > 0 && !in_trash && can_delete && !pointers);
+        self.set_enabled("copy", n > 0 && !pointers);
+        let address = match infos.as_slice() {
+            [info] => file_utils::target_of(info).is_some_and(|t| !t.is_native()),
+            _ => false,
+        };
+        self.set_enabled("copy-network-address", address);
         let cb = self.clipboard();
         let has_files = clipboard::has_files(&cb);
         // Images are pasted as a new file, so they count too.

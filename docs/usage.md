@@ -87,7 +87,9 @@ finding a server whose address you do not know; it stays empty unless something 
 network announces itself and gvfs has the backend that hears it, `wsdd` for Windows shares
 or `dns-sd` for the rest. A machine opened from there keeps the name it announced itself
 under, since what gvfs reaches it by is often a bare address. Shares Windows keeps out of
-sight, the ones whose name ends in `$`, are hidden files here and show with them. Everything else works as it does on a disk: bookmarks, drag and drop, copying, renaming,
+sight, the ones whose name ends in `$`, are hidden files here and show with them. "Copy
+Network Address", or Ctrl+C, on a server listed there or in `computer:///` puts its
+address on the clipboard. Everything else works as it does on a disk: bookmarks, drag and drop, copying, renaming,
 search. Reading a folder over a share is slower than reading one on a disk, which is why
 thumbnails, item counts and searching subfolders are limited to local files unless you say
 otherwise (see [Settings](settings.md)).

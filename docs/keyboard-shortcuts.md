@@ -32,7 +32,7 @@ Ctrl+? shows this list inside the application.
 | Ctrl+A | Select all |
 | Ctrl+S | Select the items matching a pattern |
 | Ctrl+Shift+I | Invert the selection |
-| Ctrl+X, Ctrl+C, Ctrl+V | Cut, copy, paste |
+| Ctrl+X, Ctrl+C, Ctrl+V | Cut, copy, paste; Ctrl+C on a server entry copies its address |
 | F2 | Rename; with more than one file selected, rename them all by one rule |
 | Ctrl+Shift+N | New folder |
 | Delete | Move to trash; inside Trash, delete permanently |
