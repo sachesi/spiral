@@ -1281,7 +1281,7 @@ impl PlacesSidebar {
 
     /// A tag is taken off everything that carries it when it goes, so ask first.
     fn remove_tag(&self, tag: String) {
-        let n = crate::tags::files_with(Some(&tag)).len() as u32;
+        let n = crate::tags::carriers(&tag) as u32;
         let dialog = adw::AlertDialog::builder()
             .heading(gettext("Remove Tag “%s”?").replace("%s", &tag))
             .body(if n == 0 {

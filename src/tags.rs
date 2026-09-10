@@ -238,10 +238,11 @@ pub fn move_to(name: &str, anchor: Option<(&str, bool)>) {
 pub fn rename(old: &str, new: &str) {
     let (old, new) = (old.to_string(), new.to_string());
     let files = files_with(Some(&old));
+    let trashed = trashed_with(&old);
     glib::spawn_future_local(async move {
         let (o, n) = (old.clone(), new.clone());
         let _ = gio::spawn_blocking(move || {
-            for file in files {
+            for file in files.into_iter().chain(in_trash(&trashed)) {
                 let mut names = read(&file);
                 if let Some(name) = names.iter_mut().find(|name| **name == o) {
                     *name = n.clone();
@@ -258,6 +259,11 @@ pub fn rename(old: &str, new: &str) {
             save_all(&tags);
         }
         rewrite_index(|tag, uri| Some((if tag == old { new.clone() } else { tag }, uri)));
+        TRASHED.with(|t| {
+            for (tag, _) in t.borrow_mut().iter_mut().filter(|(tag, _)| *tag == old) {
+                tag.clone_from(&new);
+            }
+        });
     });
 }
 
@@ -265,10 +271,11 @@ pub fn rename(old: &str, new: &str) {
 pub fn remove(name: &str) {
     let name = name.to_string();
     let files = files_with(Some(&name));
+    let trashed = trashed_with(&name);
     glib::spawn_future_local(async move {
         let n = name.clone();
         let _ = gio::spawn_blocking(move || {
-            for file in files {
+            for file in files.into_iter().chain(in_trash(&trashed)) {
                 let mut names = read(&file);
                 if names.contains(&n) {
                     names.retain(|name| *name != n);
@@ -281,7 +288,60 @@ pub fn remove(name: &str) {
         tags.retain(|t| t.name != name);
         save_all(&tags);
         rewrite_index(|tag, uri| (tag != name).then_some((tag, uri)));
+        TRASHED.with(|t| t.borrow_mut().retain(|(tag, _)| *tag != name));
     });
+}
+
+/// How many files removing `name` takes it off: those known to carry it, and those that
+/// did when they were trashed.
+pub fn carriers(name: &str) -> usize {
+    files_with(Some(name)).len() + trashed_with(name).len()
+}
+
+/// Where the files that carried `name` when they were trashed used to be.
+fn trashed_with(name: &str) -> Vec<String> {
+    TRASHED.with(|t| {
+        t.borrow()
+            .iter()
+            .filter(|(tag, _)| tag == name)
+            .map(|(_, uri)| uri.clone())
+            .collect()
+    })
+}
+
+/// Where the files trashed from `uris` are now, inside the trash, so that renaming or
+/// removing a tag reaches them too and a restore brings back what the tag is now. Blocking:
+/// it asks the trash for what it holds.
+fn in_trash(uris: &[String]) -> Vec<gio::File> {
+    if uris.is_empty() {
+        return Vec::new();
+    }
+    let Ok(items) = gio::File::for_uri("trash:///").enumerate_children(
+        "trash::orig-path,standard::target-uri",
+        gio::FileQueryInfoFlags::NONE,
+        gio::Cancellable::NONE,
+    ) else {
+        return Vec::new();
+    };
+    let mut found = Vec::new();
+    for info in items.flatten() {
+        let (Some(orig), Some(target)) = (
+            info.attribute_byte_string("trash::orig-path"),
+            info.attribute_string("standard::target-uri"),
+        ) else {
+            continue;
+        };
+        let orig = gio::File::for_path(orig.as_str()).uri();
+        for uri in uris {
+            // The item itself, or something that was inside it.
+            if let Some(rest) = uri.strip_prefix(orig.as_str())
+                && (rest.is_empty() || rest.starts_with('/'))
+            {
+                found.push(gio::File::for_uri(&format!("{target}{rest}")));
+            }
+        }
+    }
+    found
 }
 
 // The `tag:///` locations: the tag's files, and every tagged file at the root.
