@@ -237,32 +237,21 @@ mod imp {
             self.list.add_controller(click);
             obj.setup_actions();
 
-            // Empty space below the rows: drop a bookmark or a tag to move it last, or
-            // folders to bookmark them.
+            // Empty space below the rows: drop a bookmark to move it last, or folders to
+            // bookmark them.
             let target = gtk::DropTarget::new(
                 glib::Type::INVALID,
                 gdk::DragAction::COPY | gdk::DragAction::MOVE,
             );
-            target.set_types(&[
-                BookmarkDrag::static_type(),
-                TagDrag::static_type(),
-                gdk::FileList::static_type(),
-            ]);
+            target.set_types(&[BookmarkDrag::static_type(), gdk::FileList::static_type()]);
             target.connect_drop(glib::clone!(
                 #[weak]
                 obj,
                 #[upgrade_or]
                 false,
-                move |_, value, _, y| {
+                move |_, value, _, _| {
                     if let Ok(drag) = value.get::<BookmarkDrag>() {
                         crate::bookmarks::move_to(&gio::File::for_uri(&drag.0), None);
-                    } else if let Ok(drag) = value.get::<TagDrag>() {
-                        // Only below the rows, where the tags end: on a place or a device
-                        // there is nothing a tag could mean.
-                        if obj.imp().list.row_at_y(y as i32).is_some() {
-                            return false;
-                        }
-                        crate::tags::move_to(&drag.0, None);
                     } else if let Ok(files) = value.get::<gdk::FileList>() {
                         // Whether each one is a folder is a question for the filesystem,
                         // which may be a share that has stopped answering: ask it off the
@@ -288,6 +277,51 @@ mod imp {
                         return false;
                     }
                     obj.rebuild();
+                    true
+                }
+            ));
+            self.list.add_controller(target);
+
+            // A tag goes last when dropped below the rows, where the tags end. Over a place
+            // or a device there is nothing it could mean, and the drag says so while it is
+            // there; the tags themselves take it through their own rows.
+            let below = |list: &gtk::ListBox, y: f64| list.row_at_y(y as i32).is_none();
+            let action = move |list: &gtk::ListBox, y: f64| {
+                if below(list, y) {
+                    gdk::DragAction::MOVE
+                } else {
+                    gdk::DragAction::empty()
+                }
+            };
+            let target = gtk::DropTarget::new(TagDrag::static_type(), gdk::DragAction::MOVE);
+            let list = self.list.get();
+            target.connect_enter(glib::clone!(
+                #[weak]
+                list,
+                #[upgrade_or]
+                gdk::DragAction::empty(),
+                move |_, _, y| action(&list, y)
+            ));
+            target.connect_motion(glib::clone!(
+                #[weak]
+                list,
+                #[upgrade_or]
+                gdk::DragAction::empty(),
+                move |_, _, y| action(&list, y)
+            ));
+            target.connect_drop(glib::clone!(
+                #[weak]
+                list,
+                #[upgrade_or]
+                false,
+                move |_, value, _, y| {
+                    let Ok(drag) = value.get::<TagDrag>() else {
+                        return false;
+                    };
+                    if !below(&list, y) {
+                        return false;
+                    }
+                    crate::tags::move_to(&drag.0, None);
                     true
                 }
             ));
