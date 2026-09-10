@@ -201,6 +201,12 @@ mod imp {
                 let b = &win.imp().search_button;
                 b.set_active(!b.is_active());
             });
+            klass.install_action("win.location-menu", None, |win, _, _| {
+                let imp = win.imp();
+                if imp.toolbar_switcher.visible_child_name().as_deref() == Some("pathbar") {
+                    imp.path_bar.popup_menu();
+                }
+            });
             klass.install_action("win.close-search", None, |win, _, _| {
                 win.imp().search_button.set_active(false);
             });
@@ -275,6 +281,8 @@ mod imp {
             klass.add_binding_action(Key::o, M::CONTROL_MASK | M::SHIFT_MASK, "win.tab-overview");
             klass.add_binding_action(Key::h, M::CONTROL_MASK, "win.show-hidden");
             klass.add_binding_action(Key::F9, M::empty(), "win.sidebar-visible");
+            // F10 opens the menu of the current folder, not the main menu, see `constructed`.
+            klass.add_binding_action(Key::F10, M::empty(), "win.location-menu");
             klass.add_binding_action(Key::F3, M::empty(), "win.split-view");
             klass.add_binding_action(Key::F6, M::empty(), "win.switch-pane");
             klass.add_binding_action(Key::d, M::CONTROL_MASK, "win.bookmark");
@@ -332,6 +340,12 @@ mod imp {
             klass.add_binding_action(Key::c, M::CONTROL_MASK, "view.copy");
             klass.add_binding_action(Key::x, M::CONTROL_MASK, "view.cut");
             klass.add_binding_action(Key::v, M::CONTROL_MASK, "view.paste");
+            // And from the search box, to the folder of the result that is selected.
+            klass.add_binding_action(
+                Key::o,
+                M::CONTROL_MASK | M::ALT_MASK,
+                "view.open-item-location",
+            );
         }
 
         fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
@@ -349,6 +363,8 @@ mod imp {
             }
             obj.action_set_enabled("win.stop", false);
             obj.action_set_enabled("win.close-search", false);
+            // The main menu takes F10 otherwise, ahead of the binding for the folder menu.
+            obj.set_handle_menubar_accel(false);
             self.settings.connect_changed(
                 Some("split-view"),
                 glib::clone!(

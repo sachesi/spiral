@@ -168,6 +168,19 @@ mod imp {
             );
             klass.add_binding_action(Key::n, M::CONTROL_MASK | M::SHIFT_MASK, "view.new-folder");
             klass.add_binding_action(Key::Return, M::ALT_MASK, "view.properties");
+            klass.add_binding_action(Key::i, M::CONTROL_MASK, "view.properties");
+            klass.add_binding_action(Key::o, M::CONTROL_MASK, "view.open");
+            for enter in [Key::Return, Key::KP_Enter] {
+                klass.add_binding_action(enter, M::CONTROL_MASK, "view.open-new-tab");
+                klass.add_binding_action(enter, M::SHIFT_MASK, "view.open-new-window");
+            }
+            klass.add_binding_action(
+                Key::o,
+                M::CONTROL_MASK | M::ALT_MASK,
+                "view.open-item-location",
+            );
+            // Not "view.create-link", which only stands while the menu offers it.
+            klass.add_binding_action(Key::m, M::CONTROL_MASK, "view.link");
             klass.add_binding_action(Key::Menu, M::empty(), "view.context-menu");
             klass.add_binding_action(Key::F10, M::SHIFT_MASK, "view.context-menu");
         }

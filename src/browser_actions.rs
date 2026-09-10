@@ -188,14 +188,8 @@ impl BrowserView {
             add("delete-permanently", |v| v.delete_selected()),
             add("delete-from-trash", |v| v.delete_selected()),
             add("restore", |v| v.restore_selected()),
-            add("create-link", |v| {
-                if let Some(dest) = v.location() {
-                    v.submit_on_selection(|files| JobKind::Link {
-                        files,
-                        dest: dest.clone(),
-                    });
-                }
-            }),
+            add("create-link", |v| v.link_selection()),
+            add("link", |v| v.link_selection()),
             add("paste-link", |v| v.paste_link()),
             add("copy-to", |v| v.transfer_to(false)),
             add("move-to", |v| v.transfer_to(true)),
@@ -510,11 +504,9 @@ impl BrowserView {
         self.set_enabled("preview", n > 0);
         let all_folders = n > 0 && infos.iter().all(file_utils::is_dir);
         let shown = |key: &str| self.imp().settings.boolean(key);
-        self.set_enabled("open-new-tab", all_folders && shown("show-open-new-tab"));
-        self.set_enabled(
-            "open-new-window",
-            all_folders && shown("show-open-new-window"),
-        );
+        // Whether the menu offers them is up to `sync_open_menu`; the keys work either way.
+        self.set_enabled("open-new-tab", all_folders);
+        self.set_enabled("open-new-window", all_folders);
         self.set_enabled("open-with", n > 0 && !infos.iter().any(file_utils::is_dir));
         let has_terminal = crate::terminal::chosen().is_some();
         self.set_enabled(
@@ -582,10 +574,9 @@ impl BrowserView {
         self.set_enabled("folder-properties", self.location().is_some());
         let local = infos.iter().all(|i| file_utils::file_of(i).is_native());
         let local_dir = self.location().is_some_and(|l| l.is_native());
-        self.set_enabled(
-            "create-link",
-            n > 0 && local && local_dir && can_write && shown("show-create-link"),
-        );
+        let can_link = n > 0 && local && local_dir && can_write;
+        self.set_enabled("link", can_link);
+        self.set_enabled("create-link", can_link && shown("show-create-link"));
         self.set_enabled(
             "paste-link",
             can_write && local_dir && !in_trash && has_files,
@@ -1191,19 +1182,27 @@ impl BrowserView {
             section.remove(ours);
         }
         let ways = [
-            (gettext("Open in New _Tab"), "view.open-new-tab"),
-            (gettext("Open in New _Window"), "view.open-new-window"),
-            (gettext("Open in _Terminal"), "view.open-terminal"),
+            (
+                gettext("Open in New _Tab"),
+                "view.open-new-tab",
+                Some("show-open-new-tab"),
+            ),
+            (
+                gettext("Open in New _Window"),
+                "view.open-new-window",
+                Some("show-open-new-window"),
+            ),
+            (gettext("Open in _Terminal"), "view.open-terminal", None),
         ];
         let mut at = ours;
-        for (label, action) in ways {
+        for (label, action, setting) in ways {
             let name = action.trim_start_matches("view.");
-            if imp
+            let enabled = imp
                 .actions
                 .lookup_action(name)
                 .and_downcast::<gio::SimpleAction>()
-                .is_some_and(|a| a.is_enabled())
-            {
+                .is_some_and(|a| a.is_enabled());
+            if enabled && setting.is_none_or(|key| imp.settings.boolean(key)) {
                 section.insert(at, Some(&label), Some(action));
                 at += 1;
             }
@@ -1224,6 +1223,16 @@ impl BrowserView {
             section.append(Some(&label), Some("view.new-file"));
         } else {
             section.append_submenu(Some(&label), &templates_menu(&entries));
+        }
+    }
+
+    /// A link to each selected file, in the folder being viewed.
+    fn link_selection(&self) {
+        if let Some(dest) = self.location() {
+            self.submit_on_selection(|files| JobKind::Link {
+                files,
+                dest: dest.clone(),
+            });
         }
     }
 
