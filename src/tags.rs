@@ -568,21 +568,22 @@ pub fn trashed(file: &gio::File) {
     TRASHED.with(|t| t.borrow_mut().extend(gone));
 }
 
-/// `file` is back from the trash: what it and everything below it carried when it was
-/// trashed goes back in the index, in one change so a list showing a tag loads once. As
-/// with [`note`], only tags still on offer.
-pub fn restored(file: &gio::File) {
-    let under = under(file);
+/// What was trashed from `original` is back from the trash, at `at`: what it and
+/// everything below it carried then goes back in the index, in one change so a list
+/// showing a tag loads once. As with [`note`], only tags still on offer.
+pub fn restored(original: &gio::File, at: &gio::File) {
+    let under = under(original);
     let back: Vec<(String, String)> = TRASHED.with(|t| {
         let (back, kept) = t.take().into_iter().partition(|(_, u)| under(u));
         t.replace(kept);
         back
     });
+    let (from, to) = (original.uri(), at.uri());
     let list = index();
     let lines: Vec<String> = back
         .iter()
         .filter(|(tag, _)| exists(tag))
-        .map(|(tag, uri)| line(tag, uri))
+        .map(|(tag, uri)| line(tag, &format!("{to}{}", &uri[from.len()..])))
         .filter(|l| list.find(l) == gtk::INVALID_LIST_POSITION)
         .collect();
     if !lines.is_empty() {

@@ -238,15 +238,16 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 let Some(parent) = original.parent() else {
                     continue;
                 };
-                if transfer_one(job, mgr, &item, &parent, &name(&original), true, true)
-                    .await?
-                    .is_some()
+                // Where it lands: the original place, or beside it under another name when
+                // something has taken that one since.
+                if let Some(dest) =
+                    transfer_one(job, mgr, &item, &parent, &name(&original), true, true).await?
                 {
                     // The index let it go with the trashing. What it carried then comes
                     // back, and its own tags are read from it as well, for an item trashed
                     // before Spiral last started.
-                    crate::tags::restored(&original);
-                    if let Ok(info) = original
+                    crate::tags::restored(&original, &dest);
+                    if let Ok(info) = dest
                         .query_info_future(
                             crate::tags::ATTRIBUTE,
                             gio::FileQueryInfoFlags::NONE,
@@ -254,13 +255,13 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                         )
                         .await
                     {
-                        crate::tags::note(&original, &crate::tags::of_info(&info));
+                        crate::tags::note(&dest, &crate::tags::of_info(&info));
                     }
                     job.imp()
                         .outcome
                         .borrow_mut()
                         .moved
-                        .push((item.clone(), original.clone()));
+                        .push((item.clone(), dest));
                 }
             }
         }
