@@ -23,7 +23,7 @@ mod imp {
     impl ObjectSubclass for PropertiesDialog {
         const NAME: &'static str = "SpiralPropertiesDialog";
         type Type = super::PropertiesDialog;
-        type ParentType = adw::Dialog;
+        type ParentType = adw::PreferencesDialog;
     }
 
     impl ObjectImpl for PropertiesDialog {}
@@ -34,11 +34,12 @@ mod imp {
             self.parent_closed();
         }
     }
+    impl PreferencesDialogImpl for PropertiesDialog {}
 }
 
 glib::wrapper! {
     pub struct PropertiesDialog(ObjectSubclass<imp::PropertiesDialog>)
-        @extends adw::Dialog, gtk::Widget,
+        @extends adw::PreferencesDialog, adw::Dialog, gtk::Widget,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
 }
 
@@ -111,55 +112,29 @@ impl PropertiesDialog {
         reveal: Option<Reveal>,
         disk: Option<gio::FileInfo>,
     ) -> Self {
+        // Laid out as the preferences are, a page per tab.
         let dialog: Self = glib::Object::builder()
             .property("title", gettext("Properties"))
-            .property("content-width", 460)
+            .property("search-enabled", false)
             .build();
-        let toolbar = adw::ToolbarView::new();
-        let header = adw::HeaderBar::new();
-        toolbar.add_top_bar(&header);
-        dialog.set_child(Some(&toolbar));
         let general = dialog.general_page(infos, reveal);
-        let mut pages = Vec::new();
+        general.set_title(&gettext("General"));
+        general.set_icon_name(Some("document-properties-symbolic"));
+        dialog.add(&general);
         if let [(file, info)] = infos {
             if let Some(fs) = &disk {
-                pages.push((
-                    disk_page(file, fs),
-                    "disk",
-                    gettext("Disk"),
-                    "drive-harddisk-symbolic",
-                ));
+                let page = disk_page(file, fs);
+                page.set_title(&gettext("Disk"));
+                page.set_icon_name(Some("drive-harddisk-symbolic"));
+                dialog.add(&page);
             }
             if info.has_attribute("unix::mode") {
-                pages.push((
-                    permissions_page(file, info),
-                    "permissions",
-                    gettext("Permissions"),
-                    "system-lock-screen-symbolic",
-                ));
+                let page = permissions_page(file, info);
+                page.set_title(&gettext("Permissions"));
+                page.set_icon_name(Some("system-lock-screen-symbolic"));
+                dialog.add(&page);
             }
         }
-        if pages.is_empty() {
-            toolbar.set_content(Some(&general));
-            return dialog;
-        }
-        let stack = adw::ViewStack::new();
-        stack
-            .add_titled(&general, Some("general"), &gettext("General"))
-            .set_icon_name(Some("document-properties-symbolic"));
-        for (page, name, title, icon) in pages {
-            stack
-                .add_titled(&page, Some(name), &title)
-                .set_icon_name(Some(icon));
-        }
-        // Words alone: with an icon beside each, three of them do not fit and the longest
-        // loses its end.
-        let switcher = adw::InlineViewSwitcher::builder()
-            .stack(&stack)
-            .display_mode(adw::InlineViewSwitcherDisplayMode::Labels)
-            .build();
-        header.set_title_widget(Some(&switcher));
-        toolbar.set_content(Some(&stack));
         dialog
     }
 
