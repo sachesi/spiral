@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.13.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-10 00:28+0300\n"
+"POT-Creation-Date: 2026-09-10 09:10+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -365,14 +365,15 @@ msgstr ""
 msgid ""
 "Servers, wherever gvfs has a backend for one. \"Connect to Server…\" in the "
 "main menu takes an address, names the schemes the system can actually use, "
-"and offers the servers connected to before. A share that answers opens in a "
-"tab and joins the sidebar under Network, above it the machines gvfs can find "
-"and beside it a button that disconnects it again. Going to a share that is "
-"not connected connects it first, so a bookmark or an address typed into the "
-"path bar reaches the server without the dialog being opened at all. Without "
-"gvfs there are no network locations, and Spiral says so rather than offer an "
-"address it has no way to open, and \"Network Locations\" in Preferences "
-"takes the whole of it away for those who have no server to reach."
+"and offers the servers connected to before. A share that answers opens in "
+"the tab in front and joins the sidebar under Network, above it the machines "
+"gvfs can find and beside it a button that disconnects it again. Going to a "
+"share that is not connected connects it first, so a bookmark or an address "
+"typed into the path bar reaches the server without the dialog being opened "
+"at all. Without gvfs there are no network locations, and Spiral says so "
+"rather than offer an address it has no way to open, and \"Network "
+"Locations\" in Preferences takes the whole of it away for those who have no "
+"server to reach."
 msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:36
@@ -673,8 +674,8 @@ msgstr ""
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:1072 src/browser_view.rs:1471
-#: src/browser_view.rs:1478 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1072 src/browser_view.rs:1490
+#: src/browser_view.rs:1497 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
@@ -738,65 +739,111 @@ msgstr ""
 msgid "New _Document"
 msgstr ""
 
-#: src/browser_view.rs:575
+#: src/browser_view.rs:580
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:579
+#: src/browser_view.rs:584
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:952
+#: src/browser_view.rs:967
 #, no-c-format
 msgid "Remove from Starred"
 msgstr ""
 
-#: src/browser_view.rs:954
+#: src/browser_view.rs:969
 #, no-c-format
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view.rs:1524 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1544
+#, no-c-format
+msgid "The password dialog was dismissed."
+msgstr ""
+
+#: src/browser_view.rs:1561 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:908
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view.rs:1547
+#: src/browser_view.rs:1575
+#, no-c-format
+msgid "Connecting to %s…"
+msgstr ""
+
+#: src/browser_view.rs:1580
+#, no-c-format
+msgid "Could Not Connect"
+msgstr ""
+
+#: src/browser_view.rs:1583
+#, no-c-format
+msgid "Reloading the folder tries again."
+msgstr ""
+
+#: src/browser_view.rs:1588 ui/browser_view.ui:114
+#, no-c-format
+msgid "Could Not Open Folder"
+msgstr ""
+
+#: src/browser_view.rs:1607
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:1549 ui/browser_view.ui:103
+#: src/browser_view.rs:1611
+#, no-c-format
+msgid "No Servers Found"
+msgstr ""
+
+#: src/browser_view.rs:1615 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:1584
+#: src/browser_view.rs:1677
 #, no-c-format
 msgid ""
-"Nothing installed here can open “%s” addresses. They are read by a gvfs "
-"backend of their own."
+"Machines that announce themselves on the network appear here. Others are "
+"reached with “Connect to Server…”."
 msgstr ""
 
-#: src/browser_view.rs:1614
+#: src/browser_view.rs:1686
+#, no-c-format
+msgid ""
+"One server was found but left out: no gvfs backend for %s addresses is "
+"installed."
+msgid_plural ""
+"Some servers were found but left out: no gvfs backend for %s addresses is "
+"installed."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/browser_view.rs:1706
+#, no-c-format
+msgid "No gvfs backend for %s addresses is installed."
+msgstr ""
+
+#: src/browser_view.rs:1736
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:1630
+#: src/browser_view.rs:1752
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:1635
+#: src/browser_view.rs:1757
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -804,17 +851,17 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1641
+#: src/browser_view.rs:1763
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:2381 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2503 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:2481 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2603 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -962,15 +1009,14 @@ msgstr ""
 msgid "Server Address"
 msgstr ""
 
-#: src/dialogs/connect_server.rs:25
+#: src/dialogs/connect_server.rs:25 src/dialogs/preferences.rs:67
 #, no-c-format
-msgid ""
-"This system has no network backends installed, so no server can be reached."
+msgid "gvfs is not installed, so no server can be reached."
 msgstr ""
 
 #: src/dialogs/connect_server.rs:27
 #, no-c-format
-msgid "For example: smb://server/share. Schemes this system can use: %s"
+msgid "Addresses this system can open: %s"
 msgstr ""
 
 #: src/dialogs/connect_server.rs:48
@@ -988,7 +1034,7 @@ msgstr ""
 msgid "Connect to Server"
 msgstr ""
 
-#: src/dialogs/connect_server.rs:228
+#: src/dialogs/connect_server.rs:268
 #, no-c-format
 msgid "Forget This Server"
 msgstr ""
@@ -1119,272 +1165,265 @@ msgstr ""
 msgid "Off, Ctrl copies and dragging inside Spiral moves without asking"
 msgstr ""
 
-#: src/dialogs/preferences.rs:62 src/file_utils.rs:372
+#: src/dialogs/preferences.rs:62 src/file_utils.rs:379
 #: src/places_sidebar.rs:706
 #, no-c-format
 msgid "Network"
 msgstr ""
 
-#: src/dialogs/preferences.rs:64
-#, no-c-format
-msgid ""
-"Shares on other machines are reached through gvfs, and nothing here works "
-"without it."
-msgstr ""
-
-#: src/dialogs/preferences.rs:68
+#: src/dialogs/preferences.rs:71
 #, no-c-format
 msgid "Network Locations"
 msgstr ""
 
-#: src/dialogs/preferences.rs:70
+#: src/dialogs/preferences.rs:73
 #, no-c-format
 msgid ""
-"“Connect to Server…” in the main menu, the network in the sidebar, and "
-"shares opened by address"
+"“Connect to Server…”, the Network section of the sidebar, shares opened by "
+"address"
 msgstr ""
 
-#: src/dialogs/preferences.rs:79 src/dialogs/preferences.rs:84
+#: src/dialogs/preferences.rs:82 src/dialogs/preferences.rs:87
 #, no-c-format
 msgid "Views"
 msgstr ""
 
-#: src/dialogs/preferences.rs:87
+#: src/dialogs/preferences.rs:90
 #, no-c-format
 msgid "Sort Folders Before Files"
 msgstr ""
 
-#: src/dialogs/preferences.rs:94 src/enums.rs:57 ui/shortcuts_dialog.ui:152
+#: src/dialogs/preferences.rs:97 src/enums.rs:57 ui/shortcuts_dialog.ui:152
 #, no-c-format
 msgid "Column View"
 msgstr ""
 
-#: src/dialogs/preferences.rs:96
+#: src/dialogs/preferences.rs:99
 #, no-c-format
 msgid ""
 "A third view drawing the path as a strip of lists, one folder per column"
 msgstr ""
 
-#: src/dialogs/preferences.rs:102
+#: src/dialogs/preferences.rs:105
 #, no-c-format
 msgid "Grid View for Media Folders"
 msgstr ""
 
-#: src/dialogs/preferences.rs:104
+#: src/dialogs/preferences.rs:107
 #, no-c-format
 msgid "Folders that are mostly images and videos open in grid view"
 msgstr ""
 
-#: src/dialogs/preferences.rs:110
+#: src/dialogs/preferences.rs:113
 #, no-c-format
 msgid "Remember View per Folder"
 msgstr ""
 
-#: src/dialogs/preferences.rs:112
+#: src/dialogs/preferences.rs:115
 #, no-c-format
 msgid "Switching the view or the sort order applies to the current folder only"
 msgstr ""
 
-#: src/dialogs/preferences.rs:119
+#: src/dialogs/preferences.rs:122
 #, no-c-format
 msgid "Expandable Folders in List View"
 msgstr ""
 
-#: src/dialogs/preferences.rs:127
+#: src/dialogs/preferences.rs:130
 #, no-c-format
 msgid "Sidebar"
 msgstr ""
 
-#: src/dialogs/preferences.rs:130 src/places_sidebar.rs:624
+#: src/dialogs/preferences.rs:133 src/places_sidebar.rs:624
 #, no-c-format
 msgid "Root"
 msgstr ""
 
-#: src/dialogs/preferences.rs:131
+#: src/dialogs/preferences.rs:134
 #, no-c-format
 msgid "The top of the filesystem, above the bookmarks"
 msgstr ""
 
-#: src/dialogs/preferences.rs:136 src/file_utils.rs:375 src/path_bar.rs:326
+#: src/dialogs/preferences.rs:139 src/file_utils.rs:382 src/path_bar.rs:366
 #: src/places_sidebar.rs:632
 #, no-c-format
 msgid "Favorites"
 msgstr ""
 
-#: src/dialogs/preferences.rs:137
+#: src/dialogs/preferences.rs:140
 #, no-c-format
 msgid "The starred files and folders"
 msgstr ""
 
-#: src/dialogs/preferences.rs:146 src/file_utils.rs:378
+#: src/dialogs/preferences.rs:149 src/file_utils.rs:385
 #, no-c-format
 msgid "Tags"
 msgstr ""
 
-#: src/dialogs/preferences.rs:148
+#: src/dialogs/preferences.rs:151
 #, no-c-format
 msgid ""
 "Tags are written to the files themselves, so they follow a file wherever it "
 "goes and other programs can read them."
 msgstr ""
 
-#: src/dialogs/preferences.rs:152
+#: src/dialogs/preferences.rs:155
 #, no-c-format
 msgid "Colour Tags"
 msgstr ""
 
-#: src/dialogs/preferences.rs:154
+#: src/dialogs/preferences.rs:157
 #, no-c-format
 msgid ""
 "A row of colours in the context menu, a dot on each tagged file and the tags "
 "listed in the sidebar"
 msgstr ""
 
-#: src/dialogs/preferences.rs:163
+#: src/dialogs/preferences.rs:166
 #, no-c-format
 msgid "Menus"
 msgstr ""
 
-#: src/dialogs/preferences.rs:168
+#: src/dialogs/preferences.rs:171
 #, no-c-format
 msgid "Optional Context Menu Actions"
 msgstr ""
 
-#: src/dialogs/preferences.rs:170
+#: src/dialogs/preferences.rs:173
 #, no-c-format
 msgid ""
 "A middle click still opens a folder in a new tab, Shift+Delete still deletes "
 "permanently, and links can always be pasted."
 msgstr ""
 
-#: src/dialogs/preferences.rs:174
+#: src/dialogs/preferences.rs:177
 #, no-c-format
 msgid "Open in New Tab"
 msgstr ""
 
-#: src/dialogs/preferences.rs:175
+#: src/dialogs/preferences.rs:178
 #, no-c-format
 msgid "Open in New Window"
 msgstr ""
 
-#: src/dialogs/preferences.rs:176 ui/browser_view.ui:207
+#: src/dialogs/preferences.rs:179 ui/browser_view.ui:207
 #, no-c-format
 msgid "Copy to…"
 msgstr ""
 
-#: src/dialogs/preferences.rs:177 ui/browser_view.ui:212
+#: src/dialogs/preferences.rs:180 ui/browser_view.ui:212
 #, no-c-format
 msgid "Move to…"
 msgstr ""
 
-#: src/dialogs/preferences.rs:184
+#: src/dialogs/preferences.rs:187
 #, no-c-format
 msgid "Create Link"
 msgstr ""
 
-#: src/dialogs/preferences.rs:191 ui/shortcuts_dialog.ui:259
+#: src/dialogs/preferences.rs:194 ui/shortcuts_dialog.ui:259
 #, no-c-format
 msgid "Delete Permanently"
 msgstr ""
 
-#: src/dialogs/preferences.rs:201
+#: src/dialogs/preferences.rs:204
 #, no-c-format
 msgid "Speed"
 msgstr ""
 
-#: src/dialogs/preferences.rs:207
+#: src/dialogs/preferences.rs:210
 #, no-c-format
 msgid "Reading every file on a network share or a slow disk can take a while."
 msgstr ""
 
-#: src/dialogs/preferences.rs:211
+#: src/dialogs/preferences.rs:214
 #, no-c-format
 msgid "Local Files Only"
 msgstr ""
 
-#: src/dialogs/preferences.rs:212
+#: src/dialogs/preferences.rs:215
 #, no-c-format
 msgid "All Files"
 msgstr ""
 
-#: src/dialogs/preferences.rs:213
+#: src/dialogs/preferences.rs:216
 #, no-c-format
 msgid "Never"
 msgstr ""
 
-#: src/dialogs/preferences.rs:218
+#: src/dialogs/preferences.rs:221
 #, no-c-format
 msgid "Show Thumbnails"
 msgstr ""
 
-#: src/dialogs/preferences.rs:225
+#: src/dialogs/preferences.rs:228
 #, no-c-format
 msgid "Count Items in Folders"
 msgstr ""
 
-#: src/dialogs/preferences.rs:232
+#: src/dialogs/preferences.rs:235
 #, no-c-format
 msgid "Search in Subfolders"
 msgstr ""
 
-#: src/dialogs/preferences.rs:255
+#: src/dialogs/preferences.rs:258
 #, no-c-format
 msgid "A-Z"
 msgstr ""
 
-#: src/dialogs/preferences.rs:256
+#: src/dialogs/preferences.rs:259
 #, no-c-format
 msgid "Z-A"
 msgstr ""
 
-#: src/dialogs/preferences.rs:257
+#: src/dialogs/preferences.rs:260
 #, no-c-format
 msgid "Last Modified"
 msgstr ""
 
-#: src/dialogs/preferences.rs:258
+#: src/dialogs/preferences.rs:261
 #, no-c-format
 msgid "First Modified"
 msgstr ""
 
-#: src/dialogs/preferences.rs:259 src/dialogs/properties.rs:251
-#: src/file_utils.rs:209 src/file_utils.rs:224
+#: src/dialogs/preferences.rs:262 src/dialogs/properties.rs:251
+#: src/file_utils.rs:216 src/file_utils.rs:231
 #, no-c-format
 msgid "Size"
 msgstr ""
 
-#: src/dialogs/preferences.rs:260 src/dialogs/properties.rs:243
-#: src/file_utils.rs:210 src/file_utils.rs:226 ui/window.ui:365
+#: src/dialogs/preferences.rs:263 src/dialogs/properties.rs:243
+#: src/file_utils.rs:217 src/file_utils.rs:233 ui/window.ui:365
 #, no-c-format
 msgid "Type"
 msgstr ""
 
-#: src/dialogs/preferences.rs:271
+#: src/dialogs/preferences.rs:274
 #, no-c-format
 msgid "Sort Order"
 msgstr ""
 
-#: src/dialogs/preferences.rs:273
+#: src/dialogs/preferences.rs:276
 #, no-c-format
 msgid "How folders without an order of their own are sorted"
 msgstr ""
 
-#: src/dialogs/preferences.rs:328
+#: src/dialogs/preferences.rs:331
 #, no-c-format
 msgid "Automatic"
 msgstr ""
 
-#: src/dialogs/preferences.rs:336
+#: src/dialogs/preferences.rs:339
 #, no-c-format
 msgid "Automatic uses %s"
 msgstr ""
 
-#: src/dialogs/preferences.rs:337
+#: src/dialogs/preferences.rs:340
 #, no-c-format
 msgid "No terminal emulator found in PATH"
 msgstr ""
 
-#: src/dialogs/preferences.rs:340
+#: src/dialogs/preferences.rs:343
 #, no-c-format
 msgid "Terminal"
 msgstr ""
@@ -1443,7 +1482,7 @@ msgstr ""
 msgid "Properties"
 msgstr ""
 
-#: src/dialogs/properties.rs:99 src/file_utils.rs:216 src/file_utils.rs:228
+#: src/dialogs/properties.rs:99 src/file_utils.rs:223 src/file_utils.rs:235
 #, no-c-format
 msgid "Permissions"
 msgstr ""
@@ -1470,7 +1509,7 @@ msgid_plural "%d Items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/dialogs/properties.rs:247 src/file_utils.rs:227
+#: src/dialogs/properties.rs:247 src/file_utils.rs:234
 #, no-c-format
 msgid "MIME Type"
 msgstr ""
@@ -1480,12 +1519,12 @@ msgstr ""
 msgid "Calculating…"
 msgstr ""
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:211 ui/window.ui:386
+#: src/dialogs/properties.rs:259 src/file_utils.rs:218 ui/window.ui:386
 #, no-c-format
 msgid "Modified"
 msgstr ""
 
-#: src/dialogs/properties.rs:263 src/file_utils.rs:212
+#: src/dialogs/properties.rs:263 src/file_utils.rs:219
 #, no-c-format
 msgid "Accessed"
 msgstr ""
@@ -1516,7 +1555,7 @@ msgid "You are not the owner, so you cannot change these permissions."
 msgstr ""
 
 #: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
-#: src/file_utils.rs:223 src/tags.rs:38
+#: src/file_utils.rs:230 src/tags.rs:38
 #, no-c-format
 msgid "None"
 msgstr ""
@@ -1551,12 +1590,12 @@ msgstr ""
 msgid "Could Not Change Permissions"
 msgstr ""
 
-#: src/dialogs/properties.rs:452 src/file_utils.rs:214 src/file_utils.rs:229
+#: src/dialogs/properties.rs:452 src/file_utils.rs:221 src/file_utils.rs:236
 #, no-c-format
 msgid "Owner"
 msgstr ""
 
-#: src/dialogs/properties.rs:453 src/file_utils.rs:215 src/file_utils.rs:230
+#: src/dialogs/properties.rs:453 src/file_utils.rs:222 src/file_utils.rs:237
 #, no-c-format
 msgid "Group"
 msgstr ""
@@ -1644,97 +1683,97 @@ msgstr ""
 msgid "List View"
 msgstr ""
 
-#: src/file_utils.rs:145 src/file_utils.rs:157
+#: src/file_utils.rs:152 src/file_utils.rs:164
 #, no-c-format
 msgid "Folder"
 msgstr ""
 
-#: src/file_utils.rs:213
+#: src/file_utils.rs:220
 #, no-c-format
 msgid "Created"
 msgstr ""
 
-#: src/file_utils.rs:225
+#: src/file_utils.rs:232
 #, no-c-format
 msgid "Date Modified"
 msgstr ""
 
-#: src/file_utils.rs:254
+#: src/file_utils.rs:261
 #, no-c-format
 msgid "Today, %s"
 msgstr ""
 
-#: src/file_utils.rs:255
+#: src/file_utils.rs:262
 #, no-c-format
 msgid "Yesterday, %s"
 msgstr ""
 
-#: src/file_utils.rs:256
+#: src/file_utils.rs:263
 #, no-c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:257
+#: src/file_utils.rs:264
 #, no-c-format
 msgid "Last week"
 msgstr ""
 
-#: src/file_utils.rs:259
+#: src/file_utils.rs:266
 #, no-c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:261
+#: src/file_utils.rs:268
 #, no-c-format
 msgid "Last month"
 msgstr ""
 
-#: src/file_utils.rs:264
+#: src/file_utils.rs:271
 #, no-c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:266
+#: src/file_utils.rs:273
 #, no-c-format
 msgid "Last year"
 msgstr ""
 
-#: src/file_utils.rs:269
+#: src/file_utils.rs:276
 #, no-c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:338
+#: src/file_utils.rs:345
 #, no-c-format
 msgid "Empty"
 msgstr ""
 
-#: src/file_utils.rs:339
+#: src/file_utils.rs:346
 #, no-c-format
 msgid "%d item"
 msgid_plural "%d items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:366 src/path_bar.rs:320 src/places_sidebar.rs:606
+#: src/file_utils.rs:373 src/path_bar.rs:360 src/places_sidebar.rs:606
 #, no-c-format
 msgid "Home"
 msgstr ""
 
-#: src/file_utils.rs:369 src/path_bar.rs:323 src/places_sidebar.rs:639
+#: src/file_utils.rs:376 src/path_bar.rs:363 src/places_sidebar.rs:639
 #, no-c-format
 msgid "Trash"
 msgstr ""
 
-#: src/file_utils.rs:383 src/path_bar.rs:334
+#: src/file_utils.rs:390 src/path_bar.rs:374
 #, no-c-format
 msgid "System"
 msgstr ""
@@ -2373,7 +2412,7 @@ msgstr ""
 msgid "copy"
 msgstr ""
 
-#: src/path_bar.rs:279 ui/shortcuts_dialog.ui:105
+#: src/path_bar.rs:319 ui/shortcuts_dialog.ui:105
 #, no-c-format
 msgid "Edit Location"
 msgstr ""
@@ -2589,12 +2628,12 @@ msgstr ""
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:684 ui/shortcuts_dialog.ui:283
+#: src/window.rs:690 ui/shortcuts_dialog.ui:283
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:1110 ui/window.ui:73
+#: src/window.rs:1116 ui/window.ui:73
 #, no-c-format
 msgid "_Columns"
 msgstr ""
@@ -2605,10 +2644,6 @@ msgstr ""
 
 #: target/pot/xdg-desktop-portal-spiral.desktop:4
 msgid "File chooser dialogs shown on behalf of other applications"
-msgstr ""
-
-#: ui/browser_view.ui:114
-msgid "Could Not Open Folder"
 msgstr ""
 
 #: ui/browser_view.ui:177

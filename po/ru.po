@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-10 00:28+0300\n"
+"POT-Creation-Date: 2026-09-10 09:10+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -402,14 +402,15 @@ msgstr ""
 msgid ""
 "Servers, wherever gvfs has a backend for one. \"Connect to Server…\" in the "
 "main menu takes an address, names the schemes the system can actually use, "
-"and offers the servers connected to before. A share that answers opens in a "
-"tab and joins the sidebar under Network, above it the machines gvfs can find "
-"and beside it a button that disconnects it again. Going to a share that is "
-"not connected connects it first, so a bookmark or an address typed into the "
-"path bar reaches the server without the dialog being opened at all. Without "
-"gvfs there are no network locations, and Spiral says so rather than offer an "
-"address it has no way to open, and \"Network Locations\" in Preferences "
-"takes the whole of it away for those who have no server to reach."
+"and offers the servers connected to before. A share that answers opens in "
+"the tab in front and joins the sidebar under Network, above it the machines "
+"gvfs can find and beside it a button that disconnects it again. Going to a "
+"share that is not connected connects it first, so a bookmark or an address "
+"typed into the path bar reaches the server without the dialog being opened "
+"at all. Without gvfs there are no network locations, and Spiral says so "
+"rather than offer an address it has no way to open, and \"Network "
+"Locations\" in Preferences takes the whole of it away for those who have no "
+"server to reach."
 msgstr ""
 
 #: data/io.github.sachesi.spiral.metainfo.xml:36
@@ -749,8 +750,8 @@ msgstr "Копировать в"
 msgid "_Copy"
 msgstr "_Копировать"
 
-#: src/browser_actions.rs:1072 src/browser_view.rs:1471
-#: src/browser_view.rs:1478 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1072 src/browser_view.rs:1490
+#: src/browser_view.rs:1497 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не удалось открыть"
@@ -815,7 +816,7 @@ msgstr "Открыть в _терминале"
 msgid "New _Document"
 msgstr "Создать _документ"
 
-#: src/browser_view.rs:575
+#: src/browser_view.rs:580
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
@@ -823,7 +824,7 @@ msgstr[0] "Выбрана %d папка"
 msgstr[1] "Выбраны %d папки"
 msgstr[2] "Выбрано %d папок"
 
-#: src/browser_view.rs:579
+#: src/browser_view.rs:584
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
@@ -831,53 +832,103 @@ msgstr[0] "Выбран %d объект"
 msgstr[1] "Выбрано %d объекта"
 msgstr[2] "Выбрано %d объектов"
 
-#: src/browser_view.rs:952
+#: src/browser_view.rs:967
 #, no-c-format
 msgid "Remove from Starred"
 msgstr "Удалить из избранного"
 
-#: src/browser_view.rs:954
+#: src/browser_view.rs:969
 #, no-c-format
 msgid "Add to Starred"
 msgstr "Добавить в избранное"
 
-#: src/browser_view.rs:1524 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1544
+#, no-c-format
+msgid "The password dialog was dismissed."
+msgstr "Диалог пароля был закрыт."
+
+#: src/browser_view.rs:1561 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
 #: src/ops/walk.rs:46 src/places_sidebar.rs:908
 #, no-c-format
 msgid "_OK"
 msgstr "_ОК"
 
-#: src/browser_view.rs:1547
+#: src/browser_view.rs:1575
+#, no-c-format
+msgid "Connecting to %s…"
+msgstr "Подключение к %s…"
+
+#: src/browser_view.rs:1580
+#, no-c-format
+msgid "Could Not Connect"
+msgstr "Не удалось подключиться"
+
+#: src/browser_view.rs:1583
+#, no-c-format
+msgid "Reloading the folder tries again."
+msgstr "Перезагрузка папки повторит попытку."
+
+#: src/browser_view.rs:1588 ui/browser_view.ui:114
+#, no-c-format
+msgid "Could Not Open Folder"
+msgstr "Не удалось открыть папку"
+
+#: src/browser_view.rs:1607
 #, no-c-format
 msgid "No Results Found"
 msgstr "Ничего не найдено"
 
-#: src/browser_view.rs:1549 ui/browser_view.ui:103
+#: src/browser_view.rs:1611
+#, no-c-format
+msgid "No Servers Found"
+msgstr "Серверы не найдены"
+
+#: src/browser_view.rs:1615 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Папка пуста"
 
-#: src/browser_view.rs:1584
+#: src/browser_view.rs:1677
 #, no-c-format
 msgid ""
-"Nothing installed here can open “%s” addresses. They are read by a gvfs "
-"backend of their own."
+"Machines that announce themselves on the network appear here. Others are "
+"reached with “Connect to Server…”."
 msgstr ""
-"В системе нет ничего, что открывало бы адреса «%s». Для них нужен отдельный "
-"модуль gvfs."
+"Здесь появляются машины, которые объявляют о себе в сети. К остальным можно "
+"попасть через «Подключиться к серверу…»."
 
-#: src/browser_view.rs:1614
+#: src/browser_view.rs:1686
+#, no-c-format
+msgid ""
+"One server was found but left out: no gvfs backend for %s addresses is "
+"installed."
+msgid_plural ""
+"Some servers were found but left out: no gvfs backend for %s addresses is "
+"installed."
+msgstr[0] ""
+"Найден сервер, но не показан: модуль gvfs для адресов %s не установлен."
+msgstr[1] ""
+"Найдены серверы, но не показаны: модуль gvfs для адресов %s не установлен."
+msgstr[2] ""
+"Найдены серверы, но не показаны: модуль gvfs для адресов %s не установлен."
+
+#: src/browser_view.rs:1706
+#, no-c-format
+msgid "No gvfs backend for %s addresses is installed."
+msgstr "Модуль gvfs для адресов %s не установлен."
+
+#: src/browser_view.rs:1736
 #, no-c-format
 msgid "Loading…"
 msgstr "Загрузка…"
 
-#: src/browser_view.rs:1630
+#: src/browser_view.rs:1752
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Выбран объект «%s»"
 
-#: src/browser_view.rs:1635
+#: src/browser_view.rs:1757
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -886,17 +937,17 @@ msgstr[1] "%d других объекта выбрано"
 msgstr[2] "%d других объектов выбрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1641
+#: src/browser_view.rs:1763
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:2381 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2503 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:2481 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2603 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -1047,18 +1098,15 @@ msgstr "С_оздать"
 msgid "Server Address"
 msgstr "Адрес сервера"
 
-#: src/dialogs/connect_server.rs:25
+#: src/dialogs/connect_server.rs:25 src/dialogs/preferences.rs:67
 #, no-c-format
-msgid ""
-"This system has no network backends installed, so no server can be reached."
-msgstr ""
-"В системе не установлены сетевые модули, поэтому подключиться к серверу "
-"нельзя."
+msgid "gvfs is not installed, so no server can be reached."
+msgstr "gvfs не установлен, поэтому подключиться к серверу невозможно."
 
 #: src/dialogs/connect_server.rs:27
 #, no-c-format
-msgid "For example: smb://server/share. Schemes this system can use: %s"
-msgstr "Например: smb://server/share. Доступные в системе схемы: %s"
+msgid "Addresses this system can open: %s"
+msgstr "Адреса, которые может открыть эта система: %s"
 
 #: src/dialogs/connect_server.rs:48
 #, no-c-format
@@ -1075,7 +1123,7 @@ msgstr "_Подключиться"
 msgid "Connect to Server"
 msgstr "Подключение к серверу"
 
-#: src/dialogs/connect_server.rs:228
+#: src/dialogs/connect_server.rs:268
 #, no-c-format
 msgid "Forget This Server"
 msgstr "Забыть этот сервер"
@@ -1208,51 +1256,42 @@ msgstr ""
 "Если выключено, Ctrl копирует, а перетаскивание внутри Spiral перемещает без "
 "вопросов"
 
-#: src/dialogs/preferences.rs:62 src/file_utils.rs:372
+#: src/dialogs/preferences.rs:62 src/file_utils.rs:379
 #: src/places_sidebar.rs:706
 #, no-c-format
 msgid "Network"
 msgstr "Сеть"
 
-#: src/dialogs/preferences.rs:64
-#, no-c-format
-msgid ""
-"Shares on other machines are reached through gvfs, and nothing here works "
-"without it."
-msgstr ""
-"Общие ресурсы на других машинах доступны через gvfs, и без него здесь ничего "
-"не работает."
-
-#: src/dialogs/preferences.rs:68
+#: src/dialogs/preferences.rs:71
 #, no-c-format
 msgid "Network Locations"
 msgstr "Сетевые расположения"
 
-#: src/dialogs/preferences.rs:70
+#: src/dialogs/preferences.rs:73
 #, no-c-format
 msgid ""
-"“Connect to Server…” in the main menu, the network in the sidebar, and "
-"shares opened by address"
+"“Connect to Server…”, the Network section of the sidebar, shares opened by "
+"address"
 msgstr ""
-"«Подключиться к серверу…» в главном меню, сеть в боковой панели и общие "
-"ресурсы, открытые по адресу"
+"«Подключиться к серверу…», раздел «Сеть» на боковой панели и общие ресурсы, "
+"открытые по адресу"
 
-#: src/dialogs/preferences.rs:79 src/dialogs/preferences.rs:84
+#: src/dialogs/preferences.rs:82 src/dialogs/preferences.rs:87
 #, no-c-format
 msgid "Views"
 msgstr "Просмотр"
 
-#: src/dialogs/preferences.rs:87
+#: src/dialogs/preferences.rs:90
 #, no-c-format
 msgid "Sort Folders Before Files"
 msgstr "Папки перед файлами"
 
-#: src/dialogs/preferences.rs:94 src/enums.rs:57 ui/shortcuts_dialog.ui:152
+#: src/dialogs/preferences.rs:97 src/enums.rs:57 ui/shortcuts_dialog.ui:152
 #, no-c-format
 msgid "Column View"
 msgstr "В виде столбцов"
 
-#: src/dialogs/preferences.rs:96
+#: src/dialogs/preferences.rs:99
 #, no-c-format
 msgid ""
 "A third view drawing the path as a strip of lists, one folder per column"
@@ -1260,64 +1299,64 @@ msgstr ""
 "Третий режим просмотра, рисующий путь полосой списков, по одной папке на "
 "столбец"
 
-#: src/dialogs/preferences.rs:102
+#: src/dialogs/preferences.rs:105
 #, no-c-format
 msgid "Grid View for Media Folders"
 msgstr "Сетка для папок с медиафайлами"
 
-#: src/dialogs/preferences.rs:104
+#: src/dialogs/preferences.rs:107
 #, no-c-format
 msgid "Folders that are mostly images and videos open in grid view"
 msgstr ""
 "Папки, состоящие в основном из изображений и видео, открываются в виде сетки"
 
-#: src/dialogs/preferences.rs:110
+#: src/dialogs/preferences.rs:113
 #, no-c-format
 msgid "Remember View per Folder"
 msgstr "Запоминать вид для каждой папки"
 
-#: src/dialogs/preferences.rs:112
+#: src/dialogs/preferences.rs:115
 #, no-c-format
 msgid "Switching the view or the sort order applies to the current folder only"
 msgstr "Переключение вида и сортировка действуют только для текущей папки"
 
-#: src/dialogs/preferences.rs:119
+#: src/dialogs/preferences.rs:122
 #, no-c-format
 msgid "Expandable Folders in List View"
 msgstr "Раскрывающиеся папки в виде списка"
 
-#: src/dialogs/preferences.rs:127
+#: src/dialogs/preferences.rs:130
 #, no-c-format
 msgid "Sidebar"
 msgstr "Боковая панель"
 
-#: src/dialogs/preferences.rs:130 src/places_sidebar.rs:624
+#: src/dialogs/preferences.rs:133 src/places_sidebar.rs:624
 #, no-c-format
 msgid "Root"
 msgstr "Корень"
 
-#: src/dialogs/preferences.rs:131
+#: src/dialogs/preferences.rs:134
 #, no-c-format
 msgid "The top of the filesystem, above the bookmarks"
 msgstr "Вершина файловой системы, над закладками"
 
-#: src/dialogs/preferences.rs:136 src/file_utils.rs:375 src/path_bar.rs:326
+#: src/dialogs/preferences.rs:139 src/file_utils.rs:382 src/path_bar.rs:366
 #: src/places_sidebar.rs:632
 #, no-c-format
 msgid "Favorites"
 msgstr "Избранное"
 
-#: src/dialogs/preferences.rs:137
+#: src/dialogs/preferences.rs:140
 #, no-c-format
 msgid "The starred files and folders"
 msgstr "Файлы и папки, отмеченные звёздочкой"
 
-#: src/dialogs/preferences.rs:146 src/file_utils.rs:378
+#: src/dialogs/preferences.rs:149 src/file_utils.rs:385
 #, no-c-format
 msgid "Tags"
 msgstr "Метки"
 
-#: src/dialogs/preferences.rs:148
+#: src/dialogs/preferences.rs:151
 #, no-c-format
 msgid ""
 "Tags are written to the files themselves, so they follow a file wherever it "
@@ -1326,12 +1365,12 @@ msgstr ""
 "Метки записываются в сами файлы, поэтому остаются с файлом, куда бы он ни "
 "переместился, и другие программы могут их читать."
 
-#: src/dialogs/preferences.rs:152
+#: src/dialogs/preferences.rs:155
 #, no-c-format
 msgid "Colour Tags"
 msgstr "Цветные метки"
 
-#: src/dialogs/preferences.rs:154
+#: src/dialogs/preferences.rs:157
 #, no-c-format
 msgid ""
 "A row of colours in the context menu, a dot on each tagged file and the tags "
@@ -1340,17 +1379,17 @@ msgstr ""
 "Ряд цветов в контекстном меню, точка на каждом помеченном файле и список "
 "меток в боковой панели"
 
-#: src/dialogs/preferences.rs:163
+#: src/dialogs/preferences.rs:166
 #, no-c-format
 msgid "Menus"
 msgstr "Меню"
 
-#: src/dialogs/preferences.rs:168
+#: src/dialogs/preferences.rs:171
 #, no-c-format
 msgid "Optional Context Menu Actions"
 msgstr "Дополнительные действия контекстного меню"
 
-#: src/dialogs/preferences.rs:170
+#: src/dialogs/preferences.rs:173
 #, no-c-format
 msgid ""
 "A middle click still opens a folder in a new tab, Shift+Delete still deletes "
@@ -1359,136 +1398,136 @@ msgstr ""
 "Щелчок средней кнопкой всё так же открывает папку в новой вкладке, "
 "Shift+Delete всё так же удаляет безвозвратно, а ссылки всегда можно вставить."
 
-#: src/dialogs/preferences.rs:174
+#: src/dialogs/preferences.rs:177
 #, no-c-format
 msgid "Open in New Tab"
 msgstr "Открыть в новой вкладке"
 
-#: src/dialogs/preferences.rs:175
+#: src/dialogs/preferences.rs:178
 #, no-c-format
 msgid "Open in New Window"
 msgstr "Открыть в новом окне"
 
-#: src/dialogs/preferences.rs:176 ui/browser_view.ui:207
+#: src/dialogs/preferences.rs:179 ui/browser_view.ui:207
 #, no-c-format
 msgid "Copy to…"
 msgstr "Копировать в…"
 
-#: src/dialogs/preferences.rs:177 ui/browser_view.ui:212
+#: src/dialogs/preferences.rs:180 ui/browser_view.ui:212
 #, no-c-format
 msgid "Move to…"
 msgstr "Переместить в…"
 
-#: src/dialogs/preferences.rs:184
+#: src/dialogs/preferences.rs:187
 #, no-c-format
 msgid "Create Link"
 msgstr "Создать ссылку"
 
-#: src/dialogs/preferences.rs:191 ui/shortcuts_dialog.ui:259
+#: src/dialogs/preferences.rs:194 ui/shortcuts_dialog.ui:259
 #, no-c-format
 msgid "Delete Permanently"
 msgstr "Удалить безвозвратно"
 
-#: src/dialogs/preferences.rs:201
+#: src/dialogs/preferences.rs:204
 #, no-c-format
 msgid "Speed"
 msgstr "Скорость"
 
-#: src/dialogs/preferences.rs:207
+#: src/dialogs/preferences.rs:210
 #, no-c-format
 msgid "Reading every file on a network share or a slow disk can take a while."
 msgstr ""
 "Чтение всех файлов на сетевом ресурсе или медленном диске может занять много "
 "времени."
 
-#: src/dialogs/preferences.rs:211
+#: src/dialogs/preferences.rs:214
 #, no-c-format
 msgid "Local Files Only"
 msgstr "Только локальные файлы"
 
-#: src/dialogs/preferences.rs:212
+#: src/dialogs/preferences.rs:215
 #, no-c-format
 msgid "All Files"
 msgstr "Все файлы"
 
-#: src/dialogs/preferences.rs:213
+#: src/dialogs/preferences.rs:216
 #, no-c-format
 msgid "Never"
 msgstr "Никогда"
 
-#: src/dialogs/preferences.rs:218
+#: src/dialogs/preferences.rs:221
 #, no-c-format
 msgid "Show Thumbnails"
 msgstr "Показывать миниатюры"
 
-#: src/dialogs/preferences.rs:225
+#: src/dialogs/preferences.rs:228
 #, no-c-format
 msgid "Count Items in Folders"
 msgstr "Подсчитывать объекты в папках"
 
-#: src/dialogs/preferences.rs:232
+#: src/dialogs/preferences.rs:235
 #, no-c-format
 msgid "Search in Subfolders"
 msgstr "Поиск во вложенных папках"
 
-#: src/dialogs/preferences.rs:255
+#: src/dialogs/preferences.rs:258
 #, no-c-format
 msgid "A-Z"
 msgstr "А-Я"
 
-#: src/dialogs/preferences.rs:256
+#: src/dialogs/preferences.rs:259
 #, no-c-format
 msgid "Z-A"
 msgstr "Я-А"
 
-#: src/dialogs/preferences.rs:257
+#: src/dialogs/preferences.rs:260
 #, no-c-format
 msgid "Last Modified"
 msgstr "По дате изменения"
 
-#: src/dialogs/preferences.rs:258
+#: src/dialogs/preferences.rs:261
 #, no-c-format
 msgid "First Modified"
 msgstr "Сначала старые"
 
-#: src/dialogs/preferences.rs:259 src/dialogs/properties.rs:251
-#: src/file_utils.rs:209 src/file_utils.rs:224
+#: src/dialogs/preferences.rs:262 src/dialogs/properties.rs:251
+#: src/file_utils.rs:216 src/file_utils.rs:231
 #, no-c-format
 msgid "Size"
 msgstr "Размер"
 
-#: src/dialogs/preferences.rs:260 src/dialogs/properties.rs:243
-#: src/file_utils.rs:210 src/file_utils.rs:226 ui/window.ui:365
+#: src/dialogs/preferences.rs:263 src/dialogs/properties.rs:243
+#: src/file_utils.rs:217 src/file_utils.rs:233 ui/window.ui:365
 #, no-c-format
 msgid "Type"
 msgstr "Тип"
 
-#: src/dialogs/preferences.rs:271
+#: src/dialogs/preferences.rs:274
 #, no-c-format
 msgid "Sort Order"
 msgstr "Сортировка"
 
-#: src/dialogs/preferences.rs:273
+#: src/dialogs/preferences.rs:276
 #, no-c-format
 msgid "How folders without an order of their own are sorted"
 msgstr "Как сортируются папки, у которых нет своего порядка"
 
-#: src/dialogs/preferences.rs:328
+#: src/dialogs/preferences.rs:331
 #, no-c-format
 msgid "Automatic"
 msgstr "Автоматически"
 
-#: src/dialogs/preferences.rs:336
+#: src/dialogs/preferences.rs:339
 #, no-c-format
 msgid "Automatic uses %s"
 msgstr "Автоматически: %s"
 
-#: src/dialogs/preferences.rs:337
+#: src/dialogs/preferences.rs:340
 #, no-c-format
 msgid "No terminal emulator found in PATH"
 msgstr "В PATH не найден эмулятор терминала"
 
-#: src/dialogs/preferences.rs:340
+#: src/dialogs/preferences.rs:343
 #, no-c-format
 msgid "Terminal"
 msgstr "Терминал"
@@ -1547,7 +1586,7 @@ msgstr "%p из %n"
 msgid "Properties"
 msgstr "Свойства"
 
-#: src/dialogs/properties.rs:99 src/file_utils.rs:216 src/file_utils.rs:228
+#: src/dialogs/properties.rs:99 src/file_utils.rs:223 src/file_utils.rs:235
 #, no-c-format
 msgid "Permissions"
 msgstr "Права"
@@ -1575,7 +1614,7 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/dialogs/properties.rs:247 src/file_utils.rs:227
+#: src/dialogs/properties.rs:247 src/file_utils.rs:234
 #, no-c-format
 msgid "MIME Type"
 msgstr "Тип MIME"
@@ -1585,12 +1624,12 @@ msgstr "Тип MIME"
 msgid "Calculating…"
 msgstr "Вычисление…"
 
-#: src/dialogs/properties.rs:259 src/file_utils.rs:211 ui/window.ui:386
+#: src/dialogs/properties.rs:259 src/file_utils.rs:218 ui/window.ui:386
 #, no-c-format
 msgid "Modified"
 msgstr "Изменён"
 
-#: src/dialogs/properties.rs:263 src/file_utils.rs:212
+#: src/dialogs/properties.rs:263 src/file_utils.rs:219
 #, no-c-format
 msgid "Accessed"
 msgstr "Последний доступ"
@@ -1621,7 +1660,7 @@ msgid "You are not the owner, so you cannot change these permissions."
 msgstr "Вы не владелец, поэтому не можете изменить эти права."
 
 #: src/dialogs/properties.rs:396 src/dialogs/properties.rs:403
-#: src/file_utils.rs:223 src/tags.rs:38
+#: src/file_utils.rs:230 src/tags.rs:38
 #, no-c-format
 msgid "None"
 msgstr "Нет"
@@ -1656,12 +1695,12 @@ msgstr "Чтение и запись"
 msgid "Could Not Change Permissions"
 msgstr "Не удалось изменить права"
 
-#: src/dialogs/properties.rs:452 src/file_utils.rs:214 src/file_utils.rs:229
+#: src/dialogs/properties.rs:452 src/file_utils.rs:221 src/file_utils.rs:236
 #, no-c-format
 msgid "Owner"
 msgstr "Владелец"
 
-#: src/dialogs/properties.rs:453 src/file_utils.rs:215 src/file_utils.rs:230
+#: src/dialogs/properties.rs:453 src/file_utils.rs:222 src/file_utils.rs:237
 #, no-c-format
 msgid "Group"
 msgstr "Группа"
@@ -1750,32 +1789,32 @@ msgstr "В виде сетки"
 msgid "List View"
 msgstr "В виде списка"
 
-#: src/file_utils.rs:145 src/file_utils.rs:157
+#: src/file_utils.rs:152 src/file_utils.rs:164
 #, no-c-format
 msgid "Folder"
 msgstr "Папка"
 
-#: src/file_utils.rs:213
+#: src/file_utils.rs:220
 #, no-c-format
 msgid "Created"
 msgstr "Создан"
 
-#: src/file_utils.rs:225
+#: src/file_utils.rs:232
 #, no-c-format
 msgid "Date Modified"
 msgstr "Дата изменения"
 
-#: src/file_utils.rs:254
+#: src/file_utils.rs:261
 #, no-c-format
 msgid "Today, %s"
 msgstr "Сегодня, %s"
 
-#: src/file_utils.rs:255
+#: src/file_utils.rs:262
 #, no-c-format
 msgid "Yesterday, %s"
 msgstr "Вчера, %s"
 
-#: src/file_utils.rs:256
+#: src/file_utils.rs:263
 #, no-c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
@@ -1783,12 +1822,12 @@ msgstr[0] "%d день назад"
 msgstr[1] "%d дня назад"
 msgstr[2] "%d дней назад"
 
-#: src/file_utils.rs:257
+#: src/file_utils.rs:264
 #, no-c-format
 msgid "Last week"
 msgstr "На прошлой неделе"
 
-#: src/file_utils.rs:259
+#: src/file_utils.rs:266
 #, no-c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
@@ -1796,12 +1835,12 @@ msgstr[0] "%d неделю назад"
 msgstr[1] "%d недели назад"
 msgstr[2] "%d недель назад"
 
-#: src/file_utils.rs:261
+#: src/file_utils.rs:268
 #, no-c-format
 msgid "Last month"
 msgstr "В прошлом месяце"
 
-#: src/file_utils.rs:264
+#: src/file_utils.rs:271
 #, no-c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
@@ -1809,12 +1848,12 @@ msgstr[0] "%d месяц назад"
 msgstr[1] "%d месяца назад"
 msgstr[2] "%d месяцев назад"
 
-#: src/file_utils.rs:266
+#: src/file_utils.rs:273
 #, no-c-format
 msgid "Last year"
 msgstr "В прошлом году"
 
-#: src/file_utils.rs:269
+#: src/file_utils.rs:276
 #, no-c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
@@ -1822,12 +1861,12 @@ msgstr[0] "%d год назад"
 msgstr[1] "%d года назад"
 msgstr[2] "%d лет назад"
 
-#: src/file_utils.rs:338
+#: src/file_utils.rs:345
 #, no-c-format
 msgid "Empty"
 msgstr "Пусто"
 
-#: src/file_utils.rs:339
+#: src/file_utils.rs:346
 #, no-c-format
 msgid "%d item"
 msgid_plural "%d items"
@@ -1835,17 +1874,17 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/file_utils.rs:366 src/path_bar.rs:320 src/places_sidebar.rs:606
+#: src/file_utils.rs:373 src/path_bar.rs:360 src/places_sidebar.rs:606
 #, no-c-format
 msgid "Home"
 msgstr "Домашняя папка"
 
-#: src/file_utils.rs:369 src/path_bar.rs:323 src/places_sidebar.rs:639
+#: src/file_utils.rs:376 src/path_bar.rs:363 src/places_sidebar.rs:639
 #, no-c-format
 msgid "Trash"
 msgstr "Корзина"
 
-#: src/file_utils.rs:383 src/path_bar.rs:334
+#: src/file_utils.rs:390 src/path_bar.rs:374
 #, no-c-format
 msgid "System"
 msgstr "Система"
@@ -2511,7 +2550,7 @@ msgstr "Вставленное изображение"
 msgid "copy"
 msgstr "копия"
 
-#: src/path_bar.rs:279 ui/shortcuts_dialog.ui:105
+#: src/path_bar.rs:319 ui/shortcuts_dialog.ui:105
 #, no-c-format
 msgid "Edit Location"
 msgstr "Изменить адрес"
@@ -2732,12 +2771,12 @@ msgstr "Не удалось прочитать командную строку �
 msgid "No terminal emulator found"
 msgstr "Эмулятор терминала не найден"
 
-#: src/window.rs:684 ui/shortcuts_dialog.ui:283
+#: src/window.rs:690 ui/shortcuts_dialog.ui:283
 #, no-c-format
 msgid "Undo"
 msgstr "Отменить"
 
-#: src/window.rs:1110 ui/window.ui:73
+#: src/window.rs:1116 ui/window.ui:73
 #, no-c-format
 msgid "_Columns"
 msgstr "Ст_олбцы"
@@ -2749,10 +2788,6 @@ msgstr "Выбор файлов Spiral"
 #: target/pot/xdg-desktop-portal-spiral.desktop:4
 msgid "File chooser dialogs shown on behalf of other applications"
 msgstr "Диалоги выбора файлов, показываемые от имени других приложений"
-
-#: ui/browser_view.ui:114
-msgid "Could Not Open Folder"
-msgstr "Не удалось открыть папку"
 
 #: ui/browser_view.ui:177
 msgid "_Preview"
@@ -3198,6 +3233,26 @@ msgstr "Только содержимое"
 #: ui/window.ui:443 ui/window.ui:527
 msgid "View Options"
 msgstr "Параметры просмотра"
+
+#, no-c-format
+#~ msgid ""
+#~ "Nothing installed here can open “%s” addresses. They are read by a gvfs "
+#~ "backend of their own."
+#~ msgstr ""
+#~ "В системе нет ничего, что открывало бы адреса «%s». Для них нужен "
+#~ "отдельный модуль gvfs."
+
+#, no-c-format
+#~ msgid "For example: smb://server/share. Schemes this system can use: %s"
+#~ msgstr "Например: smb://server/share. Доступные в системе схемы: %s"
+
+#, no-c-format
+#~ msgid ""
+#~ "Shares on other machines are reached through gvfs, and nothing here works "
+#~ "without it."
+#~ msgstr ""
+#~ "Общие ресурсы на других машинах доступны через gvfs, и без него здесь "
+#~ "ничего не работает."
 
 #, no-c-format
 #~ msgid "Performance"
