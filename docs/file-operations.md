@@ -5,6 +5,9 @@ as jobs on the main loop with async GIO calls. The button at the bottom of the s
 shows one pie per running job and opens a list with a progress bar, a detail line and a
 stop button for each. Detail lines look like "12.3 MB of 210.0 MB, 4 seconds left
 (52.1 MB/s)" once a job has run for a second; finished jobs linger for three seconds.
+A copy, move, extraction or archive that lands in a folder other than the one on screen
+ends with a toast whose "Open Folder" goes there and selects what arrived; one that lands
+in the folder on screen only gets a toast when it took three seconds or more.
 
 Copies, moves and deletes count their sources first so the total is known before the
 rate clock starts. Progress inside a single file comes from GIO's copy callback.
