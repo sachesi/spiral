@@ -66,29 +66,26 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
             }
         }
         JobKind::Trash { files } => {
-            job.set_files_total(files.len() as u64);
-            let mut delete_instead = false;
-            for f in files {
+            let total = files.len();
+            job.set_files_total(total as u64);
+            // Asked once: from then on what the trash cannot take is deleted without asking
+            // again, while everything else still goes to the trash.
+            let mut delete_allowed = false;
+            for (i, f) in files.into_iter().enumerate() {
+                let more = i + 1 < total;
                 loop {
-                    let r = if delete_instead {
-                        delete_recursive(job, mgr, &f).await.map(|_| ())
-                    } else {
-                        Ok(())
-                    };
-                    r?;
-                    if delete_instead {
-                        break;
-                    }
                     match f.trash_future(PRIO).await {
                         Ok(()) => {
                             job.imp().outcome.borrow_mut().trashed.push(f.clone());
                             break;
                         }
                         Err(e) if e.matches(gio::IOErrorEnum::NotSupported) => {
-                            if !confirm_permanent_delete(mgr, &f).await {
+                            if !delete_allowed && !confirm_permanent_delete(mgr, &f, more).await {
                                 return Err(Fail::Cancelled);
                             }
-                            delete_instead = true;
+                            delete_allowed = true;
+                            delete_recursive(job, mgr, &f).await?;
+                            break;
                         }
                         Err(e) => {
                             // Translators: fills %v in “Error While %v “%s””.
@@ -251,12 +248,19 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
     Ok(())
 }
 
-async fn confirm_permanent_delete(mgr: &JobManager, file: &gio::File) -> bool {
+/// `more`: other items come after this one, and the answer covers those the trash cannot
+/// take either.
+async fn confirm_permanent_delete(mgr: &JobManager, file: &gio::File, more: bool) -> bool {
+    let body = if more {
+        gettext(
+            "This location does not support trashing. Delete it and the other items that cannot be trashed permanently instead?",
+        )
+    } else {
+        gettext("This location does not support trashing. Delete it permanently instead?")
+    };
     let dialog = adw::AlertDialog::builder()
         .heading(gettext("Cannot Move “%s” to Trash").replace("%s", &name(file)))
-        .body(gettext(
-            "This location does not support trashing. Delete it permanently instead?",
-        ))
+        .body(body)
         .close_response("cancel")
         .build();
     dialog.add_responses(&[
