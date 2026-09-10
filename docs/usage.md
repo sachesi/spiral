@@ -239,7 +239,10 @@ up to its extension; with several, it is a dialog that renames them all by one r
 a shared name with numbers after it, or some text of the old names replaced by other text.
 The names it would give are listed as the rule is typed, and it refuses to rename while
 two of them would collide or take a name the folder already has. One undo puts them all
-back.
+back. A new name, here or for a new folder or document, is refused while it holds a "/",
+is "." or "..", is taken, or is longer than the filesystem of a local folder allows (255
+bytes on most); one starting with a dot is allowed with a word that the item will be
+hidden.
 
 Delete moves to trash, Shift+Delete deletes for good after asking; the menu entry for it
 is off by default and lives in Preferences under Optional Context Menu Actions, with

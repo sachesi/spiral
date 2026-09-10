@@ -1,4 +1,4 @@
-//! File name validation, the rename popover and the new-folder dialog (Nautilus-style).
+//! File name validation, the rename popover and the new-folder dialog.
 
 use futures_channel::oneshot;
 use gettextrs::gettext;
@@ -14,9 +14,15 @@ pub enum Verdict {
     Error(String),
 }
 
-/// Everything that can be judged from the name alone; whether it is taken is checked
-/// separately, since that means asking the filesystem.
-pub fn validate(name: &str, original: Option<&str>, is_folder: bool) -> Verdict {
+/// Everything that can be judged from the name alone, and `max`, the longest name in bytes
+/// the folder takes, where it is known; whether it is taken is checked separately, since
+/// that means asking the filesystem.
+pub fn validate(
+    name: &str,
+    original: Option<&str>,
+    is_folder: bool,
+    max: Option<usize>,
+) -> Verdict {
     if name.is_empty() {
         return Verdict::Error(String::new());
     }
@@ -32,6 +38,13 @@ pub fn validate(name: &str, original: Option<&str>, is_folder: bool) -> Verdict 
             gettext("A folder cannot be called “%s”.").replace("%s", name)
         } else {
             gettext("A file cannot be called “%s”.").replace("%s", name)
+        });
+    }
+    if max.is_some_and(|max| name.len() > max) {
+        return Verdict::Error(if is_folder {
+            gettext("Folder name is too long.")
+        } else {
+            gettext("File name is too long.")
         });
     }
     if name.starts_with('.') && original.is_none_or(|o| !o.starts_with('.')) {
@@ -55,6 +68,21 @@ pub(crate) fn stem_end(name: &str, is_folder: bool) -> i32 {
     }
 }
 
+/// The longest name in bytes `dir` takes, as its filesystem says; `None` for a folder
+/// that is not local, or a filesystem that will not say. Asked off the main loop, since a
+/// network mount may take its time to answer.
+pub async fn name_max(dir: &gio::File) -> Option<usize> {
+    let path = std::ffi::CString::new(dir.path()?.into_os_string().into_encoded_bytes()).ok()?;
+    gio::spawn_blocking(move || {
+        // SAFETY: `path` is a valid NUL-terminated string that outlives the call.
+        let max = unsafe { libc::pathconf(path.as_ptr(), libc::_PC_NAME_MAX) };
+        usize::try_from(max).ok()
+    })
+    .await
+    .ok()
+    .flatten()
+}
+
 fn taken_message(is_folder: bool) -> String {
     if is_folder {
         gettext("A folder with that name already exists.")
@@ -75,7 +103,11 @@ fn bind_validation(
     is_folder: bool,
 ) {
     let entry: gtk::Editable = entry.clone().upcast();
+    let dir = parent.clone();
+    let max = std::rc::Rc::new(std::cell::Cell::new(None));
     let check = glib::clone!(
+        #[strong]
+        max,
         #[weak]
         entry,
         #[weak]
@@ -86,7 +118,7 @@ fn bind_validation(
         accept,
         move || {
             let name = entry.text().trim().to_string();
-            let (ok, msg) = match validate(&name, original.as_deref(), is_folder) {
+            let (ok, msg) = match validate(&name, original.as_deref(), is_folder, max.get()) {
                 Verdict::Ok => (true, String::new()),
                 Verdict::Warning(m) => (true, m),
                 Verdict::Error(m) => (false, m),
@@ -134,6 +166,10 @@ fn bind_validation(
         move |_| check()
     ));
     check();
+    glib::spawn_future_local(async move {
+        max.set(name_max(&dir).await);
+        check();
+    });
 }
 
 /// Inline rename popover anchored to `anchor` inside `parent`. Resolves to the new name or None.
@@ -387,4 +423,29 @@ async fn name_dialog(
         text.add_controller(focus);
     }
     rx.await.ok().flatten()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_name_longer_than_the_folder_takes_is_refused() {
+        let long = "x".repeat(256);
+        assert!(matches!(
+            validate(&long, None, false, Some(255)),
+            Verdict::Error(_)
+        ));
+        assert!(matches!(
+            validate(&long[1..], None, false, Some(255)),
+            Verdict::Ok
+        ));
+        // Counted in bytes, as the filesystem counts them.
+        let wide = "ї".repeat(128);
+        assert!(matches!(
+            validate(&wide, None, true, Some(255)),
+            Verdict::Error(_)
+        ));
+        assert!(matches!(validate(&long, None, false, None), Verdict::Ok));
+    }
 }

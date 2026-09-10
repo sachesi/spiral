@@ -1327,8 +1327,12 @@ impl BrowserView {
             #[weak(rename_to = view)]
             self,
             async move {
+                let max = match view.location() {
+                    Some(dir) => crate::naming::name_max(&dir).await,
+                    None => None,
+                };
                 let Some(new_names) =
-                    crate::dialogs::batch_rename_dialog(&view, names, others).await
+                    crate::dialogs::batch_rename_dialog(&view, names, others, max).await
                 else {
                     return;
                 };
