@@ -33,7 +33,7 @@ Ctrl+? shows this list inside the application.
 | Ctrl+X, Ctrl+C, Ctrl+V | Cut, copy, paste |
 | F2 | Rename; with more than one file selected, rename them all by one rule |
 | Ctrl+Shift+N | New folder |
-| Delete | Move to trash |
+| Delete | Move to trash; inside Trash, delete permanently |
 | Shift+Delete | Delete permanently |
 | Space | Preview the selection |
 | Alt+Return | Properties |
