@@ -1197,6 +1197,9 @@ impl BrowserView {
                 let value = format!("{}-{}", key.nick(), if reversed { "desc" } else { "asc" });
                 remember(dir, "metadata::spiral-sort", value);
             }
+            // Only the trash has the date to sort by, and every other folder would lose its
+            // order to it: it stays with the trash, for as long as the trash is shown.
+            Some(_) if key == SortKey::Trashed => imp.folder_sort.set(Some((key, reversed))),
             _ => {
                 let _ = imp.settings.set_string("sort-key", key.nick());
                 let _ = imp.settings.set_boolean("sort-reversed", reversed);
@@ -2868,17 +2871,45 @@ impl BrowserView {
         );
         location_col.set_visible(false);
         location_col.set_expand(true);
+        // The trash says where each item was and when it was trashed.
+        let trashed_on_col = text_col(
+            gettext("Trashed On"),
+            0.0,
+            gtk::pango::EllipsizeMode::End,
+            file_utils::trashed_on_string,
+            None,
+        );
+        let trashed_from_col = text_col(
+            gettext("Original Location"),
+            0.0,
+            gtk::pango::EllipsizeMode::Middle,
+            file_utils::trashed_from,
+            Some(file_utils::trashed_from),
+        );
+        for (key, col, width) in [
+            ("trashed-on", &trashed_on_col, 148),
+            ("trashed-from", &trashed_from_col, 200),
+        ] {
+            col.set_fixed_width(width);
+            col.set_resizable(true);
+            cv.insert_column(1, col);
+            // First, so the room they need is found before the others are given any.
+            columns.insert(0, (key, col.clone()));
+        }
         cv.insert_column(1, &location_col);
         self.imp().model.connect_searching_notify(glib::clone!(
             #[weak]
             location_col,
             move |m| location_col.set_visible(searchable_below && m.searching())
         ));
-        let (size_col, type_col, mod_col) = (
-            columns[0].1.clone(),
-            columns[1].1.clone(),
-            columns[2].1.clone(),
-        );
+        let column = |key: &str| {
+            columns
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map(|(_, col)| col.clone())
+                .unwrap()
+        };
+        let (size_col, type_col, mod_col) = (column("size"), column("type"), column("modified"));
         self.imp().columns.replace(columns);
         self.apply_visible_columns();
         self.imp().settings.connect_changed(
@@ -2889,6 +2920,7 @@ impl BrowserView {
                 move |_, _| view.apply_visible_columns()
             ),
         );
+        self.connect_location_notify(|view| view.queue_visible_columns());
         // Resizing the window redivides the width; the page size of the scroll is what
         // the list actually got.
         self.imp()
@@ -2906,6 +2938,7 @@ impl BrowserView {
             (&size_col, SortKey::Size),
             (&type_col, SortKey::Type),
             (&mod_col, SortKey::Modified),
+            (&trashed_on_col, SortKey::Trashed),
         ] {
             let sorter = gtk::CustomSorter::new(|_, _| gtk::Ordering::Equal);
             col.set_sorter(Some(&sorter));
@@ -2964,6 +2997,10 @@ impl BrowserView {
     fn apply_visible_columns(&self) {
         let imp = self.imp();
         let on = imp.settings.strv("visible-columns");
+        // The columns of the trash are there in the trash, whatever the key says.
+        let in_trash = self
+            .location()
+            .is_some_and(|l| l.uri().starts_with("trash:"));
         let width = imp.list_scroll.width();
         // Before the first allocation there is no width to divide; the key decides alone.
         let mut room = if width > 0 {
@@ -2974,7 +3011,11 @@ impl BrowserView {
         for (key, col) in imp.columns.borrow().iter() {
             // The star is a button wide and worth its place at any size.
             let cost = if *key == "star" { 0 } else { col.fixed_width() };
-            let show = on.iter().any(|k| k == key) && cost <= room;
+            let wanted = match *key {
+                "trashed-on" | "trashed-from" => in_trash,
+                _ => on.iter().any(|k| k == key),
+            };
+            let show = wanted && cost <= room;
             if show {
                 room -= cost;
             }
