@@ -12,14 +12,22 @@ use crate::{gio, glib, gtk};
 /// The schemes a server address can be typed with, in the order they are named to the user.
 /// A share reached over HTTPS is WebDAV, which is `davs:`; plain `https:` is there for the
 /// backends that read a web address as it stands.
-const ADDRESS_SCHEMES: [&str; 11] = [
-    "smb", "sftp", "ssh", "ftp", "ftps", "nfs", "dav", "davs", "afp", "http", "https",
+const ADDRESS_SCHEMES: [&str; 12] = [
+    "smb", "sftp", "ssh", "ftp", "ftps", "ftpis", "nfs", "dav", "davs", "afp", "http", "https",
 ];
 
 /// The other schemes that still stand for another machine: mounts an online account made,
-/// and network browsing itself. Hardware that speaks a protocol of its own, a phone over
-/// MTP or a camera, is not here: it is a device, and belongs with the disks.
-const OTHER_SCHEMES: [&str; 3] = ["google-drive", "dns-sd", "network"];
+/// WebDAV found by name on the local network, and network browsing itself. Hardware that
+/// speaks a protocol of its own, a phone over MTP or a camera, is not here: it is a device,
+/// and belongs with the disks.
+const OTHER_SCHEMES: [&str; 6] = [
+    "google-drive",
+    "onedrive",
+    "dav+sd",
+    "davs+sd",
+    "dns-sd",
+    "network",
+];
 
 /// How many servers are kept in the list of the ones connected to before.
 const MAX_SERVERS: usize = 10;
