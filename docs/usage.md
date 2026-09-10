@@ -108,10 +108,10 @@ Location" on a result jumps to its folder, and "Open Item Location in New Tab" o
 folder in a tab behind the results, the item selected in both cases. A folder left while
 it showed a search gets the search back, words and filters, when Back or Forward returns
 to it, so Back from a result's folder, or Backspace there, is back at the results. The
-last search left in a tab, if it had finished, comes back with what it had found, in the
-same order and without searching again, less anything that has gone since; F5 searches
-again. What was selected
-when a folder or a search was left is selected again on the way back.
+last search left in a tab comes back with what it had found, in the same order and without
+starting over, less anything that has gone since, and one left before it finished carries
+on from there; F5 searches again. What was selected when a folder or a search was left is
+selected again on the way back.
 
 ## Views
 

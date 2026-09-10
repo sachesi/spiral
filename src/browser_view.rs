@@ -634,6 +634,8 @@ struct Search {
     date: String,
     matching: String,
     hits: Option<Vec<gio::FileInfo>>,
+    /// Whether the search had come to its end, or goes on when shown again.
+    finished: bool,
 }
 
 /// Where mounting the location of a view stands: nothing asked, a server being reached, or
@@ -1310,8 +1312,8 @@ impl BrowserView {
             kind: model.search_kind(),
             date: model.search_date(),
             matching: model.search_match(),
-            // A search still running when left would come back looking finished.
-            hits: (!model.loading()).then(|| model.search_hits()),
+            hits: Some(model.search_hits()),
+            finished: !model.loading(),
         });
         let selected = model.selected_files();
         let pos = imp.history_pos.get();
@@ -1340,7 +1342,9 @@ impl BrowserView {
             imp.model.set_search_date(search.date);
             imp.model.set_search_match(search.matching);
             match search.hits {
-                Some(hits) => imp.model.show_search_hits(&search.text, &hits),
+                Some(hits) => imp
+                    .model
+                    .show_search_hits(&search.text, &hits, search.finished),
                 None => imp.model.set_search_text(search.text),
             }
         }
@@ -1972,33 +1976,74 @@ impl BrowserView {
         });
     }
 
-    /// Select `files` once the directory finished loading (used by FileManager1.ShowItems
-    /// and by pasting). A file written a moment ago reaches the model through the folder
-    /// monitor, which lags behind the operation that made it, so wait for it to turn up
-    /// rather than selecting nothing; a file that is never coming only costs the wait.
+    /// Select `files` and show the first, as soon as the view has them to select (used by
+    /// FileManager1.ShowItems, pasting, "Open Item Location" and going back). A folder
+    /// still listing is waited for, the way Nautilus holds a pending selection until
+    /// loading is done: a big folder is put in order at the end, and a selection made
+    /// before would not survive it. A search is not, since its results only ever go on
+    /// the end. A file written a moment ago reaches the model through the folder
+    /// monitor, which lags behind the operation that made it, so what is missing once
+    /// nothing loads is given a moment more; a change of folder drops the lot.
     pub fn select_files_when_loaded(&self, files: Vec<gio::File>) {
+        use futures_util::StreamExt;
         if files.is_empty() {
             return;
         }
-        let view = self.clone();
+        let model = self.model();
+        let sel = model.selection();
+        let (tx, mut rx) = futures_channel::mpsc::unbounded::<()>();
+        let poke = tx.clone();
+        let loading_id = model.connect_loading_notify(move |_| {
+            let _ = poke.unbounded_send(());
+        });
+        let items_id = sel.connect_items_changed(move |_, _, _, _| {
+            let _ = tx.unbounded_send(());
+        });
+        let location = self.location();
+        let view = self.downgrade();
         glib::spawn_future_local(async move {
-            let model = view.model();
-            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
-            let mut found = model.positions_of(&files);
-            while std::time::Instant::now() < deadline
-                && (model.loading() || found.len() < files.len())
-            {
-                glib::timeout_future(std::time::Duration::from_millis(50)).await;
-                found = model.positions_of(&files);
+            const GRACE: std::time::Duration = std::time::Duration::from_secs(2);
+            let mut missing_since: Option<std::time::Instant> = None;
+            loop {
+                let Some(view) = view.upgrade() else { break };
+                let moved = match (view.location(), &location) {
+                    (Some(now), Some(then)) => !now.equal(then),
+                    (now, then) => now.is_some() != then.is_some(),
+                };
+                if moved {
+                    break;
+                }
+                let found = model.positions_of(&files);
+                let waiting = model.loading() && !model.searching();
+                let all = found.len() >= files.len();
+                let given_up = !waiting
+                    && !all
+                    && missing_since
+                        .get_or_insert_with(std::time::Instant::now)
+                        .elapsed()
+                        >= GRACE;
+                if !waiting && (all || given_up) {
+                    sel.unselect_all();
+                    for &pos in &found {
+                        sel.select_item(pos, false);
+                    }
+                    if let Some(&pos) = found.first() {
+                        view.reveal_position(pos, gtk::ListScrollFlags::FOCUS);
+                    }
+                    break;
+                }
+                drop(view);
+                let wait = match missing_since {
+                    Some(since) if !waiting => GRACE.saturating_sub(since.elapsed()),
+                    _ => std::time::Duration::from_secs(3600),
+                };
+                // Nothing left to tell of a change: the model has gone.
+                if let Ok(None) = glib::future_with_timeout(wait, rx.next()).await {
+                    break;
+                }
             }
-            let sel = model.selection();
-            sel.unselect_all();
-            for &pos in &found {
-                sel.select_item(pos, false);
-            }
-            if let Some(&pos) = found.first() {
-                view.reveal_position(pos, gtk::ListScrollFlags::FOCUS);
-            }
+            model.disconnect(loading_id);
+            sel.disconnect(items_id);
         });
     }
 
