@@ -102,11 +102,12 @@ folder and, for local folders by default ("Search in Subfolders" in Preferences)
 folder below it; the list view then shows where each result lives. The filter button next
 to the entry narrows results by type (folders, documents, images, audio, videos, PDF,
 text, spreadsheets), by modification date, and can match file contents instead of or as
-well as names. Content matching reads text files up to 10 MB with nothing indexed ahead
-of time, so it is only as fast as the disk. Each tab keeps its own filters; "Open Item
-Location" on a result jumps to its folder. A folder left while it showed a search gets the
-search back, words and filters, when Back or Forward returns to it, so Back from a result's
-folder, or Backspace there, is back at the results.
+well as names. Content matching reads text files up to 10 MB with nothing indexed ahead of
+time, so it is only as fast as the disk. Each tab keeps its own filters; "Open Item
+Location" on a result jumps to its folder, and "Open Item Location in New Tab" opens the
+folder in a tab behind the results, the item selected in both cases. A folder left while
+it showed a search gets the search back, words and filters, when Back or Forward returns
+to it, so Back from a result's folder, or Backspace there, is back at the results.
 
 ## Views
 

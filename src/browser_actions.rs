@@ -162,6 +162,9 @@ impl BrowserView {
         add("star", |v| v.set_selection_starred(true));
         add("unstar", |v| v.set_selection_starred(false));
         add("open-item-location", |v| v.open_item_location());
+        add("open-item-location-new-tab", |v| {
+            v.open_item_location_in_new_tab()
+        });
         add("bookmark", |v| {
             if let Some(dir) = v.location() {
                 crate::bookmarks::add(&dir);
@@ -544,10 +547,10 @@ impl BrowserView {
             in_trash && n > 0 && infos.iter().all(|i| i.has_attribute("trash::orig-path")),
         );
         let in_virtual = self.model().searching() || self.location().is_some_and(|l| is_list(&l));
-        self.set_enabled(
-            "open-item-location",
-            n == 1 && in_virtual && file_utils::file_of(&infos[0]).parent().is_some(),
-        );
+        let item_location =
+            n == 1 && in_virtual && file_utils::file_of(&infos[0]).parent().is_some();
+        self.set_enabled("open-item-location", item_location);
+        self.set_enabled("open-item-location-new-tab", item_location);
         self.set_enabled("copy-to", n > 0 && !in_trash && shown("show-copy-to"));
         self.set_enabled(
             "move-to",
@@ -1035,6 +1038,21 @@ impl BrowserView {
         // so Back returns to the search.
         self.go_to(&parent);
         self.select_files_when_loaded(vec![file.clone()]);
+    }
+
+    /// The folder holding the selected item in a tab of its own, behind this one, with the
+    /// item selected there; the search or the list stays where it is.
+    fn open_item_location_in_new_tab(&self) {
+        let files = self.selected();
+        let [file] = files.as_slice() else { return };
+        let Some(parent) = file.parent() else { return };
+        let Some(win) = self.root().and_downcast::<crate::window::SpiralWindow>() else {
+            return;
+        };
+        let page = win.add_tab(&parent, false);
+        if let Some(view) = crate::window::SpiralWindow::views_of(&page).first() {
+            view.select_files_when_loaded(vec![file.clone()]);
+        }
     }
 
     /// Scripts run in the terminal so their output can be seen; binaries start directly.
