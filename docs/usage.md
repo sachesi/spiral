@@ -77,16 +77,15 @@ and whether to remember either are asked for by the system's own dialog. The ser
 connected to are offered again the next time the dialog is opened, most recent first, and
 can be taken off that list one by one.
 
-A share that answers opens in a tab and joins the sidebar under Network, where its button
-disconnects it again; the context menu of the row calls it "Disconnect" rather than
-"Eject". "Network" itself, above them, is where the machines around are listed, for finding
-a server whose address you do not know; it stays empty unless something on the network
-announces itself and gvfs has the backend that hears it, `wsdd` for Windows shares or
-`dns-sd` for the rest. Everything else
-works as it does on a disk: bookmarks, drag and drop, copying, renaming, search. Reading a
-folder over a share is slower than reading one on a disk, which is why thumbnails, item
-counts and searching subfolders are limited to local files unless you say otherwise (see
-[Settings](settings.md)).
+A share that answers opens in the tab in front and joins the sidebar under Network, where
+its button disconnects it again; the context menu of the row calls it "Disconnect" rather
+than "Eject". "Network" itself, above them, is where the machines around are listed, for
+finding a server whose address you do not know; it stays empty unless something on the
+network announces itself and gvfs has the backend that hears it, `wsdd` for Windows shares
+or `dns-sd` for the rest. Everything else works as it does on a disk: bookmarks, drag and
+drop, copying, renaming, search. Reading a folder over a share is slower than reading one
+on a disk, which is why thumbnails, item counts and searching subfolders are limited to
+local files unless you say otherwise (see [Settings](settings.md)).
 
 Going to a share that is not connected connects it: a bookmark, an address typed into the
 path bar, or a folder on it opened from somewhere else all ask for the password and then
