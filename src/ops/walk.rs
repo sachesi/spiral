@@ -86,10 +86,17 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                                 return Err(Fail::Cancelled);
                             }
                             delete_allowed = true;
+                            // One item of this job, however much a folder held.
+                            let done = job.files_done();
                             delete_recursive(job, mgr, &f).await?;
-                            crate::tags::forget_all(&f);
-                            crate::starred::forget_all(&f);
-                            job.imp().outcome.borrow_mut().deleted.push(f.clone());
+                            job.set_files_done(done);
+                            // Something inside that could not be deleted was skipped, and
+                            // the item is still there.
+                            if !exists(&f).await {
+                                crate::tags::forget_all(&f);
+                                crate::starred::forget_all(&f);
+                                job.imp().outcome.borrow_mut().deleted.push(f.clone());
+                            }
                             break;
                         }
                         Err(e) => {
@@ -112,8 +119,11 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
             count(job, files.clone()).await;
             for f in files {
                 delete_recursive(job, mgr, &f).await?;
-                crate::tags::forget_all(&f);
-                crate::starred::forget_all(&f);
+                // Unless something inside it was skipped and it is still there.
+                if !exists(&f).await {
+                    crate::tags::forget_all(&f);
+                    crate::starred::forget_all(&f);
+                }
             }
         }
         JobKind::Rename { renames } => {
