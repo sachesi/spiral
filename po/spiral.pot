@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.13.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-10 10:26+0300\n"
+"POT-Creation-Date: 2026-09-10 11:36+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -629,195 +629,195 @@ msgstr ""
 msgid "_Empty Document"
 msgstr ""
 
-#: src/browser_actions.rs:675
+#: src/browser_actions.rs:678
 #, no-c-format
 msgid "Extract To"
 msgstr ""
 
-#: src/browser_actions.rs:676 src/ops/archive.rs:352
+#: src/browser_actions.rs:679 src/ops/archive.rs:352
 #, no-c-format
 msgid "_Extract"
 msgstr ""
 
-#: src/browser_actions.rs:694
+#: src/browser_actions.rs:697
 #, no-c-format
 msgid "Archive"
 msgstr ""
 
-#: src/browser_actions.rs:761 src/places_sidebar.rs:495
+#: src/browser_actions.rs:764 src/places_sidebar.rs:529
 #, no-c-format
 msgid "Could not tag “%s”"
 msgstr ""
 
-#: src/browser_actions.rs:963
+#: src/browser_actions.rs:965
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr ""
 
-#: src/browser_actions.rs:976
+#: src/browser_actions.rs:978
 #, no-c-format
 msgid "Move To"
 msgstr ""
 
-#: src/browser_actions.rs:976
+#: src/browser_actions.rs:978
 #, no-c-format
 msgid "_Move"
 msgstr ""
 
-#: src/browser_actions.rs:978
+#: src/browser_actions.rs:980
 #, no-c-format
 msgid "Copy To"
 msgstr ""
 
-#: src/browser_actions.rs:978 ui/browser_view.ui:203
+#: src/browser_actions.rs:980 ui/browser_view.ui:208
 #, no-c-format
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:1070 src/browser_view.rs:1490
-#: src/browser_view.rs:1497 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1081 src/browser_view.rs:1559
+#: src/browser_view.rs:1566 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
 
-#: src/browser_actions.rs:1080
+#: src/browser_actions.rs:1091
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr ""
 
-#: src/browser_actions.rs:1082
+#: src/browser_actions.rs:1093
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_actions.rs:1090
+#: src/browser_actions.rs:1101
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr ""
 
-#: src/browser_actions.rs:1095 src/dialogs/batch_rename.rs:108
+#: src/browser_actions.rs:1106 src/dialogs/batch_rename.rs:108
 #: src/dialogs/compress.rs:70 src/dialogs/connect_server.rs:66
 #: src/dialogs/open_with.rs:59 src/dialogs/select_pattern.rs:44
 #: src/dialogs/tags.rs:36 src/ops/archive.rs:351 src/ops/conflict.rs:64
-#: src/ops/conflict.rs:315 src/ops/mod.rs:30 src/ops/walk.rs:268
-#: src/places_sidebar.rs:906 src/places_sidebar.rs:1268
+#: src/ops/conflict.rs:315 src/ops/mod.rs:30 src/ops/walk.rs:299
+#: src/places_sidebar.rs:940 src/places_sidebar.rs:1301
 #: src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
 msgstr ""
 
-#: src/browser_actions.rs:1096
+#: src/browser_actions.rs:1107
 #, no-c-format
 msgid "_Delete"
 msgstr ""
 
-#: src/browser_actions.rs:1149
+#: src/browser_actions.rs:1160
 #, no-c-format
 msgid "Untitled Document"
 msgstr ""
 
-#: src/browser_actions.rs:1183 ui/path_bar.ui:32 ui/path_bar.ui:63
+#: src/browser_actions.rs:1194 ui/path_bar.ui:32 ui/path_bar.ui:63
 #: ui/places_sidebar.ui:16 ui/places_sidebar.ui:58
 #, no-c-format
 msgid "Open in New _Tab"
 msgstr ""
 
-#: src/browser_actions.rs:1184 ui/path_bar.ui:36 ui/path_bar.ui:67
+#: src/browser_actions.rs:1195 ui/path_bar.ui:36 ui/path_bar.ui:67
 #, no-c-format
 msgid "Open in New _Window"
 msgstr ""
 
-#: src/browser_actions.rs:1185 ui/browser_view.ui:342
+#: src/browser_actions.rs:1196 ui/browser_view.ui:347
 #, no-c-format
 msgid "Open in _Terminal"
 msgstr ""
 
-#: src/browser_actions.rs:1211 ui/path_bar.ui:16
+#: src/browser_actions.rs:1222 ui/path_bar.ui:16
 #, no-c-format
 msgid "New _Document"
 msgstr ""
 
-#: src/browser_view.rs:580
+#: src/browser_view.rs:583
 #, no-c-format
 msgid "%d folder selected"
 msgid_plural "%d folders selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:584
+#: src/browser_view.rs:587
 #, no-c-format
 msgid "%d item selected"
 msgid_plural "%d items selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:967
+#: src/browser_view.rs:986
 #, no-c-format
 msgid "Remove from Starred"
 msgstr ""
 
-#: src/browser_view.rs:969
+#: src/browser_view.rs:988
 #, no-c-format
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view.rs:1544
+#: src/browser_view.rs:1613
 #, no-c-format
 msgid "The password dialog was dismissed."
 msgstr ""
 
-#: src/browser_view.rs:1561 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1630 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
-#: src/ops/walk.rs:46 src/places_sidebar.rs:935
+#: src/ops/walk.rs:46 src/places_sidebar.rs:969
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view.rs:1575
+#: src/browser_view.rs:1644
 #, no-c-format
 msgid "Connecting to %s…"
 msgstr ""
 
-#: src/browser_view.rs:1580
+#: src/browser_view.rs:1649
 #, no-c-format
 msgid "Could Not Connect"
 msgstr ""
 
-#: src/browser_view.rs:1583
+#: src/browser_view.rs:1652
 #, no-c-format
 msgid "Reloading the folder tries again."
 msgstr ""
 
-#: src/browser_view.rs:1588 ui/browser_view.ui:114
+#: src/browser_view.rs:1657 ui/browser_view.ui:114
 #, no-c-format
 msgid "Could Not Open Folder"
 msgstr ""
 
-#: src/browser_view.rs:1607
+#: src/browser_view.rs:1676
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:1611
+#: src/browser_view.rs:1680
 #, no-c-format
 msgid "No Servers Found"
 msgstr ""
 
-#: src/browser_view.rs:1615 ui/browser_view.ui:103
+#: src/browser_view.rs:1684 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:1677
+#: src/browser_view.rs:1746
 #, no-c-format
 msgid ""
 "Machines that announce themselves on the network appear here. Others are "
 "reached with “Connect to Server…”."
 msgstr ""
 
-#: src/browser_view.rs:1686
+#: src/browser_view.rs:1755
 #, no-c-format
 msgid ""
 "One server was found but left out: no gvfs backend for %s addresses is "
@@ -828,22 +828,22 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:1706
+#: src/browser_view.rs:1775
 #, no-c-format
 msgid "No gvfs backend for %s addresses is installed."
 msgstr ""
 
-#: src/browser_view.rs:1736
+#: src/browser_view.rs:1805
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:1752
+#: src/browser_view.rs:1821
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:1757
+#: src/browser_view.rs:1826
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -851,17 +851,17 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:1763
+#: src/browser_view.rs:1832
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:2503 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2572 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:2603 src/dialogs/properties.rs:256
+#: src/browser_view.rs:2672 src/dialogs/properties.rs:256
 #: src/dialogs/properties.rs:273
 #, no-c-format
 msgid "Location"
@@ -910,7 +910,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:72
-#: src/places_sidebar.rs:1294
+#: src/places_sidebar.rs:1327
 #, no-c-format
 msgid "_Rename"
 msgstr ""
@@ -1166,7 +1166,7 @@ msgid "Off, Ctrl copies and dragging inside Spiral moves without asking"
 msgstr ""
 
 #: src/dialogs/preferences.rs:62 src/file_utils.rs:394
-#: src/places_sidebar.rs:733
+#: src/places_sidebar.rs:767
 #, no-c-format
 msgid "Network"
 msgstr ""
@@ -1234,7 +1234,7 @@ msgstr ""
 msgid "Sidebar"
 msgstr ""
 
-#: src/dialogs/preferences.rs:133 src/places_sidebar.rs:651
+#: src/dialogs/preferences.rs:133 src/places_sidebar.rs:685
 #, no-c-format
 msgid "Root"
 msgstr ""
@@ -1245,7 +1245,7 @@ msgid "The top of the filesystem, above the bookmarks"
 msgstr ""
 
 #: src/dialogs/preferences.rs:139 src/file_utils.rs:397 src/path_bar.rs:366
-#: src/places_sidebar.rs:659
+#: src/places_sidebar.rs:693
 #, no-c-format
 msgid "Favorites"
 msgstr ""
@@ -1306,12 +1306,12 @@ msgstr ""
 msgid "Open in New Window"
 msgstr ""
 
-#: src/dialogs/preferences.rs:179 ui/browser_view.ui:207
+#: src/dialogs/preferences.rs:179 ui/browser_view.ui:212
 #, no-c-format
 msgid "Copy to…"
 msgstr ""
 
-#: src/dialogs/preferences.rs:180 ui/browser_view.ui:212
+#: src/dialogs/preferences.rs:180 ui/browser_view.ui:217
 #, no-c-format
 msgid "Move to…"
 msgstr ""
@@ -1662,12 +1662,12 @@ msgstr ""
 msgid "_Add"
 msgstr ""
 
-#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1192
+#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1225
 #, no-c-format
 msgid "Custom…"
 msgstr ""
 
-#: src/dialogs/tags.rs:177 src/places_sidebar.rs:985
+#: src/dialogs/tags.rs:177 src/places_sidebar.rs:1019
 #, no-c-format
 msgid "Tag Colour"
 msgstr ""
@@ -1763,12 +1763,12 @@ msgid_plural "%d items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:388 src/path_bar.rs:360 src/places_sidebar.rs:633
+#: src/file_utils.rs:388 src/path_bar.rs:360 src/places_sidebar.rs:667
 #, no-c-format
 msgid "Home"
 msgstr ""
 
-#: src/file_utils.rs:391 src/path_bar.rs:363 src/places_sidebar.rs:666
+#: src/file_utils.rs:391 src/path_bar.rs:363 src/places_sidebar.rs:700
 #, no-c-format
 msgid "Trash"
 msgstr ""
@@ -1908,7 +1908,7 @@ msgstr ""
 msgid "Extracting “%s”"
 msgstr ""
 
-#: src/ops/archive.rs:527 src/ops/walk.rs:522
+#: src/ops/archive.rs:527 src/ops/walk.rs:553
 #, no-c-format
 msgid "Waiting for your answer"
 msgstr ""
@@ -2280,24 +2280,29 @@ msgid_plural "%d hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ops/job.rs:378
+#: src/ops/job.rs:335
+#, no-c-format
+msgid "Nothing was trashed or deleted"
+msgstr ""
+
+#: src/ops/job.rs:381
 #, no-c-format
 msgid "Preparing… %d file"
 msgid_plural "Preparing… %d files"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ops/job.rs:406
+#: src/ops/job.rs:409
 #, no-c-format
 msgid "%a of %b"
 msgstr ""
 
-#: src/ops/job.rs:413
+#: src/ops/job.rs:416
 #, no-c-format
 msgid "%a, %t left (%r/s)"
 msgstr ""
 
-#: src/ops/job.rs:421
+#: src/ops/job.rs:424
 #, no-c-format
 msgid "%a of %b file"
 msgid_plural "%a of %b files"
@@ -2324,7 +2329,7 @@ msgstr ""
 msgid "All items in the Trash will be permanently deleted."
 msgstr ""
 
-#: src/ops/mod.rs:31 src/places_sidebar.rs:908 ui/browser_view.ui:356
+#: src/ops/mod.rs:31 src/places_sidebar.rs:942 ui/browser_view.ui:361
 #, no-c-format
 msgid "_Empty Trash"
 msgstr ""
@@ -2345,76 +2350,76 @@ msgid "The destination folder is inside the source folder."
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:93
+#: src/ops/walk.rs:104
 #, no-c-format
 msgid "Trashing"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:130
+#: src/ops/walk.rs:146
 #, no-c-format
 msgid "Renaming"
 msgstr ""
 
-#: src/ops/walk.rs:209
+#: src/ops/walk.rs:225
 #, no-c-format
 msgid "Links can only point at local files"
 msgstr ""
 
-#: src/ops/walk.rs:257
+#: src/ops/walk.rs:288
 #, no-c-format
 msgid ""
-"This location does not support trashing. Delete it and the other items that "
-"cannot be trashed permanently instead?"
+"This location does not support trashing. Delete it permanently instead, "
+"along with any other item that cannot be trashed either?"
 msgstr ""
 
-#: src/ops/walk.rs:260
+#: src/ops/walk.rs:291
 #, no-c-format
 msgid "This location does not support trashing. Delete it permanently instead?"
 msgstr ""
 
-#: src/ops/walk.rs:263
+#: src/ops/walk.rs:294
 #, no-c-format
 msgid "Cannot Move “%s” to Trash"
 msgstr ""
 
-#: src/ops/walk.rs:269
+#: src/ops/walk.rs:300
 #, no-c-format
 msgid "_Delete Permanently"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:350
+#: src/ops/walk.rs:381
 #, no-c-format
 msgid "Moving"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:353
+#: src/ops/walk.rs:384
 #, no-c-format
 msgid "Copying"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:553
+#: src/ops/walk.rs:584
 #, no-c-format
 msgid "Deleting"
 msgstr ""
 
 #. Translators: name of a symbolic link, as in “Link to report.pdf”.
-#: src/ops/walk.rs:584
+#: src/ops/walk.rs:615
 #, no-c-format
 msgid "Link to %s"
 msgstr ""
 
 #. Translators: file name given to an image pasted from the clipboard.
-#: src/ops/walk.rs:606
+#: src/ops/walk.rs:637
 #, no-c-format
 msgid "Pasted Image"
 msgstr ""
 
 #. Translators: goes into duplicate names, as in “report (copy).pdf”.
-#: src/ops/walk.rs:628
+#: src/ops/walk.rs:659
 #, no-c-format
 msgid "copy"
 msgstr ""
@@ -2424,81 +2429,81 @@ msgstr ""
 msgid "Edit Location"
 msgstr ""
 
-#: src/places_sidebar.rs:643
+#: src/places_sidebar.rs:677
 #, no-c-format
 msgid "Desktop"
 msgstr ""
 
-#: src/places_sidebar.rs:787
+#: src/places_sidebar.rs:821
 #, no-c-format
 msgid "Disconnect"
 msgstr ""
 
-#: src/places_sidebar.rs:789
+#: src/places_sidebar.rs:823
 #, no-c-format
 msgid "Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:824
+#: src/places_sidebar.rs:858
 #, no-c-format
 msgid "Could Not Mount"
 msgstr ""
 
-#: src/places_sidebar.rs:863
+#: src/places_sidebar.rs:897
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:865
+#: src/places_sidebar.rs:899
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr ""
 
-#: src/places_sidebar.rs:884
+#: src/places_sidebar.rs:918
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:890
+#: src/places_sidebar.rs:924
 #, no-c-format
 msgid "Could Not Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:901
+#: src/places_sidebar.rs:935
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr ""
 
-#: src/places_sidebar.rs:903
+#: src/places_sidebar.rs:937
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
 "trashed items on the volume will be permanently lost."
 msgstr ""
 
-#: src/places_sidebar.rs:907
+#: src/places_sidebar.rs:941
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr ""
 
-#: src/places_sidebar.rs:1253
+#: src/places_sidebar.rs:1286
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr ""
 
-#: src/places_sidebar.rs:1255
+#: src/places_sidebar.rs:1288
 #, no-c-format
 msgid "No file carries it."
 msgstr ""
 
-#: src/places_sidebar.rs:1258
+#: src/places_sidebar.rs:1291
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/places_sidebar.rs:1269 ui/places_sidebar.ui:28
+#: src/places_sidebar.rs:1302 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr ""
@@ -2635,12 +2640,12 @@ msgstr ""
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:690 ui/shortcuts_dialog.ui:283
+#: src/window.rs:697 ui/shortcuts_dialog.ui:283
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:1116 ui/window.ui:73
+#: src/window.rs:1123 ui/window.ui:73
 #, no-c-format
 msgid "_Columns"
 msgstr ""
@@ -2662,107 +2667,111 @@ msgid "Open Item _Location"
 msgstr ""
 
 #: ui/browser_view.ui:187
-msgid "Open _With…"
+msgid "Open Item Location in New Ta_b"
 msgstr ""
 
 #: ui/browser_view.ui:192
+msgid "Open _With…"
+msgstr ""
+
+#: ui/browser_view.ui:197
 msgid "_Run as a Program"
 msgstr ""
 
-#: ui/browser_view.ui:199
+#: ui/browser_view.ui:204
 msgid "Cu_t"
 msgstr ""
 
-#: ui/browser_view.ui:217
+#: ui/browser_view.ui:222
 msgid "_Paste Into Folder"
 msgstr ""
 
-#: ui/browser_view.ui:222
+#: ui/browser_view.ui:227
 msgid "Create _Link"
 msgstr ""
 
-#: ui/browser_view.ui:229
+#: ui/browser_view.ui:234
 msgid "_Extract Here"
 msgstr ""
 
-#: ui/browser_view.ui:234
+#: ui/browser_view.ui:239
 msgid "E_xtract To…"
 msgstr ""
 
-#: ui/browser_view.ui:239
+#: ui/browser_view.ui:244
 msgid "C_ompress…"
 msgstr ""
 
-#: ui/browser_view.ui:246
+#: ui/browser_view.ui:251
 msgid "Add to _Favorites"
 msgstr ""
 
-#: ui/browser_view.ui:251
+#: ui/browser_view.ui:256
 msgid "Remove from _Favorites"
 msgstr ""
 
-#: ui/browser_view.ui:259
+#: ui/browser_view.ui:264
 msgid "_Restore From Trash"
 msgstr ""
 
-#: ui/browser_view.ui:264 ui/places_sidebar.ui:23 ui/places_sidebar.ui:69
+#: ui/browser_view.ui:269 ui/places_sidebar.ui:23 ui/places_sidebar.ui:69
 msgid "Rena_me…"
 msgstr ""
 
-#: ui/browser_view.ui:268
+#: ui/browser_view.ui:273
 msgid "Move to _Trash"
 msgstr ""
 
-#: ui/browser_view.ui:272
+#: ui/browser_view.ui:277
 msgid "_Delete Permanently…"
 msgstr ""
 
-#: ui/browser_view.ui:277
+#: ui/browser_view.ui:282
 msgid "_Delete From Trash…"
 msgstr ""
 
-#: ui/browser_view.ui:284
+#: ui/browser_view.ui:289
 msgid "_Unmount"
 msgstr ""
 
-#: ui/browser_view.ui:289 ui/places_sidebar.ui:35
+#: ui/browser_view.ui:294 ui/places_sidebar.ui:35
 msgid "_Eject"
 msgstr ""
 
-#: ui/browser_view.ui:296 ui/browser_view.ui:361 ui/path_bar.ui:55
+#: ui/browser_view.ui:301 ui/browser_view.ui:366 ui/path_bar.ui:55
 #: ui/path_bar.ui:83
 msgid "P_roperties"
 msgstr ""
 
-#: ui/browser_view.ui:304
+#: ui/browser_view.ui:309
 msgid "_Copy Here"
 msgstr ""
 
-#: ui/browser_view.ui:308
+#: ui/browser_view.ui:313
 msgid "_Move Here"
 msgstr ""
 
-#: ui/browser_view.ui:313
+#: ui/browser_view.ui:318
 msgid "_Link Here"
 msgstr ""
 
-#: ui/browser_view.ui:321 ui/path_bar.ui:12
+#: ui/browser_view.ui:326 ui/path_bar.ui:12
 msgid "New _Folder…"
 msgstr ""
 
-#: ui/browser_view.ui:327 ui/path_bar.ui:22
+#: ui/browser_view.ui:332 ui/path_bar.ui:22
 msgid "_Paste"
 msgstr ""
 
-#: ui/browser_view.ui:331
+#: ui/browser_view.ui:336
 msgid "Paste as _Link"
 msgstr ""
 
-#: ui/browser_view.ui:336 ui/path_bar.ui:26
+#: ui/browser_view.ui:341 ui/path_bar.ui:26
 msgid "Select _All"
 msgstr ""
 
-#: ui/browser_view.ui:349 ui/path_bar.ui:73
+#: ui/browser_view.ui:354 ui/path_bar.ui:73
 msgid "Add to _Bookmarks"
 msgstr ""
 
