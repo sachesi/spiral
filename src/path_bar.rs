@@ -394,6 +394,11 @@ glib::wrapper! {
 impl PathBar {
     /// Tell the bar what a location was listed under, ahead of setting the location, for
     /// one that has no mount to be named after.
+    /// Open the ⋮ menu of the current folder.
+    pub fn popup_menu(&self) {
+        self.imp().menu_button.popup();
+    }
+
     pub fn set_given_name(&self, given: Option<(gio::File, String)>) {
         self.imp().given.replace(given);
     }

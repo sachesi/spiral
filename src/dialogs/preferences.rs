@@ -170,7 +170,7 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     let optional = adw::PreferencesGroup::builder()
         .title(gettext("Optional Context Menu Actions"))
         .description(gettext(
-            "A middle click still opens a folder in a new tab, Shift+Delete still deletes permanently, and links can always be pasted.",
+            "These only change the menus: a middle click and the shortcuts still do what the entries do, and links can always be pasted.",
         ))
         .build();
     for (key, title) in [

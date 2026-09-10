@@ -240,7 +240,9 @@ two of them would collide or take a name the folder already has. One undo puts t
 back.
 
 Delete moves to trash, Shift+Delete deletes for good after asking; the menu entry for it
-is off by default and lives in Preferences under Optional Context Menu Actions. Locations
+is off by default and lives in Preferences under Optional Context Menu Actions, with
+"Open in New Tab", "Open in New Window" and "Create Link"; their shortcuts (Ctrl+Return,
+Shift+Return, Ctrl+M) work whether the menu shows them or not. Locations
 that cannot trash (some shares) offer permanent deletion instead. Inside Trash the menu
 offers "Restore From Trash" and "Delete From Trash". Everything else about operations,
 conflicts and undo is in [file-operations.md](file-operations.md).

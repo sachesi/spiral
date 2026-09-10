@@ -18,6 +18,7 @@ Ctrl+? shows this list inside the application.
 | Backspace | Parent folder; back to the search in a folder opened from its results; out of a search |
 | Alt+Home | Home |
 | Ctrl+L | Type a location |
+| F10 | Menu of the current folder |
 | Ctrl+F | Search the folder |
 | F5, Ctrl+R | Reload |
 | Esc | Stop reading the folder or the search, keeping what has arrived; otherwise end the search |
@@ -37,7 +38,11 @@ Ctrl+? shows this list inside the application.
 | Delete | Move to trash; inside Trash, delete permanently |
 | Shift+Delete | Delete permanently |
 | Space | Preview the selection |
-| Alt+Return | Properties |
+| Ctrl+O | Open |
+| Ctrl+Return, Shift+Return | Open a folder in a new tab, in a new window |
+| Ctrl+Alt+O | Open the folder a search result or a favorite is in |
+| Ctrl+M | Create a link to the selection |
+| Alt+Return, Ctrl+I | Properties |
 | Menu, Shift+F10 | Context menu |
 
 Tab switching with Ctrl+Page Up and Ctrl+Page Down is libadwaita's; Alt and a digit goes to
