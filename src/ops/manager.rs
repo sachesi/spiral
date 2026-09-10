@@ -3,7 +3,7 @@
 use std::cell::{Cell, RefCell};
 
 use futures_util::future::{Aborted, abortable};
-use gettextrs::gettext;
+use gettextrs::{gettext, ngettext};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 
@@ -64,7 +64,67 @@ impl JobManager {
     pub fn new(app: &SpiralApplication) -> Self {
         let mgr: Self = glib::Object::new();
         mgr.imp().app.set(Some(app));
+        // The operations list goes with the last window; a notification stands in for it
+        // until a window is back.
+        app.connect_window_removed(glib::clone!(
+            #[weak]
+            mgr,
+            move |_, _| mgr.tell_running()
+        ));
+        app.connect_window_added(|app, _| app.withdraw_notification(RUNNING));
         mgr
+    }
+
+    fn has_window(&self) -> bool {
+        self.app().windows().iter().any(|w| w.is::<SpiralWindow>())
+    }
+
+    /// With no window open, say how many operations are running, or withdraw the word once
+    /// none are.
+    fn tell_running(&self) {
+        let app = self.app();
+        let running = self.imp().running.get();
+        if self.has_window() || running == 0 {
+            app.withdraw_notification(RUNNING);
+            return;
+        }
+        let n = gio::Notification::new(&gettext("File Operations"));
+        n.set_body(Some(
+            &ngettext(
+                "%d file operation running",
+                "%d file operations running",
+                running,
+            )
+            .replace("%d", &running.to_string()),
+        ));
+        n.set_category(Some("transfer"));
+        n.set_default_action("app.show-operations");
+        n.add_button(&gettext("Show Details"), "app.show-operations");
+        app.send_notification(Some(RUNNING), &n);
+    }
+
+    /// With no window open, say how an operation ended: what went wrong with one that
+    /// failed, and that they are all done once the last one is.
+    fn tell_end(&self, failure: Option<&str>) {
+        if self.has_window() {
+            return;
+        }
+        let app = self.app();
+        if let Some(message) = failure {
+            let n = gio::Notification::new(&gettext("File Operation Failed"));
+            n.set_body(Some(message));
+            n.set_category(Some("transfer.error"));
+            n.set_default_action("app.new-window");
+            app.send_notification(None, &n);
+        }
+        self.tell_running();
+        if self.imp().running.get() == 0 && failure.is_none() {
+            let n = gio::Notification::new(&gettext("File Operations"));
+            n.set_body(Some(&gettext("All file operations are done")));
+            n.set_category(Some("transfer.complete"));
+            n.set_default_action("app.new-window");
+            app.send_notification(Some(DONE), &n);
+        }
     }
 
     fn app(&self) -> SpiralApplication {
@@ -129,11 +189,13 @@ impl JobManager {
         took: std::time::Duration,
     ) {
         let imp = self.imp();
+        let mut failure = None;
         let status = match result {
             Ok(Ok(())) => JobStatus::Done,
             Ok(Err(Fail::Cancelled)) => JobStatus::Cancelled,
             Ok(Err(Fail::Failed(msg))) => {
                 self.show_toast(&msg, false);
+                failure = Some(msg);
                 JobStatus::Failed
             }
             Err(Aborted) => {
@@ -153,6 +215,7 @@ impl JobManager {
         job.imp().hold.take();
         imp.running.set(imp.running.get().saturating_sub(1));
         self.notify_running();
+        self.tell_end(failure.as_deref());
 
         if status == JobStatus::Done {
             let kind = job.kind();
@@ -255,6 +318,11 @@ impl JobManager {
         }
     }
 }
+
+/// Ids of the notifications about operations: the one counting those running, and the one
+/// saying they are done.
+const RUNNING: &str = "operations";
+const DONE: &str = "operations-done";
 
 /// How long an operation takes before its end is worth a toast in the folder it was for.
 const SLOW: std::time::Duration = std::time::Duration::from_secs(3);

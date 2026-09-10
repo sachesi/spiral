@@ -293,12 +293,16 @@ impl SpiralApplication {
         let about = gio::ActionEntry::builder("about")
             .activate(|app: &Self, _, _| app.show_about())
             .build();
+        // What a notification about operations opens: a window with the operations list.
+        let show_operations = gio::ActionEntry::builder("show-operations")
+            .activate(|app: &Self, _, _| app.open_window(&[]).show_progress())
+            .build();
         let preferences = gio::ActionEntry::builder("preferences")
             .activate(|app: &Self, _, _| {
                 crate::dialogs::preferences_dialog().present(app.active_window().as_ref());
             })
             .build();
-        self.add_action_entries([quit, new_window, about, preferences]);
+        self.add_action_entries([quit, new_window, about, show_operations, preferences]);
         self.set_accels_for_action("app.preferences", &["<Control>comma"]);
 
         let mgr = self.job_manager();
