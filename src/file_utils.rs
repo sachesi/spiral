@@ -109,6 +109,21 @@ pub fn content_type_of(info: &gio::FileInfo) -> Option<glib::GString> {
 pub fn is_hidden(info: &gio::FileInfo) -> bool {
     (info.has_attribute("standard::is-hidden") && info.is_hidden())
         || (info.has_attribute("standard::is-backup") && info.is_backup())
+        || is_hidden_share(info)
+}
+
+/// A share whose name ends in `$` is one Windows keeps out of its lists: `print$` with the
+/// printer drivers, `C$` and `ADMIN$` for administrators. gvfs lists whatever the server
+/// lets it see, so the convention is kept here, the way a dot keeps a file out of sight.
+fn is_hidden_share(info: &gio::FileInfo) -> bool {
+    target_of(info).is_some()
+        && info.has_attribute("standard::name")
+        && info.name().to_string_lossy().ends_with('$')
+        && info
+            .attribute_object("standard::file")
+            .and_downcast::<gio::File>()
+            .and_then(|f| f.uri_scheme())
+            .is_some_and(|s| s == "smb")
 }
 
 /// Whether `info` points at a location nothing installed here can open: a server listed
@@ -520,6 +535,31 @@ mod tests {
         let plain = gio::FileInfo::new();
         plain.set_file_type(gio::FileType::Regular);
         assert!(!is_unreachable(&plain));
+    }
+
+    /// A share entry as gvfs lists it on an SMB server: a mountable of that name, on the
+    /// server, pointing at itself.
+    fn share(server: &str, name: &str) -> gio::FileInfo {
+        let info = gio::FileInfo::new();
+        info.set_name(name);
+        info.set_file_type(gio::FileType::Mountable);
+        let uri = format!("{server}{name}/");
+        info.set_attribute_string("standard::target-uri", &uri);
+        info.set_attribute_object("standard::file", &gio::File::for_uri(&uri));
+        info
+    }
+
+    /// The shares Windows keeps out of its lists, the ones ending in `$`, are hidden here
+    /// too; a file of that name inside a share, or a share on another kind of server,
+    /// is not.
+    #[test]
+    fn a_dollar_share_on_an_smb_server_is_hidden() {
+        assert!(is_hidden(&share("smb://server/", "print$")));
+        assert!(!is_hidden(&share("smb://server/", "Public")));
+        assert!(!is_hidden(&share("afp://server/", "print$")));
+        let file = share("smb://server/", "report$");
+        file.set_file_type(gio::FileType::Regular);
+        assert!(!is_hidden(&file));
     }
 
     fn named(name: &str) -> gio::FileInfo {
