@@ -104,8 +104,8 @@ impl JobManager {
     }
 
     /// With no window open, say how an operation ended: what went wrong with one that
-    /// failed, and that they are all done once the last one is.
-    fn tell_end(&self, failure: Option<&str>) {
+    /// failed, and that they are all done once the last one is, unless it was stopped.
+    fn tell_end(&self, failure: Option<&str>, cancelled: bool) {
         if self.has_window() {
             return;
         }
@@ -118,7 +118,7 @@ impl JobManager {
             app.send_notification(None, &n);
         }
         self.tell_running();
-        if self.imp().running.get() == 0 && failure.is_none() {
+        if self.imp().running.get() == 0 && failure.is_none() && !cancelled {
             let n = gio::Notification::new(&gettext("File Operations"));
             n.set_body(Some(&gettext("All file operations are done")));
             n.set_category(Some("transfer.complete"));
@@ -215,7 +215,7 @@ impl JobManager {
         job.imp().hold.take();
         imp.running.set(imp.running.get().saturating_sub(1));
         self.notify_running();
-        self.tell_end(failure.as_deref());
+        self.tell_end(failure.as_deref(), status == JobStatus::Cancelled);
 
         if status == JobStatus::Done {
             let kind = job.kind();
