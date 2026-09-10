@@ -53,6 +53,7 @@ pub mod browser_view;
 pub mod clipboard;
 pub mod dbus;
 pub mod dialogs;
+pub mod disks;
 pub mod enums;
 pub mod file_utils;
 pub mod folder_model;
