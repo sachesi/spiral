@@ -210,6 +210,25 @@ pub fn set_color(name: &str, color: &str) {
     }
 }
 
+/// Put the tag before or after `anchor`, or last without one; the order is the sidebar's
+/// and the context menu's.
+pub fn move_to(name: &str, anchor: Option<(&str, bool)>) {
+    let mut tags = (*all()).clone();
+    let Some(pos) = tags.iter().position(|t| t.name == name) else {
+        return;
+    };
+    let tag = tags.remove(pos);
+    let at = anchor
+        .and_then(|(a, after)| {
+            tags.iter()
+                .position(|t| t.name == a)
+                .map(|i| if after { i + 1 } else { i })
+        })
+        .unwrap_or(tags.len());
+    tags.insert(at, tag);
+    save_all(&tags);
+}
+
 /// Give the tag a new name, on every file known to carry it as well as in the setting.
 /// The files are written off the main loop: there may be many, and some on a share.
 pub fn rename(old: &str, new: &str) {
