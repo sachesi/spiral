@@ -91,12 +91,16 @@ impl PropertiesDialog {
                 });
             // A folder has a page about the disk it is on, where the filesystem says how big
             // that is.
+            // A share that is slow to answer does not hold the dialog up; it goes without.
             let disk = match infos.as_slice() {
-                [(file, info)] if file_utils::is_dir(info) => file
-                    .query_filesystem_info_future(FS_ATTRS, glib::Priority::DEFAULT)
-                    .await
-                    .ok()
-                    .filter(|fs| fs.attribute_uint64("filesystem::size") > 0),
+                [(file, info)] if file_utils::is_dir(info) => glib::future_with_timeout(
+                    std::time::Duration::from_secs(1),
+                    file.query_filesystem_info_future(FS_ATTRS, glib::Priority::DEFAULT),
+                )
+                .await
+                .ok()
+                .and_then(Result::ok)
+                .filter(|fs| fs.attribute_uint64("filesystem::size") > 0),
                 _ => None,
             };
             if !infos.is_empty() && parent.root().is_some() {
@@ -471,15 +475,33 @@ fn disk_page(dir: &gio::File, fs: &gio::FileInfo) -> adw::PreferencesPage {
     usage.add(&row(&gettext("Free"), &prefs::size(free)));
     let capacity = row(&gettext("Capacity"), &prefs::size(size));
     let bar = gtk::LevelBar::builder()
-        .value(used as f64 / size as f64)
         .width_request(120)
         .valign(gtk::Align::Center)
         .build();
+    // The bar's own levels show a bar near its end as good news, which on a disk it is
+    // not; without them it is the one colour, and the warning colour when nearly full.
+    for offset in [
+        gtk::LEVEL_BAR_OFFSET_LOW,
+        gtk::LEVEL_BAR_OFFSET_HIGH,
+        gtk::LEVEL_BAR_OFFSET_FULL,
+    ] {
+        bar.remove_offset_value(Some(offset));
+    }
+    let fill = used as f64 / size as f64;
+    bar.set_value(fill);
+    if fill > 0.9 {
+        bar.add_css_class("spiral-nearly-full");
+    }
     capacity.add_suffix(&bar);
     usage.add(&capacity);
     page.add(&usage);
 
-    let mount = dir.path().and_then(|p| crate::disks::mount_of(&p));
+    // A share reached through gvfs has a local path too, into gvfs's own mount, which is
+    // not the share's; what the filesystem answered says what it is instead.
+    let mount = dir
+        .path()
+        .filter(|_| dir.is_native())
+        .and_then(|p| crate::disks::mount_of(&p));
     let fs_type = fs
         .attribute_string("filesystem::type")
         .map(|t| t.to_string());

@@ -362,3 +362,8 @@ modelbutton > popover.menu > contents {
   margin-left: 10px;
   margin-right: 10px;
 }
+
+/* A disk nearly out of room, in Properties. */
+levelbar.spiral-nearly-full > trough > block.filled {
+  background-color: var(--warning-bg-color);
+}
