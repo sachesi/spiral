@@ -376,7 +376,7 @@ fn undo_for(job: &Job) -> Option<JobKind> {
                 files,
             })
         }
-        JobKind::Delete { .. } => None,
+        JobKind::Delete { .. } | JobKind::SetPermissions { .. } => None,
     }
 }
 
