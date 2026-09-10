@@ -120,7 +120,7 @@ mod imp {
         /// Optional list columns by key, for the visibility setting.
         pub columns: RefCell<Vec<(&'static str, gtk::ColumnViewColumn)>>,
 
-        pub history: RefCell<Vec<gio::File>>,
+        pub history: RefCell<Vec<super::Visit>>,
         pub history_pos: Cell<usize>,
         /// Where mounting the location stands, so a server that turns it down is not asked
         /// again each time the folder is listed, and the page can say what goes on meanwhile.
@@ -614,6 +614,22 @@ fn mostly_media(model: &FolderModel) -> bool {
 // every time its row is scrolled back into view.
 thread_local! {
     static COUNTS: RefCell<CountCache> = RefCell::new(CountCache::default());
+}
+
+/// A step in a tab's history: the folder, and the search it was showing when it was left,
+/// which going back to it brings back.
+pub struct Visit {
+    file: gio::File,
+    search: Option<Search>,
+}
+
+/// A search as it stood: the words and the filters.
+#[derive(Clone)]
+struct Search {
+    text: String,
+    kind: String,
+    date: String,
+    matching: String,
 }
 
 /// Where mounting the location of a view stands: nothing asked, a server being reached, or
@@ -1256,26 +1272,56 @@ impl BrowserView {
     /// Navigate to `file`, pushing onto history.
     pub fn go_to(&self, file: &gio::File) {
         let imp = self.imp();
-        if imp.model.location().is_some_and(|l| l.equal(file)) {
+        // Already there, unless it is showing a search: then the folder itself is a step
+        // of its own, and Back returns to the search.
+        if imp.model.location().is_some_and(|l| l.equal(file)) && imp.model.search_text().is_empty()
+        {
             return;
         }
+        self.remember_search();
         {
             let mut hist = imp.history.borrow_mut();
             let pos = imp.history_pos.get();
             if !hist.is_empty() {
                 hist.truncate(pos + 1);
             }
-            hist.push(file.clone());
+            hist.push(Visit {
+                file: file.clone(),
+                search: None,
+            });
             imp.history_pos.set(hist.len() - 1);
         }
-        self.set_location_internal(file);
+        self.set_location_internal(file, None);
     }
 
-    fn set_location_internal(&self, file: &gio::File) {
+    /// Keep the search on screen with the step of the history being left.
+    fn remember_search(&self) {
+        let imp = self.imp();
+        let model = &imp.model;
+        let text = model.search_text();
+        let search = (!text.is_empty()).then(|| Search {
+            text,
+            kind: model.search_kind(),
+            date: model.search_date(),
+            matching: model.search_match(),
+        });
+        if let Some(visit) = imp.history.borrow_mut().get_mut(imp.history_pos.get()) {
+            visit.search = search;
+        }
+    }
+
+    /// Show `file`, and `search` in it when the step of the history had one.
+    fn set_location_internal(&self, file: &gio::File, search: Option<Search>) {
         let imp = self.imp();
         imp.mounting.replace(Mounting::Idle);
         imp.model.set_search_text("");
         imp.model.set_location(Some(file));
+        if let Some(search) = search {
+            imp.model.set_search_kind(search.kind);
+            imp.model.set_search_date(search.date);
+            imp.model.set_search_match(search.matching);
+            imp.model.set_search_text(search.text);
+        }
         imp.location.replace(Some(file.clone()));
         self.resolve_view_mode(file);
         // Model is empty right after set_location; scroll once the first items land.
@@ -1324,9 +1370,9 @@ impl BrowserView {
         if pos == 0 {
             return;
         }
+        self.remember_search();
         imp.history_pos.set(pos - 1);
-        let file = imp.history.borrow()[pos - 1].clone();
-        self.set_location_internal(&file);
+        self.show_visit(pos - 1);
     }
 
     pub fn go_forward(&self) {
@@ -1335,9 +1381,29 @@ impl BrowserView {
         if pos + 1 >= imp.history.borrow().len() {
             return;
         }
+        self.remember_search();
         imp.history_pos.set(pos + 1);
-        let file = imp.history.borrow()[pos + 1].clone();
-        self.set_location_internal(&file);
+        self.show_visit(pos + 1);
+    }
+
+    fn show_visit(&self, pos: usize) {
+        let (file, search) = {
+            let hist = self.imp().history.borrow();
+            (hist[pos].file.clone(), hist[pos].search.clone())
+        };
+        self.set_location_internal(&file, search);
+    }
+
+    /// Backspace: back to the search this folder was opened from, up otherwise.
+    pub fn go_back_or_up(&self) {
+        let imp = self.imp();
+        let pos = imp.history_pos.get();
+        let from_search = pos > 0 && imp.history.borrow()[pos - 1].search.is_some();
+        if from_search {
+            self.go_back();
+        } else {
+            self.go_up();
+        }
     }
 
     pub fn go_up(&self) {

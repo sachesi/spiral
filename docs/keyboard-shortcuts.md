@@ -14,7 +14,8 @@ Ctrl+? shows this list inside the application.
 | Ctrl+Q | Quit |
 | Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
 | Alt+Left, Alt+Right | Back, forward |
-| Alt+Up, Backspace | Parent folder |
+| Alt+Up | Parent folder |
+| Backspace | Parent folder; back to the search in a folder opened from its results |
 | Alt+Home | Home |
 | Ctrl+L | Type a location |
 | Ctrl+F | Search the folder |

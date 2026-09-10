@@ -185,6 +185,9 @@ mod imp {
                 win.navigate(BrowserView::go_forward)
             });
             klass.install_action("win.up", None, |win, _, _| win.navigate(BrowserView::go_up));
+            klass.install_action("win.back-or-up", None, |win, _, _| {
+                win.navigate(BrowserView::go_back_or_up)
+            });
             klass.install_action("win.home", None, |win, _, _| {
                 win.navigate(|v| v.go_to(&gio::File::for_path(glib::home_dir())))
             });
@@ -257,7 +260,7 @@ mod imp {
             klass.add_binding_action(Key::Left, M::ALT_MASK, "win.back");
             klass.add_binding_action(Key::Right, M::ALT_MASK, "win.forward");
             klass.add_binding_action(Key::Up, M::ALT_MASK, "win.up");
-            klass.add_binding_action(Key::BackSpace, M::empty(), "win.up");
+            klass.add_binding_action(Key::BackSpace, M::empty(), "win.back-or-up");
             klass.add_binding_action(Key::Home, M::ALT_MASK, "win.home");
             klass.add_binding_action(Key::F5, M::empty(), "win.reload");
             klass.add_binding_action(Key::r, M::CONTROL_MASK, "win.reload");
@@ -630,7 +633,11 @@ mod imp {
         fn on_search_toggled(&self, button: &gtk::ToggleButton) {
             if button.is_active() {
                 self.toolbar_switcher.set_visible_child_name("search");
-                self.search_entry.grab_focus();
+                // Shown again for a search coming back with the folder, the keyboard stays
+                // with the files.
+                if !self.syncing_search.get() {
+                    self.search_entry.grab_focus();
+                }
             } else {
                 self.search_entry.set_text("");
                 self.toolbar_switcher.set_visible_child_name("pathbar");
@@ -1162,6 +1169,8 @@ impl SpiralWindow {
         let search = model.search_text();
         if imp.search_entry.text().as_str() != search {
             imp.search_entry.set_text(&search);
+            // Typing on from the files goes on at the end of the words, not before them.
+            imp.search_entry.set_position(-1);
         }
         let pos = |list: &[&str], v: &str| list.iter().position(|k| *k == v).unwrap_or(0) as u32;
         imp.syncing_search.set(true);
@@ -1172,9 +1181,8 @@ impl SpiralWindow {
             .set_selected(pos(&dates, &model.search_date()));
         imp.search_match_row
             .set_selected(pos(&MATCHES, &model.search_match()));
+        // A tab showing a search shows the search bar, as when Back brings one back.
+        imp.search_button.set_active(!search.is_empty());
         imp.syncing_search.set(false);
-        if search.is_empty() && imp.search_button.is_active() {
-            imp.search_button.set_active(false);
-        }
     }
 }

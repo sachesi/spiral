@@ -54,7 +54,8 @@ accepts, Esc goes back to the crumbs. Hidden folders only complete if you typed 
 Right-clicking any crumb offers to open that folder in a new tab or window, bookmark it,
 copy its location or show its properties; the ⋮ menu has the same for the current folder.
 
-Alt+Up, Backspace and the arrow beside the history buttons go to the parent folder;
+Alt+Up and the arrow beside the history buttons go to the parent folder, and so does
+Backspace, except in a folder opened from search results, where it goes back to the search;
 Alt+Left and Alt+Right go through the history. Escape stops a folder or a search that is
 still coming in and keeps what has arrived; with nothing loading it does nothing. A folder
 stopped that way is a list of what had been read, and stops following what happens in the
@@ -103,7 +104,9 @@ to the entry narrows results by type (folders, documents, images, audio, videos,
 text, spreadsheets), by modification date, and can match file contents instead of or as
 well as names. Content matching reads text files up to 10 MB with nothing indexed ahead
 of time, so it is only as fast as the disk. Each tab keeps its own filters; "Open Item
-Location" on a result jumps to its folder.
+Location" on a result jumps to its folder. A folder left while it showed a search gets the
+search back, words and filters, when Back or Forward returns to it, so Back from a result's
+folder, or Backspace there, is back at the results.
 
 ## Views
 
