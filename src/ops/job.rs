@@ -317,7 +317,8 @@ impl Job {
     }
 
     /// Text for the finished row and the toast: what was asked for, except after trashing,
-    /// where it names what went to the trash, or what was deleted if nothing did.
+    /// where it names what went to the trash, or what was deleted if nothing did, or says
+    /// that nothing happened.
     pub fn done_message(&self) -> String {
         let kind = self.kind();
         let out = self.imp().outcome.borrow();
@@ -330,6 +331,8 @@ impl Job {
                 files: out.deleted.clone(),
             }
             .done_message(),
+            // Every item was skipped.
+            JobKind::Trash { .. } => gettext("Nothing was trashed or deleted"),
             kind => kind.done_message(),
         }
     }
