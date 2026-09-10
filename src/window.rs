@@ -726,7 +726,7 @@ impl SpiralWindow {
     }
 
     /// The panes of a tab, left to right.
-    fn views_of(page: &adw::TabPage) -> Vec<BrowserView> {
+    pub(crate) fn views_of(page: &adw::TabPage) -> Vec<BrowserView> {
         let Ok(paned) = page.child().downcast::<gtk::Paned>() else {
             return Vec::new();
         };
