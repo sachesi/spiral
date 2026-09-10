@@ -99,6 +99,10 @@ pub fn rename(file: &gio::File, label: &str) {
 
 /// Move `file` next to `anchor` (before it, or after when `after`), or to the end.
 pub fn move_to(file: &gio::File, anchor: Option<(&gio::File, bool)>) {
+    // Dropped on itself: it stays where it is.
+    if anchor.is_some_and(|(a, _)| a.equal(file)) {
+        return;
+    }
     let mut entries = load();
     let Some(pos) = entries.iter().position(|(f, _)| f.equal(file)) else {
         return;
