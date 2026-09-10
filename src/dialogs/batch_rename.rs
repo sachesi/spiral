@@ -26,11 +26,13 @@ const PREVIEW_ROWS: usize = 100;
 
 /// Ask for a rule and return the new name of every file in `names`, in the same order, or
 /// None if the dialog was dismissed. `others` are the names already in the folder that are
-/// not being renamed: a new name may not take one of those.
+/// not being renamed: a new name may not take one of those. `max` is the longest name the
+/// folder takes, where it is known.
 pub async fn batch_rename_dialog(
     parent: &impl IsA<gtk::Widget>,
     names: Vec<String>,
     others: HashSet<String>,
+    max: Option<usize>,
 ) -> Option<Vec<String>> {
     let rules = gtk::StringList::new(&[]);
     rules.append(&gettext("Name and Number"));
@@ -176,7 +178,7 @@ pub async fn batch_rename_dialog(
                     ),
                     Rule::Replace => replaced(&names, &find_row.text(), &replace_row.text()),
                 };
-                let problem = check(&names, &made, &others);
+                let problem = check(&names, &made, &others, max);
                 for (row, new) in rows.iter().zip(&made) {
                     row.set_subtitle(&glib::markup_escape_text(new));
                 }
@@ -285,9 +287,14 @@ fn replaced(names: &[String], find: &str, with: &str) -> Vec<String> {
 /// What is wrong with the names, if anything: the first complaint, in the order a reader
 /// would notice them. `others` is what the folder holds besides the files being renamed,
 /// as a set: a selection of thousands is checked on every keystroke.
-fn check(names: &[String], made: &[String], others: &HashSet<String>) -> Option<String> {
+fn check(
+    names: &[String],
+    made: &[String],
+    others: &HashSet<String>,
+    max: Option<usize>,
+) -> Option<String> {
     for (old, new) in names.iter().zip(made) {
-        if let naming::Verdict::Error(message) = naming::validate(new, Some(old), false) {
+        if let naming::Verdict::Error(message) = naming::validate(new, Some(old), false, max) {
             return Some(if message.is_empty() {
                 gettext("File names cannot be empty.")
             } else {
