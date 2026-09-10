@@ -115,19 +115,19 @@ msgstr "Показувати «Улюблене» на бічній панелі
 
 #: data/io.github.sachesi.spiral.gschema.xml:96
 msgid "Offer colour tags"
-msgstr "Пропонувати кольорові мітки"
+msgstr "Пропонувати кольорові теги"
 
 #: data/io.github.sachesi.spiral.gschema.xml:97
 msgid ""
 "Tags are kept on the files themselves, in the user.xdg.tags extended "
 "attribute, and listed in the sidebar."
 msgstr ""
-"Мітки зберігаються в самих файлах, у розширеному атрибуті user.xdg.tags, і "
+"Теги зберігаються в самих файлах, у розширеному атрибуті user.xdg.tags, і "
 "перелічені в бічній панелі."
 
 #: data/io.github.sachesi.spiral.gschema.xml:101
 msgid "The tags on offer, each a name and a colour"
-msgstr "Доступні мітки, кожна з назвою та кольором"
+msgstr "Доступні теги, кожен з назвою та кольором"
 
 #: data/io.github.sachesi.spiral.gschema.xml:102
 msgid ""
@@ -722,7 +722,7 @@ msgstr "Архів"
 #: src/browser_actions.rs:761 src/places_sidebar.rs:495
 #, no-c-format
 msgid "Could not tag “%s”"
-msgstr "Не вдалося позначити «%s»"
+msgstr "Не вдалося додати тег до «%s»"
 
 #: src/browser_actions.rs:963
 #, no-c-format
@@ -1354,7 +1354,7 @@ msgstr "Файли й теки, позначені зірочкою"
 #: src/dialogs/preferences.rs:149 src/file_utils.rs:400
 #, no-c-format
 msgid "Tags"
-msgstr "Мітки"
+msgstr "Теги"
 
 #: src/dialogs/preferences.rs:151
 #, no-c-format
@@ -1362,13 +1362,13 @@ msgid ""
 "Tags are written to the files themselves, so they follow a file wherever it "
 "goes and other programs can read them."
 msgstr ""
-"Мітки записуються в самі файли, тому залишаються з файлом, куди б він не "
+"Теги записуються в самі файли, тому залишаються з файлом, куди б він не "
 "перемістився, і інші програми можуть їх читати."
 
 #: src/dialogs/preferences.rs:155
 #, no-c-format
 msgid "Colour Tags"
-msgstr "Кольорові мітки"
+msgstr "Кольорові теги"
 
 #: src/dialogs/preferences.rs:157
 #, no-c-format
@@ -1376,8 +1376,8 @@ msgid ""
 "A row of colours in the context menu, a dot on each tagged file and the tags "
 "listed in the sidebar"
 msgstr ""
-"Ряд кольорів у контекстному меню, крапка на кожному позначеному файлі та "
-"список міток у бічній панелі"
+"Ряд кольорів у контекстному меню, крапка на кожному файлі з тегом та список "
+"тегів у бічній панелі"
 
 #: src/dialogs/preferences.rs:166
 #, no-c-format
@@ -1761,7 +1761,7 @@ msgstr "Вибрати за взірцем"
 #: src/dialogs/tags.rs:31
 #, no-c-format
 msgid "New Tag"
-msgstr "Нова мітка"
+msgstr "Новий тег"
 
 #: src/dialogs/tags.rs:36
 #, no-c-format
@@ -1776,7 +1776,7 @@ msgstr "Власний колір…"
 #: src/dialogs/tags.rs:177 src/places_sidebar.rs:985
 #, no-c-format
 msgid "Tag Colour"
-msgstr "Колір мітки"
+msgstr "Колір тегу"
 
 #: src/enums.rs:55 ui/shortcuts_dialog.ui:140
 #, no-c-format
@@ -2626,7 +2626,7 @@ msgstr "_Не спорожняти"
 #: src/places_sidebar.rs:1253
 #, no-c-format
 msgid "Remove Tag “%s”?"
-msgstr "Вилучити мітку «%s»?"
+msgstr "Вилучити тег «%s»?"
 
 #: src/places_sidebar.rs:1255
 #, no-c-format
@@ -2737,37 +2737,37 @@ msgstr "Власний колір"
 #: src/tags.rs:31
 #, no-c-format
 msgid "Red"
-msgstr "Червона"
+msgstr "Червоний"
 
 #: src/tags.rs:32
 #, no-c-format
 msgid "Orange"
-msgstr "Помаранчева"
+msgstr "Помаранчевий"
 
 #: src/tags.rs:33
 #, no-c-format
 msgid "Yellow"
-msgstr "Жовта"
+msgstr "Жовтий"
 
 #: src/tags.rs:34
 #, no-c-format
 msgid "Green"
-msgstr "Зелена"
+msgstr "Зелений"
 
 #: src/tags.rs:35
 #, no-c-format
 msgid "Blue"
-msgstr "Синя"
+msgstr "Синій"
 
 #: src/tags.rs:36
 #, no-c-format
 msgid "Purple"
-msgstr "Фіолетова"
+msgstr "Фіолетовий"
 
 #: src/tags.rs:37
 #, no-c-format
 msgid "Grey"
-msgstr "Сіра"
+msgstr "Сірий"
 
 #: src/terminal.rs:192
 #, no-c-format
@@ -2936,7 +2936,7 @@ msgstr "В_илучити…"
 
 #: ui/places_sidebar.ui:79
 msgid "New _Tag…"
-msgstr "Нова _мітка…"
+msgstr "Новий _тег…"
 
 #: ui/shortcuts_dialog.ui:15
 msgid "New Window"

@@ -115,19 +115,19 @@ msgstr "Показывать «Избранное» на боковой пане
 
 #: data/io.github.sachesi.spiral.gschema.xml:96
 msgid "Offer colour tags"
-msgstr "Предлагать цветные метки"
+msgstr "Предлагать цветные теги"
 
 #: data/io.github.sachesi.spiral.gschema.xml:97
 msgid ""
 "Tags are kept on the files themselves, in the user.xdg.tags extended "
 "attribute, and listed in the sidebar."
 msgstr ""
-"Метки хранятся в самих файлах, в расширенном атрибуте user.xdg.tags, и "
+"Теги хранятся в самих файлах, в расширенном атрибуте user.xdg.tags, и "
 "перечислены в боковой панели."
 
 #: data/io.github.sachesi.spiral.gschema.xml:101
 msgid "The tags on offer, each a name and a colour"
-msgstr "Доступные метки, каждая с именем и цветом"
+msgstr "Доступные теги, каждый с именем и цветом"
 
 #: data/io.github.sachesi.spiral.gschema.xml:102
 msgid ""
@@ -723,7 +723,7 @@ msgstr "Архив"
 #: src/browser_actions.rs:761 src/places_sidebar.rs:495
 #, no-c-format
 msgid "Could not tag “%s”"
-msgstr "Не удалось пометить «%s»"
+msgstr "Не удалось добавить тег к «%s»"
 
 #: src/browser_actions.rs:963
 #, no-c-format
@@ -1354,7 +1354,7 @@ msgstr "Файлы и папки, отмеченные звёздочкой"
 #: src/dialogs/preferences.rs:149 src/file_utils.rs:400
 #, no-c-format
 msgid "Tags"
-msgstr "Метки"
+msgstr "Теги"
 
 #: src/dialogs/preferences.rs:151
 #, no-c-format
@@ -1362,13 +1362,13 @@ msgid ""
 "Tags are written to the files themselves, so they follow a file wherever it "
 "goes and other programs can read them."
 msgstr ""
-"Метки записываются в сами файлы, поэтому остаются с файлом, куда бы он ни "
+"Теги записываются в сами файлы, поэтому остаются с файлом, куда бы он ни "
 "переместился, и другие программы могут их читать."
 
 #: src/dialogs/preferences.rs:155
 #, no-c-format
 msgid "Colour Tags"
-msgstr "Цветные метки"
+msgstr "Цветные теги"
 
 #: src/dialogs/preferences.rs:157
 #, no-c-format
@@ -1376,8 +1376,8 @@ msgid ""
 "A row of colours in the context menu, a dot on each tagged file and the tags "
 "listed in the sidebar"
 msgstr ""
-"Ряд цветов в контекстном меню, точка на каждом помеченном файле и список "
-"меток в боковой панели"
+"Ряд цветов в контекстном меню, точка на каждом файле с тегом и список тегов "
+"в боковой панели"
 
 #: src/dialogs/preferences.rs:166
 #, no-c-format
@@ -1761,7 +1761,7 @@ msgstr "Выделить по шаблону"
 #: src/dialogs/tags.rs:31
 #, no-c-format
 msgid "New Tag"
-msgstr "Новая метка"
+msgstr "Новый тег"
 
 #: src/dialogs/tags.rs:36
 #, no-c-format
@@ -1776,7 +1776,7 @@ msgstr "Свой цвет…"
 #: src/dialogs/tags.rs:177 src/places_sidebar.rs:985
 #, no-c-format
 msgid "Tag Colour"
-msgstr "Цвет метки"
+msgstr "Цвет тега"
 
 #: src/enums.rs:55 ui/shortcuts_dialog.ui:140
 #, no-c-format
@@ -2626,7 +2626,7 @@ msgstr "_Не очищать"
 #: src/places_sidebar.rs:1253
 #, no-c-format
 msgid "Remove Tag “%s”?"
-msgstr "Удалить метку «%s»?"
+msgstr "Удалить тег «%s»?"
 
 #: src/places_sidebar.rs:1255
 #, no-c-format
@@ -2738,37 +2738,37 @@ msgstr "Свой цвет"
 #: src/tags.rs:31
 #, no-c-format
 msgid "Red"
-msgstr "Красная"
+msgstr "Красный"
 
 #: src/tags.rs:32
 #, no-c-format
 msgid "Orange"
-msgstr "Оранжевая"
+msgstr "Оранжевый"
 
 #: src/tags.rs:33
 #, no-c-format
 msgid "Yellow"
-msgstr "Жёлтая"
+msgstr "Жёлтый"
 
 #: src/tags.rs:34
 #, no-c-format
 msgid "Green"
-msgstr "Зелёная"
+msgstr "Зелёный"
 
 #: src/tags.rs:35
 #, no-c-format
 msgid "Blue"
-msgstr "Синяя"
+msgstr "Синий"
 
 #: src/tags.rs:36
 #, no-c-format
 msgid "Purple"
-msgstr "Фиолетовая"
+msgstr "Фиолетовый"
 
 #: src/tags.rs:37
 #, no-c-format
 msgid "Grey"
-msgstr "Серая"
+msgstr "Серый"
 
 #: src/terminal.rs:192
 #, no-c-format
@@ -2937,7 +2937,7 @@ msgstr "_Удалить…"
 
 #: ui/places_sidebar.ui:79
 msgid "New _Tag…"
-msgstr "Новая _метка…"
+msgstr "Новый _тег…"
 
 #: ui/shortcuts_dialog.ui:15
 msgid "New Window"
