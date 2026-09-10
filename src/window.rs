@@ -216,8 +216,14 @@ mod imp {
                     #[weak]
                     win,
                     async move {
+                        // Where the sidebar and the location bar go: the tab in front.
                         if let Some(file) = crate::dialogs::connect_server_dialog(&win).await {
-                            win.open_location(&file);
+                            match win.current_view() {
+                                Some(view) => view.go_to(&file),
+                                None => {
+                                    win.add_tab(&file, true);
+                                }
+                            }
                         }
                     }
                 ));
