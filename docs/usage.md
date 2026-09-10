@@ -300,8 +300,11 @@ attributes: files on a network share or a FAT-formatted stick cannot be tagged. 
 program can ask every file on the disk, Spiral keeps an index of which files carry which
 tag, `~/.local/share/spiral/tags`, one `tag<TAB>uri` line per pair; a file tagged elsewhere
 or moved by another program joins it when a listing shows it, provided the tag is one on
-offer, and an entry that has stopped being true is dropped when the tag is listed. The tags themselves, name and colour
-each, are the `tags` setting.
+offer, and an entry that has stopped being true is dropped when the tag is listed. A file
+trashed or deleted here leaves the index, and its tag's list, at once. Restored from the
+trash it comes back, and so do the tagged files inside a folder trashed since Spiral
+started; those in one trashed earlier come back when a listing shows them. The tags
+themselves, name and colour each, are the `tags` setting.
 
 ## Properties
 
