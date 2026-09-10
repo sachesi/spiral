@@ -104,9 +104,15 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
 
     let (tx, rx) = oneshot::channel::<Option<gio::File>>();
     let tx = Rc::new(RefCell::new(Some(tx)));
+    // The mount under way, called off with the dialog: closed, it must not go on to ask
+    // for a password or connect with nobody watching.
+    let pending: Rc<RefCell<Option<gio::Cancellable>>> = Rc::new(RefCell::new(None));
+
     let start = Rc::new(glib::clone!(
         #[weak]
         entry,
+        #[weak]
+        cancel,
         #[weak]
         connect,
         #[weak]
@@ -119,24 +125,36 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
         connect_label,
         #[strong]
         tx,
+        #[strong]
+        pending,
         move |address: String| {
             let Some(file) = crate::network::address(&address) else {
                 return;
             };
             // Reaching a server takes as long as it takes; the dialog says so and takes
             // no second address, from the button or from the list, until this one has
-            // answered.
+            // answered. The button keeps its width, so the header does not shift, and the
+            // keyboard goes to Cancel, the one thing left to do: an entry made insensitive
+            // takes the focus with it, and Escape would reach nothing.
+
             let label = connect_label.clone();
+            connect.set_width_request(connect.width());
             connect.set_child(Some(&adw::Spinner::new()));
+
             connect.set_sensitive(false);
+            cancel.grab_focus();
             entry.set_sensitive(false);
+
             recent.set_sensitive(false);
             failure.set_visible(false);
+            let cancellable = gio::Cancellable::new();
+            pending.replace(Some(cancellable.clone()));
             glib::spawn_future_local(glib::clone!(
                 #[strong]
                 tx,
                 async move {
-                    let result = crate::network::mount(&file, &dialog).await;
+                    let result = crate::network::mount(&file, &dialog, &cancellable).await;
+
                     connect.set_label(&label);
                     connect.set_sensitive(true);
                     entry.set_sensitive(true);
@@ -149,9 +167,12 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
                             }
                             dialog.close();
                         }
-                        // The password dialog was dismissed: nothing to report, the
-                        // address is still there to try again.
-                        Err(e) if e.matches(gio::IOErrorEnum::FailedHandled) => {}
+                        // The password dialog was dismissed, or this one: nothing to
+                        // report, the address is still there to try again.
+                        Err(e)
+                            if e.matches(gio::IOErrorEnum::FailedHandled)
+                                || e.matches(gio::IOErrorEnum::Cancelled) => {}
+
                         Err(e) => {
                             failure.set_label(e.message());
                             failure.set_visible(true);
@@ -185,7 +206,13 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
     dialog.connect_closed(glib::clone!(
         #[strong]
         tx,
+        #[strong]
+        pending,
         move |_| {
+            if let Some(cancellable) = pending.borrow_mut().take() {
+                cancellable.cancel();
+            }
+
             if let Some(tx) = tx.borrow_mut().take() {
                 let _ = tx.send(None);
             }

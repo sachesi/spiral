@@ -101,16 +101,40 @@ fn split_address(text: &str) -> Option<(String, &str)> {
 }
 
 /// Mount whatever `file` is on, asking for a password through the window `parent` is in.
-/// A location already mounted is nothing to do.
-pub async fn mount(file: &gio::File, parent: &impl IsA<gtk::Widget>) -> Result<(), glib::Error> {
+/// A location already mounted is nothing to do. Cancelling `cancellable` gives the attempt
+/// up: gvfs goes on with a mount its client has left, and asks for the password when it
+/// gets that far, so an attempt given up answers no question either.
+pub async fn mount(
+    file: &gio::File,
+    parent: &impl IsA<gtk::Widget>,
+    cancellable: &gio::Cancellable,
+) -> Result<(), glib::Error> {
     let window = parent.root().and_downcast::<gtk::Window>();
     let op = gtk::MountOperation::new(window.as_ref());
-    match file
-        .mount_enclosing_volume_future(gio::MountMountFlags::NONE, Some(&op))
-        .await
-    {
-        Err(e) if e.matches(gio::IOErrorEnum::AlreadyMounted) => Ok(()),
-        result => result,
+    for signal in ["ask-password", "ask-question"] {
+        let cancellable = cancellable.clone();
+        op.connect_local(signal, false, move |values| {
+            if cancellable.is_cancelled() {
+                let op = values[0].get::<gio::MountOperation>().unwrap();
+                op.reply(gio::MountOperationResult::Aborted);
+                op.stop_signal_emission_by_name(signal);
+            }
+            None
+        });
+    }
+    let (tx, rx) = futures_channel::oneshot::channel();
+    file.mount_enclosing_volume(
+        gio::MountMountFlags::NONE,
+        Some(&op),
+        Some(cancellable),
+        move |result| {
+            let _ = tx.send(result);
+        },
+    );
+    match rx.await {
+        Ok(Err(e)) if e.matches(gio::IOErrorEnum::AlreadyMounted) => Ok(()),
+        Ok(result) => result,
+        Err(_) => Err(glib::Error::new(gio::IOErrorEnum::Cancelled, "")),
     }
 }
 
