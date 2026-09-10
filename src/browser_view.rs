@@ -145,6 +145,9 @@ mod imp {
             use gtk::gdk::{Key, ModifierType as M};
             klass.add_binding_action(Key::KP_Delete, M::empty(), "view.trash");
             klass.add_binding_action(Key::Delete, M::empty(), "view.trash");
+            // Inside the trash, where nothing can be trashed, Delete asks to delete for good.
+            klass.add_binding_action(Key::KP_Delete, M::empty(), "view.delete-from-trash");
+            klass.add_binding_action(Key::Delete, M::empty(), "view.delete-from-trash");
             klass.add_binding_action(Key::Delete, M::SHIFT_MASK, "view.delete");
             klass.add_binding_action(Key::F2, M::empty(), "view.rename");
             klass.add_binding_action(Key::c, M::CONTROL_MASK, "view.copy");
