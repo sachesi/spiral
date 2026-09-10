@@ -787,6 +787,43 @@ impl SpiralWindow {
     }
 
     /// Pop up the file operations list (used when relaunched while jobs run).
+    /// Say that an operation is done with what it put in `folder`: with a way there, which
+    /// selects the files that `landed`, when the folder is not the one on screen, and on
+    /// its own when it is but the operation was `slow`. Files that appear in the folder
+    /// being looked at say it themselves otherwise.
+    pub fn show_done_toast(
+        &self,
+        message: &str,
+        folder: &gio::File,
+        landed: Vec<gio::File>,
+        slow: bool,
+    ) {
+        let here = self
+            .current_view()
+            .and_then(|v| v.location())
+            .is_some_and(|l| l.equal(folder));
+        if here && !slow {
+            return;
+        }
+        let toast = adw::Toast::new(message);
+        if !here {
+            toast.set_button_label(Some(&gettext("Open Folder")));
+            toast.connect_button_clicked(glib::clone!(
+                #[weak(rename_to = win)]
+                self,
+                #[strong]
+                folder,
+                move |_| {
+                    win.navigate(|v| {
+                        v.go_to(&folder);
+                        v.select_files_when_loaded(landed.clone());
+                    })
+                }
+            ));
+        }
+        self.imp().toast_overlay.add_toast(toast);
+    }
+
     pub fn show_progress(&self) {
         let indicator = self.imp().progress_indicator.clone();
         glib::idle_add_local_once(move || {

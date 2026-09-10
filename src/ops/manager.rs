@@ -97,6 +97,7 @@ impl JobManager {
         self.notify_running();
         job.set_status(JobStatus::Running);
 
+        let started = std::time::Instant::now();
         let (fut, handle) = abortable(glib::clone!(
             #[strong]
             job,
@@ -113,7 +114,8 @@ impl JobManager {
             self,
             async move {
                 let result = fut.await;
-                mgr.finish(&job, result, record_undo).await;
+                mgr.finish(&job, result, record_undo, started.elapsed())
+                    .await;
             }
         ));
         job
@@ -124,6 +126,7 @@ impl JobManager {
         job: &Job,
         result: Result<Result<(), Fail>, Aborted>,
         record_undo: bool,
+        took: std::time::Duration,
     ) {
         let imp = self.imp();
         let status = match result {
@@ -157,11 +160,22 @@ impl JobManager {
                 let undo = undo_for(job);
                 self.set_undo(undo, None);
             }
-            // The operations list already shows what finished; like Nautilus, only trashing
-            // gets a toast, so Undo is one click away.
+            // The operations list already shows what finished. Trashing gets a toast, so
+            // Undo is one click away, and so does what lands in a folder other than the
+            // one on screen, with the way there; or in that one, when it took long enough
+            // to have been forgotten.
             if matches!(kind, JobKind::Trash { .. }) {
                 let undoable = record_undo && imp.undo.borrow().is_some();
                 self.show_toast(&job.done_message(), undoable);
+            } else if let Some(folder) = kind.destination()
+                && let Some(win) = self.app().active_window().and_downcast::<SpiralWindow>()
+            {
+                let landed = {
+                    let out = job.imp().outcome.borrow();
+                    let moved = out.moved.iter().map(|(_, dest)| dest.clone());
+                    out.created.iter().cloned().chain(moved).collect()
+                };
+                win.show_done_toast(&job.done_message(), &folder, landed, took >= SLOW);
             }
         }
 
@@ -241,6 +255,9 @@ impl JobManager {
         }
     }
 }
+
+/// How long an operation takes before its end is worth a toast in the folder it was for.
+const SLOW: std::time::Duration = std::time::Duration::from_secs(3);
 
 /// The job that reverses `job`, derived from what it actually did.
 fn undo_for(job: &Job) -> Option<JobKind> {

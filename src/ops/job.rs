@@ -150,6 +150,15 @@ impl JobKind {
     }
 
     /// Text for the finished row in the operations list, and the toast after trashing.
+    /// The folder the files a copy, a move, an extraction or a compression makes land in.
+    pub fn destination(&self) -> Option<gio::File> {
+        match self {
+            JobKind::Transfer { pairs, .. } => pairs.first().map(|(_, dest)| dest.clone()),
+            JobKind::Extract { dest, .. } | JobKind::Compress { dest, .. } => Some(dest.clone()),
+            _ => None,
+        }
+    }
+
     pub fn done_message(&self) -> String {
         match self {
             JobKind::Transfer {
