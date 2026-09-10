@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.13.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-10 09:28+0300\n"
+"POT-Creation-Date: 2026-09-10 10:26+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -629,112 +629,112 @@ msgstr ""
 msgid "_Empty Document"
 msgstr ""
 
-#: src/browser_actions.rs:678
+#: src/browser_actions.rs:675
 #, no-c-format
 msgid "Extract To"
 msgstr ""
 
-#: src/browser_actions.rs:679 src/ops/archive.rs:352
+#: src/browser_actions.rs:676 src/ops/archive.rs:352
 #, no-c-format
 msgid "_Extract"
 msgstr ""
 
-#: src/browser_actions.rs:697
+#: src/browser_actions.rs:694
 #, no-c-format
 msgid "Archive"
 msgstr ""
 
-#: src/browser_actions.rs:764 src/places_sidebar.rs:468
+#: src/browser_actions.rs:761 src/places_sidebar.rs:495
 #, no-c-format
 msgid "Could not tag “%s”"
 msgstr ""
 
-#: src/browser_actions.rs:966
+#: src/browser_actions.rs:963
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr ""
 
-#: src/browser_actions.rs:979
+#: src/browser_actions.rs:976
 #, no-c-format
 msgid "Move To"
 msgstr ""
 
-#: src/browser_actions.rs:979
+#: src/browser_actions.rs:976
 #, no-c-format
 msgid "_Move"
 msgstr ""
 
-#: src/browser_actions.rs:981
+#: src/browser_actions.rs:978
 #, no-c-format
 msgid "Copy To"
 msgstr ""
 
-#: src/browser_actions.rs:981 ui/browser_view.ui:203
+#: src/browser_actions.rs:978 ui/browser_view.ui:203
 #, no-c-format
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:1073 src/browser_view.rs:1490
+#: src/browser_actions.rs:1070 src/browser_view.rs:1490
 #: src/browser_view.rs:1497 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
 
-#: src/browser_actions.rs:1083
+#: src/browser_actions.rs:1080
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr ""
 
-#: src/browser_actions.rs:1085
+#: src/browser_actions.rs:1082
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_actions.rs:1093
+#: src/browser_actions.rs:1090
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr ""
 
-#: src/browser_actions.rs:1098 src/dialogs/batch_rename.rs:108
+#: src/browser_actions.rs:1095 src/dialogs/batch_rename.rs:108
 #: src/dialogs/compress.rs:70 src/dialogs/connect_server.rs:66
 #: src/dialogs/open_with.rs:59 src/dialogs/select_pattern.rs:44
 #: src/dialogs/tags.rs:36 src/ops/archive.rs:351 src/ops/conflict.rs:64
-#: src/ops/conflict.rs:315 src/ops/mod.rs:30 src/ops/walk.rs:263
-#: src/places_sidebar.rs:879 src/places_sidebar.rs:1241
+#: src/ops/conflict.rs:315 src/ops/mod.rs:30 src/ops/walk.rs:268
+#: src/places_sidebar.rs:906 src/places_sidebar.rs:1268
 #: src/portal/chooser_window.rs:852
 #, no-c-format
 msgid "_Cancel"
 msgstr ""
 
-#: src/browser_actions.rs:1099
+#: src/browser_actions.rs:1096
 #, no-c-format
 msgid "_Delete"
 msgstr ""
 
-#: src/browser_actions.rs:1152
+#: src/browser_actions.rs:1149
 #, no-c-format
 msgid "Untitled Document"
 msgstr ""
 
-#: src/browser_actions.rs:1186 ui/path_bar.ui:32 ui/path_bar.ui:63
+#: src/browser_actions.rs:1183 ui/path_bar.ui:32 ui/path_bar.ui:63
 #: ui/places_sidebar.ui:16 ui/places_sidebar.ui:58
 #, no-c-format
 msgid "Open in New _Tab"
 msgstr ""
 
-#: src/browser_actions.rs:1187 ui/path_bar.ui:36 ui/path_bar.ui:67
+#: src/browser_actions.rs:1184 ui/path_bar.ui:36 ui/path_bar.ui:67
 #, no-c-format
 msgid "Open in New _Window"
 msgstr ""
 
-#: src/browser_actions.rs:1188 ui/browser_view.ui:342
+#: src/browser_actions.rs:1185 ui/browser_view.ui:342
 #, no-c-format
 msgid "Open in _Terminal"
 msgstr ""
 
-#: src/browser_actions.rs:1214 ui/path_bar.ui:16
+#: src/browser_actions.rs:1211 ui/path_bar.ui:16
 #, no-c-format
 msgid "New _Document"
 msgstr ""
@@ -770,7 +770,7 @@ msgstr ""
 
 #: src/browser_view.rs:1561 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:334 src/dialogs/properties.rs:442
-#: src/ops/walk.rs:46 src/places_sidebar.rs:908
+#: src/ops/walk.rs:46 src/places_sidebar.rs:935
 #, no-c-format
 msgid "_OK"
 msgstr ""
@@ -910,7 +910,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/dialogs/batch_rename.rs:113 src/naming.rs:166 src/ops/conflict.rs:72
-#: src/places_sidebar.rs:1267
+#: src/places_sidebar.rs:1294
 #, no-c-format
 msgid "_Rename"
 msgstr ""
@@ -1166,7 +1166,7 @@ msgid "Off, Ctrl copies and dragging inside Spiral moves without asking"
 msgstr ""
 
 #: src/dialogs/preferences.rs:62 src/file_utils.rs:394
-#: src/places_sidebar.rs:706
+#: src/places_sidebar.rs:733
 #, no-c-format
 msgid "Network"
 msgstr ""
@@ -1234,7 +1234,7 @@ msgstr ""
 msgid "Sidebar"
 msgstr ""
 
-#: src/dialogs/preferences.rs:133 src/places_sidebar.rs:624
+#: src/dialogs/preferences.rs:133 src/places_sidebar.rs:651
 #, no-c-format
 msgid "Root"
 msgstr ""
@@ -1245,7 +1245,7 @@ msgid "The top of the filesystem, above the bookmarks"
 msgstr ""
 
 #: src/dialogs/preferences.rs:139 src/file_utils.rs:397 src/path_bar.rs:366
-#: src/places_sidebar.rs:632
+#: src/places_sidebar.rs:659
 #, no-c-format
 msgid "Favorites"
 msgstr ""
@@ -1662,12 +1662,12 @@ msgstr ""
 msgid "_Add"
 msgstr ""
 
-#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1165
+#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1192
 #, no-c-format
 msgid "Custom…"
 msgstr ""
 
-#: src/dialogs/tags.rs:177 src/places_sidebar.rs:958
+#: src/dialogs/tags.rs:177 src/places_sidebar.rs:985
 #, no-c-format
 msgid "Tag Colour"
 msgstr ""
@@ -1763,12 +1763,12 @@ msgid_plural "%d items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:388 src/path_bar.rs:360 src/places_sidebar.rs:606
+#: src/file_utils.rs:388 src/path_bar.rs:360 src/places_sidebar.rs:633
 #, no-c-format
 msgid "Home"
 msgstr ""
 
-#: src/file_utils.rs:391 src/path_bar.rs:363 src/places_sidebar.rs:639
+#: src/file_utils.rs:391 src/path_bar.rs:363 src/places_sidebar.rs:666
 #, no-c-format
 msgid "Trash"
 msgstr ""
@@ -1908,7 +1908,7 @@ msgstr ""
 msgid "Extracting “%s”"
 msgstr ""
 
-#: src/ops/archive.rs:527 src/ops/walk.rs:517
+#: src/ops/archive.rs:527 src/ops/walk.rs:522
 #, no-c-format
 msgid "Waiting for your answer"
 msgstr ""
@@ -2280,24 +2280,24 @@ msgid_plural "%d hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ops/job.rs:357
+#: src/ops/job.rs:378
 #, no-c-format
 msgid "Preparing… %d file"
 msgid_plural "Preparing… %d files"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ops/job.rs:385
+#: src/ops/job.rs:406
 #, no-c-format
 msgid "%a of %b"
 msgstr ""
 
-#: src/ops/job.rs:392
+#: src/ops/job.rs:413
 #, no-c-format
 msgid "%a, %t left (%r/s)"
 msgstr ""
 
-#: src/ops/job.rs:400
+#: src/ops/job.rs:421
 #, no-c-format
 msgid "%a of %b file"
 msgid_plural "%a of %b files"
@@ -2324,7 +2324,7 @@ msgstr ""
 msgid "All items in the Trash will be permanently deleted."
 msgstr ""
 
-#: src/ops/mod.rs:31 src/places_sidebar.rs:881 ui/browser_view.ui:356
+#: src/ops/mod.rs:31 src/places_sidebar.rs:908 ui/browser_view.ui:356
 #, no-c-format
 msgid "_Empty Trash"
 msgstr ""
@@ -2345,69 +2345,76 @@ msgid "The destination folder is inside the source folder."
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:95
+#: src/ops/walk.rs:93
 #, no-c-format
 msgid "Trashing"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:132
+#: src/ops/walk.rs:130
 #, no-c-format
 msgid "Renaming"
 msgstr ""
 
-#: src/ops/walk.rs:211
+#: src/ops/walk.rs:209
 #, no-c-format
 msgid "Links can only point at local files"
 msgstr ""
 
-#: src/ops/walk.rs:256
+#: src/ops/walk.rs:257
 #, no-c-format
-msgid "Cannot Move “%s” to Trash"
+msgid ""
+"This location does not support trashing. Delete it and the other items that "
+"cannot be trashed permanently instead?"
 msgstr ""
 
-#: src/ops/walk.rs:258
+#: src/ops/walk.rs:260
 #, no-c-format
 msgid "This location does not support trashing. Delete it permanently instead?"
 msgstr ""
 
-#: src/ops/walk.rs:264
+#: src/ops/walk.rs:263
+#, no-c-format
+msgid "Cannot Move “%s” to Trash"
+msgstr ""
+
+#: src/ops/walk.rs:269
 #, no-c-format
 msgid "_Delete Permanently"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:345
+#: src/ops/walk.rs:350
 #, no-c-format
 msgid "Moving"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:348
+#: src/ops/walk.rs:353
 #, no-c-format
 msgid "Copying"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:548
+#: src/ops/walk.rs:553
 #, no-c-format
 msgid "Deleting"
 msgstr ""
 
 #. Translators: name of a symbolic link, as in “Link to report.pdf”.
-#: src/ops/walk.rs:579
+#: src/ops/walk.rs:584
 #, no-c-format
 msgid "Link to %s"
 msgstr ""
 
 #. Translators: file name given to an image pasted from the clipboard.
-#: src/ops/walk.rs:601
+#: src/ops/walk.rs:606
 #, no-c-format
 msgid "Pasted Image"
 msgstr ""
 
 #. Translators: goes into duplicate names, as in “report (copy).pdf”.
-#: src/ops/walk.rs:623
+#: src/ops/walk.rs:628
 #, no-c-format
 msgid "copy"
 msgstr ""
@@ -2417,81 +2424,81 @@ msgstr ""
 msgid "Edit Location"
 msgstr ""
 
-#: src/places_sidebar.rs:616
+#: src/places_sidebar.rs:643
 #, no-c-format
 msgid "Desktop"
 msgstr ""
 
-#: src/places_sidebar.rs:760
+#: src/places_sidebar.rs:787
 #, no-c-format
 msgid "Disconnect"
 msgstr ""
 
-#: src/places_sidebar.rs:762
+#: src/places_sidebar.rs:789
 #, no-c-format
 msgid "Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:797
+#: src/places_sidebar.rs:824
 #, no-c-format
 msgid "Could Not Mount"
 msgstr ""
 
-#: src/places_sidebar.rs:836
+#: src/places_sidebar.rs:863
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:838
+#: src/places_sidebar.rs:865
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr ""
 
-#: src/places_sidebar.rs:857
+#: src/places_sidebar.rs:884
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:863
+#: src/places_sidebar.rs:890
 #, no-c-format
 msgid "Could Not Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:874
+#: src/places_sidebar.rs:901
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr ""
 
-#: src/places_sidebar.rs:876
+#: src/places_sidebar.rs:903
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
 "trashed items on the volume will be permanently lost."
 msgstr ""
 
-#: src/places_sidebar.rs:880
+#: src/places_sidebar.rs:907
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr ""
 
-#: src/places_sidebar.rs:1226
+#: src/places_sidebar.rs:1253
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr ""
 
-#: src/places_sidebar.rs:1228
+#: src/places_sidebar.rs:1255
 #, no-c-format
 msgid "No file carries it."
 msgstr ""
 
-#: src/places_sidebar.rs:1231
+#: src/places_sidebar.rs:1258
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/places_sidebar.rs:1242 ui/places_sidebar.ui:28
+#: src/places_sidebar.rs:1269 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr ""
