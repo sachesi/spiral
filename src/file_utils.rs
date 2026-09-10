@@ -14,8 +14,8 @@ use crate::{gio, glib};
 /// directories, listed or not, and Spiral asks the same question itself for the rows it
 /// actually shows.
 pub const ATTRIBUTES: &str = "standard::*,time::modified,time::access,time::created,\
-access::can-read,access::can-write,access::can-delete,access::can-trash,\
-access::can-rename,access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,\
+access::can-read,access::can-write,access::can-delete,access::can-rename,\
+access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,\
 metadata::custom-icon,metadata::custom-icon-name,xattr::xdg.tags";
 
 /// Icon to draw for `info`, honouring the Nautilus-compatible custom icon metadata.

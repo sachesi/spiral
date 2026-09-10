@@ -501,11 +501,7 @@ impl BrowserView {
         let virtual_dir = in_trash || self.location().is_some_and(|l| is_list(&l));
         let can_write = !virtual_dir && self.imp().can_write.get();
         let all = |attr: &str| infos.iter().all(|i| file_utils::allows(i, attr));
-        let (can_delete, can_trash, can_rename) = (
-            all("access::can-delete"),
-            all("access::can-trash"),
-            all("access::can-rename"),
-        );
+        let (can_delete, can_rename) = (all("access::can-delete"), all("access::can-rename"));
         let dir_writable = single_dir && file_utils::allows(&infos[0], "access::can-write");
         self.set_enabled("open", n > 0);
         self.set_enabled("preview", n > 0);
@@ -535,7 +531,8 @@ impl BrowserView {
         self.set_enabled("paste", can_write && !in_trash && has_clip);
         self.set_enabled("paste-into", dir_writable && !in_trash && has_clip);
         self.set_enabled("rename", n > 0 && !in_trash && can_rename);
-        self.set_enabled("trash", n > 0 && !in_trash && can_trash);
+        // Not `access::can-trash`: where there is no trash, the job offers to delete instead.
+        self.set_enabled("trash", n > 0 && !in_trash && can_delete);
         self.set_enabled("delete", n > 0 && can_delete);
         self.set_enabled(
             "delete-permanently",
