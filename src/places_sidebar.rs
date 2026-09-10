@@ -1120,6 +1120,7 @@ impl PlacesSidebar {
         let row = existing.unwrap_or_else(|| {
             let bx = gtk::Box::builder()
                 .spacing(2)
+                .halign(gtk::Align::Center)
                 .css_classes(["spiral-tag-picker"])
                 .build();
             imp.color_picker.replace(Some(bx.clone()));
