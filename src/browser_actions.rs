@@ -1575,8 +1575,8 @@ impl BrowserView {
         popover.popup();
     }
 
-    /// Select every name in the folder matching a shell pattern:
-    /// the pattern replaces the selection rather than adding to it.
+    /// Select every name in the folder matching a shell pattern. The pattern replaces the
+    /// selection rather than adding to it.
     fn select_pattern(&self) {
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]

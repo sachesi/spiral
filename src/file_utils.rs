@@ -18,7 +18,7 @@ access::can-read,access::can-write,access::can-delete,access::can-rename,\
 access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,trash::deletion-date,\
 metadata::custom-icon,metadata::custom-icon-name,xattr::xdg.tags";
 
-/// Icon to draw for `info`, honouring the custom icon metadata.
+/// Icon to draw for `info`, honouring the `metadata::custom-icon` other file managers set.
 pub fn icon_of(info: &gio::FileInfo) -> gio::Icon {
     if let Some(custom) = info.attribute_string("metadata::custom-icon") {
         let file = if custom.starts_with('/') {

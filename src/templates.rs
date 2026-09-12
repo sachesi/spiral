@@ -13,7 +13,7 @@ pub enum Entry {
     Folder { name: String, children: Vec<Entry> },
 }
 
-/// At most this many templates from one folder, and no deeper than this.
+/// How many templates are offered from one folder, and how deep the menu goes.
 const PER_FOLDER: usize = 30;
 const MAX_DEPTH: u32 = 5;
 

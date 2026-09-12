@@ -170,8 +170,7 @@ date; the order stays with the Trash and leaves other folders alone.
 The column view is off until "Column View" in Preferences turns it on; with it off the
 views are the grid and the list, and a folder that remembers the columns opens in the list.
 
-It draws the path as a strip of lists, one folder per column.
-The last column is the folder you are in; the columns before it are the
+It draws the path as a strip of lists, one folder per column. The last column is the folder you are in; the columns before it are the
 folders that lead there, with the one you came through picked out, and a column appears
 past the last one whenever a single folder is selected, showing what it holds. The strip
 scrolls sideways and keeps the last column in sight; Shift and the wheel move it by hand,
@@ -217,8 +216,8 @@ A drag starts anywhere on a row or a grid tile, and a folder accepts a drop anyw
 its row. Drop targets are folders in the view, breadcrumbs and sidebar entries except
 Favorites; Trash takes a drop as well, and trashes what lands on it. A drag held for a
 moment over a folder, a breadcrumb or a sidebar entry opens it, so files can be carried
-into a folder that is nowhere on screen when the drag starts. Cut, copy and paste use the usual clipboard format for files, so
-they work with other file managers; files waiting on the clipboard as a cut are shown faded until they
+into a folder that is nowhere on screen when the drag starts. Cut, copy and paste use the usual clipboard format for files, so they work
+with other file managers; files waiting on the clipboard as a cut are shown faded until they
 are pasted. An image on the clipboard with no files behind it — a screenshot, say —
 pastes into the folder as "Pasted Image.png". What a paste leaves in the folder is selected
 once it lands, ready for whatever is done to it next. "Paste Into Folder" pastes into a
@@ -329,8 +328,8 @@ makes a new one. Renaming and removing rewrite every file known to carry the tag
 removing asks first. Removing every tag brings the seven colours back. Dragging a tag up or
 down the sidebar reorders the tags, there and in the context menu.
 
-A file's tags are the `user.xdg.tags` extended attribute on the file itself, so
-they survive a rename, a move or a copy, and other programs see them and
+A file's tags are the `user.xdg.tags` extended attribute on the file itself, the one other
+programs use too, so they survive a rename, a move or a copy, and other programs see them and
 Spiral sees theirs. That also means they live only where the filesystem keeps extended
 attributes: files on a network share or a FAT-formatted stick cannot be tagged. Since no
 program can ask every file on the disk, Spiral keeps an index of which files carry which

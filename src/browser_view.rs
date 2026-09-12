@@ -798,7 +798,7 @@ const NAME_MIN_WIDTH: i32 = 220;
 /// The star column: one flat button wide.
 const STAR_WIDTH: i32 = 40;
 
-/// Lock shown on files the user cannot read or change, dimmed as emblems are. It
+/// Lock shown on files the user cannot read or change, dimmed like the other emblems. It
 /// keeps its place when empty so icons line up across cells.
 pub(crate) fn emblem_image() -> gtk::Image {
     gtk::Image::builder()
@@ -2743,7 +2743,7 @@ impl BrowserView {
             labels.append(&label);
             labels.append(&captions);
             // Icon between two emblem-wide margins, the lock stacked at the top of the
-            // right one: the grid cell geometry.
+            // right one.
             image.set_margin_start(EMBLEM_MARGIN);
             image.set_hexpand(true);
             let emblem = emblem_image();

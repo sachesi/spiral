@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-12 19:33+0300\n"
+"POT-Creation-Date: 2026-09-12 20:03+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -699,8 +699,8 @@ msgid ""
 "-w, -s, -q. Filesystem calls no longer block the interface on slow mounts."
 msgstr ""
 "Російський та український переклади. Порядок упорядкування запам’ятовується "
-"для кожної теки. Командний рядок, який на кожен виклик відкриває нові вікна "
-"в запущеному екземплярі: -w, -s, -q. Звернення до файлової системи більше не "
+"для кожної теки. Командний рядок, який на кожен виклик відкриває нові вікна в "
+"запущеному екземплярі: -w, -s, -q. Звернення до файлової системи більше не "
 "блокують інтерфейс на повільних точках монтування."
 
 #: data/io.github.sachesi.spiral.metainfo.xml:113
@@ -801,8 +801,8 @@ msgstr "Копіювати до"
 msgid "_Copy"
 msgstr "_Копіювати"
 
-#: src/browser_actions.rs:1135 src/browser_view.rs:1803
-#: src/browser_view.rs:1810 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1135 src/browser_view.rs:1814
+#: src/browser_view.rs:1821 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не вдалося відкрити"
@@ -898,54 +898,54 @@ msgstr "Вилучити з вибраного"
 msgid "Add to Starred"
 msgstr "Додати до вибраного"
 
-#: src/browser_view.rs:1857
+#: src/browser_view.rs:1868
 #, no-c-format
 msgid "The password dialog was dismissed."
 msgstr "Діалог пароля було закрито."
 
-#: src/browser_view.rs:1874 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1885 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:444 src/dialogs/properties.rs:750
 #: src/ops/walk.rs:46 src/places_sidebar.rs:978
 #, no-c-format
 msgid "_OK"
 msgstr "_Гаразд"
 
-#: src/browser_view.rs:1888
+#: src/browser_view.rs:1899
 #, no-c-format
 msgid "Connecting to %s…"
 msgstr "Підключення до %s…"
 
-#: src/browser_view.rs:1893
+#: src/browser_view.rs:1904
 #, no-c-format
 msgid "Could Not Connect"
 msgstr "Не вдалося підключитися"
 
-#: src/browser_view.rs:1896
+#: src/browser_view.rs:1907
 #, no-c-format
 msgid "Reloading the folder tries again."
 msgstr "Перезавантаження теки повторить спробу."
 
-#: src/browser_view.rs:1901 ui/browser_view.ui:114
+#: src/browser_view.rs:1912 ui/browser_view.ui:114
 #, no-c-format
 msgid "Could Not Open Folder"
 msgstr "Не вдалося відкрити теку"
 
-#: src/browser_view.rs:1920
+#: src/browser_view.rs:1931
 #, no-c-format
 msgid "No Results Found"
 msgstr "Нічого не знайдено"
 
-#: src/browser_view.rs:1924
+#: src/browser_view.rs:1935
 #, no-c-format
 msgid "No Servers Found"
 msgstr "Серверів не знайдено"
 
-#: src/browser_view.rs:1928 ui/browser_view.ui:103
+#: src/browser_view.rs:1939 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Тека порожня"
 
-#: src/browser_view.rs:1990
+#: src/browser_view.rs:2001
 #, no-c-format
 msgid ""
 "Machines that announce themselves on the network appear here. Others are "
@@ -954,7 +954,7 @@ msgstr ""
 "Тут з’являються машини, які оголошують про себе в мережі. До інших можна "
 "дістатися через «Підключитися до сервера…»."
 
-#: src/browser_view.rs:1999
+#: src/browser_view.rs:2010
 #, no-c-format
 msgid ""
 "One server was found but left out: no gvfs backend for %s addresses is "
@@ -969,22 +969,22 @@ msgstr[1] ""
 msgstr[2] ""
 "Знайдено сервери, але не показано: модуль gvfs для адрес %s не встановлено."
 
-#: src/browser_view.rs:2019
+#: src/browser_view.rs:2030
 #, no-c-format
 msgid "No gvfs backend for %s addresses is installed."
 msgstr "Модуль gvfs для адрес %s не встановлено."
 
-#: src/browser_view.rs:2049
+#: src/browser_view.rs:2060
 #, no-c-format
 msgid "Loading…"
 msgstr "Завантаження…"
 
-#: src/browser_view.rs:2065
+#: src/browser_view.rs:2076
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Вибрано «%s»"
 
-#: src/browser_view.rs:2070
+#: src/browser_view.rs:2081
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -993,28 +993,28 @@ msgstr[1] "%d інші об’єкти вибрано"
 msgstr[2] "%d інших об’єктів вибрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:2076
+#: src/browser_view.rs:2087
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:2862 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2873 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:2962 src/dialogs/properties.rs:321
+#: src/browser_view.rs:2973 src/dialogs/properties.rs:321
 #: src/dialogs/properties.rs:383
 #, no-c-format
 msgid "Location"
 msgstr "Розташування"
 
-#: src/browser_view.rs:2972 src/dialogs/properties.rs:361
+#: src/browser_view.rs:2983 src/dialogs/properties.rs:361
 #, no-c-format
 msgid "Trashed On"
 msgstr "Дата вилучення"
 
-#: src/browser_view.rs:2979
+#: src/browser_view.rs:2990
 #, no-c-format
 msgid "Original Location"
 msgstr "Початкове розташування"
