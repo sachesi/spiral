@@ -9,6 +9,13 @@ A copy, move, extraction or archive that lands in a folder other than the one on
 ends with a toast whose "Open Folder" goes there and selects what arrived; one that lands
 in the folder on screen only gets a toast when it took three seconds or more.
 
+What a paste, a new folder or "Extract Here" leaves in the folder on screen is selected
+when the job ends, as long as the window is still in that folder. When the selected items
+go away instead, trashed, deleted or moved elsewhere by Spiral or by another program,
+the item that took their place is selected, or the last one if they were at the end, and
+it has the keyboard, so the arrow keys carry on from there. A selected file that another
+program changes (its permissions, a tag, a save over it) stays selected.
+
 Copies, moves and deletes count their sources first so the total is known before the
 rate clock starts. Progress inside a single file comes from GIO's copy callback.
 

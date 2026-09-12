@@ -205,11 +205,11 @@ impl BrowserView {
             add("new-file", |v| v.new_document(None)),
             add("empty-trash", |v| v.empty_trash()),
             add("extract", |v| {
-                if let Some(dest) = v.location() {
-                    v.submit_on_selection(|archives| JobKind::Extract {
-                        archives,
-                        dest: dest.clone(),
-                    });
+                let archives = v.selected();
+                if let Some(dest) = v.location()
+                    && !archives.is_empty()
+                {
+                    v.submit_and_select(JobKind::Extract { archives, dest });
                 }
             }),
             add("extract-to", |v| v.extract_to()),
@@ -936,16 +936,23 @@ impl BrowserView {
     }
 
     /// Submit and select what the job leaves in the folder, the way pasting should end:
-    /// with the pasted files picked out, ready for the next thing done to them.
+    /// with the pasted files picked out, ready for the next thing done to them. Only if
+    /// the view is still in that folder when the job ends: one that has moved on to
+    /// another keeps the selection it has there.
     fn submit_and_select(&self, kind: JobKind) {
         let Some(job) = self.manager().map(|m| m.submit(kind)) else {
             return;
         };
+        let location = self.location();
         job.connect_status_notify(glib::clone!(
             #[weak(rename_to = view)]
             self,
             move |job| {
-                if job.status() == JobStatus::Done {
+                let here = match (view.location(), &location) {
+                    (Some(now), Some(then)) => now.equal(then),
+                    _ => false,
+                };
+                if job.status() == JobStatus::Done && here {
                     view.select_files_when_loaded(job.landed());
                 }
             }
