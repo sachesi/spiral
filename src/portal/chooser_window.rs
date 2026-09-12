@@ -787,10 +787,10 @@ fn make_filter(filter: Option<FileFilter>, directory: bool) -> gtk::Filter {
         if patterns.is_empty() && mimes.is_empty() {
             return true;
         }
-        let name = info.display_name().to_lowercase();
+        let name: Vec<char> = info.display_name().to_lowercase().chars().collect();
         if patterns
             .iter()
-            .any(|p| glob_match(p.as_bytes(), name.as_bytes()))
+            .any(|p| glob_match(&p.chars().collect::<Vec<_>>(), &name))
         {
             return true;
         }
@@ -800,17 +800,46 @@ fn make_filter(filter: Option<FileFilter>, directory: bool) -> gtk::Filter {
     .upcast()
 }
 
-/// Shell-style glob with `*` and `?` (what file filters use).
-fn glob_match(pat: &[u8], text: &[u8]) -> bool {
+/// Shell-style glob with `*`, `?` and `[...]` (what file filters use: GTK sends a suffix
+/// as "*.[pP][nN][gG]").
+fn glob_match(pat: &[char], text: &[char]) -> bool {
     match (pat.first(), text.first()) {
         (None, None) => true,
-        (Some(b'*'), _) => {
+        (Some('*'), _) => {
             glob_match(&pat[1..], text) || (!text.is_empty() && glob_match(pat, &text[1..]))
         }
-        (Some(b'?'), Some(_)) => glob_match(&pat[1..], &text[1..]),
+        (Some('?'), Some(_)) => glob_match(&pat[1..], &text[1..]),
+        (Some('['), Some(&c)) => match glob_class(&pat[1..], c) {
+            Some((matched, rest)) => matched && glob_match(rest, &text[1..]),
+            None => c == '[' && glob_match(&pat[1..], &text[1..]),
+        },
         (Some(p), Some(t)) if p == t => glob_match(&pat[1..], &text[1..]),
         _ => false,
     }
+}
+
+/// Whether `c` is in the class a `[` opened, `pat` being what follows the `[`, and the
+/// pattern after the class; `None` for a `[` that is never closed and stands for itself.
+fn glob_class(pat: &[char], c: char) -> Option<(bool, &[char])> {
+    let (negated, body) = match pat.first() {
+        Some('!' | '^') => (true, &pat[1..]),
+        _ => (false, pat),
+    };
+    // A `]` first is one of the characters, not the end.
+    let end = body.iter().skip(1).position(|&x| x == ']')? + 1;
+    let set = &body[..end];
+    let mut found = false;
+    let mut i = 0;
+    while i < set.len() {
+        if i + 2 < set.len() && set[i + 1] == '-' {
+            found |= (set[i]..=set[i + 2]).contains(&c);
+            i += 3;
+        } else {
+            found |= set[i] == c;
+            i += 1;
+        }
+    }
+    Some((found != negated, &body[end + 1..]))
 }
 
 fn choice_widget(c: &Choice) -> gtk::Widget {
@@ -854,4 +883,27 @@ async fn confirm_replace(parent: &impl IsA<gtk::Widget>, name: &str) -> bool {
     ]);
     dialog.set_response_appearance("replace", adw::ResponseAppearance::Destructive);
     dialog.choose_future(Some(parent)).await == "replace"
+}
+
+#[cfg(test)]
+mod tests {
+    use super::glob_match;
+
+    fn matches(pattern: &str, name: &str) -> bool {
+        let chars = |s: &str| s.chars().collect::<Vec<_>>();
+        glob_match(&chars(pattern), &chars(name))
+    }
+
+    #[test]
+    fn globs() {
+        assert!(matches("*.txt", "notes.txt"));
+        assert!(!matches("*.txt", "notes.md"));
+        assert!(matches("*.[pp][nn][gg]", "photo.png"));
+        assert!(!matches("*.[pp][nn][gg]", "photo.jpg"));
+        assert!(matches("scan[0-9].pdf", "scan3.pdf"));
+        assert!(!matches("scan[!0-9].pdf", "scan3.pdf"));
+        assert!(matches("[]x]", "]"));
+        assert!(matches("a[b", "a[b"));
+        assert!(matches("résumé.*", "résumé.odt"));
+    }
 }
