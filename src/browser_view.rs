@@ -544,7 +544,7 @@ mod imp {
                     {
                         obj.queue_select_neighbor(position);
                     }
-                    if removed > 0 && added > 0 {
+                    if added > 0 {
                         obj.queue_select_replaced();
                     }
                 }
@@ -1592,13 +1592,20 @@ impl BrowserView {
     /// top. After the change, for the same reason as picking the first result; not where
     /// the whole folder went, as it does on leaving it.
     fn queue_select_neighbor(&self, position: u32) {
+        // Not in a file chooser, where what is selected fills the name to save under.
+        if self.chooser_mode() {
+            return;
+        }
         glib::idle_add_local_once(glib::clone!(
             #[weak(rename_to = view)]
             self,
             move || {
-                let sel = view.model().selection();
+                let model = view.model();
+                let sel = model.selection();
                 let n = sel.n_items();
-                if n == 0 || !sel.selection().is_empty() {
+                // A rename, or a file saved over, comes back under a fresh row, which
+                // takes the selection instead.
+                if n == 0 || !sel.selection().is_empty() || model.expects_back() {
                     return;
                 }
                 let pos = position.min(n - 1);
@@ -1613,16 +1620,20 @@ impl BrowserView {
         ));
     }
 
-    /// Select again what was selected when the directory list read it again and put a
-    /// fresh row in its place, and give the first of them back the keyboard if the view
-    /// had it, which went with the old row. After the change, as for the neighbour.
+    /// Select again what was selected when the directory list read it again, or it was
+    /// renamed, and a fresh row came in its place, and give the first of them back the
+    /// keyboard if the view had it, which went with the old row. After the change, as for
+    /// the neighbour, and not in a file chooser either.
     fn queue_select_replaced(&self) {
+        if self.chooser_mode() || !self.model().expects_back() {
+            return;
+        }
         glib::idle_add_local_once(glib::clone!(
             #[weak(rename_to = view)]
             self,
             move || {
                 let model = view.model();
-                let positions = model.positions_of(&model.take_replaced());
+                let positions = model.take_back();
                 let Some(&first) = positions.first() else {
                     return;
                 };
