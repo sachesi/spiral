@@ -1189,11 +1189,22 @@ impl BrowserView {
             #[weak(rename_to = view)]
             self,
             async move {
-                if let Some(name) = crate::naming::new_folder_dialog(&view, &parent, "").await {
-                    // Selected and given the keyboard once it appears: a folder is made to
-                    // be used, and what follows -- opening it, renaming it, dragging into
-                    // it -- starts from there.
+                let Some(name) = crate::naming::new_folder_dialog(&view, &parent, "").await else {
+                    return;
+                };
+                // Selected and given the keyboard once it appears: a folder is made to be
+                // used, and what follows -- opening it, renaming it, dragging into it --
+                // starts from there.
+                if view.manager().is_some() {
                     view.submit_and_select(JobKind::CreateFolder { parent, name });
+                    return;
+                }
+                // The file chooser has no operations to hand it to; making a folder is
+                // quick enough to do here.
+                let folder = parent.child(&name);
+                match folder.make_directory_future(glib::Priority::DEFAULT).await {
+                    Ok(()) => view.select_files_when_loaded(vec![folder]),
+                    Err(e) => view.show_error(&gettext("Could Not Create Folder"), e.message()),
                 }
             }
         ));
