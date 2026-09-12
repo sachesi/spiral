@@ -80,7 +80,7 @@ pub struct Volume {
 
 pub struct Drive {
     pub model: String,
-    /// What kind of drive, in words: "NVMe SSD", "Hard disk, 7200 RPM", "USB flash drive".
+    /// What kind of drive, in words: "NVMe", "Hard disk, 7200 RPM", "USB flash drive".
     pub kind: String,
     pub size: u64,
 }
@@ -168,7 +168,6 @@ pub async fn volume_of(device: &str) -> Option<Volume> {
 
 fn drive(ifaces: &HashMap<String, Props>) -> Option<Drive> {
     let d = ifaces.get(DRIVE)?;
-    let flag = |key: &str| d.get(key).and_then(|v| v.get::<bool>()).unwrap_or(false);
     let model = [string(d, "Vendor"), string(d, "Model")]
         .into_iter()
         .flatten()
@@ -176,20 +175,24 @@ fn drive(ifaces: &HashMap<String, Props>) -> Option<Drive> {
         .join(" ");
     let media = string(d, "Media").unwrap_or_default();
     let bus = string(d, "ConnectionBus").unwrap_or_default();
-    let rotational = flag("Rotational");
+    // Revolutions per minute, -1 for a disk that spins at a rate it does not tell, 0 for
+    // one that does not spin.
     let rate = d
         .get("RotationRate")
         .and_then(|v| v.get::<i32>())
         .unwrap_or(0);
+    let rotational = rate != 0;
     let kind = if ifaces.contains_key(NVME) {
-        gettext("NVMe SSD")
+        gettext("NVMe")
     } else if media.starts_with("optical") {
         gettext("Optical drive")
     } else if media.starts_with("flash_sd") || bus == "sdio" {
         gettext("SD card")
     } else if bus == "usb" && media == "thumb" {
         gettext("USB flash drive")
-    } else if bus == "usb" && rotational {
+    } else if bus == "usb" && rate > 0 {
+        // Only a rate the disk tells: a USB stick comes out as spinning often enough,
+        // since the kernel takes a disk it knows nothing about for one that does.
         gettext("USB hard disk")
     } else if bus == "usb" {
         gettext("USB drive")
@@ -260,4 +263,34 @@ fn bytestring(v: &glib::Variant) -> Option<String> {
     let bytes = v.fixed_array::<u8>().ok()?;
     let bytes = bytes.strip_suffix(&[0]).unwrap_or(bytes);
     (!bytes.is_empty()).then(|| String::from_utf8_lossy(bytes).into_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::glib::prelude::*;
+
+    fn kind(rate: i32, bus: &str, nvme: bool) -> String {
+        let drive: Props = [
+            ("RotationRate".to_string(), rate.to_variant()),
+            ("ConnectionBus".to_string(), bus.to_variant()),
+        ]
+        .into();
+        let mut ifaces = HashMap::from([(DRIVE.to_string(), drive)]);
+        if nvme {
+            ifaces.insert(NVME.to_string(), Props::new());
+        }
+        super::drive(&ifaces).unwrap().kind
+    }
+
+    #[test]
+    fn drive_kinds() {
+        assert_eq!(kind(0, "", true), "NVMe");
+        assert_eq!(kind(0, "", false), "SSD");
+        assert_eq!(kind(-1, "", false), "Hard disk");
+        assert_eq!(kind(7200, "", false), "Hard disk, 7200 RPM");
+        assert_eq!(kind(5400, "usb", false), "USB hard disk");
+        assert_eq!(kind(-1, "usb", false), "USB drive");
+        assert_eq!(kind(0, "usb", false), "USB drive");
+    }
 }
