@@ -18,7 +18,7 @@ access::can-read,access::can-write,access::can-delete,access::can-rename,\
 access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,trash::deletion-date,\
 metadata::custom-icon,metadata::custom-icon-name,xattr::xdg.tags";
 
-/// Icon to draw for `info`, honouring the Nautilus-compatible custom icon metadata.
+/// Icon to draw for `info`, honouring the `metadata::custom-icon` other file managers set.
 pub fn icon_of(info: &gio::FileInfo) -> gio::Icon {
     if let Some(custom) = info.attribute_string("metadata::custom-icon") {
         let file = if custom.starts_with('/') {
@@ -47,7 +47,7 @@ pub fn allows(info: &gio::FileInfo, attribute: &str) -> bool {
     !info.has_attribute(attribute) || info.boolean(attribute)
 }
 
-/// Lock emblem rule from Nautilus: unreadable files always; read-only files only when
+/// Lock emblem rule: unreadable files always; read-only files only when
 /// the folder around them is writable (so a read-only tree is not a wall of locks) and
 /// never in the trash, where everything is read-only.
 pub fn is_locked(info: &gio::FileInfo, folder_writable: bool) -> bool {
@@ -253,7 +253,7 @@ pub fn caption_kinds() -> [(&'static str, String); 8] {
     ]
 }
 
-/// Nautilus-style relative date, for example "Today, 17:41", "Yesterday, 09:00", "3 days ago",
+/// Relative date, for example "Today, 17:41", "Yesterday, 09:00", "3 days ago",
 /// "Last month", "2 years ago".
 pub fn relative_date(dt: &glib::DateTime) -> String {
     let Ok(now) = glib::DateTime::now_local() else {

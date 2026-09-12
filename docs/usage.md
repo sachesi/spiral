@@ -1,7 +1,7 @@
 # Using Spiral
 
-If you have used GNOME Files, most of this is familiar. What follows is the parts worth
-knowing and the places where Spiral does something of its own.
+If you have used a GNOME file manager, most of this is familiar. What follows is the
+parts worth knowing and the places where Spiral does something of its own.
 
 ## Windows, tabs, sidebar
 
@@ -171,8 +171,7 @@ date; the order stays with the Trash and leaves other folders alone.
 The column view is off until "Column View" in Preferences turns it on; with it off the
 views are the grid and the list, and a folder that remembers the columns opens in the list.
 
-It draws the path as a strip of lists, one folder per column, the way the
-Finder does. The last column is the folder you are in; the columns before it are the
+It draws the path as a strip of lists, one folder per column. The last column is the folder you are in; the columns before it are the
 folders that lead there, with the one you came through picked out, and a column appears
 past the last one whenever a single folder is selected, showing what it holds. The strip
 scrolls sideways and keeps the last column in sight; Shift and the wheel move it by hand,
@@ -218,8 +217,8 @@ A drag starts anywhere on a row or a grid tile, and a folder accepts a drop anyw
 its row. Drop targets are folders in the view, breadcrumbs and sidebar entries except
 Favorites; Trash takes a drop as well, and trashes what lands on it. A drag held for a
 moment over a folder, a breadcrumb or a sidebar entry opens it, so files can be carried
-into a folder that is nowhere on screen when the drag starts. Cut, copy and paste use the same clipboard format as GNOME Files, so
-the two interoperate; files waiting on the clipboard as a cut are shown faded until they
+into a folder that is nowhere on screen when the drag starts. Cut, copy and paste use the GNOME clipboard format, so they work
+with other GNOME file managers; files waiting on the clipboard as a cut are shown faded until they
 are pasted. An image on the clipboard with no files behind it — a screenshot, say —
 pastes into the folder as "Pasted Image.png". What a paste leaves in the folder is selected
 once it lands, ready for whatever is done to it next. "Paste Into Folder" pastes into a
@@ -330,8 +329,8 @@ makes a new one. Renaming and removing rewrite every file known to carry the tag
 removing asks first. Removing every tag brings the seven colours back. Dragging a tag up or
 down the sidebar reorders the tags, there and in the context menu.
 
-A file's tags are the `user.xdg.tags` extended attribute on the file itself, the one Dolphin
-and Baloo use, so they survive a rename, a move or a copy, and other programs see them and
+A file's tags are the `user.xdg.tags` extended attribute on the file itself, the one other
+programs use too, so they survive a rename, a move or a copy, and other programs see them and
 Spiral sees theirs. That also means they live only where the filesystem keeps extended
 attributes: files on a network share or a FAT-formatted stick cannot be tagged. Since no
 program can ask every file on the disk, Spiral keeps an index of which files carry which
@@ -358,7 +357,7 @@ drive, with its model, its kind (NVMe, SSD, HDD, USB drive, SD card),
 its size, the partition table (GPT or MBR) and the partition. The volume and the drive
 come from UDisks, and without it the page has what the mount says. On a disk device with
 GNOME Disks installed the page offers "Open in Disks". A single folder can be given a custom icon; it is stored as
-`metadata::custom-icon`, which GNOME Files reads as well. For a single local file there
+`metadata::custom-icon`, which other file managers read as well. For a single local file there
 is a Permissions page with owner, group and others as dropdowns and an Executable switch;
 it is read-only unless you own the file. A folder you own also gets "Change Permissions
 for Enclosed Files…", which sets owner, group and others apart for the files and the
@@ -375,6 +374,6 @@ as an operation, leaves links alone, and says how many items it could not change
     spiral -q                 # close every window and quit
     spiral --version
 
-Every call opens new windows in the running instance, as with GNOME Files. `-q` stops
+Every call opens new windows in the running instance. `-q` stops
 running file operations first, cleaning up partial files the same way the stop button
 does.

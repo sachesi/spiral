@@ -178,7 +178,7 @@ mod imp {
                 );
             }
 
-            // The GTK file chooser and Nautilus edit the same bookmarks file.
+            // The GTK file chooser and other file managers edit the same bookmarks file.
             let bookmarks = gio::File::for_path(crate::bookmarks::path());
             if let Ok(m) =
                 bookmarks.monitor_file(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
@@ -492,7 +492,7 @@ fn place_row(icon: &str, title: &str, file: &gio::File, section: u8) -> gtk::Lis
 }
 
 /// A tag: its dot and its name, opening the list of what carries it. Files dropped on
-/// it are given the tag, the way Finder does it.
+/// it are given the tag.
 fn tag_row(tag: &crate::tags::Tag) -> gtk::ListBoxRow {
     // The dot in a box as wide as the icons of the rows above, so the names line up and
     // the dot stays round.

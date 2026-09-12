@@ -13,7 +13,7 @@ pub enum Entry {
     Folder { name: String, children: Vec<Entry> },
 }
 
-/// As many as GNOME Files offers from one folder, and as deep as it goes.
+/// How many templates are offered from one folder, and how deep the menu goes.
 const PER_FOLDER: usize = 30;
 const MAX_DEPTH: u32 = 5;
 

@@ -4,7 +4,7 @@
 //! list do, and it is the one the `view.*` actions, the context menus and drag and drop
 //! work on. The columns before it are the path that leads there, the one after is what
 //! the selected folder holds. Clicking in any of those goes to that folder, which makes
-//! it the last column, the way the Finder moves between columns.
+//! it the last column.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -21,7 +21,7 @@ use crate::file_utils;
 use crate::folder_model::FolderModel;
 use crate::{gdk, gio, glib, gtk};
 
-/// Width of one column, as in the Finder these come from.
+/// Width of one column.
 const COLUMN_WIDTH: i32 = 240;
 /// How long a selection has to hold still before the folder it points at is listed, so
 /// that running down a folder full of folders does not open a listing per keystroke.

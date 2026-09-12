@@ -1,4 +1,4 @@
-//! Breadcrumb path bar in the Nautilus style: a pill with flat buttons and a current-folder menu.
+//! Breadcrumb path bar: a pill with flat buttons and a current-folder menu.
 
 use std::cell::RefCell;
 

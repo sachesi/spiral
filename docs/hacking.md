@@ -80,5 +80,3 @@ processes that touch untrusted data go through `sandbox_base` in `thumbnails.rs`
 
 The portal backend must own its bus name before GTK is initialised, see
 [integration.md](integration.md).
-
-Where behaviour was a judgement call, GNOME Files was the reference.

@@ -1,5 +1,5 @@
 //! The GTK bookmarks file (~/.config/gtk-3.0/bookmarks): "uri [label]" per line, shared with
-//! the GTK file chooser and Nautilus.
+//! the GTK file chooser and other file managers.
 
 use std::path::PathBuf;
 

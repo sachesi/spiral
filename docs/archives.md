@@ -21,8 +21,8 @@ takes its formats away; the error names the package to install.
 The tool extracts into a hidden working directory inside the destination. If the archive
 had a single top-level item, that item is moved out under its own name; otherwise the
 directory is renamed after the archive minus its extension (`photos.tar.gz` becomes
-`photos`). Nothing existing is overwritten, a ` (2)` suffix is used instead. This is what
-GNOME Files does. Extraction only targets local folders.
+`photos`). Nothing existing is overwritten, a ` (2)` suffix is used instead. Extraction
+only targets local folders.
 
 7-Zip reports a percentage, which shows as a finer progress bar; the other tools advance
 per archive.

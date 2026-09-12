@@ -1,5 +1,5 @@
 //! Colour tags. A file's tags are the names in its `user.xdg.tags` extended attribute,
-//! the freedesktop one Dolphin and Baloo read as well, so they stay with the file through
+//! the freedesktop one other programs read as well, so they stay with the file through
 //! a rename, a move or a copy, and other programs see them. Which files carry a tag is
 //! kept in an index under the user data dir, one `tag<TAB>uri` line per pair, since asking
 //! every file on the disk is not an option; an entry that has stopped being true is

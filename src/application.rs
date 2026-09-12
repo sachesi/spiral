@@ -52,7 +52,7 @@ mod imp {
             ControlFlow::Continue(())
         }
 
-        /// Every invocation reaches the running instance here, like Nautilus: `-q` quits it,
+        /// Every invocation reaches the running instance here: `-q` quits it,
         /// anything else opens new windows.
         fn command_line(&self, cmdline: &gio::ApplicationCommandLine) -> glib::ExitCode {
             let app = self.obj();

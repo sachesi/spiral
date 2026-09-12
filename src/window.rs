@@ -1294,7 +1294,7 @@ impl SpiralWindow {
         }
     }
 
-    /// The split button shows the view you switch *to*, like Nautilus.
+    /// The split button shows the view you switch *to*.
     fn sync_view_button(&self) {
         let imp = self.imp();
         let mode = self

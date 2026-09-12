@@ -1,4 +1,4 @@
-//! Dialogs a running job may need: name collisions (Nautilus-style) and I/O errors.
+//! Dialogs a running job may need: name collisions and I/O errors.
 
 use futures_channel::oneshot;
 use gettextrs::gettext;

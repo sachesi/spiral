@@ -1,7 +1,7 @@
 # Spiral
 
 A file manager for Wayland desktops that don't come with one. Rust, GTK 4, libadwaita.
-It behaves like GNOME Files as far as that made sense, and it ships a FileChooser portal
+It follows the GNOME design, and it ships a FileChooser portal
 backend so other applications get the same dialog for opening and saving files.
 
 There is no dependency on a GNOME session. You need a Wayland compositor, a session bus,

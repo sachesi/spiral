@@ -1,5 +1,5 @@
-/* Structural styling ported from Nautilus. Colors come from libadwaita variables, except the
-   neutral selection colour of the file views. */
+/* Structural styling. Colors come from libadwaita variables, except the neutral selection
+   colour of the file views. */
 
 /* Progress indicator (sidebar bottom bar) */
 @keyframes needs_attention_keyframes {
@@ -196,7 +196,7 @@
 rubberband {
   border-radius: 6px;
 }
-/* Neutral selection colour in the file views, like Nautilus. */
+/* Neutral selection colour in the file views, so the accent is left to the controls. */
 .spiral-list-view columnview > listview,
 .spiral-grid-view gridview,
 .spiral-miller-column listview {

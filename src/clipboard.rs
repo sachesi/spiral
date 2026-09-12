@@ -1,4 +1,4 @@
-//! File clipboard using Nautilus' `x-special/gnome-copied-files` plus a `gdk::FileList`,
+//! File clipboard using GNOME's `x-special/gnome-copied-files` plus a `gdk::FileList`,
 //! which GDK serialises as `text/uri-list` and as plain-text paths for terminals and editors.
 
 use std::cell::RefCell;

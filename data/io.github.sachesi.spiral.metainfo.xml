@@ -6,7 +6,7 @@
   <name>Spiral</name>
   <summary>Browse and manage your files</summary>
   <description>
-    <p>Spiral is a GTK4 and libadwaita file manager for Wayland desktops that come without one. It follows the layout and behaviour of GNOME Files and adds a file chooser portal backend, so applications that open and save files through the portal get the same picker.</p>
+    <p>Spiral is a GTK4 and libadwaita file manager for Wayland desktops that come without one. It follows the GNOME design and adds a file chooser portal backend, so applications that open and save files through the portal get the same picker.</p>
     <ul>
       <li>Grid, list and column views, tabs, and a places sidebar with devices, bookmarks and favorites</li>
       <li>Copy, move, trash, rename and duplicate with progress, conflict handling and undo</li>
@@ -32,7 +32,7 @@
     </release>
     <release version="0.13.0" date="2026-09-10">
       <description>
-        <p>Colour tags, off until "Colour Tags" in Preferences turns them on. A tag is a name and a colour; seven come by default, and the ones you make take a colour from the palette or one of your own. A file's tags live in its user.xdg.tags attribute, so they survive renames, moves and copies and are the tags Dolphin and Baloo read; an index under the user data dir says which files carry each tag, since nothing can ask every file on the disk, and it is corrected as listings show what is true. The context menu tags a selection from a row of coloured dots, the tags of a file lead its name in every view, the list and the columns wash the row with the first colour while the grid washes the name, and the sidebar lists the tags, opens what carries one, takes drops to tag files, and renames, recolours and removes them.</p>
+        <p>Colour tags, off until "Colour Tags" in Preferences turns them on. A tag is a name and a colour; seven come by default, and the ones you make take a colour from the palette or one of your own. A file's tags live in its user.xdg.tags attribute, so they survive renames, moves and copies and are the tags other programs read too; an index under the user data dir says which files carry each tag, since nothing can ask every file on the disk, and it is corrected as listings show what is true. The context menu tags a selection from a row of coloured dots, the tags of a file lead its name in every view, the list and the columns wash the row with the first colour while the grid washes the name, and the sidebar lists the tags, opens what carries one, takes drops to tag files, and renames, recolours and removes them.</p>
         <p>"Copy to…", "Move to…" and "Extract To…" ask in a dialog attached to the window instead of a file chooser window of its own: folders and nothing else, "New Folder" in the header for a destination that does not exist yet, and the button takes the folder selected or the one on screen. The dialog folds its sidebar away in a narrow window and has a button to ask it back, as the portal chooser now does at its own width. Ctrl+L types a location in the dialogs as well as in the window, and the portal chooser answers Ctrl+R, F5 and Ctrl+S from anywhere in it. A drop on a folder in the list or the columns goes into the folder under the pointer, which is tinted while the drag is over it, and files dropped on Trash are trashed whether the drag arrived as a move or a copy.</p>
         <p>A video preview goes on playing when the arrows step to the next file, and a sound file whose length is only known once the pipeline has read into it gets its timeline and the seeking that comes with it. Ctrl+S no longer picks files out by pattern in a save dialog, where that key belongs to the application the dialog was opened for, and "Empty Trash…" does not ask its question over an empty trash.</p>
         <p>Opening in a new tab, a new window or a terminal are items of the menu again rather than a submenu, and the colours of a tag are a row of dots in its menu, since a menu that has had a submenu open is not dismissed by a click outside it. Which of the optional entries a context menu carries is a page of its own in Preferences, which are laid out as pages now that there are enough of them: opening in a new tab or a new window, "Copy to…", "Move to…", "Create Link" and "Delete Permanently" are all off to begin with, and a middle click still opens a folder in a new tab whatever the menu shows.</p>
@@ -106,7 +106,7 @@
     </release>
     <release version="0.2.0" date="2026-09-06">
       <description>
-        <p>Russian and Ukrainian translations. Sort order remembered per folder. A Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem calls no longer block the interface on slow mounts.</p>
+        <p>Russian and Ukrainian translations. Sort order remembered per folder. A command line that opens new windows in the running instance on every call: -w, -s, -q. Filesystem calls no longer block the interface on slow mounts.</p>
       </description>
     </release>
     <release version="0.1.0" date="2026-09-06">

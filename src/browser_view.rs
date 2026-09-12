@@ -779,7 +779,7 @@ async fn count_children(dir: &gio::File) -> Option<u64> {
     }
 }
 
-/// Width of the emblem margin beside a grid icon, as in Nautilus.
+/// Width of the emblem margin beside a grid icon.
 const EMBLEM_MARGIN: i32 = 18;
 
 /// The order a folder remembers, from an info asked for `metadata::spiral-sort`.
@@ -798,7 +798,7 @@ const NAME_MIN_WIDTH: i32 = 220;
 /// The star column: one flat button wide.
 const STAR_WIDTH: i32 = 40;
 
-/// Lock shown on files the user cannot read or change, dimmed like Nautilus emblems. It
+/// Lock shown on files the user cannot read or change, dimmed like the other emblems. It
 /// keeps its place when empty so icons line up across cells.
 pub(crate) fn emblem_image() -> gtk::Image {
     gtk::Image::builder()
@@ -971,14 +971,14 @@ pub fn preferred_action(target: &gtk::DropTarget) -> gtk::gdk::DragAction {
     } else if actions == gtk::gdk::DragAction::LINK {
         gtk::gdk::DragAction::LINK
     } else if actions.contains(gtk::gdk::DragAction::MOVE) && drop.drag().is_some() {
-        // Same-process drag: default to move like Nautilus does for local files.
+        // Same-process drag: default to move for local files.
         gtk::gdk::DragAction::MOVE
     } else {
         gtk::gdk::DragAction::COPY
     }
 }
 
-/// How long a drag has to rest on a folder before it springs open, as in GNOME Files.
+/// How long a drag has to rest on a folder before it springs open.
 const HOVER_OPEN_AFTER: std::time::Duration = std::time::Duration::from_millis(500);
 
 /// Open what `widget` points at when a drag rests on it: a breadcrumb, a sidebar entry.
@@ -1087,7 +1087,7 @@ pub(crate) fn name_tooltip(label: &gtk::Label) {
     });
 }
 
-/// Files waiting on the clipboard as a cut are dimmed, the way Nautilus marks them.
+/// Files waiting on the clipboard as a cut are dimmed.
 pub(crate) fn set_cut(cell: &impl IsA<gtk::Widget>, info: &gio::FileInfo) {
     if crate::clipboard::is_cut(&file_utils::file_of(info)) {
         cell.add_css_class("spiral-cut");
@@ -2743,7 +2743,7 @@ impl BrowserView {
             labels.append(&label);
             labels.append(&captions);
             // Icon between two emblem-wide margins, the lock stacked at the top of the
-            // right one: the Nautilus grid cell geometry.
+            // right one.
             image.set_margin_start(EMBLEM_MARGIN);
             image.set_hexpand(true);
             let emblem = emblem_image();

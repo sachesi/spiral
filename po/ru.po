@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-12 19:33+0300\n"
+"POT-Creation-Date: 2026-09-12 20:03+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -298,14 +298,14 @@ msgstr "Показывать две панели папок рядом"
 #: data/io.github.sachesi.spiral.metainfo.xml:9
 msgid ""
 "Spiral is a GTK4 and libadwaita file manager for Wayland desktops that come "
-"without one. It follows the layout and behaviour of GNOME Files and adds a "
-"file chooser portal backend, so applications that open and save files "
-"through the portal get the same picker."
+"without one. It follows the GNOME design and adds a file chooser portal "
+"backend, so applications that open and save files through the portal get the "
+"same picker."
 msgstr ""
 "Spiral — файловый менеджер на GTK4 и libadwaita для окружений Wayland, в "
-"которых его нет. Он повторяет компоновку и поведение Файлов GNOME и "
-"добавляет бэкенд портала выбора файлов, поэтому приложения, открывающие и "
-"сохраняющие файлы через портал, получают тот же диалог."
+"которых его нет. Он следует дизайну GNOME и добавляет бэкенд портала выбора "
+"файлов, поэтому приложения, открывающие и сохраняющие файлы через портал, "
+"получают тот же диалог."
 
 #: data/io.github.sachesi.spiral.metainfo.xml:11
 msgid ""
@@ -393,9 +393,9 @@ msgid ""
 "is a name and a colour; seven come by default, and the ones you make take a "
 "colour from the palette or one of your own. A file's tags live in its "
 "user.xdg.tags attribute, so they survive renames, moves and copies and are "
-"the tags Dolphin and Baloo read; an index under the user data dir says which "
-"files carry each tag, since nothing can ask every file on the disk, and it "
-"is corrected as listings show what is true. The context menu tags a "
+"the tags other programs read too; an index under the user data dir says "
+"which files carry each tag, since nothing can ask every file on the disk, "
+"and it is corrected as listings show what is true. The context menu tags a "
 "selection from a row of coloured dots, the tags of a file lead its name in "
 "every view, the list and the columns wash the row with the first colour "
 "while the grid washes the name, and the sidebar lists the tags, opens what "
@@ -699,13 +699,13 @@ msgstr ""
 #: data/io.github.sachesi.spiral.metainfo.xml:109
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
-"Nautilus-style command line: new windows per call, -w, -s, -q. Filesystem "
-"calls no longer block the interface on slow mounts."
+"command line that opens new windows in the running instance on every call: "
+"-w, -s, -q. Filesystem calls no longer block the interface on slow mounts."
 msgstr ""
 "Русский и украинский переводы. Порядок сортировки запоминается для каждой "
-"папки. Командная строка в стиле Nautilus: новое окно на каждый вызов, -w, "
-"-s, -q. Обращения к файловой системе больше не блокируют интерфейс на "
-"медленных точках монтирования."
+"папки. Командная строка, которая при каждом вызове открывает новые окна в "
+"запущенном экземпляре: -w, -s, -q. Обращения к файловой системе больше не "
+"блокируют интерфейс на медленных точках монтирования."
 
 #: data/io.github.sachesi.spiral.metainfo.xml:113
 msgid "First release."
@@ -805,8 +805,8 @@ msgstr "Копировать в"
 msgid "_Copy"
 msgstr "_Копировать"
 
-#: src/browser_actions.rs:1135 src/browser_view.rs:1803
-#: src/browser_view.rs:1810 src/dialogs/open_with.rs:205
+#: src/browser_actions.rs:1135 src/browser_view.rs:1814
+#: src/browser_view.rs:1821 src/dialogs/open_with.rs:205
 #, no-c-format
 msgid "Could Not Open"
 msgstr "Не удалось открыть"
@@ -902,54 +902,54 @@ msgstr "Удалить из избранного"
 msgid "Add to Starred"
 msgstr "Добавить в избранное"
 
-#: src/browser_view.rs:1857
+#: src/browser_view.rs:1868
 #, no-c-format
 msgid "The password dialog was dismissed."
 msgstr "Диалог пароля был закрыт."
 
-#: src/browser_view.rs:1874 src/dialogs/open_with.rs:208
+#: src/browser_view.rs:1885 src/dialogs/open_with.rs:208
 #: src/dialogs/properties.rs:444 src/dialogs/properties.rs:750
 #: src/ops/walk.rs:46 src/places_sidebar.rs:978
 #, no-c-format
 msgid "_OK"
 msgstr "_ОК"
 
-#: src/browser_view.rs:1888
+#: src/browser_view.rs:1899
 #, no-c-format
 msgid "Connecting to %s…"
 msgstr "Подключение к %s…"
 
-#: src/browser_view.rs:1893
+#: src/browser_view.rs:1904
 #, no-c-format
 msgid "Could Not Connect"
 msgstr "Не удалось подключиться"
 
-#: src/browser_view.rs:1896
+#: src/browser_view.rs:1907
 #, no-c-format
 msgid "Reloading the folder tries again."
 msgstr "Перезагрузка папки повторит попытку."
 
-#: src/browser_view.rs:1901 ui/browser_view.ui:114
+#: src/browser_view.rs:1912 ui/browser_view.ui:114
 #, no-c-format
 msgid "Could Not Open Folder"
 msgstr "Не удалось открыть папку"
 
-#: src/browser_view.rs:1920
+#: src/browser_view.rs:1931
 #, no-c-format
 msgid "No Results Found"
 msgstr "Ничего не найдено"
 
-#: src/browser_view.rs:1924
+#: src/browser_view.rs:1935
 #, no-c-format
 msgid "No Servers Found"
 msgstr "Серверы не найдены"
 
-#: src/browser_view.rs:1928 ui/browser_view.ui:103
+#: src/browser_view.rs:1939 ui/browser_view.ui:103
 #, no-c-format
 msgid "Folder is Empty"
 msgstr "Папка пуста"
 
-#: src/browser_view.rs:1990
+#: src/browser_view.rs:2001
 #, no-c-format
 msgid ""
 "Machines that announce themselves on the network appear here. Others are "
@@ -958,7 +958,7 @@ msgstr ""
 "Здесь появляются машины, которые объявляют о себе в сети. К остальным можно "
 "попасть через «Подключиться к серверу…»."
 
-#: src/browser_view.rs:1999
+#: src/browser_view.rs:2010
 #, no-c-format
 msgid ""
 "One server was found but left out: no gvfs backend for %s addresses is "
@@ -973,22 +973,22 @@ msgstr[1] ""
 msgstr[2] ""
 "Найдены серверы, но не показаны: модуль gvfs для адресов %s не установлен."
 
-#: src/browser_view.rs:2019
+#: src/browser_view.rs:2030
 #, no-c-format
 msgid "No gvfs backend for %s addresses is installed."
 msgstr "Модуль gvfs для адресов %s не установлен."
 
-#: src/browser_view.rs:2049
+#: src/browser_view.rs:2060
 #, no-c-format
 msgid "Loading…"
 msgstr "Загрузка…"
 
-#: src/browser_view.rs:2065
+#: src/browser_view.rs:2076
 #, no-c-format
 msgid "“%s” selected"
 msgstr "Выбран объект «%s»"
 
-#: src/browser_view.rs:2070
+#: src/browser_view.rs:2081
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -997,28 +997,28 @@ msgstr[1] "%d других объекта выбрано"
 msgstr[2] "%d других объектов выбрано"
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:2076
+#: src/browser_view.rs:2087
 #, no-c-format
 msgid "%f, %n"
 msgstr "%f, %n"
 
-#: src/browser_view.rs:2862 src/dialogs/tags.rs:18
+#: src/browser_view.rs:2873 src/dialogs/tags.rs:18
 #, no-c-format
 msgid "Name"
 msgstr "Имя"
 
-#: src/browser_view.rs:2962 src/dialogs/properties.rs:321
+#: src/browser_view.rs:2973 src/dialogs/properties.rs:321
 #: src/dialogs/properties.rs:383
 #, no-c-format
 msgid "Location"
 msgstr "Расположение"
 
-#: src/browser_view.rs:2972 src/dialogs/properties.rs:361
+#: src/browser_view.rs:2983 src/dialogs/properties.rs:361
 #, no-c-format
 msgid "Trashed On"
 msgstr "Дата удаления"
 
-#: src/browser_view.rs:2979
+#: src/browser_view.rs:2990
 #, no-c-format
 msgid "Original Location"
 msgstr "Исходное расположение"
