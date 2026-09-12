@@ -181,7 +181,6 @@ fn drive(ifaces: &HashMap<String, Props>) -> Option<Drive> {
         .get("RotationRate")
         .and_then(|v| v.get::<i32>())
         .unwrap_or(0);
-    let rotational = rate != 0;
     let kind = if ifaces.contains_key(NVME) {
         gettext("NVMe")
     } else if media.starts_with("optical") {
@@ -190,13 +189,9 @@ fn drive(ifaces: &HashMap<String, Props>) -> Option<Drive> {
         gettext("SD card")
     } else if bus == "usb" && media == "thumb" {
         gettext("USB flash drive")
-    } else if bus == "usb" && rate > 0 {
-        // Only a rate the disk tells: a USB stick comes out as spinning often enough,
-        // since the kernel takes a disk it knows nothing about for one that does.
-        gettext("USB hard disk")
     } else if bus == "usb" {
         gettext("USB drive")
-    } else if rotational {
+    } else if rate != 0 {
         gettext("HDD")
     } else {
         gettext("SSD")
@@ -287,7 +282,7 @@ mod tests {
         assert_eq!(kind(0, "", false), "SSD");
         assert_eq!(kind(-1, "", false), "HDD");
         assert_eq!(kind(7200, "", false), "HDD");
-        assert_eq!(kind(5400, "usb", false), "USB hard disk");
+        assert_eq!(kind(5400, "usb", false), "USB drive");
         assert_eq!(kind(-1, "usb", false), "USB drive");
         assert_eq!(kind(0, "usb", false), "USB drive");
     }
