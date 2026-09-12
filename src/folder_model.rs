@@ -13,6 +13,10 @@ const SHOW_WHILE_LISTING_UP_TO: u32 = 2000;
 
 /// How long a listing may keep the window blank before what has arrived is shown.
 const SHOW_LISTING_AFTER: std::time::Duration = std::time::Duration::from_secs(1);
+
+/// How long a selected file the directory list is reading again waits to be selected
+/// again once its fresh row is in.
+const REPLACED_FOR: std::time::Duration = std::time::Duration::from_secs(2);
 use crate::file_utils;
 use crate::{gio, glib, gtk};
 
@@ -64,6 +68,9 @@ mod imp {
         /// Files the monitor reported, waiting for the next pass over the list.
         pub pending: RefCell<Vec<gio::File>>,
         pub refresh_queued: Cell<bool>,
+        /// Selected files the directory list is about to put a fresh row in for, and when
+        /// that was heard of; see `take_replaced`.
+        pub replaced: RefCell<Vec<(gio::File, i64)>>,
         /// Whether the listing is on the pipeline; a big one waits there for its end,
         /// see `show_listing`.
         listing_shown: Cell<bool>,
@@ -166,6 +173,7 @@ mod imp {
                 monitor: Default::default(),
                 pending: Default::default(),
                 refresh_queued: Default::default(),
+                replaced: Default::default(),
                 listing_shown: Default::default(),
                 sort_deferred: Default::default(),
                 filtered,
@@ -381,19 +389,20 @@ mod imp {
                 monitor.connect_changed(glib::clone!(
                     #[weak(rename_to = obj)]
                     self.obj(),
-                    move |_, changed, _, event| {
-                        // A tag or a mode set on a file is an attribute change and
-                        // nothing else; there is no end of writing to wait for.
-                        if event == gio::FileMonitorEvent::ChangesDoneHint
-                            || event == gio::FileMonitorEvent::AttributeChanged
-                        {
-                            obj.refresh(changed.clone());
-                        }
+                    move |_, changed, _, event| match event {
+                        gio::FileMonitorEvent::ChangesDoneHint => obj.refresh(changed.clone()),
+                        // The directory list reads these again itself -- a tag or a mode
+                        // set, a file saved over -- and puts the fresh row in place of
+                        // the old one, which the selection does not follow.
+                        gio::FileMonitorEvent::AttributeChanged
+                        | gio::FileMonitorEvent::Created => obj.note_replaced(changed),
+                        _ => {}
                     }
                 ));
                 self.monitor.replace(Some(monitor));
             }
             self.location.replace(file);
+            self.replaced.take();
             if list {
                 self.filtered.set_model(Some(&self.list_store));
                 self.obj().load_list();
@@ -586,6 +595,33 @@ impl FolderModel {
     }
 
     /// Files currently selected, in view order.
+    /// Remember `file` if it is selected: the directory list is reading it again, and
+    /// the row it puts in its place comes unselected. Asked of the monitor as the change
+    /// arrives, before the list has its answer.
+    fn note_replaced(&self, file: &gio::File) {
+        if self.selection().selection().is_empty() {
+            return;
+        }
+        if self.selected_files().iter().any(|f| f.equal(file)) {
+            let now = glib::monotonic_time();
+            self.imp().replaced.borrow_mut().push((file.clone(), now));
+        }
+    }
+
+    /// The selected files whose rows the directory list has put fresh ones in for, for
+    /// the view to select again. What was heard of more than a moment ago is let go: the
+    /// list answers at once, or the change never made it a new row.
+    pub fn take_replaced(&self) -> Vec<gio::File> {
+        let since = glib::monotonic_time() - REPLACED_FOR.as_micros() as i64;
+        self.imp()
+            .replaced
+            .take()
+            .into_iter()
+            .filter(|(_, at)| *at >= since)
+            .map(|(file, _)| file)
+            .collect()
+    }
+
     pub fn selected_files(&self) -> Vec<gio::File> {
         self.selected_infos()
             .iter()

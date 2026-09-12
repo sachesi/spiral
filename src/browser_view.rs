@@ -88,6 +88,9 @@ mod imp {
         pub first_picked: Cell<bool>,
         pub picking: Cell<bool>,
         pub pick_pending: Cell<bool>,
+        /// Whether anything was selected as of the last change to the selection or the
+        /// items, since the selection says nothing when what was selected goes away.
+        pub had_selection: Cell<bool>,
         /// Where a drag is hovering over the strip, and the frame callback that pushes
         /// the strip along and marks the column the drop would land in.
         pub drag_at: Cell<(f64, f64)>,
@@ -209,6 +212,7 @@ mod imp {
                 first_picked: Default::default(),
                 picking: Default::default(),
                 pick_pending: Default::default(),
+                had_selection: Default::default(),
                 drag_at: Default::default(),
                 drag_tick: Default::default(),
                 error_page: Default::default(),
@@ -527,10 +531,22 @@ mod imp {
             self.model.selection().connect_items_changed(glib::clone!(
                 #[weak]
                 obj,
-                move |_, _, _, _| {
+                move |sel, position, removed, added| {
                     obj.update_stack();
                     obj.queue_selection_update();
                     obj.queue_pick_first_result();
+                    let selected = !sel.selection().is_empty();
+                    if obj.imp().had_selection.replace(selected)
+                        && !selected
+                        && removed > 0
+                        && added == 0
+                        && sel.n_items() > 0
+                    {
+                        obj.queue_select_neighbor(position);
+                    }
+                    if removed > 0 && added > 0 {
+                        obj.queue_select_replaced();
+                    }
                 }
             ));
             self.model
@@ -538,11 +554,12 @@ mod imp {
                 .connect_selection_changed(glib::clone!(
                     #[weak]
                     obj,
-                    move |_, _, _| {
+                    move |sel, _, _| {
                         let imp = obj.imp();
                         if !imp.picking.get() {
                             imp.first_picked.set(false);
                         }
+                        imp.had_selection.set(!sel.selection().is_empty());
                         obj.queue_selection_update();
                     }
                 ));
@@ -1556,6 +1573,57 @@ impl BrowserView {
         ));
     }
 
+    /// What was selected went away -- deleted, moved elsewhere -- leaving nothing selected:
+    /// select what took its place, or the last item where it was at the end, and give it
+    /// the keyboard if the view had it, so the arrows go on from there and not from the
+    /// top. After the change, for the same reason as picking the first result; not where
+    /// the whole folder went, as it does on leaving it.
+    fn queue_select_neighbor(&self, position: u32) {
+        glib::idle_add_local_once(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move || {
+                let sel = view.model().selection();
+                let n = sel.n_items();
+                if n == 0 || !sel.selection().is_empty() {
+                    return;
+                }
+                let pos = position.min(n - 1);
+                sel.select_item(pos, true);
+                let flags = if view.focus_child().is_some() {
+                    gtk::ListScrollFlags::FOCUS
+                } else {
+                    gtk::ListScrollFlags::NONE
+                };
+                view.reveal_position(pos, flags);
+            }
+        ));
+    }
+
+    /// Select again what was selected when the directory list read it again and put a
+    /// fresh row in its place, and give the first of them back the keyboard if the view
+    /// had it, which went with the old row. After the change, as for the neighbour.
+    fn queue_select_replaced(&self) {
+        glib::idle_add_local_once(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move || {
+                let model = view.model();
+                let positions = model.positions_of(&model.take_replaced());
+                let Some(&first) = positions.first() else {
+                    return;
+                };
+                let sel = model.selection();
+                for &pos in &positions {
+                    sel.select_item(pos, false);
+                }
+                if view.focus_child().is_some() {
+                    view.reveal_position(first, gtk::ListScrollFlags::FOCUS);
+                }
+            }
+        ));
+    }
+
     fn pick_first_result(&self) {
         let imp = self.imp();
         let model = &imp.model;
@@ -2154,6 +2222,11 @@ impl BrowserView {
                         .elapsed()
                         >= GRACE;
                 if !waiting && (all || given_up) {
+                    // None of them at all -- hidden, or never made -- is nothing to
+                    // trade the selection for.
+                    if found.is_empty() {
+                        break;
+                    }
                     sel.unselect_all();
                     for &pos in &found {
                         sel.select_item(pos, false);
