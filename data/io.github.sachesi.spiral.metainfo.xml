@@ -22,6 +22,14 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.15.0" date="2026-09-12">
+      <description>
+        <p>The file chooser makes the folder New Folder asks for, its type filters match the suffixes GTK applications send, and its sidebar leaves the tags out when a file is being saved. A window made wider, a maximized chooser among them, gets as many grid columns as fit. "just setup-portal" also sends the file dialogs of Qt applications to the chooser, from the next login.</p>
+        <p>The selection follows the files. When selected items are trashed, deleted or moved away, the item that takes their place is selected and has the keyboard, so the arrow keys carry on from there instead of starting at the top; a selected file that is renamed, or changed by another program, stays selected; and "Extract Here" selects what the archive left.</p>
+        <p>A file carries one tag at a time, and picking another replaces it. A tag lists a folder once, whatever paths it was seen under, and rows washed with a tag's colour show the hover. In the column view a tag is a single column, every column keeps its own folder's order, and a folder of images no longer turns the columns into a grid.</p>
+        <p>Properties tells hard disks from SSDs and names the kind of drive in a word: NVMe, SSD, HDD or USB drive.</p>
+      </description>
+    </release>
     <release version="0.14.0" date="2026-09-10">
       <description>
         <p>Enter in the search box opens the first result, which stays selected until another is picked, and Down takes the keyboard to the results. Escape or Back ends a search and stays in the folder, with the result selected there, or the folder in it that holds the result. Up selects the folder it came from, Back the folder it came through where nothing else was selected, and the side buttons of a mouse go back and forward.</p>
