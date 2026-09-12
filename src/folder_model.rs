@@ -979,10 +979,15 @@ impl FolderModel {
                 let mut missing = Vec::new();
                 // (file, tags it was down for and has not got)
                 let mut stale: Vec<(gio::File, Vec<String>)> = Vec::new();
+                // A file the index has under two paths -- a folder reached through a
+                // link or a bind mount as well as where it is -- is one file, listed
+                // once: the index keeps both, as each is true.
+                let attributes = format!("{},id::file", file_utils::ATTRIBUTES);
+                let mut seen = std::collections::HashSet::new();
                 for file in files {
                     match file
                         .query_info_future(
-                            file_utils::ATTRIBUTES,
+                            &attributes,
                             gio::FileQueryInfoFlags::NONE,
                             glib::Priority::DEFAULT,
                         )
@@ -990,8 +995,13 @@ impl FolderModel {
                     {
                         Ok(info) => {
                             info.set_attribute_object("standard::file", &file);
+                            let again = info
+                                .attribute_string("id::file")
+                                .is_some_and(|id| !seen.insert(id));
                             if starred {
-                                infos.push(info);
+                                if !again {
+                                    infos.push(info);
+                                }
                                 continue;
                             }
                             let has = crate::tags::of_info(&info);
@@ -1003,7 +1013,7 @@ impl FolderModel {
                                 Some(t) => has.contains(t),
                                 None => has.iter().any(|t| !wrong.contains(t)),
                             };
-                            if listed {
+                            if listed && !again {
                                 infos.push(info);
                             }
                             if !wrong.is_empty() {
