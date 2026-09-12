@@ -316,12 +316,13 @@ line.
 Off by default; "Colour Tags" in Preferences turns them on. Seven tags named after their
 colours come with it. There are never more than seven: remove one, and "New Tag…" in the
 menu of a tag in the sidebar makes another, with a name and one of the seven colours or a
-colour of your own from the colour dialog. A tagged file is washed with the colour of its
-first tag: across its row in the list and column views, behind its name in the grid.
+colour of your own from the colour dialog. A file carries one tag at a time, and is washed
+with its colour: across its row in the list and column views, behind its name in the grid.
 
 The context menu of a selection shows the tags as a row of dots: a click puts the tag on
-every selected file, or takes it off when they all have it; a dot with a tick is on all of
-them, a faded tick on some. Dropping files on a tag in the sidebar gives them that tag.
+every selected file in place of the one it had, or takes it off when they all have it; a
+dot with a tick is on all of them, a faded tick on some. Dropping files on a tag in the
+sidebar gives them that tag, in place of their own.
 
 Each tag in the sidebar opens the list of what carries it; the "Tags" crumb above it lists
 every tagged file. A tag's own menu there renames it, changes its colour, removes it, or

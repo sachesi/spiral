@@ -818,11 +818,7 @@ impl BrowserView {
                 }
                 break;
             }
-            let mut names = crate::tags::of_info(&info);
-            names.retain(|t| t != name);
-            if on {
-                names.push(name.to_string());
-            }
+            let names = crate::tags::applied(crate::tags::of_info(&info), name, on);
             match crate::tags::attribute_value(&names) {
                 Some(v) => info.set_attribute_string(crate::tags::ATTRIBUTE, &v),
                 None => info.remove_attribute(crate::tags::ATTRIBUTE),
