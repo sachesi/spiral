@@ -80,7 +80,7 @@ pub struct Volume {
 
 pub struct Drive {
     pub model: String,
-    /// What kind of drive, in words: "NVMe", "Hard disk, 7200 RPM", "USB flash drive".
+    /// What kind of drive, in words: "NVMe", "HDD", "USB flash drive".
     pub kind: String,
     pub size: u64,
 }
@@ -196,10 +196,8 @@ fn drive(ifaces: &HashMap<String, Props>) -> Option<Drive> {
         gettext("USB hard disk")
     } else if bus == "usb" {
         gettext("USB drive")
-    } else if rotational && rate > 0 {
-        gettext("Hard disk, %d RPM").replace("%d", &rate.to_string())
     } else if rotational {
-        gettext("Hard disk")
+        gettext("HDD")
     } else {
         gettext("SSD")
     };
@@ -287,8 +285,8 @@ mod tests {
     fn drive_kinds() {
         assert_eq!(kind(0, "", true), "NVMe");
         assert_eq!(kind(0, "", false), "SSD");
-        assert_eq!(kind(-1, "", false), "Hard disk");
-        assert_eq!(kind(7200, "", false), "Hard disk, 7200 RPM");
+        assert_eq!(kind(-1, "", false), "HDD");
+        assert_eq!(kind(7200, "", false), "HDD");
         assert_eq!(kind(5400, "usb", false), "USB hard disk");
         assert_eq!(kind(-1, "usb", false), "USB drive");
         assert_eq!(kind(0, "usb", false), "USB drive");
