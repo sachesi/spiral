@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.14.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-12 19:07+0300\n"
+"POT-Creation-Date: 2026-09-12 19:32+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1943,15 +1943,10 @@ msgstr ""
 
 #: src/disks.rs:200
 #, no-c-format
-msgid "Hard disk, %d RPM"
+msgid "HDD"
 msgstr ""
 
 #: src/disks.rs:202
-#, no-c-format
-msgid "Hard disk"
-msgstr ""
-
-#: src/disks.rs:204
 #, no-c-format
 msgid "SSD"
 msgstr ""

@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-12 19:07+0300\n"
+"POT-Creation-Date: 2026-09-12 19:32+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -2050,15 +2050,10 @@ msgstr "Накопитель USB"
 
 #: src/disks.rs:200
 #, no-c-format
-msgid "Hard disk, %d RPM"
-msgstr "Жёсткий диск, %d об/мин"
+msgid "HDD"
+msgstr "HDD"
 
 #: src/disks.rs:202
-#, no-c-format
-msgid "Hard disk"
-msgstr "Жёсткий диск"
-
-#: src/disks.rs:204
 #, no-c-format
 msgid "SSD"
 msgstr "SSD"
@@ -3604,6 +3599,14 @@ msgstr "Только содержимое"
 #: ui/window.ui:443 ui/window.ui:527
 msgid "View Options"
 msgstr "Параметры просмотра"
+
+#, no-c-format
+#~ msgid "Hard disk, %d RPM"
+#~ msgstr "Жёсткий диск, %d об/мин"
+
+#, no-c-format
+#~ msgid "Hard disk"
+#~ msgstr "Жёсткий диск"
 
 #, no-c-format
 #~ msgid ""
