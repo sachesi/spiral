@@ -315,6 +315,18 @@ window {
 .spiral-grid-view label.spiral-tag-wash-gray {
   background-color: color-mix(in srgb, var(--spiral-tag-gray) 18%, transparent);
 }
+/* The wash takes the place of the shade a row gets when hovered or pressed, so the
+   shade goes over it instead. */
+.spiral-list-view columnview > listview > row.spiral-tag-wash:not(:selected):hover,
+.spiral-miller-column listview > row.spiral-tag-wash:not(:selected):hover {
+  background-image: linear-gradient(color-mix(in srgb, currentColor 4%, transparent),
+                                    color-mix(in srgb, currentColor 4%, transparent));
+}
+.spiral-list-view columnview > listview > row.spiral-tag-wash:not(:selected):active,
+.spiral-miller-column listview > row.spiral-tag-wash:not(:selected):active {
+  background-image: linear-gradient(color-mix(in srgb, currentColor 8%, transparent),
+                                    color-mix(in srgb, currentColor 8%, transparent));
+}
 .spiral-tag-picker {
   padding: 2px 6px;
 }
