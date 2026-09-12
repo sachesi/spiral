@@ -122,6 +122,9 @@ async fn run(
     }
     let model = view.model();
     let sidebar: PlacesSidebar = glib::Object::new();
+    if !matches!(mode, Mode::Open { .. }) {
+        sidebar.set_hide_tags(true);
+    }
     let location_bar = crate::location_entry::LocationBar::new(&view);
 
     let back = gtk::Button::builder()

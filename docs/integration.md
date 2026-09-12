@@ -12,7 +12,8 @@ The dialog is a trimmed file manager window: sidebar, path bar, the same views, 
 bottom bar with the filter dropdown, the name entry in save mode, a button for the
 application's extra options, and the accept button. Trash, delete, cut and paste, rename
 and drag and drop are off. New Folder is there in save mode and when a folder is being
-asked for. Opening a file accepts; pressing Open with a folder selected enters it; Esc
+asked for. The sidebar has the tags only when opening: a tag lists files from anywhere,
+and is nowhere to save one. Opening a file accepts; pressing Open with a folder selected enters it; Esc
 cancels. The keys of the file manager that a dialog has a use for are there: Ctrl+L, or a
 click on the current folder in the path bar, types a location; Ctrl+R and F5 read the
 folder again; Ctrl+S selects the items matching a pattern.
