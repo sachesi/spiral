@@ -470,17 +470,30 @@ fn remove_attribute(file: &gio::File) -> Result<(), glib::Error> {
     }
 }
 
+/// `names` with `name` put on or taken off. A file carries one tag at a time, so the
+/// others on offer make way for it; a name only another program knows is left alone.
+pub fn applied(mut names: Vec<String>, name: &str, on: bool) -> Vec<String> {
+    if on {
+        names.retain(|n| n == name || !exists(n));
+        if !names.iter().any(|n| n == name) {
+            names.push(name.to_string());
+        }
+    } else {
+        names.retain(|n| n != name);
+    }
+    names
+}
+
 /// Put `name` on `file` or take it off, on the file and in the index. A file that already
 /// stands as asked is left alone, but for the index, which may not have heard of it.
 pub fn set(file: &gio::File, name: &str, on: bool) -> Result<(), glib::Error> {
-    let mut names = read(file);
-    if names.iter().any(|n| n == name) != on {
-        if on {
-            names.push(name.to_string());
-        } else {
-            names.retain(|n| n != name);
-        }
+    let old = read(file);
+    let names = applied(old.clone(), name, on);
+    if names != old {
         write(file, &names)?;
+    }
+    for gone in old.iter().filter(|n| !names.contains(n)) {
+        forget(gone, file);
     }
     if on {
         note(file, std::slice::from_ref(&name.to_string()));
