@@ -36,6 +36,9 @@ mod imp {
         pub popover: RefCell<Option<gtk::PopoverMenu>>,
         /// The row of colours in a tag's menu, kept between menus as the popover keeps it.
         pub color_picker: RefCell<Option<gtk::Box>>,
+        /// Whether the tags are left out, as they are where a file is being saved: a tag
+        /// lists files, and a file cannot be saved into one.
+        pub hide_tags: Cell<bool>,
     }
 
     impl Default for PlacesSidebar {
@@ -54,6 +57,7 @@ mod imp {
                 menu_row: Default::default(),
                 popover: Default::default(),
                 color_picker: Default::default(),
+                hide_tags: Default::default(),
             }
         }
     }
@@ -655,6 +659,11 @@ fn row_section(row: &gtk::ListBoxRow) -> u8 {
 }
 
 impl PlacesSidebar {
+    pub fn set_hide_tags(&self, hide: bool) {
+        self.imp().hide_tags.set(hide);
+        self.rebuild();
+    }
+
     pub fn rebuild(&self) {
         let imp = self.imp();
         let list = &imp.list;
@@ -773,7 +782,7 @@ impl PlacesSidebar {
             list.append(&self.mount_row(&mount, SECTION_NETWORK));
         }
 
-        if crate::tags::enabled() {
+        if crate::tags::enabled() && !imp.hide_tags.get() {
             for tag in crate::tags::all().iter() {
                 list.append(&tag_row(tag));
             }
