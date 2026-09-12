@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.14.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-12 19:32+0300\n"
+"POT-Creation-Date: 2026-09-12 19:33+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1911,42 +1911,37 @@ msgstr ""
 msgid "Tag Colour"
 msgstr ""
 
-#: src/disks.rs:186
+#: src/disks.rs:185
 #, no-c-format
 msgid "NVMe"
 msgstr ""
 
-#: src/disks.rs:188
+#: src/disks.rs:187
 #, no-c-format
 msgid "Optical drive"
 msgstr ""
 
-#: src/disks.rs:190
+#: src/disks.rs:189
 #, no-c-format
 msgid "SD card"
 msgstr ""
 
-#: src/disks.rs:192
+#: src/disks.rs:191
 #, no-c-format
 msgid "USB flash drive"
 msgstr ""
 
-#: src/disks.rs:196
-#, no-c-format
-msgid "USB hard disk"
-msgstr ""
-
-#: src/disks.rs:198
+#: src/disks.rs:193
 #, no-c-format
 msgid "USB drive"
 msgstr ""
 
-#: src/disks.rs:200
+#: src/disks.rs:195
 #, no-c-format
 msgid "HDD"
 msgstr ""
 
-#: src/disks.rs:202
+#: src/disks.rs:197
 #, no-c-format
 msgid "SSD"
 msgstr ""

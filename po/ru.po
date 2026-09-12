@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-12 19:32+0300\n"
+"POT-Creation-Date: 2026-09-12 19:33+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -2018,42 +2018,37 @@ msgstr "Свой цвет…"
 msgid "Tag Colour"
 msgstr "Цвет тега"
 
-#: src/disks.rs:186
+#: src/disks.rs:185
 #, no-c-format
 msgid "NVMe"
 msgstr "NVMe"
 
-#: src/disks.rs:188
+#: src/disks.rs:187
 #, no-c-format
 msgid "Optical drive"
 msgstr "Оптический привод"
 
-#: src/disks.rs:190
+#: src/disks.rs:189
 #, no-c-format
 msgid "SD card"
 msgstr "SD-карта"
 
-#: src/disks.rs:192
+#: src/disks.rs:191
 #, no-c-format
 msgid "USB flash drive"
 msgstr "Флеш-накопитель USB"
 
-#: src/disks.rs:196
-#, no-c-format
-msgid "USB hard disk"
-msgstr "Жёсткий диск USB"
-
-#: src/disks.rs:198
+#: src/disks.rs:193
 #, no-c-format
 msgid "USB drive"
 msgstr "Накопитель USB"
 
-#: src/disks.rs:200
+#: src/disks.rs:195
 #, no-c-format
 msgid "HDD"
 msgstr "HDD"
 
-#: src/disks.rs:202
+#: src/disks.rs:197
 #, no-c-format
 msgid "SSD"
 msgstr "SSD"
@@ -3599,6 +3594,10 @@ msgstr "Только содержимое"
 #: ui/window.ui:443 ui/window.ui:527
 msgid "View Options"
 msgstr "Параметры просмотра"
+
+#, no-c-format
+#~ msgid "USB hard disk"
+#~ msgstr "Жёсткий диск USB"
 
 #, no-c-format
 #~ msgid "Hard disk, %d RPM"
