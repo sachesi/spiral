@@ -147,8 +147,20 @@ setup-portal:
     fi
     systemctl --user restart xdg-desktop-portal.service
     echo "FileChooser portal -> spiral ($conf)"
+    # Qt asks the portal for a file dialog only with its portal theme; left to itself it
+    # shows its own dialog, or GTK 3's.
+    envd="${XDG_CONFIG_HOME:-$HOME/.config}/environment.d"
+    theme="${QT_QPA_PLATFORMTHEME:-}"
+    if [ -n "$theme" ] && [ "$theme" != xdgdesktopportal ]; then
+        echo "Qt: QT_QPA_PLATFORMTHEME is $theme, left alone; Qt applications keep their own dialogs"
+    else
+        mkdir -p "$envd"
+        printf 'QT_QPA_PLATFORMTHEME=xdgdesktopportal\n' > "$envd/60-spiral-qt-portal.conf"
+        echo "Qt: QT_QPA_PLATFORMTHEME=xdgdesktopportal ($envd/60-spiral-qt-portal.conf, from the next login)"
+    fi
 
 # Remove the portal preference again, from whichever file setup-portal wrote it to.
 unset-portal:
     sed -i '/^org.freedesktop.impl.portal.FileChooser=spiral$/d' "${XDG_CONFIG_HOME:-$HOME/.config}/xdg-desktop-portal/"*portals.conf
+    rm -f "${XDG_CONFIG_HOME:-$HOME/.config}/environment.d/60-spiral-qt-portal.conf"
     systemctl --user restart xdg-desktop-portal.service

@@ -5,8 +5,8 @@
 `xdg-desktop-portal-spiral` implements `org.freedesktop.impl.portal.FileChooser`. Once
 `portals.conf` prefers it (`just setup-portal`, see [installing.md](installing.md)),
 applications that go through the portal for file dialogs, which is GTK 4 apps under a
-portal, Flatpaks, Firefox, Chromium and Electron apps, Qt with the xdg platform theme,
-get Spiral's dialog.
+portal, Flatpaks, Firefox, Chromium and Electron apps, Qt with the xdg platform theme
+(which `just setup-portal` turns on for the next login), get Spiral's dialog.
 
 The dialog is a trimmed file manager window: sidebar, path bar, the same views, and a
 bottom bar with the filter dropdown, the name entry in save mode, a button for the

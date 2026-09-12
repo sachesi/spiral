@@ -77,6 +77,14 @@ adds `org.freedesktop.impl.portal.FileChooser=spiral` to the `[preferred]` secti
 `<desktop>-portals.conf` exists there for one of the names in `XDG_CURRENT_DESKTOP`, that
 file is edited instead, since it takes precedence.
 
+Qt applications outside a Flatpak only go through the portal with Qt's portal platform
+theme; otherwise they show Qt's own dialog, or GTK 3's on GNOME and its relatives. So the
+same command writes `QT_QPA_PLATFORMTHEME=xdgdesktopportal` to
+`~/.config/environment.d/60-spiral-qt-portal.conf`, which the session picks up at the next
+login, unless `QT_QPA_PLATFORMTHEME` is already set to something else, such as `qt6ct`,
+which it leaves alone. KDE applications running under Plasma's own theme also need
+`PLASMA_INTEGRATION_USE_PORTAL=1`.
+
 The backend is started by D-Bus activation the first time a file dialog is requested, so
 `WAYLAND_DISPLAY` has to be in the bus activation environment. Sessions that run
 `dbus-update-activation-environment` at start are fine. See
