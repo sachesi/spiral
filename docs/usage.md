@@ -354,7 +354,7 @@ link also shows its target, with a button to the target's folder, and an item in
 shows the folder it was trashed from, with a button there, and when it was trashed. A
 folder has a Disk page: how full the disk is; the volume, with its format, label, where
 it is mounted, the device, a btrfs subvolume and compression, and encryption; and the
-drive, with its model, its kind (NVMe SSD, SSD, hard disk and its speed, USB, SD card),
+drive, with its model, its kind (NVMe, SSD, HDD, USB drive, SD card),
 its size, the partition table (GPT or MBR) and the partition. The volume and the drive
 come from UDisks, and without it the page has what the mount says. On a disk device with
 GNOME Disks installed the page offers "Open in Disks". A single folder can be given a custom icon; it is stored as
