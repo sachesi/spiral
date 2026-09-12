@@ -6,13 +6,15 @@
 //! the selected folder holds. Clicking in any of those goes to that folder, which makes
 //! it the last column, the way the Finder moves between columns.
 
+use std::cell::Cell;
+use std::rc::Rc;
 use std::time::Duration;
 
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
 use crate::browser_view::{
-    BrowserView, bind_tags, emblem_image, preferred_action, remember_list_item, set_cut,
-    unbind_icon,
+    BrowserView, bind_tags, emblem_image, preferred_action, remember_list_item, remembered_sort,
+    set_cut, unbind_icon,
 };
 use crate::enums::ViewMode;
 use crate::file_utils;
@@ -41,6 +43,8 @@ pub struct SideColumn {
     model: FolderModel,
     list: gtk::ListView,
     root: gtk::ScrolledWindow,
+    /// Whether the folder has an order of its own, rather than the default one.
+    own_sort: Rc<Cell<bool>>,
 }
 
 /// The column widget at a point in `root`'s own coordinates.
@@ -64,6 +68,19 @@ fn side_roots(view: &BrowserView) -> Vec<gtk::ScrolledWindow> {
         .chain(imp.preview_column.borrow().iter())
         .map(|column| column.root.clone())
         .collect()
+}
+
+/// Where the strip starts for `location`. For a folder, where the path bar's chain does:
+/// at home, or at the root of the filesystem. A mount point is where the crumbs start but
+/// not the columns, since finding it means asking gvfs and the strip is drawn before an
+/// answer could arrive. A tag is a column of its own: the list of every tag above it
+/// would only show its files a second time.
+fn strip_root(location: &gio::File) -> gio::File {
+    if crate::tags::is_tag_location(location) {
+        location.clone()
+    } else {
+        crate::path_bar::chain_root(location, None)
+    }
 }
 
 /// Select `file` once the column showing it has listed enough to hold it.
@@ -101,10 +118,11 @@ impl BrowserView {
                 self,
                 move |_, _, _| view.schedule_preview()
             ));
-        // The columns beside the current one sort the way it does.
-        for prop in ["sort-key", "sort-reversed"] {
-            imp.model.connect_notify_local(
-                Some(prop),
+        // The columns without an order of their own follow the default one.
+        let (key, reversed) = self.sort_keys();
+        for name in [key, reversed] {
+            imp.settings.connect_changed(
+                Some(name),
                 glib::clone!(
                     #[weak(rename_to = view)]
                     self,
@@ -258,10 +276,7 @@ impl BrowserView {
             self.clear_side_columns();
             return;
         };
-        // The chain the path bar draws: from home, or from the root of the filesystem.
-        // A mount point is where the crumbs start but not the columns, since finding it
-        // means asking gvfs and the strip is drawn before an answer could arrive.
-        let root = crate::path_bar::chain_root(&location, None);
+        let root = strip_root(&location);
         let mut chain = Vec::new();
         let mut current = location;
         while !current.equal(&root) {
@@ -312,7 +327,7 @@ impl BrowserView {
     /// Whether the folder being viewed has a path to draw beside it.
     pub(crate) fn shows_chain(&self) -> bool {
         self.location()
-            .is_some_and(|location| !location.equal(&crate::path_bar::chain_root(&location, None)))
+            .is_some_and(|location| !location.equal(&strip_root(&location)))
     }
 
     fn clear_side_columns(&self) {
@@ -372,8 +387,12 @@ impl BrowserView {
     /// A listing of `dir` of its own, with `mark` picked out as the folder on the path.
     fn side_column(&self, dir: &gio::File, mark: Option<gio::File>) -> SideColumn {
         let model = FolderModel::new(dir);
-        model.set_sort_key(self.model().sort_key());
-        model.set_sort_reversed(self.model().sort_reversed());
+        // In its own folder's order, as that folder opens in: the one it remembers, else
+        // the default. Not the current folder's, which may be neither.
+        let (key, reversed) = self.global_sort();
+        model.set_sort_key(key);
+        model.set_sort_reversed(reversed);
+        let own_sort = Rc::new(Cell::new(false));
         self.imp()
             .settings
             .bind("show-hidden", &model, "show-hidden")
@@ -432,25 +451,57 @@ impl BrowserView {
             ));
             root.add_controller(target);
         }
-        if let Some(file) = mark {
-            mark_when_loaded(&model, &list, file);
+        if let Some(file) = &mark {
+            mark_when_loaded(&model, &list, file.clone());
+        }
+        if !self.chooser_mode() && crate::prefs::remember_view() {
+            let (weak_model, weak_list) = (model.downgrade(), list.downgrade());
+            let (dir, own_sort) = (dir.clone(), own_sort.clone());
+            glib::spawn_future_local(async move {
+                let Ok(info) = dir
+                    .query_info_future(
+                        "metadata::spiral-sort",
+                        gio::FileQueryInfoFlags::NONE,
+                        glib::Priority::DEFAULT,
+                    )
+                    .await
+                else {
+                    return;
+                };
+                let (Some((key, reversed)), Some(model), Some(list)) = (
+                    remembered_sort(&info),
+                    weak_model.upgrade(),
+                    weak_list.upgrade(),
+                ) else {
+                    return;
+                };
+                own_sort.set(true);
+                model.set_sort_key(key);
+                model.set_sort_reversed(reversed);
+                // Sorting again lets go of the selection, and with it the mark.
+                if let Some(file) = mark {
+                    mark_when_loaded(&model, &list, file);
+                }
+            });
         }
         SideColumn {
             dir: dir.clone(),
             model,
             list,
             root,
+            own_sort,
         }
     }
 
     fn sync_column_sort(&self) {
-        let (key, reversed) = (self.model().sort_key(), self.model().sort_reversed());
+        let (key, reversed) = self.global_sort();
         let imp = self.imp();
         for column in imp
             .side_columns
             .borrow()
             .iter()
             .chain(imp.preview_column.borrow().iter())
+            .filter(|column| !column.own_sort.get())
         {
             column.model.set_sort_key(key);
             column.model.set_sort_reversed(reversed);

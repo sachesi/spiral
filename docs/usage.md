@@ -188,8 +188,14 @@ folder that column lists.
 
 Unlike the grid and the list, the columns stay put as you walk from folder to folder,
 since walking is what they are for; a folder that remembers a view of its own is the
-exception and takes the strip apart. Leave them with the view button or Ctrl+1 and Ctrl+2.
-A search reaches past the folder you are in, so it falls back to the list while it runs.
+exception and takes the strip apart, while "Grid View for Media Folders" never does. Leave
+them with the view button or Ctrl+1 and Ctrl+2. A search reaches past the folder you are
+in, so it falls back to the list while it runs.
+
+Each column is in the order its own folder opens in: the one it remembers, with "Remember
+View per Folder" on, or the default. Sorting sorts the folder you are in, and the columns
+without an order of their own when it changes the default. A tag, or the list of every
+tag, is a single column: the files in it come from anywhere, so there is no path to draw.
 
 ## Selecting, opening, moving things
 

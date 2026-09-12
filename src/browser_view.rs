@@ -782,6 +782,13 @@ async fn count_children(dir: &gio::File) -> Option<u64> {
 /// Width of the emblem margin beside a grid icon, as in Nautilus.
 const EMBLEM_MARGIN: i32 = 18;
 
+/// The order a folder remembers, from an info asked for `metadata::spiral-sort`.
+pub(crate) fn remembered_sort(info: &gio::FileInfo) -> Option<(SortKey, bool)> {
+    let value = info.attribute_string("metadata::spiral-sort")?;
+    let (key, dir) = value.split_once('-')?;
+    Some((SortKey::from_nick(key)?, dir == "desc"))
+}
+
 /// Columns the grid may have at most, whatever fits; the `max-columns` of the template.
 const GRID_MAX_COLUMNS: i32 = 20;
 
@@ -1189,7 +1196,7 @@ impl BrowserView {
 
     /// Where the sort order is kept: a chooser has keys of its own, so ordering a dialog
     /// leaves the file manager's windows as they were, and is there again next time.
-    fn sort_keys(&self) -> (&'static str, &'static str) {
+    pub(crate) fn sort_keys(&self) -> (&'static str, &'static str) {
         if self.chooser_mode() {
             ("chooser-sort-key", "chooser-sort-reversed")
         } else {
@@ -1197,13 +1204,19 @@ impl BrowserView {
         }
     }
 
-    fn apply_global_sort(&self) {
+    /// The order of a folder that remembers none of its own.
+    pub(crate) fn global_sort(&self) -> (SortKey, bool) {
         let imp = self.imp();
         let (key_name, reversed_name) = self.sort_keys();
         let key = SortKey::from_nick(&imp.settings.string(key_name)).unwrap_or_default();
+        (key, imp.settings.boolean(reversed_name))
+    }
+
+    fn apply_global_sort(&self) {
+        let (key, reversed) = self.global_sort();
+        let imp = self.imp();
         imp.model.set_sort_key(key);
-        imp.model
-            .set_sort_reversed(imp.settings.boolean(reversed_name));
+        imp.model.set_sort_reversed(reversed);
     }
 
     /// Sort the current folder: remembered for this folder when views are remembered per
@@ -1263,7 +1276,8 @@ impl BrowserView {
             self.set_view_mode(global_view_mode(&imp.settings, "view-mode"));
         }
         let remember = crate::prefs::remember_view();
-        let guess = crate::prefs::guess_view() && !keep;
+        // Nor are the columns ever traded for a grid by a guess.
+        let guess = crate::prefs::guess_view() && self.view_mode() != ViewMode::Columns;
         if !remember && !guess {
             return;
         }
@@ -1283,11 +1297,7 @@ impl BrowserView {
                         .await
                     && view.imp().nav_gen.get() == generation
                 {
-                    if let Some((key, dir)) = info
-                        .attribute_string("metadata::spiral-sort")
-                        .and_then(|s| s.split_once('-').map(|(k, d)| (k.to_string(), d == "desc")))
-                        && let Some(key) = SortKey::from_nick(&key)
-                    {
+                    if let Some((key, dir)) = remembered_sort(&info) {
                         view.imp().folder_sort.set(Some((key, dir)));
                         view.model().set_sort_key(key);
                         view.model().set_sort_reversed(dir);
@@ -1318,7 +1328,10 @@ impl BrowserView {
                     let _ = rx.await;
                     model.disconnect(id);
                 }
-                if view.imp().nav_gen.get() == generation && mostly_media(&model) {
+                if view.imp().nav_gen.get() == generation
+                    && view.view_mode() != ViewMode::Columns
+                    && mostly_media(&model)
+                {
                     view.set_view_mode(ViewMode::Grid);
                 }
             }
