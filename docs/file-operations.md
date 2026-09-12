@@ -13,8 +13,9 @@ What a paste, a new folder or "Extract Here" leaves in the folder on screen is s
 when the job ends, as long as the window is still in that folder. When the selected items
 go away instead, trashed, deleted or moved elsewhere by Spiral or by another program,
 the item that took their place is selected, or the last one if they were at the end, and
-it has the keyboard, so the arrow keys carry on from there. A selected file that another
-program changes (its permissions, a tag, a save over it) stays selected.
+it has the keyboard, so the arrow keys carry on from there. A selected file that is
+renamed, or changed by another program (its permissions, a tag, a save over it), stays
+selected. A selection of more than 256 items is not followed through such changes.
 
 Copies, moves and deletes count their sources first so the total is known before the
 rate clock starts. Progress inside a single file comes from GIO's copy callback.

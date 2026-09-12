@@ -17,6 +17,9 @@ const SHOW_LISTING_AFTER: std::time::Duration = std::time::Duration::from_secs(1
 /// How long a selected file the directory list is reading again waits to be selected
 /// again once its fresh row is in.
 const REPLACED_FOR: std::time::Duration = std::time::Duration::from_secs(2);
+
+/// The most selected files the monitor looks through for each change it reports.
+const EXPECT_UP_TO: u64 = 256;
 use crate::file_utils;
 use crate::{gio, glib, gtk};
 
@@ -68,8 +71,8 @@ mod imp {
         /// Files the monitor reported, waiting for the next pass over the list.
         pub pending: RefCell<Vec<gio::File>>,
         pub refresh_queued: Cell<bool>,
-        /// Selected files the directory list is about to put a fresh row in for, and when
-        /// that was heard of; see `take_replaced`.
+        /// Selected files the directory list is about to put a fresh row in for, under
+        /// the name they will have, and when that was heard of; see `take_back`.
         pub replaced: RefCell<Vec<(gio::File, i64)>>,
         /// Whether the listing is on the pipeline; a big one waits there for its end,
         /// see `show_listing`.
@@ -383,19 +386,27 @@ mod imp {
                 old.cancel();
             }
             if let Some(dir) = file.as_ref().filter(|_| !list)
-                && let Ok(monitor) =
-                    dir.monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
+                && let Ok(monitor) = dir
+                    .monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
             {
                 monitor.connect_changed(glib::clone!(
                     #[weak(rename_to = obj)]
                     self.obj(),
-                    move |_, changed, _, event| match event {
+                    move |_, changed, other, event| match event {
                         gio::FileMonitorEvent::ChangesDoneHint => obj.refresh(changed.clone()),
                         // The directory list reads these again itself -- a tag or a mode
                         // set, a file saved over -- and puts the fresh row in place of
                         // the old one, which the selection does not follow.
                         gio::FileMonitorEvent::AttributeChanged
-                        | gio::FileMonitorEvent::Created => obj.note_replaced(changed),
+                        | gio::FileMonitorEvent::Created => obj.expect_back(changed, changed),
+                        // A rename takes the old row out and puts a new one in, a
+                        // moment later; a file saved over arrives as one too.
+                        gio::FileMonitorEvent::Renamed => {
+                            if let Some(other) = other {
+                                obj.expect_back(changed, other);
+                                obj.expect_back(other, other);
+                            }
+                        }
                         _ => {}
                     }
                 ));
@@ -595,31 +606,54 @@ impl FolderModel {
     }
 
     /// Files currently selected, in view order.
-    /// Remember `file` if it is selected: the directory list is reading it again, and
-    /// the row it puts in its place comes unselected. Asked of the monitor as the change
-    /// arrives, before the list has its answer.
-    fn note_replaced(&self, file: &gio::File) {
-        if self.selection().selection().is_empty() {
+    /// If `file` is selected, expect it back as `back`: the directory list is reading it
+    /// again, or it was renamed, and the row that comes in its place comes unselected.
+    /// Asked of the monitor as the change arrives, before the list has its answer. A big
+    /// selection is not looked through for every file the folder hears of.
+    fn expect_back(&self, file: &gio::File, back: &gio::File) {
+        let set = self.selection().selection();
+        if set.is_empty() || set.size() > EXPECT_UP_TO {
             return;
         }
         if self.selected_files().iter().any(|f| f.equal(file)) {
             let now = glib::monotonic_time();
-            self.imp().replaced.borrow_mut().push((file.clone(), now));
+            self.imp().replaced.borrow_mut().push((back.clone(), now));
         }
     }
 
-    /// The selected files whose rows the directory list has put fresh ones in for, for
-    /// the view to select again. What was heard of more than a moment ago is let go: the
-    /// list answers at once, or the change never made it a new row.
-    pub fn take_replaced(&self) -> Vec<gio::File> {
+    /// Whether a selected file is on its way back under a fresh row.
+    pub fn expects_back(&self) -> bool {
         let since = glib::monotonic_time() - REPLACED_FOR.as_micros() as i64;
+        let mut replaced = self.imp().replaced.borrow_mut();
+        replaced.retain(|(_, at)| *at >= since);
+        !replaced.is_empty()
+    }
+
+    /// Where the files expected back are, among those whose fresh rows are in, for the
+    /// view to select again; they are expected no more. The others are waited for a
+    /// moment longer: the list answers at once, or the change never made it a new row.
+    pub fn take_back(&self) -> Vec<u32> {
+        if !self.expects_back() {
+            return Vec::new();
+        }
+        let files: Vec<gio::File> = self
+            .imp()
+            .replaced
+            .borrow()
+            .iter()
+            .map(|(f, _)| f.clone())
+            .collect();
+        let found = self.positions_of(&files);
+        let arrived: Vec<gio::File> = found
+            .iter()
+            .filter_map(|&pos| self.info_at(pos))
+            .map(|info| file_utils::file_of(&info))
+            .collect();
         self.imp()
             .replaced
-            .take()
-            .into_iter()
-            .filter(|(_, at)| *at >= since)
-            .map(|(file, _)| file)
-            .collect()
+            .borrow_mut()
+            .retain(|(f, _)| !arrived.iter().any(|a| a.equal(f)));
+        found
     }
 
     pub fn selected_files(&self) -> Vec<gio::File> {
