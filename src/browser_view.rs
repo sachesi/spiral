@@ -480,10 +480,18 @@ mod imp {
             obj.setup_columns();
             obj.setup_miller();
             if let Some(hadj) = self.grid_view.hadjustment() {
+                // The width is told while the grid is being laid out, which drops a change
+                // to its columns made then; they change once the layout is done.
                 hadj.connect_page_size_notify(glib::clone!(
                     #[weak]
                     obj,
-                    move |_| obj.fit_grid_columns()
+                    move |_| {
+                        glib::idle_add_local_once(glib::clone!(
+                            #[weak]
+                            obj,
+                            move || obj.fit_grid_columns()
+                        ));
+                    }
                 ));
             }
             obj.connect_icon_size_notify(|obj| obj.fit_grid_columns());
