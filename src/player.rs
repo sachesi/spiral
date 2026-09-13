@@ -342,7 +342,11 @@ impl Player {
                     if let Some(limit) = imp.limit.take() {
                         limit.remove();
                     }
-                    self.prepare();
+                    // A file already switched away from is not announced: whoever listens
+                    // is waiting for the next one, and would take its size for that one's.
+                    if imp.pending.borrow().is_none() {
+                        self.prepare();
+                    }
                     self.settle();
                 }
             }
