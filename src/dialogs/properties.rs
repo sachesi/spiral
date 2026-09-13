@@ -446,12 +446,17 @@ impl PropertiesDialog {
     }
 }
 
+/// A fact and its value. The value is text a file or a filesystem gave, never markup: a
+/// name with an ampersand in it would not show, and one with tags would be drawn as they say.
 pub(crate) fn row(label: &str, value: &str) -> adw::ActionRow {
+    // Set apart, after the row is made: a builder does not set its properties in the order
+    // it is given them, and the value would be read as markup once before the switch.
     let r = adw::ActionRow::builder()
-        .title(label)
-        .subtitle(value)
+        .use_markup(false)
         .subtitle_selectable(true)
         .build();
+    r.set_title(label);
+    r.set_subtitle(value);
     r.add_css_class("property");
     r
 }
