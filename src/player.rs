@@ -286,11 +286,10 @@ impl Player {
             return;
         }
         imp.starting.set(false);
-        self.set_error(glib::Error::new(
-            gio::IOErrorEnum::TimedOut,
-            "the file did not start playing",
-        ));
-        self.settle();
+        self.fail(
+            true,
+            glib::Error::new(gio::IOErrorEnum::TimedOut, "the file did not start playing"),
+        );
     }
 
     /// Nothing can decode the picture. playbin3 does not call that an error: the file
@@ -303,10 +302,27 @@ impl Player {
         }
         let starting = imp.starting.replace(false);
         let _ = imp.playbin().set_state(gst::State::Null);
-        self.set_error(glib::Error::new(
-            gst::CoreError::MissingPlugin,
-            "no decoder for the picture in this file",
-        ));
+        self.fail(
+            starting,
+            glib::Error::new(
+                gst::CoreError::MissingPlugin,
+                "no decoder for the picture in this file",
+            ),
+        );
+    }
+
+    /// The file failed, while it was `starting` or later. One already switched away from
+    /// fails unannounced: whoever listens is waiting for the next one and would take the
+    /// failure for that one's, and a stream that has failed stays failed.
+    fn fail(&self, starting: bool, error: glib::Error) {
+        if starting && self.imp().pending.borrow().is_some() {
+            glib::g_debug!(
+                "spiral",
+                "player: a file switched away from failed: {error}"
+            );
+        } else {
+            self.set_error(error);
+        }
         if starting {
             self.settle();
         }
@@ -329,10 +345,7 @@ impl Player {
                 if let Some(limit) = imp.limit.take() {
                     limit.remove();
                 }
-                self.set_error(e.error());
-                if starting {
-                    self.settle();
-                }
+                self.fail(starting, e.error());
             }
             MessageView::AsyncDone(_) => {
                 if imp.seeking.replace(false) {
