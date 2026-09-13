@@ -28,7 +28,8 @@ Before a change goes in:
                            renaming, tags, opening, context menus
     src/miller.rs          column view: the folder chain as a strip of lists
     src/folder_model.rs    list model of a folder: monitoring, sorting, filtering
-    src/places_sidebar.rs  sidebar, mounts, eject, bookmark drag and drop
+    src/places_sidebar.rs  the sidebar; in places_sidebar/ its rows, drag and drop, devices
+                           and mounts, and the menu of a row
     src/path_bar.rs        breadcrumbs
     src/location_entry.rs  inline completion, and the path bar the choosers type in
     src/ops/               jobs: job.rs, manager.rs (queue and undo), walk.rs (copy, move,
