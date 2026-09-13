@@ -8,13 +8,16 @@ use std::rc::Rc;
 use gettextrs::gettext;
 
 use crate::gtk::prelude::*;
+use crate::object_data::Key;
 use crate::{gio, glib, gtk};
+
+static QUIET: Key<bool> = Key::new("quiet");
 
 /// Set the entry's text without triggering completion.
 pub fn set_text_quiet(entry: &gtk::Entry, text: &str) {
-    unsafe { entry.set_data("quiet", true) };
+    QUIET.set(entry, true);
     entry.set_text(text);
-    unsafe { entry.steal_data::<bool>("quiet") };
+    QUIET.take(entry);
 }
 
 pub fn attach(entry: &gtk::Entry) {
@@ -31,7 +34,7 @@ pub fn attach(entry: &gtk::Entry) {
     entry.connect_changed(move |entry| {
         let text = entry.text();
         let grew = inserted.replace(false);
-        let quiet = unsafe { entry.data::<bool>("quiet").is_some() };
+        let quiet = QUIET.has(entry);
         generation.set(generation.get() + 1);
         if quiet || !grew || text.contains("://") || text.ends_with('/') {
             return;

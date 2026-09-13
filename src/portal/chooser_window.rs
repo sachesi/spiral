@@ -11,10 +11,13 @@ use gettextrs::gettext;
 
 use crate::adw::prelude::*;
 use crate::browser_view::BrowserView;
+use crate::object_data::Key;
 use crate::places_sidebar::PlacesSidebar;
 use crate::{adw, file_utils, gio, glib, gtk};
 
 use super::{Kind, Request};
+
+static CHOICE_KEYS: Key<Vec<String>> = Key::new("choice-keys");
 
 enum Mode {
     Open { multiple: bool, directory: bool },
@@ -533,11 +536,10 @@ async fn run(
                 // Combo choices are a label plus dropdown box; the dropdown is the last child.
                 let dropdown = w.last_child().and_downcast::<gtk::DropDown>();
                 let value = if let Some(dd) = dropdown {
-                    unsafe {
-                        dd.data::<Vec<String>>("choice-keys")
-                            .map(|k| k.as_ref()[dd.selected() as usize].clone())
-                    }
-                    .unwrap_or_default()
+                    CHOICE_KEYS
+                        .get(&dd)
+                        .and_then(|keys| keys.get(dd.selected() as usize).cloned())
+                        .unwrap_or_default()
                 } else if let Some(cb) = w.downcast_ref::<gtk::CheckButton>() {
                     if cb.is_active() {
                         "true".into()
@@ -858,7 +860,7 @@ fn choice_widget(c: &Choice) -> gtk::Widget {
     if let Some(i) = keys.iter().position(|k| k == c.initial_selection()) {
         dd.set_selected(i as u32);
     }
-    unsafe { dd.set_data("choice-keys", keys) };
+    CHOICE_KEYS.set(&dd, keys);
     let bx = gtk::Box::builder().spacing(12).build();
     bx.append(
         &gtk::Label::builder()

@@ -9,7 +9,14 @@ use gtk::subclass::prelude::*;
 use crate::enums::{SortKey, ViewMode};
 use crate::file_utils;
 use crate::folder_model::FolderModel;
+use crate::object_data::Key;
 use crate::{adw, gdk, gio, glib, gtk};
+
+static COUNT_ABORT: Key<futures_util::future::AbortHandle> = Key::new("count-abort");
+static THUMB_ABORT: Key<futures_util::future::AbortHandle> = Key::new("thumb-abort");
+static THUMB_MAP: Key<glib::SignalHandlerId> = Key::new("thumb-map");
+static LIST_ITEM: Key<glib::WeakRef<gtk::ListItem>> = Key::new("list-item");
+static SORT_KEY: Key<SortKey> = Key::new("sort-key");
 
 mod imp {
     use super::*;
@@ -611,9 +618,7 @@ glib::wrapper! {
 }
 
 fn unbind_captions(label: &gtk::Label) {
-    if let Some(handle) =
-        unsafe { label.steal_data::<futures_util::future::AbortHandle>("count-abort") }
-    {
+    if let Some(handle) = COUNT_ABORT.take(label) {
         handle.abort();
     }
 }
@@ -906,12 +911,10 @@ fn cell_name(cell: &gtk::Widget) -> Option<gtk::Label> {
 }
 
 pub(crate) fn unbind_icon(image: &gtk::Image) {
-    if let Some(handle) =
-        unsafe { image.steal_data::<futures_util::future::AbortHandle>("thumb-abort") }
-    {
+    if let Some(handle) = THUMB_ABORT.take(image) {
         handle.abort();
     }
-    if let Some(id) = unsafe { image.steal_data::<glib::SignalHandlerId>("thumb-map") } {
+    if let Some(id) = THUMB_MAP.take(image) {
         image.disconnect(id);
     }
     image.remove_css_class("file-thumbnail");
@@ -954,9 +957,9 @@ async fn on_screen(image: &gtk::Image) {
             let _ = tx.send(());
         }
     });
-    unsafe { image.set_data("thumb-map", id) };
+    THUMB_MAP.set(image, id);
     let _ = rx.await;
-    if let Some(id) = unsafe { image.steal_data::<glib::SignalHandlerId>("thumb-map") } {
+    if let Some(id) = THUMB_MAP.take(image) {
         image.disconnect(id);
     }
 }
@@ -1107,7 +1110,7 @@ pub(crate) fn set_cut(cell: &impl IsA<gtk::Widget>, info: &gio::FileInfo) {
 }
 
 pub(crate) fn remember_list_item(cell: &impl IsA<gtk::Widget>, item: &gtk::ListItem) {
-    unsafe { cell.set_data("list-item", item.downgrade()) };
+    LIST_ITEM.set(cell.upcast_ref::<gtk::Widget>(), item.downgrade());
 }
 
 /// A bound cell of the row under a point, whichever part of the row the point hits.
@@ -1136,7 +1139,7 @@ pub(crate) fn row_widget(inner: &gtk::Widget) -> Option<gtk::Widget> {
 fn each_cell(root: &gtk::Widget, f: &mut impl FnMut(&gtk::Widget)) {
     let mut child = root.first_child();
     while let Some(c) = child {
-        if unsafe { c.data::<glib::WeakRef<gtk::ListItem>>("list-item") }.is_some() {
+        if LIST_ITEM.has(&c) {
             f(&c);
         } else {
             each_cell(&c, f);
@@ -1155,8 +1158,10 @@ fn cell_emblem(cell: &gtk::Widget) -> Option<gtk::Image> {
 }
 
 pub(crate) fn cell_position(cell: &impl IsA<gtk::Widget>) -> Option<u32> {
-    let weak = unsafe { cell.data::<glib::WeakRef<gtk::ListItem>>("list-item") }?;
-    let pos = unsafe { weak.as_ref() }.upgrade()?.position();
+    let pos = LIST_ITEM
+        .get(cell.upcast_ref::<gtk::Widget>())?
+        .upgrade()?
+        .position();
     (pos != gtk::INVALID_LIST_POSITION).then_some(pos)
 }
 
@@ -2168,7 +2173,7 @@ impl BrowserView {
                     );
                 }
             ));
-            unsafe { label.set_data("count-abort", handle) };
+            COUNT_ABORT.set(label, handle);
             glib::spawn_future_local(async move {
                 let _ = fut.await;
             });
@@ -2209,7 +2214,7 @@ impl BrowserView {
                 }
             }
         ));
-        unsafe { image.set_data("thumb-abort", handle) };
+        THUMB_ABORT.set(image, handle);
         // Low priority, as the folder appearing matters more than the pictures in it.
         glib::MainContext::default().spawn_local_with_priority(glib::Priority::LOW, async move {
             let _ = fut.await;
@@ -3068,7 +3073,7 @@ impl BrowserView {
         ] {
             let sorter = gtk::CustomSorter::new(|_, _| gtk::Ordering::Equal);
             col.set_sorter(Some(&sorter));
-            unsafe { col.set_data("sort-key", key) };
+            SORT_KEY.set(col, key);
         }
         let cv_sorter = cv.sorter().and_downcast::<gtk::ColumnViewSorter>().unwrap();
         cv_sorter.connect_changed(glib::clone!(
@@ -3081,7 +3086,9 @@ impl BrowserView {
                 let Some(col) = s.primary_sort_column() else {
                     return;
                 };
-                let key = unsafe { *col.data::<SortKey>("sort-key").unwrap().as_ref() };
+                let Some(key) = SORT_KEY.get(&col) else {
+                    return;
+                };
                 let reversed = s.primary_sort_order() == gtk::SortType::Descending;
                 view.set_sort(key, reversed);
             }
@@ -3214,10 +3221,11 @@ impl BrowserView {
         } else {
             gtk::SortType::Ascending
         };
-        let col =
-            cv.columns().iter::<gtk::ColumnViewColumn>().flatten().find(
-                |c| unsafe { c.data::<SortKey>("sort-key").map(|k| *k.as_ref()) } == Some(key),
-            );
+        let col = cv
+            .columns()
+            .iter::<gtk::ColumnViewColumn>()
+            .flatten()
+            .find(|c| SORT_KEY.get(c) == Some(key));
         imp.syncing_header.set(true);
         // Clear first: the column view would otherwise keep the old column as a secondary sort.
         cv.sort_by_column(None::<&gtk::ColumnViewColumn>, order);

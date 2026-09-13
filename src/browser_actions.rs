@@ -7,8 +7,11 @@ use crate::adw::subclass::prelude::*;
 use crate::application::SpiralApplication;
 use crate::browser_view::BrowserView;
 use crate::file_utils;
+use crate::object_data::Key;
 use crate::ops::{JobKind, JobManager, JobStatus};
 use crate::{clipboard, gio, glib, gtk};
+
+static TAG: Key<String> = Key::new("tag");
 
 /// Position of the first name cell below `w`, a few levels deep at most.
 fn first_cell_position(w: &gtk::Widget, depth: u32) -> Option<u32> {
@@ -894,7 +897,7 @@ impl BrowserView {
                 .tooltip_text(&tag.name)
                 .css_classes(["flat", "circular"])
                 .build();
-            unsafe { button.set_data("tag", tag.name.clone()) };
+            TAG.set(&button, tag.name.clone());
             let name = tag.name.clone();
             button.connect_clicked(glib::clone!(
                 #[weak(rename_to = view)]
@@ -926,10 +929,7 @@ impl BrowserView {
         let mut child = picker.first_child();
         while let Some(button) = child {
             child = button.next_sibling();
-            let (Some(name), Some(dot)) = (
-                unsafe { button.data::<String>("tag").map(|p| p.as_ref().clone()) },
-                button.first_child(),
-            ) else {
+            let (Some(name), Some(dot)) = (TAG.get(&button), button.first_child()) else {
                 continue;
             };
             let state = self.tag_state(&name);

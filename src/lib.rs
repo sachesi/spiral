@@ -63,6 +63,7 @@ pub mod metadata;
 pub mod miller;
 pub mod naming;
 pub mod network;
+pub mod object_data;
 pub mod ops;
 pub mod path_bar;
 pub mod places_sidebar;

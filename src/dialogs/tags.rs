@@ -8,8 +8,11 @@ use gettextrs::gettext;
 
 use crate::adw::prelude::*;
 use crate::browser_view::tag_dot;
+use crate::object_data::Key;
 use crate::tags::Tag;
 use crate::{adw, gdk, glib, gtk};
+
+static COLOR: Key<String> = Key::new("color");
 
 /// Ask for a name and a colour. Resolves to the tag, or None if the dialog was dismissed.
 /// A name is refused while it is empty, has a comma in it or is a tag already.
@@ -109,7 +112,7 @@ fn color_picker(
             .active(color == selected)
             .css_classes(["flat", "circular"])
             .build();
-        unsafe { button.set_data("color", color.to_string()) };
+        COLOR.set(&button, color.to_string());
         button.set_group(group.as_ref());
         button.connect_toggled(glib::clone!(
             #[strong]
@@ -196,8 +199,7 @@ fn color_picker(
                     let mut child = row.first_child();
                     while let Some(b) = child {
                         child = b.next_sibling();
-                        let color =
-                            unsafe { b.data::<String>("color").map(|p| p.as_ref().clone()) };
+                        let color = COLOR.get(&b);
                         if color.as_deref() == Some(before.as_str())
                             && let Some(b) = b.downcast_ref::<gtk::ToggleButton>()
                         {

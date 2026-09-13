@@ -4,7 +4,10 @@ use gettextrs::gettext;
 
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
+use crate::object_data::Key;
 use crate::{adw, gio, glib, gtk};
+
+static APP: Key<gio::AppInfo> = Key::new("app");
 
 mod imp {
     use super::*;
@@ -38,7 +41,7 @@ glib::wrapper! {
 }
 
 fn app_of(row: &gtk::ListBoxRow) -> Option<gio::AppInfo> {
-    unsafe { row.data::<gio::AppInfo>("app").map(|p| p.as_ref().clone()) }
+    APP.get(row)
 }
 
 impl OpenWithDialog {
@@ -178,7 +181,7 @@ impl OpenWithDialog {
                 );
             }
             let row = gtk::ListBoxRow::builder().child(&bx).build();
-            unsafe { row.set_data("app", app) };
+            APP.set(&row, app);
             imp.list.append(&row);
         }
         if let Some(first) = imp.list.row_at_index(0) {

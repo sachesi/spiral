@@ -7,7 +7,15 @@ use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gettextrs::{gettext, ngettext};
 
+use crate::object_data::Key;
 use crate::{adw, gdk, gio, glib, gtk};
+
+static ROW_FILE: Key<gio::File> = Key::new("file");
+static BOOKMARK: Key<bool> = Key::new("bookmark");
+static EJECT: Key<EjectTarget> = Key::new("eject");
+static VOLUME: Key<gio::Volume> = Key::new("volume");
+static SECTION: Key<u8> = Key::new("section");
+static ROW_TAG: Key<String> = Key::new("tag");
 
 mod imp {
     use super::*;
@@ -357,17 +365,17 @@ glib::wrapper! {
 }
 
 fn row_file(row: &gtk::ListBoxRow) -> Option<gio::File> {
-    unsafe { row.data::<gio::File>("file").map(|p| p.as_ref().clone()) }
+    ROW_FILE.get(row)
 }
 
 /// The file of a row from the GTK bookmarks file (not the fixed XDG folders).
 fn row_bookmark(row: &gtk::ListBoxRow) -> Option<gio::File> {
-    let is_bookmark = unsafe { row.data::<bool>("bookmark").is_some() };
+    let is_bookmark = BOOKMARK.has(row);
     is_bookmark.then(|| row_file(row)).flatten()
 }
 
 fn row_eject(row: &gtk::ListBoxRow) -> Option<EjectTarget> {
-    unsafe { row.data::<EjectTarget>("eject").map(|p| p.as_ref().clone()) }
+    EJECT.get(row)
 }
 
 async fn is_dir_future(file: &gio::File) -> bool {
@@ -441,10 +449,7 @@ fn add_reorder_dnd<T: glib::value::ValueType>(
 }
 
 fn row_volume(row: &gtk::ListBoxRow) -> Option<gio::Volume> {
-    unsafe {
-        row.data::<gio::Volume>("volume")
-            .map(|p| p.as_ref().clone())
-    }
+    VOLUME.get(row)
 }
 
 const SECTION_PLACES: u8 = 0;
@@ -480,13 +485,13 @@ fn row_with(
         .child(&content)
         .focus_on_click(false)
         .build();
-    unsafe { row.set_data("section", section) };
+    SECTION.set(&row, section);
     (row, content)
 }
 
 fn place_row(icon: &str, title: &str, file: &gio::File, section: u8) -> gtk::ListBoxRow {
     let (row, _) = make_row(&gio::ThemedIcon::new(icon).upcast(), title, section);
-    unsafe { row.set_data("file", file.clone()) };
+    ROW_FILE.set(&row, file.clone());
     add_drop_target(&row, file);
     row
 }
@@ -502,8 +507,8 @@ fn tag_row(tag: &crate::tags::Tag) -> gtk::ListBoxRow {
         .build();
     holder.append(&crate::browser_view::tag_dot(&tag.color));
     let (row, _) = row_with(&holder, &tag.name, SECTION_TAGS);
-    unsafe { row.set_data("file", crate::tags::location(&tag.name)) };
-    unsafe { row.set_data("tag", tag.name.clone()) };
+    ROW_FILE.set(&row, crate::tags::location(&tag.name));
+    ROW_TAG.set(&row, tag.name.clone());
     let anchor = tag.name.clone();
     add_reorder_dnd(&row, TagDrag(tag.name.clone()), move |drag, after| {
         crate::tags::move_to(&drag.0, Some((&anchor, after)));
@@ -651,11 +656,11 @@ fn trash_drop_action(target: &gtk::DropTarget) -> gdk::DragAction {
 
 /// The tag a row stands for, by name.
 fn row_tag(row: &gtk::ListBoxRow) -> Option<String> {
-    unsafe { row.data::<String>("tag").map(|p| p.as_ref().clone()) }
+    ROW_TAG.get(row)
 }
 
 fn row_section(row: &gtk::ListBoxRow) -> u8 {
-    unsafe { row.data::<u8>("section").map(|p| *p.as_ref()).unwrap_or(0) }
+    SECTION.get(row).unwrap_or(0)
 }
 
 impl PlacesSidebar {
@@ -746,7 +751,7 @@ impl PlacesSidebar {
                 "folder-remote-symbolic"
             };
             let row = place_row(icon, &name, &file, SECTION_BOOKMARKS);
-            unsafe { row.set_data("bookmark", true) };
+            BOOKMARK.set(&row, true);
             add_bookmark_dnd(&row, &file);
             list.append(&row);
             seen.push(file);
@@ -795,13 +800,13 @@ impl PlacesSidebar {
     fn volume_row(&self, volume: &gio::Volume) -> gtk::ListBoxRow {
         let (row, content) = make_row(&volume.symbolic_icon(), &volume.name(), SECTION_DEVICES);
         if let Some(mount) = volume.get_mount() {
-            unsafe { row.set_data("file", mount.default_location()) };
+            ROW_FILE.set(&row, mount.default_location());
             add_drop_target(&row, &mount.default_location());
             if mount.can_unmount() || mount.can_eject() {
                 content.append(&self.eject_button(&row, EjectTarget::Mount(mount)));
             }
         } else {
-            unsafe { row.set_data("volume", volume.clone()) };
+            VOLUME.set(&row, volume.clone());
             if volume.can_eject() {
                 content.append(&self.eject_button(&row, EjectTarget::Volume(volume.clone())));
             }
@@ -811,7 +816,7 @@ impl PlacesSidebar {
 
     fn mount_row(&self, mount: &gio::Mount, section: u8) -> gtk::ListBoxRow {
         let (row, content) = make_row(&mount.symbolic_icon(), &mount.name(), section);
-        unsafe { row.set_data("file", mount.default_location()) };
+        ROW_FILE.set(&row, mount.default_location());
         add_drop_target(&row, &mount.default_location());
         if mount.can_unmount() || mount.can_eject() {
             content.append(&self.eject_button(&row, EjectTarget::Mount(mount.clone())));
@@ -820,7 +825,7 @@ impl PlacesSidebar {
     }
 
     fn eject_button(&self, row: &gtk::ListBoxRow, target: EjectTarget) -> gtk::Button {
-        unsafe { row.set_data("eject", target.clone()) };
+        EJECT.set(row, target.clone());
         let button = gtk::Button::builder()
             .icon_name("media-eject-symbolic")
             .valign(gtk::Align::Center)
