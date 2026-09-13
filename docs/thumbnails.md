@@ -3,7 +3,8 @@
 Spiral uses the freedesktop thumbnail cache, `~/.cache/thumbnails/large`, so thumbnails
 made by other programs are reused and the ones Spiral makes are usable elsewhere. Only the
 256 px "large" size is generated. The "Show Thumbnails" preference limits this to local
-files, all files, or none.
+files, all files, or none. What is in the trash counts as local: it is a file on the disk
+under another name, and its thumbnail is that file's.
 
 ## How one gets made
 

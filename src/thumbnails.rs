@@ -103,7 +103,15 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
     if info.file_type() == gio::FileType::Directory {
         return None;
     }
+    // An item in the trash is a local file under another name, and so is one in recent
+    // files: the thumbnail is that file's, allowed and made as for any other local file.
     let file = crate::file_utils::file_of(info);
+    let file = match info.attribute_string("standard::target-uri") {
+        Some(uri) => Some(gio::File::for_uri(&uri)),
+        None => in_trashed_folder(&file).await,
+    }
+    .filter(|target| target.is_native())
+    .unwrap_or(file);
     let uri = file.uri().to_string();
     // Checked before the cache so a preference change takes effect on the next reload.
     if !crate::prefs::thumbnails_for(&file) {
@@ -169,6 +177,41 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         glib::spawn_future_local(generate_task(key, source, at));
     }
     rx.await.ok().flatten()
+}
+
+/// Where a file inside a folder in the trash is on the disk. The trash says so only for
+/// what is at its top, so the way there is that folder's, asked once per folder.
+async fn in_trashed_folder(file: &gio::File) -> Option<gio::File> {
+    thread_local! {
+        static TARGETS: RefCell<HashMap<glib::GString, gio::File>> = RefCell::new(HashMap::new());
+    }
+    if !file.has_uri_scheme("trash") {
+        return None;
+    }
+    let mut top = file.parent().filter(|p| p.parent().is_some())?;
+    while let Some(parent) = top.parent().filter(|p| p.parent().is_some()) {
+        top = parent;
+    }
+    let rest = top.relative_path(file)?;
+    let key = top.uri();
+    let target = match TARGETS.with(|t| t.borrow().get(&key).cloned()) {
+        Some(target) => target,
+        None => {
+            let uri = top
+                .query_info_future(
+                    "standard::target-uri",
+                    gio::FileQueryInfoFlags::NONE,
+                    glib::Priority::DEFAULT,
+                )
+                .await
+                .ok()?
+                .attribute_string("standard::target-uri")?;
+            let target = gio::File::for_uri(&uri);
+            TARGETS.with(|t| t.borrow_mut().insert(key, target.clone()));
+            target
+        }
+    };
+    Some(target.resolve_relative_path(rest))
 }
 
 /// What a thumbnail would be made from, if the cache has none.
