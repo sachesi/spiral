@@ -53,8 +53,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 } else {
                     name(&src)
                 };
-                let dest =
-                    transfer_one(job, mgr, &src, &dest_dir, &dest_name, is_move, true).await?;
+                let dest = transfer_one(job, mgr, &src, &dest_dir, &dest_name, is_move).await?;
                 if let Some(dest) = dest {
                     let mut out = job.imp().outcome.borrow_mut();
                     if is_move {
@@ -176,9 +175,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
             job.imp().outcome.borrow_mut().created.push(dir.clone());
             count(job, files.clone()).await;
             for src in files {
-                if let Some(dest) =
-                    transfer_one(job, mgr, &src, &dir, &name(&src), true, true).await?
-                {
+                if let Some(dest) = transfer_one(job, mgr, &src, &dir, &name(&src), true).await? {
                     job.imp().outcome.borrow_mut().moved.push((src, dest));
                 }
             }
@@ -205,9 +202,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
         JobKind::Unfold { folder, pairs } => {
             count(job, pairs.iter().map(|(item, _)| item.clone()).collect()).await;
             for (item, to) in pairs {
-                if let Some(dest) =
-                    transfer_one(job, mgr, &item, &to, &name(&item), true, true).await?
-                {
+                if let Some(dest) = transfer_one(job, mgr, &item, &to, &name(&item), true).await? {
                     job.imp().outcome.borrow_mut().moved.push((item, dest));
                 }
             }
@@ -302,7 +297,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 // Where it lands: the original place, or beside it under another name when
                 // something has taken that one since.
                 if let Some(dest) =
-                    transfer_one(job, mgr, &item, &parent, &name(&original), true, true).await?
+                    transfer_one(job, mgr, &item, &parent, &name(&original), true).await?
                 {
                     // The index let it go with the trashing. What it carried then comes
                     // back, and its own tags are read from it as well, for an item trashed
@@ -477,7 +472,6 @@ async fn transfer_one(
     dest_dir: &gio::File,
     dest_name: &str,
     is_move: bool,
-    top_level: bool,
 ) -> Res<Option<gio::File>> {
     let mut dest = dest_dir.child(dest_name);
     let mut overwrite = false;
@@ -547,9 +541,9 @@ async fn transfer_one(
                         match resolve_conflict(job, mgr, src, &dest, dest_is_dir).await? {
                             Step::Skip => return Ok(None),
                             Step::Overwrite => {
-                                if !dest_is_dir {
-                                    // Replacing a file with a folder: remove the file first.
-                                    let _ = dest.delete_future(PRIO).await;
+                                // Replacing a file with a folder: remove the file first.
+                                if !dest_is_dir && !delete_or_ask(mgr, &verb, &dest).await? {
+                                    return Ok(None);
                                 }
                                 overwrite = true;
                                 continue;
@@ -577,13 +571,13 @@ async fn transfer_one(
                     &dest,
                     &cinfo.name().to_string_lossy(),
                     is_move,
-                    false,
                 ))
                 .await?;
                 all_moved &= r.is_some();
             }
-            if is_move && all_moved {
-                let _ = src.delete_future(PRIO).await;
+            // What it held has moved; a folder that cannot be removed then stays behind,
+            // empty, and says why.
+            if is_move && all_moved && delete_or_ask(mgr, &verb, src).await? {
                 crate::tags::relocate(src, &dest);
             }
             return Ok(Some(dest));
@@ -608,10 +602,13 @@ async fn transfer_one(
                 job.set_files_done(job.files_done() + 1);
                 job.report(false);
                 if is_move {
-                    let _ = src.delete_future(PRIO).await;
+                    // The copy is made; a source that cannot be removed leaves the file in
+                    // both places, and it does not count as moved.
+                    if !delete_or_ask(mgr, &verb, src).await? {
+                        return Ok(None);
+                    }
                     crate::tags::relocate(src, &dest);
                 }
-                let _ = top_level;
                 return Ok(Some(dest));
             }
             Err(e) if e.matches(gio::IOErrorEnum::Exists) => {
@@ -682,21 +679,27 @@ async fn delete_recursive(job: &Job, mgr: &JobManager, file: &gio::File) -> Res<
             Box::pin(delete_recursive(job, mgr, &child)).await?;
         }
     }
+    // Translators: fills %v in “Error While %v “%s””.
+    delete_or_ask(mgr, &gettext("Deleting"), file).await?;
+    job.set_files_done(job.files_done() + 1);
+    job.report(false);
+    Ok(())
+}
+
+/// Delete `file`, asking what to do when it cannot be. False when the answer was to skip
+/// it; one already gone counts as deleted.
+async fn delete_or_ask(mgr: &JobManager, verb: &str, file: &gio::File) -> Res<bool> {
     loop {
         match file.delete_future(PRIO).await {
-            Ok(()) => break,
-            Err(e) if e.matches(gio::IOErrorEnum::NotFound) => break,
-            // Translators: fills %v in “Error While %v “%s””.
-            Err(e) => match ask_error(&mgr.parent_window(), &gettext("Deleting"), file, &e).await {
-                ErrorChoice::Skip => break,
-                ErrorChoice::Retry => continue,
+            Ok(()) => return Ok(true),
+            Err(e) if e.matches(gio::IOErrorEnum::NotFound) => return Ok(true),
+            Err(e) => match ask_error(&mgr.parent_window(), verb, file, &e).await {
+                ErrorChoice::Skip => return Ok(false),
+                ErrorChoice::Retry => {}
                 ErrorChoice::Cancel => return Err(Fail::Cancelled),
             },
         }
     }
-    job.set_files_done(job.files_done() + 1);
-    job.report(false);
-    Ok(())
 }
 
 /// Type without following symlinks; Unknown when the file is missing or unreadable.
