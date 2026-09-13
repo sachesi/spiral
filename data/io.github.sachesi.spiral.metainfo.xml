@@ -22,6 +22,13 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.16.0" date="2026-09-13">
+      <description>
+        <p>A details panel beside the panes, on F8: what a file is, how big it is, when it was made and changed, and what it says about itself. Photos give their camera, lens, exposure and the time they were taken, camera raw files as well; recordings and videos their length, streams and tags; PDFs, office documents and e-books their pages, title and author. Where a photo was taken is never read out. The panel keeps its place and the keyboard, and follows the folder it describes as the folder changes.</p>
+        <p>The preview opens a video or a small picture at a size worth looking at and enlarges a picture smaller than that, and it steps through a folder without blinking. A file slow to load no longer leaves the one before it on screen, a video stepped away from while it started no longer spoils the next, and items in the trash are previewed and described from the file they are.</p>
+        <p>The Menu key opens the menu of the file the keyboard is on. Favorites and tag lists redraw a file whose mode, owner or tags change, and keep it selected. A folder that cannot be removed after what it held moved to another filesystem says so instead of reporting the move done, and every helper that reads files runs with its seccomp filter or not at all.</p>
+      </description>
+    </release>
     <release version="0.15.0" date="2026-09-12">
       <description>
         <p>The file chooser makes the folder New Folder asks for, its type filters match the suffixes GTK applications send, and its sidebar leaves the tags out when a file is being saved. A window made wider, a maximized chooser among them, gets as many grid columns as fit. "just setup-portal" also sends the file dialogs of Qt applications to the chooser, from the next login.</p>
