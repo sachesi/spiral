@@ -511,7 +511,8 @@ impl BrowserView {
         let (can_delete, can_rename) = (all("access::can-delete"), all("access::can-rename"));
         let dir_writable = single_dir && file_utils::allows(&infos[0], "access::can-write");
         self.set_enabled("open", n > 0);
-        self.set_enabled("preview", n > 0);
+        // The preview holds one file, and its arrows would trade a wider selection for it.
+        self.set_enabled("preview", n == 1);
         let all_folders = n > 0 && infos.iter().all(file_utils::is_dir);
         let shown = |key: &str| self.imp().settings.boolean(key);
         // Whether the menu offers them is up to `sync_open_menu`; the keys work either way.

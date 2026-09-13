@@ -268,7 +268,7 @@ folder holding the item and selects it there.
 ## Preview
 
 Space shows the selected file without opening an application, and closes the preview
-again; Escape closes it too. Images, video, sound and text files are drawn by Spiral
+again; Escape closes it too. It takes one file: with several selected, Space does nothing. Images, video, sound and text files are drawn by Spiral
 itself, and PDFs a page at a time. Source code is coloured by GtkSourceView, which knows
 the language from the name and the type of the file; the page itself keeps the colours of
 the theme, only the words are the scheme's. Lines are numbered down the side. Lines are not wrapped, since source is read the
