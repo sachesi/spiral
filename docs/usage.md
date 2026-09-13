@@ -338,7 +338,9 @@ or moved by another program joins it when a listing shows it, provided the tag i
 offer, and an entry that has stopped being true is dropped when the tag is listed. A
 folder seen under two paths, through a link or a bind mount as well as where it is, is in
 the index under both and listed once, and so is a favourite starred under both. A file
-trashed or deleted here leaves the index, and its tag's list, at once. Restored from the
+trashed or deleted here leaves the index, and its tag's list, at once. Every Spiral running,
+the file chooser as well, follows the index, so a file tagged in one window shows up at once
+in a tag's list open in another, and what is selected there stays selected. Restored from the
 trash it comes back, and so do the tagged files inside a folder trashed since Spiral
 started; those in one trashed earlier come back when a listing shows them. The tags
 themselves, name and colour each, are the `tags` setting.

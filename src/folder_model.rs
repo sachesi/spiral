@@ -1062,7 +1062,39 @@ impl FolderModel {
                 if imp.list_gen.get() != generation {
                     return;
                 }
-                imp.list_store.splice(0, imp.list_store.n_items(), &infos);
+                // A file tagged, starred or let go in another window or another Spiral
+                // touches only its own row, so the rest keep the selection, the focus and
+                // the scroll. A list that shares no file with the one before, as on coming
+                // from another location, goes in whole.
+                let store = &imp.list_store;
+                let key = |i: &gio::FileInfo| file_utils::file_of(i).uri();
+                let mut fresh: std::collections::HashMap<glib::GString, gio::FileInfo> =
+                    infos.iter().map(|i| (key(i), i.clone())).collect();
+                let old: Vec<gio::FileInfo> = store.iter().flatten().collect();
+                if old.iter().any(|i| fresh.contains_key(&key(i))) {
+                    for (pos, old) in old.iter().enumerate().rev() {
+                        let pos = pos as u32;
+                        match fresh.remove(&key(old)) {
+                            None => store.remove(pos),
+                            Some(new)
+                                if old.attribute_string(crate::tags::ATTRIBUTE)
+                                    != new.attribute_string(crate::tags::ATTRIBUTE)
+                                    || old.modification_date_time()
+                                        != new.modification_date_time() =>
+                            {
+                                store.splice(pos, 1, &[new])
+                            }
+                            Some(_) => {}
+                        }
+                    }
+                    let added: Vec<gio::FileInfo> = infos
+                        .into_iter()
+                        .filter(|i| fresh.contains_key(&key(i)))
+                        .collect();
+                    store.extend_from_slice(&added);
+                } else {
+                    store.splice(0, store.n_items(), &infos);
+                }
                 imp.set_loading(false);
                 for file in missing {
                     if starred {
