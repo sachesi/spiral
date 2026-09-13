@@ -65,6 +65,7 @@ says they have changed.
     just run-portal      # the backend, needs a session bus and xdg-desktop-portal
     just check           # fmt, clippy -D warnings, blueprint, validators, catalogues
     just test            # the unit tests
+    cargo deny check     # advisories, licences and sources of the dependencies
 
 `G_MESSAGES_DEBUG=spiral` enables the debug log domain.
 
