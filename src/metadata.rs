@@ -54,14 +54,29 @@ pub struct Facts {
     pub rate: Option<u32>,
     /// In bits per second.
     pub bitrate: Option<u32>,
+    /// Bits per sample, for lossless sound.
+    pub depth: Option<u32>,
+    /// How many sound streams, where there is more than one.
+    pub audio_tracks: Option<u32>,
+    /// The languages of the subtitles, or how many there are where they do not say.
+    pub subtitles: Option<String>,
+    pub subtitle_tracks: Option<u32>,
     pub title: Option<String>,
     pub artist: Option<String>,
     pub album: Option<String>,
+    pub album_artist: Option<String>,
+    pub genre: Option<String>,
+    pub track: Option<u32>,
+    pub tracks: Option<u32>,
+    pub year: Option<u32>,
 }
 
-/// Which reading a file of `content_type` gets: "image", "media", or none.
+/// Which reading a file of `content_type` gets: "raw" for a camera's raw file, "image",
+/// "media", or none.
 pub fn kind_of(content_type: &str) -> Option<&'static str> {
-    if content_type.starts_with("image/") {
+    if gio::content_type_is_a(content_type, "image/x-dcraw") {
+        Some("raw")
+    } else if content_type.starts_with("image/") {
         Some("image")
     } else if content_type.starts_with("audio/") || content_type.starts_with("video/") {
         Some("media")
@@ -75,7 +90,8 @@ pub fn kind_of(content_type: &str) -> Option<&'static str> {
 /// Run inside the sandbox: the facts of the file at `path`, as `key<TAB>value` lines.
 pub fn probe(kind: &str, path: &Path) -> String {
     let facts = match kind {
-        "image" => probe_image(path),
+        "image" => probe_image(path, false),
+        "raw" => probe_image(path, true),
         "media" => probe_media(path),
         _ => Vec::new(),
     };
@@ -93,19 +109,23 @@ fn one_line(text: &str) -> String {
         .to_string()
 }
 
-fn probe_image(path: &Path) -> Vec<(&'static str, String)> {
+fn probe_image(path: &Path, raw: bool) -> Vec<(&'static str, String)> {
     let mut out = Vec::new();
-    let exif = std::fs::File::open(path).ok().and_then(|file| {
-        exif::Reader::new()
-            .read_from_container(&mut std::io::BufReader::new(file))
-            .ok()
-    });
-    let field = |tag| {
-        exif.as_ref()
-            .and_then(|e| e.get_field(tag, exif::In::PRIMARY))
+    let blocks = read_exif(path);
+    // By number, in whichever block has it: a CR3 keeps the camera and the exposure in
+    // separate ones. Never the GPS block, never the thumbnail's directory.
+    let field = |number: u16| {
+        blocks
+            .iter()
+            .flat_map(|e| e.fields())
+            .find(|f| {
+                f.tag.number() == number
+                    && f.tag.context() != exif::Context::Gps
+                    && f.ifd_num == exif::In::PRIMARY
+            })
             .map(|f| &f.value)
     };
-    let text = |tag| match field(tag) {
+    let text = |number| match field(number) {
         Some(exif::Value::Ascii(parts)) => parts
             .first()
             .map(|p| String::from_utf8_lossy(p).trim().to_string())
@@ -122,15 +142,18 @@ fn probe_image(path: &Path) -> Vec<(&'static str, String)> {
         .filter(|n| n.is_finite() && *n > 0.0)
     };
 
-    // The size the picture is drawn at: turned the way the camera was held.
-    if let Some((_, width, height)) = crate::gtk::gdk_pixbuf::Pixbuf::file_info(path)
-        && width > 0
-        && height > 0
-    {
-        let turned = matches!(
-            field(exif::Tag::Orientation).and_then(|v| v.get_uint(0)),
-            Some(5..=8)
-        );
+    // The size the picture is drawn at: turned the way the camera was held. A raw file is
+    // not a picture gdk-pixbuf can size, or it sizes the preview inside; the camera says the
+    // size of the picture in the EXIF.
+    let size = if raw {
+        number(PIXEL_X)
+            .zip(number(PIXEL_Y))
+            .map(|(w, h)| (w as i32, h as i32))
+    } else {
+        crate::gtk::gdk_pixbuf::Pixbuf::file_info(path).map(|(_, w, h)| (w, h))
+    };
+    if let Some((width, height)) = size.filter(|&(w, h)| w > 0 && h > 0) {
+        let turned = matches!(field(ORIENTATION).and_then(|v| v.get_uint(0)), Some(5..=8));
         let (width, height) = if turned {
             (height, width)
         } else {
@@ -139,37 +162,108 @@ fn probe_image(path: &Path) -> Vec<(&'static str, String)> {
         out.push(("width", width.to_string()));
         out.push(("height", height.to_string()));
     }
-    let original = field(exif::Tag::DateTimeOriginal).or_else(|| field(exif::Tag::DateTime));
+    let original = field(DATE_TIME_ORIGINAL).or_else(|| field(DATE_TIME));
     if let Some(exif::Value::Ascii(parts)) = original
         && let Some(mut date) = parts
             .first()
             .and_then(|p| exif::DateTime::from_ascii(p).ok())
     {
-        if let Some(exif::Value::Ascii(offset)) = field(exif::Tag::OffsetTimeOriginal)
+        if let Some(exif::Value::Ascii(offset)) = field(OFFSET_TIME_ORIGINAL)
             && let Some(offset) = offset.first()
         {
             let _ = date.parse_offset(offset);
         }
         out.push(("taken", iso8601(&date)));
     }
-    let make = text(exif::Tag::Make);
-    if let Some(model) = text(exif::Tag::Model) {
+    let make = text(MAKE);
+    if let Some(model) = text(MODEL) {
         out.push(("camera", camera(make.as_deref(), &model)));
     }
-    if let Some(lens) = text(exif::Tag::LensModel) {
+    if let Some(lens) = text(LENS_MODEL) {
         out.push(("lens", lens));
     }
     for (key, tag) in [
-        ("aperture", exif::Tag::FNumber),
-        ("exposure", exif::Tag::ExposureTime),
-        ("iso", exif::Tag::PhotographicSensitivity),
-        ("focal", exif::Tag::FocalLength),
+        ("aperture", F_NUMBER),
+        ("exposure", EXPOSURE_TIME),
+        ("iso", ISO),
+        ("focal", FOCAL_LENGTH),
     ] {
         if let Some(n) = number(tag) {
             out.push((key, n.to_string()));
         }
     }
     out
+}
+
+const MAKE: u16 = 0x010f;
+const MODEL: u16 = 0x0110;
+const ORIENTATION: u16 = 0x0112;
+const DATE_TIME: u16 = 0x0132;
+const EXPOSURE_TIME: u16 = 0x829a;
+const F_NUMBER: u16 = 0x829d;
+const ISO: u16 = 0x8827;
+const DATE_TIME_ORIGINAL: u16 = 0x9003;
+const OFFSET_TIME_ORIGINAL: u16 = 0x9011;
+const FOCAL_LENGTH: u16 = 0x920a;
+const PIXEL_X: u16 = 0xa002;
+const PIXEL_Y: u16 = 0xa003;
+const LENS_MODEL: u16 = 0xa434;
+
+/// How much of a file is searched for EXIF the reader does not find on its own.
+const EXIF_SCAN: usize = 4 * 1024 * 1024;
+/// How much is handed to the reader from each TIFF header found in it.
+const EXIF_BLOCK: usize = 512 * 1024;
+/// How many TIFF headers are tried before the search gives up.
+const EXIF_TRIES: usize = 32;
+
+/// The EXIF of the file at `path`: where the reader knows the container (JPEG, TIFF and the
+/// raw files built on it, HEIF and AVIF, PNG, WebP), as it reads it. Elsewhere, what can be
+/// found in the head of the file: an Olympus or Panasonic raw file is a TIFF under another
+/// signature, and a Fujifilm raw file, the metadata boxes of a CR3 and the Exif box of a
+/// JPEG XL each hold TIFF blocks the reader can take one by one.
+fn read_exif(path: &Path) -> Vec<exif::Exif> {
+    let reader = exif::Reader::new();
+    let Ok(file) = std::fs::File::open(path) else {
+        return Vec::new();
+    };
+    if let Ok(exif) = reader.read_from_container(&mut std::io::BufReader::new(&file)) {
+        return vec![exif];
+    }
+    // The reader above has moved through the file.
+    let mut head = Vec::new();
+    if std::io::Seek::rewind(&mut &file).is_err() {
+        return Vec::new();
+    }
+    let _ =
+        std::io::Read::read_to_end(&mut std::io::Read::take(&file, EXIF_SCAN as u64), &mut head);
+    match head.get(..4) {
+        Some(b"IIU\0" | b"IIRO" | b"IIRS") => {
+            head[2..4].copy_from_slice(&[0x2a, 0]);
+            return reader.read_raw(head).into_iter().collect();
+        }
+        Some(b"MMOR") => {
+            head[2..4].copy_from_slice(&[0, 0x2a]);
+            return reader.read_raw(head).into_iter().collect();
+        }
+        _ => {}
+    }
+    let mut blocks = Vec::new();
+    let mut at = 0;
+    let mut tries = 0;
+    while tries < EXIF_TRIES
+        && let Some(found) = head[at..]
+            .windows(4)
+            .position(|w| w == b"II*\0" || w == b"MM\0*")
+    {
+        let start = at + found;
+        tries += 1;
+        let end = (start + EXIF_BLOCK).min(head.len());
+        if let Ok(exif) = reader.read_raw(head[start..end].to_vec()) {
+            blocks.push(exif);
+        }
+        at = start + 4;
+    }
+    blocks
 }
 
 fn iso8601(date: &exif::DateTime) -> String {
@@ -224,10 +318,47 @@ fn probe_media(path: &Path) -> Vec<(&'static str, String)> {
     let codec = |caps: Option<gst::Caps>| {
         caps.map(|c| gstreamer_pbutils::pb_utils_get_codec_description(&c).to_string())
     };
-    if let Some(video) = info.video_streams().first() {
-        if video.width() > 0 && video.height() > 0 {
-            out.push(("width", video.width().to_string()));
-            out.push(("height", video.height().to_string()));
+    // The title of a song is a tag of the file, or of its one sound stream where the file has
+    // no tags of its own (Ogg, FLAC). The streams of a video are titled after the track
+    // ("Audio", "English"), which says nothing of the video.
+    let videos = info.video_streams();
+    let audios = info.audio_streams();
+    let global = info
+        .stream_info()
+        .and_then(|s| {
+            s.downcast::<gstreamer_pbutils::DiscovererContainerInfo>()
+                .ok()
+        })
+        .and_then(|c| c.tags());
+    let own = videos
+        .is_empty()
+        .then(|| audios.first().and_then(|a| a.tags()))
+        .flatten();
+    let tags: Vec<gst::TagList> = [global, own].into_iter().flatten().collect();
+    let text = |get: fn(&gst::TagList) -> Option<String>| {
+        tags.iter().find_map(get).filter(|s| !s.trim().is_empty())
+    };
+    let number = |get: fn(&gst::TagList) -> Option<u32>| tags.iter().find_map(get);
+
+    if let Some(video) = videos.first() {
+        // A phone held upright records the picture on its side and says so in a tag.
+        let orientation = video
+            .tags()
+            .into_iter()
+            .chain(tags.iter().cloned())
+            .find_map(|t| {
+                t.get::<gst::tags::ImageOrientation>()
+                    .map(|o| o.get().to_string())
+            });
+        let upright = orientation.is_some_and(|o| o.ends_with("-90") || o.ends_with("-270"));
+        let (width, height) = if upright {
+            (video.height(), video.width())
+        } else {
+            (video.width(), video.height())
+        };
+        if width > 0 && height > 0 {
+            out.push(("width", width.to_string()));
+            out.push(("height", height.to_string()));
         }
         if let Some(name) = codec(video.caps()) {
             out.push(("video", name));
@@ -240,13 +371,20 @@ fn probe_media(path: &Path) -> Vec<(&'static str, String)> {
             ));
         }
     }
-    if let Some(audio) = info.audio_streams().first() {
+    if let Some(audio) = audios.first() {
         if let Some(name) = codec(audio.caps()) {
             out.push(("audio", name));
         }
+        // Only lossless sound keeps its bit depth; for the rest it is what the decoder would
+        // hand out, 32-bit float for Vorbis or AAC.
+        let lossless = audio
+            .caps()
+            .and_then(|c| c.structure(0).map(|s| s.name().to_string()))
+            .is_some_and(|name| LOSSLESS.contains(&name.as_str()));
         for (key, value) in [
             ("channels", audio.channels()),
             ("rate", audio.sample_rate()),
+            ("depth", if lossless { audio.depth() } else { 0 }),
             ("bitrate", audio.bitrate()),
         ] {
             if value > 0 {
@@ -254,34 +392,91 @@ fn probe_media(path: &Path) -> Vec<(&'static str, String)> {
             }
         }
     }
-    // The title of a song is a tag of the file, or of its one sound stream where the file has
-    // no tags of its own (Ogg, FLAC). The streams of a video are titled after the track
-    // ("Audio", "English"), which says nothing of the video.
-    let global = info
-        .stream_info()
-        .and_then(|s| {
-            s.downcast::<gstreamer_pbutils::DiscovererContainerInfo>()
-                .ok()
-        })
-        .and_then(|c| c.tags());
-    let own = info
-        .video_streams()
-        .is_empty()
-        .then(|| info.audio_streams().first().and_then(|a| a.tags()))
-        .flatten();
-    let tags: Vec<gst::TagList> = [global, own].into_iter().flatten().collect();
-    let tag = |get: fn(&gst::TagList) -> Option<String>| tags.iter().find_map(get);
-    if let Some(title) = tag(|t| Some(t.get::<gst::tags::Title>()?.get().to_string())) {
-        out.push(("title", title));
+    if audios.len() > 1 {
+        out.push(("audio_tracks", audios.len().to_string()));
     }
-    if let Some(artist) = tag(|t| Some(t.get::<gst::tags::Artist>()?.get().to_string())) {
-        out.push(("artist", artist));
+    let subtitles = info.subtitle_streams();
+    if !subtitles.is_empty() {
+        let languages: Vec<String> = subtitles
+            .iter()
+            .filter_map(|s| s.language())
+            .map(|l| l.to_string())
+            .collect();
+        if languages.len() == subtitles.len() {
+            out.push(("subtitles", languages.join(", ")));
+        } else {
+            out.push(("subtitle_tracks", subtitles.len().to_string()));
+        }
     }
-    if let Some(album) = tag(|t| Some(t.get::<gst::tags::Album>()?.get().to_string())) {
-        out.push(("album", album));
+    for (key, value) in [
+        (
+            "title",
+            text(|t| Some(t.get::<gst::tags::Title>()?.get().to_string())),
+        ),
+        (
+            "artist",
+            text(|t| Some(t.get::<gst::tags::Artist>()?.get().to_string())),
+        ),
+        (
+            "album",
+            text(|t| Some(t.get::<gst::tags::Album>()?.get().to_string())),
+        ),
+        (
+            "album_artist",
+            text(|t| Some(t.get::<gst::tags::AlbumArtist>()?.get().to_string())),
+        ),
+        (
+            "genre",
+            text(|t| Some(t.get::<gst::tags::Genre>()?.get().to_string())),
+        ),
+    ] {
+        if let Some(value) = value {
+            out.push((key, value));
+        }
+    }
+    for (key, value) in [
+        (
+            "track",
+            number(|t| Some(t.get::<gst::tags::TrackNumber>()?.get())),
+        ),
+        (
+            "tracks",
+            number(|t| Some(t.get::<gst::tags::TrackCount>()?.get())),
+        ),
+        // The date of a song is when it came out; a video's is when it was written, which
+        // the muxer fills in, and says little.
+        (
+            "year",
+            number(|t| {
+                t.get::<gst::tags::DateTime>()
+                    .map(|d| d.get().year() as u32)
+                    .or_else(|| {
+                        t.get::<gst::tags::Date>()
+                            .map(|d| u32::from(d.get().year()))
+                    })
+            }),
+        ),
+    ] {
+        if let Some(value) = value.filter(|&v| v > 0)
+            && (key != "year" || videos.is_empty())
+        {
+            out.push((key, value.to_string()));
+        }
     }
     out
 }
+
+/// Caps of sound that is stored as it is played.
+const LOSSLESS: [&str; 8] = [
+    "audio/x-flac",
+    "audio/x-alac",
+    "audio/x-raw",
+    "audio/x-wav",
+    "audio/x-aiff",
+    "audio/x-wavpack",
+    "audio/x-ape",
+    "audio/x-tta",
+];
 
 // ---- in the file manager --------------------------------------------------------------------
 
@@ -306,7 +501,18 @@ pub async fn read(info: &gio::FileInfo) -> Option<Rc<Facts>> {
         .await
         .ok()
         .flatten()?;
-    let facts = Rc::new(parse(&String::from_utf8_lossy(&out)));
+    let mut facts = parse(&String::from_utf8_lossy(&out));
+    // A stream that does not say its bitrate (FLAC, Opus in Ogg) is given the average: the
+    // size of the file over its length. With video in it the sound's share is not known.
+    if facts.bitrate.is_none()
+        && facts.video.is_none()
+        && let Some(ms) = facts.duration
+    {
+        facts.bitrate = u32::try_from(file_utils::size_of(info) * 8 * 1000 / ms)
+            .ok()
+            .filter(|&b| b > 0);
+    }
+    let facts = Rc::new(facts);
     CACHE.with(|c| {
         let mut c = c.borrow_mut();
         if c.seen.insert(key.clone(), facts.clone()).is_none() {
@@ -438,9 +644,18 @@ fn parse(out: &str) -> Facts {
             "channels" => facts.channels = int(),
             "rate" => facts.rate = int(),
             "bitrate" => facts.bitrate = int(),
+            "depth" => facts.depth = int(),
+            "audio_tracks" => facts.audio_tracks = int(),
+            "subtitles" => facts.subtitles = text(),
+            "subtitle_tracks" => facts.subtitle_tracks = int(),
             "title" => facts.title = text(),
             "artist" => facts.artist = text(),
             "album" => facts.album = text(),
+            "album_artist" => facts.album_artist = text(),
+            "genre" => facts.genre = text(),
+            "track" => facts.track = int(),
+            "tracks" => facts.tracks = int(),
+            "year" => facts.year = int(),
             _ => {}
         }
     }
@@ -461,6 +676,24 @@ impl Facts {
         add(gettext("Title"), self.title.clone());
         add(gettext("Artist"), self.artist.clone());
         add(gettext("Album"), self.album.clone());
+        // Said only where it is not the artist again.
+        add(
+            gettext("Album Artist"),
+            self.album_artist
+                .clone()
+                .filter(|a| Some(a) != self.artist.as_ref()),
+        );
+        add(
+            gettext("Track"),
+            self.track.map(|n| match self.tracks {
+                Some(of) if of >= n => gettext("%s of %s")
+                    .replacen("%s", &n.to_string(), 1)
+                    .replacen("%s", &of.to_string(), 1),
+                _ => n.to_string(),
+            }),
+        );
+        add(gettext("Year"), self.year.map(|y| y.to_string()));
+        add(gettext("Genre"), self.genre.clone());
         add(
             gettext("Dimensions"),
             self.width
@@ -474,6 +707,17 @@ impl Facts {
         add(gettext("Exposure"), self.exposure_text());
         add(gettext("Video"), self.video_text());
         add(gettext("Audio"), self.audio_text());
+        add(
+            gettext("Audio Tracks"),
+            self.audio_tracks.map(|n| n.to_string()),
+        );
+        add(
+            gettext("Subtitles"),
+            self.subtitles
+                .as_deref()
+                .map(language_names)
+                .or_else(|| self.subtitle_tracks.map(|n| n.to_string())),
+        );
         rows
     }
 
@@ -481,10 +725,10 @@ impl Facts {
         let parts: Vec<String> = [
             self.aperture.map(|f| format!("f/{}", trimmed(f, 1))),
             self.exposure
-                .map(|t| gettext("%s s").replace("%s", &shutter(t))),
-            self.iso.map(|n| format!("ISO {n}")),
+                .map(|t| unit(gettext("%s s").replace("%s", &shutter(t)))),
+            self.iso.map(|n| unit(format!("ISO {n}"))),
             self.focal
-                .map(|mm| gettext("%s mm").replace("%s", &trimmed(mm, 1))),
+                .map(|mm| unit(gettext("%s mm").replace("%s", &trimmed(mm, 1)))),
         ]
         .into_iter()
         .flatten()
@@ -495,7 +739,7 @@ impl Facts {
     fn video_text(&self) -> Option<String> {
         let fps = self
             .fps
-            .map(|f| gettext("%s fps").replace("%s", &trimmed(f, 2)));
+            .map(|f| unit(gettext("%s fps").replace("%s", &trimmed(f, 2))));
         join([self.video.clone(), fps])
     }
 
@@ -507,12 +751,33 @@ impl Facts {
         });
         let rate = self
             .rate
-            .map(|hz| gettext("%s kHz").replace("%s", &trimmed(f64::from(hz) / 1000.0, 1)));
+            .map(|hz| unit(gettext("%s kHz").replace("%s", &trimmed(f64::from(hz) / 1000.0, 1))));
         let bitrate = self
             .bitrate
-            .map(|b| gettext("%s kbit/s").replace("%s", &(b / 1000).to_string()));
-        join([self.audio.clone(), channels, rate, bitrate])
+            .map(|b| unit(gettext("%s kbit/s").replace("%s", &(b / 1000).to_string())));
+        let depth = self
+            .depth
+            .map(|d| unit(gettext("%s-bit").replace("%s", &d.to_string())));
+        join([self.audio.clone(), channels, rate, depth, bitrate])
     }
+}
+
+/// "en, de" as "English, German", in the language of the interface where iso-codes has it.
+fn language_names(codes: &str) -> String {
+    codes
+        .split(", ")
+        .map(|code| {
+            gstreamer_tag::language_codes::language_name(code)
+                .map(|name| name.to_string())
+                .unwrap_or_else(|| code.to_string())
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// A number and its unit, kept on one line when the panel wraps the rest.
+fn unit(text: String) -> String {
+    text.replace(' ', "\u{a0}")
 }
 
 fn join<const N: usize>(parts: [Option<String>; N]) -> Option<String> {
@@ -590,6 +855,7 @@ mod tests {
         assert_eq!(trimmed(29.97, 2), "29.97");
         assert_eq!(duration_text(187_400), "3:07");
         assert_eq!(duration_text(3_723_000), "1:02:03");
+        assert_eq!(language_names("en, xx"), "English, xx");
         // Tokyo's clock, not the viewer's.
         assert!(
             taken_text("2024-05-17T18:42:07+09:00")
@@ -647,6 +913,128 @@ mod tests {
         jpeg.extend(app1);
         jpeg.extend([0xff, 0xd9]);
         jpeg
+    }
+
+    enum V {
+        A(&'static str),
+        S(u16),
+        R(u32, u32),
+    }
+
+    /// A TIFF block with one directory holding `entries`, which must be in tag order.
+    fn tiff(big: bool, entries: &[(u16, V)]) -> Vec<u8> {
+        let u16b = |n: u16| {
+            if big {
+                n.to_be_bytes()
+            } else {
+                n.to_le_bytes()
+            }
+        };
+        let u32b = |n: u32| {
+            if big {
+                n.to_be_bytes()
+            } else {
+                n.to_le_bytes()
+            }
+        };
+        let mut out = if big {
+            b"MM\0*".to_vec()
+        } else {
+            b"II*\0".to_vec()
+        };
+        out.extend(u32b(8));
+        let mut data = Vec::new();
+        let data_at = 8 + 2 + 12 * entries.len() + 4;
+        out.extend(u16b(entries.len() as u16));
+        for (tag, value) in entries {
+            out.extend(u16b(*tag));
+            let (kind, count, bytes) = match value {
+                V::A(text) => (
+                    2u16,
+                    text.len() as u32 + 1,
+                    [text.as_bytes(), b"\0"].concat(),
+                ),
+                V::S(n) => (3, 1, [u16b(*n), [0, 0]].concat()),
+                V::R(a, b) => (5, 1, [u32b(*a), u32b(*b)].concat()),
+            };
+            out.extend(u16b(kind));
+            out.extend(u32b(count));
+            if bytes.len() <= 4 {
+                let mut inline = bytes.clone();
+                inline.resize(4, 0);
+                out.extend(inline);
+            } else {
+                out.extend(u32b((data_at + data.len()) as u32));
+                data.extend(bytes);
+            }
+        }
+        out.extend(u32b(0));
+        out.extend(data);
+        out
+    }
+
+    fn probe_bytes(kind: &str, bytes: &[u8]) -> Facts {
+        static SEQ: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let path = std::env::temp_dir().join(format!(
+            "spiral-probe-{}-{}",
+            std::process::id(),
+            SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        std::fs::write(&path, bytes).unwrap();
+        let out = probe(kind, &path);
+        let _ = std::fs::remove_file(&path);
+        parse(&out)
+    }
+
+    #[test]
+    fn raw_files_under_another_signature_are_read_as_tiff() {
+        let block = tiff(
+            false,
+            &[
+                (MAKE, V::A("Panasonic")),
+                (MODEL, V::A("DC-S5")),
+                (ORIENTATION, V::S(6)),
+                (PIXEL_X, V::S(6000)),
+                (PIXEL_Y, V::S(4000)),
+            ],
+        );
+        for signature in [b"IIU\0", b"IIRO"] {
+            let mut raw = block.clone();
+            raw[..4].copy_from_slice(signature);
+            let facts = probe_bytes("raw", &raw);
+            assert_eq!(facts.camera.as_deref(), Some("Panasonic DC-S5"));
+            // Held upright: the picture is taller than the sensor is wide.
+            assert_eq!((facts.width, facts.height), (Some(4000), Some(6000)));
+        }
+    }
+
+    #[test]
+    fn exif_is_found_inside_containers_the_reader_does_not_know() {
+        // A Fujifilm raw file: a header, then a JPEG preview carrying the EXIF.
+        let mut raf = b"FUJIFILMCCD-RAW 0201FF383501".to_vec();
+        raf.resize(160, 0);
+        raf.extend(jpeg_with_exif());
+        raf.extend([0u8; 64]);
+        let facts = probe_bytes("raw", &raf);
+        assert_eq!(facts.camera.as_deref(), Some("ACME Shooter 3000"));
+        assert_eq!(facts.exposure, Some(0.004));
+
+        // A CR3: the camera in one metadata box, the exposure in the next.
+        let mut cr3 = b"\0\0\0\x18ftypcrx \0\0\0\x01crx isom".to_vec();
+        cr3.extend(b"\0\0\0\0CMT1");
+        cr3.extend(tiff(
+            false,
+            &[(MAKE, V::A("Canon")), (MODEL, V::A("Canon EOS R5"))],
+        ));
+        cr3.extend(b"\0\0\0\0CMT2");
+        cr3.extend(tiff(
+            false,
+            &[(EXPOSURE_TIME, V::R(1, 500)), (ISO, V::S(400))],
+        ));
+        let facts = probe_bytes("raw", &cr3);
+        assert_eq!(facts.camera.as_deref(), Some("Canon EOS R5"));
+        assert_eq!(facts.exposure, Some(0.002));
+        assert_eq!(facts.iso, Some(400));
     }
 
     #[test]

@@ -27,6 +27,7 @@ gio = { version = "0.22", features = ["v2_80"] }
 gdk4-wayland = "0.11"
 gstreamer = "0.25"
 gstreamer-pbutils = { version = "0.25", features = ["v1_20"] }
+gstreamer-tag = "0.25"
 kamadak-exif = "0.6"
 ashpd = { version = "0.13", default-features = false, features = ["backend", "file_chooser", "tokio"] }
 tokio = { version = "1", features = ["rt"] }

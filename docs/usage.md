@@ -380,16 +380,20 @@ owner, the group and the permissions. Several: how many, their type when they sh
 and the size of the files among them; folders are left for Properties to add up. A photo,
 a recording or a video on this machine also says what it carries itself, above the rest: a
 picture its size, and from its EXIF when it was taken (on the camera's clock, as a date
-whatever the date preference), the camera, the lens and the exposure; a recording or a
-video its title, artist and album, its length, and its video and sound streams. That is
-read by the bundled `spiral-thumbnailer` in the thumbnailers' sandbox, GStreamer for
-recordings and videos, and never by Spiral itself, so without bubblewrap there is none of
-it. Where a photo was taken is not read at all. Nothing selected: the folder itself, with
-its number of items and the free space on its disk. The Properties button at the bottom
-opens Properties for the same files, which is where anything is changed. The panel reads a
-file once the selection has stayed on it for a moment, so holding an arrow down does not
-read every file on the way. It stays open as you leave it, for new windows too, and a
-window narrower than roughly 900 px leaves it closed until it grows.
+whatever the date preference), the camera, the lens and the exposure, raw files from the
+camera included; a recording its title, artist, album, track, year and genre, its length
+and its sound, with the bit depth of lossless sound and the average bitrate where the
+stream does not give one; a video its size, upright when the phone was held upright, its
+length, its video and sound streams, how many sound tracks it has and the languages of its
+subtitles. That is read by the bundled `spiral-thumbnailer` in the thumbnailers' sandbox,
+GStreamer for recordings and videos, and never by Spiral itself, so without bubblewrap
+there is none of it. Where a photo was taken is not read at all. Nothing selected: the
+folder itself, with its number of items and the free space on its disk. The Properties
+button at the bottom opens Properties for the same files, which is where anything is
+changed. The panel reads a file once the selection has stayed on it for a moment, so
+holding an arrow down does not read every file on the way. It stays open as you leave it,
+for new windows too, and a window narrower than roughly 900 px leaves it closed until it
+grows.
 
 ## Command line
 

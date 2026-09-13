@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.15.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-13 14:01+0300\n"
+"POT-Creation-Date: 2026-09-13 14:15+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2100,101 +2100,141 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: src/metadata.rs:440
+#: src/metadata.rs:654
 #, no-c-format
 msgid "Title"
 msgstr ""
 
-#: src/metadata.rs:441
+#: src/metadata.rs:655
 #, no-c-format
 msgid "Artist"
 msgstr ""
 
-#: src/metadata.rs:442
+#: src/metadata.rs:656
 #, no-c-format
 msgid "Album"
 msgstr ""
 
-#: src/metadata.rs:444
+#: src/metadata.rs:659
+#, no-c-format
+msgid "Album Artist"
+msgstr ""
+
+#: src/metadata.rs:663
+#, no-c-format
+msgid "Track"
+msgstr ""
+
+#: src/metadata.rs:665
+#, no-c-format
+msgid "%s of %s"
+msgstr ""
+
+#: src/metadata.rs:671
+#, no-c-format
+msgid "Year"
+msgstr ""
+
+#: src/metadata.rs:672
+#, no-c-format
+msgid "Genre"
+msgstr ""
+
+#: src/metadata.rs:674
 #, no-c-format
 msgid "Dimensions"
 msgstr ""
 
-#: src/metadata.rs:449
+#: src/metadata.rs:679
 #, no-c-format
 msgid "Duration"
 msgstr ""
 
-#: src/metadata.rs:450
+#: src/metadata.rs:680
 #, no-c-format
 msgid "Taken"
 msgstr ""
 
-#: src/metadata.rs:451
+#: src/metadata.rs:681
 #, no-c-format
 msgid "Camera"
 msgstr ""
 
-#: src/metadata.rs:452
+#: src/metadata.rs:682
 #, no-c-format
 msgid "Lens"
 msgstr ""
 
-#: src/metadata.rs:453
+#: src/metadata.rs:683
 #, no-c-format
 msgid "Exposure"
 msgstr ""
 
-#: src/metadata.rs:454
+#: src/metadata.rs:684
 #, no-c-format
 msgid "Video"
 msgstr ""
 
-#: src/metadata.rs:455 ui/window.ui:411
+#: src/metadata.rs:685 ui/window.ui:411
 #, no-c-format
 msgid "Audio"
 msgstr ""
 
-#: src/metadata.rs:462
+#: src/metadata.rs:687
+#, no-c-format
+msgid "Audio Tracks"
+msgstr ""
+
+#: src/metadata.rs:691
+#, no-c-format
+msgid "Subtitles"
+msgstr ""
+
+#: src/metadata.rs:703
 #, no-c-format
 msgid "%s s"
 msgstr ""
 
-#: src/metadata.rs:465
+#: src/metadata.rs:706
 #, no-c-format
 msgid "%s mm"
 msgstr ""
 
-#: src/metadata.rs:476
+#: src/metadata.rs:717
 #, no-c-format
 msgid "%s fps"
 msgstr ""
 
-#: src/metadata.rs:482
+#: src/metadata.rs:723
 #, no-c-format
 msgid "Mono"
 msgstr ""
 
-#: src/metadata.rs:483
+#: src/metadata.rs:724
 #, no-c-format
 msgid "Stereo"
 msgstr ""
 
-#: src/metadata.rs:484
+#: src/metadata.rs:725
 #, no-c-format
 msgid "%d channel"
 msgid_plural "%d channels"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/metadata.rs:487
+#: src/metadata.rs:729
 #, no-c-format
 msgid "%s kHz"
 msgstr ""
 
-#: src/metadata.rs:491
+#: src/metadata.rs:732
 #, no-c-format
 msgid "%s kbit/s"
+msgstr ""
+
+#: src/metadata.rs:735
+#, no-c-format
+msgid "%s-bit"
 msgstr ""
 
 #: src/naming.rs:31
