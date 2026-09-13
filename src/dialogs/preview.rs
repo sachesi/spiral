@@ -940,7 +940,7 @@ fn head_of(path: &Path, most: usize) -> Option<Vec<u8>> {
 
 /// Width and height of a local image from its header alone, turned the way its EXIF tag
 /// says, which is the way it will be drawn.
-pub(crate) fn image_size(path: &Path) -> Option<(i32, i32)> {
+fn image_size(path: &Path) -> Option<(i32, i32)> {
     let (format, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(path)?;
     if width <= 0 || height <= 0 {
         return None;

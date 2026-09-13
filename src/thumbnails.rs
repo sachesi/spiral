@@ -834,7 +834,7 @@ fn seccomp_filter() -> Option<std::fs::File> {
 }
 
 /// The bundled image thumbnailer: next to the running binary when uninstalled, else in libexec.
-fn own_thumbnailer() -> Option<PathBuf> {
+pub(crate) fn own_thumbnailer() -> Option<PathBuf> {
     let name = "spiral-thumbnailer";
     std::env::current_exe()
         .ok()

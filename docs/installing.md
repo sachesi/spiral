@@ -36,7 +36,7 @@ behind, and the preview then reports the sink missing until the registry is rebu
 
 The build produces `spiral`, the portal backend `xdg-desktop-portal-spiral`, and
 `spiral-thumbnailer`, a small gdk-pixbuf helper used for images that have no system
-thumbnailer.
+thumbnailer and for reading the details of photos, recordings and videos.
 
 Two paths are compiled in: where the thumbnailer helper lives (`SPIRAL_LIBEXECDIR`,
 default `/usr/local/libexec`) and the locale directory (`SPIRAL_LOCALEDIR`, default

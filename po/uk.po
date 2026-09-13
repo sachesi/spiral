@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-13 13:32+0300\n"
+"POT-Creation-Date: 2026-09-13 14:01+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -26,7 +26,7 @@ msgid "File Manager"
 msgstr "Менеджер файлів"
 
 #: data/io.github.sachesi.spiral.desktop:4
-#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:346
+#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:349
 #, no-c-format
 msgid "Browse and manage your files"
 msgstr "Перегляд і керування файлами"
@@ -771,7 +771,7 @@ msgid "[FILE…]"
 msgstr "[ФАЙЛ…]"
 
 #. Translators: put your name here, one per line, optionally with an email address.
-#: src/application.rs:348
+#: src/application.rs:351
 #, no-c-format
 msgid "translator-credits"
 msgstr "sachesi"
@@ -1041,13 +1041,13 @@ msgstr "%f, %n"
 msgid "Name"
 msgstr "Назва"
 
-#: src/browser_view.rs:2992 src/details_panel.rs:190
+#: src/browser_view.rs:2992 src/details_panel.rs:177
 #: src/dialogs/properties.rs:321 src/dialogs/properties.rs:383
 #, no-c-format
 msgid "Location"
 msgstr "Розташування"
 
-#: src/browser_view.rs:3002 src/details_panel.rs:199
+#: src/browser_view.rs:3002 src/details_panel.rs:186
 #: src/dialogs/properties.rs:361
 #, no-c-format
 msgid "Trashed On"
@@ -1058,75 +1058,70 @@ msgstr "Дата вилучення"
 msgid "Original Location"
 msgstr "Початкове розташування"
 
-#: src/details_panel.rs:144 src/dialogs/properties.rs:312 src/file_utils.rs:249
+#: src/details_panel.rs:145 src/dialogs/properties.rs:312 src/file_utils.rs:249
 #, no-c-format
 msgid "MIME Type"
 msgstr "Тип MIME"
 
-#: src/details_panel.rs:149 src/details_panel.rs:168 src/details_panel.rs:337
+#: src/details_panel.rs:150 src/details_panel.rs:169 src/details_panel.rs:343
 #: src/dialogs/preferences.rs:262 src/dialogs/properties.rs:316
 #: src/dialogs/properties.rs:573 src/file_utils.rs:231 src/file_utils.rs:246
 #, no-c-format
 msgid "Size"
 msgstr "Розмір"
 
-#: src/details_panel.rs:177
-#, no-c-format
-msgid "Dimensions"
-msgstr "Розміри"
-
-#: src/details_panel.rs:195 src/dialogs/properties.rs:333
+#: src/details_panel.rs:182 src/dialogs/properties.rs:333
 #, no-c-format
 msgid "Link Target"
 msgstr "Ціль посилання"
 
-#: src/details_panel.rs:198 src/dialogs/properties.rs:351
+#: src/details_panel.rs:185 src/dialogs/properties.rs:351
 #, no-c-format
 msgid "Original Folder"
 msgstr "Початкова тека"
 
-#: src/details_panel.rs:200 src/details_panel.rs:246
+#: src/details_panel.rs:187 src/details_panel.rs:254
 #: src/dialogs/properties.rs:366 src/file_utils.rs:233 ui/window.ui:424
 #, no-c-format
 msgid "Modified"
 msgstr "Змінено"
 
-#: src/details_panel.rs:201 src/dialogs/properties.rs:370 src/file_utils.rs:234
+#: src/details_panel.rs:188 src/dialogs/properties.rs:370 src/file_utils.rs:234
 #, no-c-format
 msgid "Accessed"
 msgstr "Останній доступ"
 
-#: src/details_panel.rs:202 src/dialogs/properties.rs:374 src/file_utils.rs:235
+#: src/details_panel.rs:189 src/dialogs/properties.rs:374 src/file_utils.rs:235
 #, no-c-format
 msgid "Created"
 msgstr "Створено"
 
-#: src/details_panel.rs:204 src/details_panel.rs:247
+#: src/details_panel.rs:191 src/details_panel.rs:255
 #: src/dialogs/properties.rs:760 src/dialogs/properties.rs:912
 #: src/file_utils.rs:236 src/file_utils.rs:251
 #, no-c-format
 msgid "Owner"
 msgstr "Власник"
 
-#: src/details_panel.rs:208 src/details_panel.rs:248
+#: src/details_panel.rs:195 src/details_panel.rs:256
 #: src/dialogs/properties.rs:761 src/dialogs/properties.rs:912
 #: src/file_utils.rs:237 src/file_utils.rs:252
 #, no-c-format
 msgid "Group"
 msgstr "Група"
 
-#: src/details_panel.rs:212 src/details_panel.rs:249
+#: src/details_panel.rs:199 src/details_panel.rs:257
 #: src/dialogs/properties.rs:139 src/file_utils.rs:238 src/file_utils.rs:250
 #, no-c-format
 msgid "Permissions"
 msgstr "Права доступу"
 
-#: src/details_panel.rs:253 src/dialogs/properties.rs:475
+#: src/details_panel.rs:260 src/dialogs/properties.rs:475
 #, no-c-format
 msgid "Free"
 msgstr "Вільно"
 
-#: src/details_panel.rs:320 src/dialogs/properties.rs:297
+#: src/details_panel.rs:326 src/dialogs/properties.rs:297
 #, no-c-format
 msgid "%d Item"
 msgid_plural "%d Items"
@@ -1134,12 +1129,12 @@ msgstr[0] "%d об’єкт"
 msgstr[1] "%d об’єкти"
 msgstr[2] "%d об’єктів"
 
-#: src/details_panel.rs:335
+#: src/details_panel.rs:341
 #, no-c-format
 msgid "%s, folders not counted"
 msgstr "%s, без урахування тек"
 
-#: src/details_panel.rs:391 src/dialogs/properties.rs:121
+#: src/details_panel.rs:399 src/dialogs/properties.rs:121
 #: ui/shortcuts_dialog.ui:325
 #, no-c-format
 msgid "Properties"
@@ -2216,6 +2211,104 @@ msgstr "Система"
 msgid "Cancel"
 msgstr "Скасувати"
 
+#: src/metadata.rs:440
+#, no-c-format
+msgid "Title"
+msgstr "Назва"
+
+#: src/metadata.rs:441
+#, no-c-format
+msgid "Artist"
+msgstr "Виконавець"
+
+#: src/metadata.rs:442
+#, no-c-format
+msgid "Album"
+msgstr "Альбом"
+
+#: src/metadata.rs:444
+#, no-c-format
+msgid "Dimensions"
+msgstr "Розміри"
+
+#: src/metadata.rs:449
+#, no-c-format
+msgid "Duration"
+msgstr "Тривалість"
+
+#: src/metadata.rs:450
+#, no-c-format
+msgid "Taken"
+msgstr "Знято"
+
+#: src/metadata.rs:451
+#, no-c-format
+msgid "Camera"
+msgstr "Камера"
+
+#: src/metadata.rs:452
+#, no-c-format
+msgid "Lens"
+msgstr "Об'єктив"
+
+#: src/metadata.rs:453
+#, no-c-format
+msgid "Exposure"
+msgstr "Експозиція"
+
+#: src/metadata.rs:454
+#, no-c-format
+msgid "Video"
+msgstr "Відео"
+
+#: src/metadata.rs:455 ui/window.ui:411
+#, no-c-format
+msgid "Audio"
+msgstr "Звук"
+
+#: src/metadata.rs:462
+#, no-c-format
+msgid "%s s"
+msgstr "%s с"
+
+#: src/metadata.rs:465
+#, no-c-format
+msgid "%s mm"
+msgstr "%s мм"
+
+#: src/metadata.rs:476
+#, no-c-format
+msgid "%s fps"
+msgstr "%s кадр/с"
+
+#: src/metadata.rs:482
+#, no-c-format
+msgid "Mono"
+msgstr "Моно"
+
+#: src/metadata.rs:483
+#, no-c-format
+msgid "Stereo"
+msgstr "Стерео"
+
+#: src/metadata.rs:484
+#, no-c-format
+msgid "%d channel"
+msgid_plural "%d channels"
+msgstr[0] "%d канал"
+msgstr[1] "%d канали"
+msgstr[2] "%d каналів"
+
+#: src/metadata.rs:487
+#, no-c-format
+msgid "%s kHz"
+msgstr "%s кГц"
+
+#: src/metadata.rs:491
+#, no-c-format
+msgid "%s kbit/s"
+msgstr "%s кбіт/с"
+
 #: src/naming.rs:31
 #, no-c-format
 msgid "Folder names cannot contain “/”."
@@ -3162,17 +3255,17 @@ msgstr "Не вдалося прочитати командний рядок п�
 msgid "No terminal emulator found"
 msgstr "Емулятор термінала не знайдено"
 
-#: src/window.rs:828 src/window.rs:894 ui/shortcuts_dialog.ui:337
+#: src/window.rs:832 src/window.rs:898 ui/shortcuts_dialog.ui:337
 #, no-c-format
 msgid "Undo"
 msgstr "Повернути"
 
-#: src/window.rs:855
+#: src/window.rs:859
 #, no-c-format
 msgid "Open Folder"
 msgstr "Відкрити теку"
 
-#: src/window.rs:1356 ui/window.ui:73
+#: src/window.rs:1361 ui/window.ui:73
 #, no-c-format
 msgid "_Columns"
 msgstr "Ст_овпчики"
@@ -3597,10 +3690,6 @@ msgstr "Будь-який"
 #: ui/window.ui:409
 msgid "Documents"
 msgstr "Документи"
-
-#: ui/window.ui:411
-msgid "Audio"
-msgstr "Звук"
 
 #: ui/window.ui:412
 msgid "Videos"

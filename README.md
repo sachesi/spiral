@@ -12,9 +12,9 @@ bookmarks and network shares, background file operations with progress, conflict
 and undo, archives through whatever tools are installed, thumbnails, a Space preview for
 images, video, sound, text and PDFs, a details panel, drag and drop, "Open in Terminal",
 servers reached through gvfs, the `org.freedesktop.FileManager1` service for "Show in
-folder" and the portal backend. Thumbnailers, archive tools and the PDF previewer run
-under bubblewrap, which is required: they read files from anywhere, and Spiral has no
-unsandboxed path for them.
+folder" and the portal backend. Thumbnailers, the reader of photo and media details,
+archive tools and the PDF previewer run under bubblewrap, which is required: they read
+files from anywhere, and Spiral has no unsandboxed path for them.
 
 ## Building and installing
 

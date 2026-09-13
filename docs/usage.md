@@ -371,19 +371,25 @@ as an operation, leaves links alone, and says how many items it could not change
 
 ## Details
 
-F8, or "Show Details" in the view menu, opens a panel on the right of the window about what
-is selected in the pane in charge, and follows the selection as it moves. One file: its
-thumbnail, name and type, the MIME type, the size (a folder's number of items, where item
-counts are on), the width and height of a local picture, the folder it is in when that is
-not the one on screen, a link's target, where an item in the trash came from and when it
-was trashed, the times, the owner, the group and the permissions. Several: how many, their
-type when they share one, and the size of the files among them; folders are left for
-Properties to add up. Nothing selected: the folder itself, with its number of items and the
-free space on its disk. The Properties button at the bottom opens Properties for the same
-files, which is where anything is changed. The panel reads a file once the selection has
-stayed on it for a moment, so holding an arrow down does not read every file on the way.
-It stays open as you leave it, for new windows too, and a window narrower than roughly
-900 px leaves it closed until it grows.
+F8, or "Show Details" in the view menu, opens a panel on the right of the window about
+what is selected in the pane in charge, and follows the selection as it moves. One file:
+its thumbnail, name and type, the MIME type, the size (a folder's number of items, where
+item counts are on), the folder it is in when that is not the one on screen, a link's
+target, where an item in the trash came from and when it was trashed, the times, the
+owner, the group and the permissions. Several: how many, their type when they share one,
+and the size of the files among them; folders are left for Properties to add up. A photo,
+a recording or a video on this machine also says what it carries itself, above the rest: a
+picture its size, and from its EXIF when it was taken (on the camera's clock, as a date
+whatever the date preference), the camera, the lens and the exposure; a recording or a
+video its title, artist and album, its length, and its video and sound streams. That is
+read by the bundled `spiral-thumbnailer` in the thumbnailers' sandbox, GStreamer for
+recordings and videos, and never by Spiral itself, so without bubblewrap there is none of
+it. Where a photo was taken is not read at all. Nothing selected: the folder itself, with
+its number of items and the free space on its disk. The Properties button at the bottom
+opens Properties for the same files, which is where anything is changed. The panel reads a
+file once the selection has stayed on it for a moment, so holding an arrow down does not
+read every file on the way. It stays open as you leave it, for new windows too, and a
+window narrower than roughly 900 px leaves it closed until it grows.
 
 ## Command line
 

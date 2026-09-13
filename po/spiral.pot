@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.15.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-13 13:32+0300\n"
+"POT-Creation-Date: 2026-09-13 14:01+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,7 +28,7 @@ msgid "File Manager"
 msgstr ""
 
 #: data/io.github.sachesi.spiral.desktop:4
-#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:346
+#: data/io.github.sachesi.spiral.metainfo.xml:7 src/application.rs:349
 #, no-c-format
 msgid "Browse and manage your files"
 msgstr ""
@@ -697,7 +697,7 @@ msgid "[FILE…]"
 msgstr ""
 
 #. Translators: put your name here, one per line, optionally with an email address.
-#: src/application.rs:348
+#: src/application.rs:351
 #, no-c-format
 msgid "translator-credits"
 msgstr ""
@@ -956,13 +956,13 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:2992 src/details_panel.rs:190
+#: src/browser_view.rs:2992 src/details_panel.rs:177
 #: src/dialogs/properties.rs:321 src/dialogs/properties.rs:383
 #, no-c-format
 msgid "Location"
 msgstr ""
 
-#: src/browser_view.rs:3002 src/details_panel.rs:199
+#: src/browser_view.rs:3002 src/details_panel.rs:186
 #: src/dialogs/properties.rs:361
 #, no-c-format
 msgid "Trashed On"
@@ -973,87 +973,82 @@ msgstr ""
 msgid "Original Location"
 msgstr ""
 
-#: src/details_panel.rs:144 src/dialogs/properties.rs:312 src/file_utils.rs:249
+#: src/details_panel.rs:145 src/dialogs/properties.rs:312 src/file_utils.rs:249
 #, no-c-format
 msgid "MIME Type"
 msgstr ""
 
-#: src/details_panel.rs:149 src/details_panel.rs:168 src/details_panel.rs:337
+#: src/details_panel.rs:150 src/details_panel.rs:169 src/details_panel.rs:343
 #: src/dialogs/preferences.rs:262 src/dialogs/properties.rs:316
 #: src/dialogs/properties.rs:573 src/file_utils.rs:231 src/file_utils.rs:246
 #, no-c-format
 msgid "Size"
 msgstr ""
 
-#: src/details_panel.rs:177
-#, no-c-format
-msgid "Dimensions"
-msgstr ""
-
-#: src/details_panel.rs:195 src/dialogs/properties.rs:333
+#: src/details_panel.rs:182 src/dialogs/properties.rs:333
 #, no-c-format
 msgid "Link Target"
 msgstr ""
 
-#: src/details_panel.rs:198 src/dialogs/properties.rs:351
+#: src/details_panel.rs:185 src/dialogs/properties.rs:351
 #, no-c-format
 msgid "Original Folder"
 msgstr ""
 
-#: src/details_panel.rs:200 src/details_panel.rs:246
+#: src/details_panel.rs:187 src/details_panel.rs:254
 #: src/dialogs/properties.rs:366 src/file_utils.rs:233 ui/window.ui:424
 #, no-c-format
 msgid "Modified"
 msgstr ""
 
-#: src/details_panel.rs:201 src/dialogs/properties.rs:370 src/file_utils.rs:234
+#: src/details_panel.rs:188 src/dialogs/properties.rs:370 src/file_utils.rs:234
 #, no-c-format
 msgid "Accessed"
 msgstr ""
 
-#: src/details_panel.rs:202 src/dialogs/properties.rs:374 src/file_utils.rs:235
+#: src/details_panel.rs:189 src/dialogs/properties.rs:374 src/file_utils.rs:235
 #, no-c-format
 msgid "Created"
 msgstr ""
 
-#: src/details_panel.rs:204 src/details_panel.rs:247
+#: src/details_panel.rs:191 src/details_panel.rs:255
 #: src/dialogs/properties.rs:760 src/dialogs/properties.rs:912
 #: src/file_utils.rs:236 src/file_utils.rs:251
 #, no-c-format
 msgid "Owner"
 msgstr ""
 
-#: src/details_panel.rs:208 src/details_panel.rs:248
+#: src/details_panel.rs:195 src/details_panel.rs:256
 #: src/dialogs/properties.rs:761 src/dialogs/properties.rs:912
 #: src/file_utils.rs:237 src/file_utils.rs:252
 #, no-c-format
 msgid "Group"
 msgstr ""
 
-#: src/details_panel.rs:212 src/details_panel.rs:249
+#: src/details_panel.rs:199 src/details_panel.rs:257
 #: src/dialogs/properties.rs:139 src/file_utils.rs:238 src/file_utils.rs:250
 #, no-c-format
 msgid "Permissions"
 msgstr ""
 
-#: src/details_panel.rs:253 src/dialogs/properties.rs:475
+#: src/details_panel.rs:260 src/dialogs/properties.rs:475
 #, no-c-format
 msgid "Free"
 msgstr ""
 
-#: src/details_panel.rs:320 src/dialogs/properties.rs:297
+#: src/details_panel.rs:326 src/dialogs/properties.rs:297
 #, no-c-format
 msgid "%d Item"
 msgid_plural "%d Items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/details_panel.rs:335
+#: src/details_panel.rs:341
 #, no-c-format
 msgid "%s, folders not counted"
 msgstr ""
 
-#: src/details_panel.rs:391 src/dialogs/properties.rs:121
+#: src/details_panel.rs:399 src/dialogs/properties.rs:121
 #: ui/shortcuts_dialog.ui:325
 #, no-c-format
 msgid "Properties"
@@ -2105,6 +2100,103 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
+#: src/metadata.rs:440
+#, no-c-format
+msgid "Title"
+msgstr ""
+
+#: src/metadata.rs:441
+#, no-c-format
+msgid "Artist"
+msgstr ""
+
+#: src/metadata.rs:442
+#, no-c-format
+msgid "Album"
+msgstr ""
+
+#: src/metadata.rs:444
+#, no-c-format
+msgid "Dimensions"
+msgstr ""
+
+#: src/metadata.rs:449
+#, no-c-format
+msgid "Duration"
+msgstr ""
+
+#: src/metadata.rs:450
+#, no-c-format
+msgid "Taken"
+msgstr ""
+
+#: src/metadata.rs:451
+#, no-c-format
+msgid "Camera"
+msgstr ""
+
+#: src/metadata.rs:452
+#, no-c-format
+msgid "Lens"
+msgstr ""
+
+#: src/metadata.rs:453
+#, no-c-format
+msgid "Exposure"
+msgstr ""
+
+#: src/metadata.rs:454
+#, no-c-format
+msgid "Video"
+msgstr ""
+
+#: src/metadata.rs:455 ui/window.ui:411
+#, no-c-format
+msgid "Audio"
+msgstr ""
+
+#: src/metadata.rs:462
+#, no-c-format
+msgid "%s s"
+msgstr ""
+
+#: src/metadata.rs:465
+#, no-c-format
+msgid "%s mm"
+msgstr ""
+
+#: src/metadata.rs:476
+#, no-c-format
+msgid "%s fps"
+msgstr ""
+
+#: src/metadata.rs:482
+#, no-c-format
+msgid "Mono"
+msgstr ""
+
+#: src/metadata.rs:483
+#, no-c-format
+msgid "Stereo"
+msgstr ""
+
+#: src/metadata.rs:484
+#, no-c-format
+msgid "%d channel"
+msgid_plural "%d channels"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/metadata.rs:487
+#, no-c-format
+msgid "%s kHz"
+msgstr ""
+
+#: src/metadata.rs:491
+#, no-c-format
+msgid "%s kbit/s"
+msgstr ""
+
 #: src/naming.rs:31
 #, no-c-format
 msgid "Folder names cannot contain “/”."
@@ -3016,17 +3108,17 @@ msgstr ""
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:828 src/window.rs:894 ui/shortcuts_dialog.ui:337
+#: src/window.rs:832 src/window.rs:898 ui/shortcuts_dialog.ui:337
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:855
+#: src/window.rs:859
 #, no-c-format
 msgid "Open Folder"
 msgstr ""
 
-#: src/window.rs:1356 ui/window.ui:73
+#: src/window.rs:1361 ui/window.ui:73
 #, no-c-format
 msgid "_Columns"
 msgstr ""
@@ -3450,10 +3542,6 @@ msgstr ""
 
 #: ui/window.ui:409
 msgid "Documents"
-msgstr ""
-
-#: ui/window.ui:411
-msgid "Audio"
 msgstr ""
 
 #: ui/window.ui:412

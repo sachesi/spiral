@@ -18,6 +18,8 @@
     src/ops/               jobs: job.rs, manager.rs (queue and undo), walk.rs (copy, move,
                            trash, delete), conflict.rs (dialogs), archive.rs
     src/thumbnails.rs      thumbnail lookup and generation, the bwrap sandbox, seccomp
+    src/metadata.rs        photo and media details, read by the helper in the sandbox
+    src/details_panel.rs   the details panel beside the panes
     src/terminal.rs        terminal discovery
     src/portal/            the chooser backend: backend.rs (ashpd), chooser_window.rs
     src/dbus/              FileManager1

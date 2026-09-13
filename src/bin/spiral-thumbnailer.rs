@@ -1,5 +1,6 @@
 //! Helper run inside the thumbnail sandbox: renders one image into a PNG with gdk-pixbuf, so
-//! image decoders never run in the file manager process.
+//! image decoders never run in the file manager process. With `--probe`, it prints what a
+//! picture, a recording or a video says about itself instead, for the details panel.
 
 use std::process::ExitCode;
 
@@ -7,6 +8,15 @@ use spiral::gtk::gdk_pixbuf::Pixbuf;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();
+    if let [_, flag, kind, input] = args.as_slice()
+        && flag == "--probe"
+    {
+        print!(
+            "{}",
+            spiral::metadata::probe(kind, std::path::Path::new(input))
+        );
+        return ExitCode::SUCCESS;
+    }
     let [_, input, output, size] = args.as_slice() else {
         eprintln!("usage: spiral-thumbnailer INPUT OUTPUT SIZE");
         return ExitCode::from(2);

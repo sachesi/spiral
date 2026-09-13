@@ -3,8 +3,9 @@
 //!
 //! Nearly everything comes from the listing the pane already holds. Reading more is kept
 //! to what is cheap and safe to do for every file the selection stops on: the thumbnail,
-//! made by the sandboxed thumbnailers as for the views; the size of a local picture from
-//! its header; the number of items in a folder; the folder's own record and free space.
+//! made by the sandboxed thumbnailers as for the views; what a picture, a recording or a
+//! video says about itself, read in the same sandbox; the number of items in a folder; the
+//! folder's own record and free space.
 
 use std::cell::{Cell, RefCell};
 use std::future::Future;
@@ -15,7 +16,7 @@ use gettextrs::{gettext, ngettext};
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
 use crate::browser_view::BrowserView;
-use crate::dialogs::{image_size, property_row as row};
+use crate::dialogs::property_row as row;
 use crate::{adw, file_utils, gio, glib, gtk, prefs};
 
 /// How long the selection stays put before the panel follows it. An arrow key held down
@@ -168,23 +169,6 @@ impl DetailsPanel {
                 group.add(&row(&gettext("Size"), &size));
             }
         }
-        // Only on this machine: through a share it would be a read for every file the
-        // selection passes.
-        if content_type.starts_with("image/")
-            && file.is_native()
-            && let Some(path) = file.path()
-        {
-            let dimensions = hidden_row(&group, &gettext("Dimensions"));
-            self.when(
-                gio::spawn_blocking(move || image_size(&path)),
-                move |size| {
-                    if let Ok(Some((width, height))) = size {
-                        dimensions.set_subtitle(&format!("{width} × {height}"));
-                        dimensions.set_visible(true);
-                    }
-                },
-            );
-        }
         // Where the file is, when that is not the folder on screen: a search result, a
         // file in Favorites or under a folder unfolded in the list.
         if let Some(parent) = file.parent()
@@ -221,6 +205,22 @@ impl DetailsPanel {
                 group.add(&row(&title, &value));
             }
         }
+        // What the file says of itself, above what the folder says of it: the size of a
+        // picture and the camera, the length of a song and who sings it.
+        let about = adw::PreferencesGroup::builder().visible(false).build();
+        if !is_dir && crate::metadata::kind_of(&content_type).is_some() {
+            let info = info.clone();
+            let about = about.clone();
+            self.when(
+                async move { crate::metadata::read(&info).await },
+                move |facts| {
+                    for (title, value) in facts.map(|f| f.rows()).unwrap_or_default() {
+                        about.add(&row(&title, &value));
+                        about.set_visible(true);
+                    }
+                },
+            );
+        }
         if !is_dir {
             let info = info.clone();
             let icon = icon.clone();
@@ -237,7 +237,7 @@ impl DetailsPanel {
             &icon,
             &info.display_name(),
             &file_utils::type_string(info),
-            &group,
+            &[&about, &group],
         )
     }
 
@@ -310,7 +310,7 @@ impl DetailsPanel {
             );
         }
         let count = file_utils::items_string(u64::from(model.n_items()));
-        page(&icon, &view.location_title(), &count, &group)
+        page(&icon, &view.location_title(), &count, &[&group])
     }
 }
 
@@ -342,7 +342,7 @@ fn many_page(infos: &[gio::FileInfo]) -> gtk::Widget {
         };
         group.add(&row(&gettext("Size"), &size));
     }
-    page(&icon, &title, &subtitle, &group)
+    page(&icon, &title, &subtitle, &[&group])
 }
 
 /// A row for `group` that stays hidden until what it says has been read.
@@ -359,7 +359,7 @@ fn page(
     icon: &gtk::Image,
     title: &str,
     subtitle: &str,
-    group: &adw::PreferencesGroup,
+    groups: &[&adw::PreferencesGroup],
 ) -> gtk::Widget {
     let page = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -390,7 +390,9 @@ fn page(
         head.append(&label(subtitle, "dim-label"));
     }
     page.append(&head);
-    page.append(group);
+    for group in groups {
+        page.append(*group);
+    }
     let actions = adw::PreferencesGroup::new();
     actions.add(
         &adw::ButtonRow::builder()
