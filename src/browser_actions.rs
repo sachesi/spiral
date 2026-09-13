@@ -1566,17 +1566,20 @@ impl BrowserView {
     }
 
     fn popup_menu_at(&self, x: f64, y: f64) {
+        self.popup_menu_on(self.item_at(x, y), x, y);
+    }
+
+    /// The menu of the item at `pos`, which is selected unless it already is, or the
+    /// folder's with no item, at a point in `stack` coordinates.
+    fn popup_menu_on(&self, pos: Option<u32>, x: f64, y: f64) {
         let imp = self.imp();
         let selection = self.model().selection();
-        let on_item = match self.item_at(x, y) {
-            Some(pos) => {
-                if !selection.is_selected(pos) {
-                    selection.select_item(pos, true);
-                }
-                true
-            }
-            None => false,
-        };
+        if let Some(pos) = pos
+            && !selection.is_selected(pos)
+        {
+            selection.select_item(pos, true);
+        }
+        let on_item = pos.is_some();
         // The menus that are built rather than laid out follow what the actions say, so
         // they are made once the selection has been taken in.
         self.update_action_state();
@@ -1671,8 +1674,31 @@ impl BrowserView {
         ));
     }
 
+    /// Menu or Shift+F10: the menu a right click on the file the keyboard is on would
+    /// open, over that file. With the keyboard on no file, the menu of the selection, or
+    /// of the folder when nothing is selected, in the middle of the pane: whatever file
+    /// sits there is not the one the keys were on.
     fn popup_menu_for_selection(&self) {
-        let (w, h) = (self.width() as f64, self.height() as f64);
-        self.popup_menu_at(w / 2.0, h / 2.0);
+        let stack = self.imp().stack.upcast_ref::<gtk::Widget>();
+        let focused = self
+            .root()
+            .and_then(|root| root.focus())
+            .and_then(|w| crate::browser_view::row_widget(&w))
+            .filter(|row| row.is_ancestor(stack))
+            .and_then(|row| Some((first_cell_position(&row, 0)?, row.compute_bounds(stack)?)));
+        let (w, h) = (stack.width() as f64, stack.height() as f64);
+        match focused {
+            // A file scrolled out of sight keeps the keyboard; its menu stays on screen.
+            Some((pos, b)) => self.popup_menu_on(
+                Some(pos),
+                f64::from(b.x() + b.width() / 2.0).clamp(0.0, w),
+                f64::from(b.y() + b.height() / 2.0).clamp(0.0, h),
+            ),
+            None => {
+                let selected = self.model().selection().selection();
+                let pos = (!selected.is_empty()).then(|| selected.minimum());
+                self.popup_menu_on(pos, w / 2.0, h / 2.0);
+            }
+        }
     }
 }

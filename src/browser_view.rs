@@ -1121,7 +1121,7 @@ pub(crate) fn cell_at(root: &gtk::Widget, x: f64, y: f64) -> Option<gtk::Widget>
 }
 
 /// The list or grid item a widget sits in: the child of the list itself.
-fn row_widget(inner: &gtk::Widget) -> Option<gtk::Widget> {
+pub(crate) fn row_widget(inner: &gtk::Widget) -> Option<gtk::Widget> {
     let mut w = inner.clone();
     while let Some(parent) = w.parent() {
         if parent.is::<gtk::ListView>() || parent.is::<gtk::GridView>() {
