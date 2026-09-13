@@ -1101,11 +1101,21 @@ impl FolderModel {
                     infos.iter().map(|i| (key(i), i.clone())).collect();
                 let old: Vec<gio::FileInfo> = store.iter().flatten().collect();
                 if same.is_some_and(|l| l.equal(&location)) {
+                    // A changed file's row goes in anew, which drops it from the selection:
+                    // it is selected again once it is in.
+                    let selected: std::collections::HashSet<glib::GString> =
+                        model.selected_infos().iter().map(key).collect();
+                    let mut reselect = Vec::new();
                     for (pos, old) in old.iter().enumerate().rev() {
                         let pos = pos as u32;
                         match fresh.remove(&key(old)) {
                             None => store.remove(pos),
-                            Some(new) if changed(old, &new) => store.splice(pos, 1, &[new]),
+                            Some(new) if changed(old, &new) => {
+                                if selected.contains(&key(old)) {
+                                    reselect.push(file_utils::file_of(&new));
+                                }
+                                store.splice(pos, 1, &[new]);
+                            }
                             Some(_) => {}
                         }
                     }
@@ -1114,6 +1124,10 @@ impl FolderModel {
                         .filter(|i| fresh.contains_key(&key(i)))
                         .collect();
                     store.extend_from_slice(&added);
+                    let selection = model.selection();
+                    for pos in model.positions_of(&reselect) {
+                        selection.select_item(pos, false);
+                    }
                 } else {
                     store.splice(0, store.n_items(), &infos);
                 }
