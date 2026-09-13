@@ -15,13 +15,15 @@ Before a change goes in:
 
 ## Where things are
 
-    build.rs               runs blueprint-compiler, bundles the GResource
+    build.rs               runs blueprint-compiler, bundles the GResource, compiles the
+                           settings schema for the tests
     data/ui/*.blp          the window, browser view, path bar, sidebar, shortcuts dialog
     data/style.css         structural CSS, colours come from libadwaita
     src/bin/               the three executables, thin mains
     src/application.rs     GtkApplication subclass, app actions, FileManager1 registration
     src/window.rs          tabs, header bar, location entry, win.* actions
-    src/browser_view.rs    one tab: grid and list, selection, view mode, drag and drop
+    src/browser_view.rs    one tab: grid and list, view mode, sort; in browser_view/ its
+                           navigation, opening, selection, cells, columns, drag and drop
     src/browser_actions.rs view.* actions, context menus, rename and new-folder flows
     src/miller.rs          column view: the folder chain as a strip of lists
     src/folder_model.rs    list model of a folder: monitoring, sorting, filtering
