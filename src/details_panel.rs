@@ -43,6 +43,8 @@ mod imp {
         pub shown: Cell<Option<u64>>,
         /// Counts the updates, so what an earlier one is still reading is not shown.
         pub generation: Cell<u64>,
+        /// Brings the folder page on show up to date without building it again.
+        pub refresh: RefCell<Option<Box<dyn Fn()>>>,
     }
 
     #[glib::object_subclass]
@@ -127,9 +129,13 @@ impl DetailsPanel {
         // would take it back to the top and the keyboard out of it.
         let key = shown_for(&view, &infos);
         if imp.shown.get() == Some(key) {
+            if let Some(refresh) = imp.refresh.borrow().as_ref() {
+                refresh();
+            }
             return;
         }
         imp.shown.set(Some(key));
+        imp.refresh.take();
         imp.generation.set(imp.generation.get() + 1);
         let focused = self
             .root()
@@ -273,8 +279,12 @@ impl DetailsPanel {
             &file_utils::type_string(info),
             &[&about, &group],
         )
+        .0
     }
 
+    /// The folder, or the search, with nothing selected in it. The page is kept while the
+    /// pane goes on showing the same, and follows it in place: its count as the listing
+    /// grows, and what the folder's record and its disk say once it has been read again.
     fn folder_page(&self, view: &BrowserView) -> gtk::Widget {
         let model = view.model();
         let icon = gtk::Image::builder()
@@ -283,18 +293,35 @@ impl DetailsPanel {
             .build();
         let group = adw::PreferencesGroup::new();
         // A search is about what it found, not the folder it looks in.
-        if let Some(folder) = view.location().filter(|_| !model.searching()) {
-            let titles = [
-                gettext("Modified"),
-                gettext("Owner"),
-                gettext("Group"),
-                gettext("Permissions"),
-            ];
-            let rows: Vec<adw::ActionRow> = titles.iter().map(|t| hidden_row(&group, t)).collect();
-            let free = hidden_row(&group, &gettext("Free"));
+        let folder = view.location().filter(|_| !model.searching());
+        let titles = [
+            gettext("Modified"),
+            gettext("Owner"),
+            gettext("Group"),
+            gettext("Permissions"),
+            gettext("Free"),
+        ];
+        let rows: Vec<adw::ActionRow> = match folder {
+            Some(_) => titles.iter().map(|t| hidden_row(&group, t)).collect(),
+            None => Vec::new(),
+        };
+        let (page, count) = page(&icon, &view.location_title(), &items_of(view), &[&group]);
+        // Kept in its place with nothing to say, so the rows do not move when it has.
+        count.set_visible(true);
+        let panel = self.downgrade();
+        let view = view.downgrade();
+        let refresh = move || {
+            let (Some(panel), Some(view)) = (panel.upgrade(), view.upgrade()) else {
+                return;
+            };
+            count.set_label(&items_of(&view));
+            let Some(folder) = folder.clone() else {
+                return;
+            };
             let dir = folder.clone();
             let head = icon.clone();
-            self.when(
+            let facts = rows.clone();
+            panel.when(
                 async move {
                     dir.query_info_future(
                         file_utils::ATTRIBUTES,
@@ -313,16 +340,14 @@ impl DetailsPanel {
                         file_utils::caption(&info, "group").unwrap_or_default(),
                         file_utils::permissions_string(&info).unwrap_or_default(),
                     ];
-                    for (row, value) in rows.iter().zip(values) {
-                        if !value.is_empty() {
-                            row.set_subtitle(&value);
-                            row.set_visible(true);
-                        }
+                    for (row, value) in facts.iter().zip(values) {
+                        show_value(row, &value);
                     }
                 },
             );
             // A share that is slow to answer goes without, as in Properties.
-            self.when(
+            let free = rows[4].clone();
+            panel.when(
                 async move {
                     glib::future_with_timeout(
                         Duration::from_secs(1),
@@ -337,21 +362,21 @@ impl DetailsPanel {
                 },
                 move |fs| {
                     if let Some(fs) = fs.filter(|fs| fs.attribute_uint64("filesystem::size") > 0) {
-                        free.set_subtitle(&prefs::size(fs.attribute_uint64("filesystem::free")));
-                        free.set_visible(true);
+                        show_value(&free, &prefs::size(fs.attribute_uint64("filesystem::free")));
                     }
                 },
             );
-        }
-        let count = file_utils::items_string(u64::from(model.n_top_items()));
-        page(&icon, &view.location_title(), &count, &[&group])
+        };
+        refresh();
+        self.imp().refresh.replace(Some(Box::new(refresh)));
+        page
     }
 }
 
 /// What a page shows is made from: the pane, and the files selected in it as the listing has
-/// them, a changed file being a new record there; with none selected, the folder. The record
-/// of the first item stands for a listing read again, as it is after a change of preference.
-/// A record's address is only a hint: one let go leaves it to the next.
+/// them, a changed file being a new record there; with none selected, the folder or the
+/// search, whose page follows its items in place. A record's address is only a hint: one let
+/// go leaves it to the next.
 fn shown_for(view: &BrowserView, infos: &[gio::FileInfo]) -> u64 {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     (view.as_ptr() as usize).hash(&mut hasher);
@@ -361,11 +386,6 @@ fn shown_for(view: &BrowserView, infos: &[gio::FileInfo]) -> u64 {
             .map(|l| l.uri().to_string())
             .hash(&mut hasher);
         model.searching().hash(&mut hasher);
-        model.n_top_items().hash(&mut hasher);
-        model
-            .info_at(0)
-            .map(|i| i.as_ptr() as usize)
-            .hash(&mut hasher);
     }
     for info in infos {
         (info.as_ptr() as usize).hash(&mut hasher);
@@ -406,7 +426,26 @@ fn many_page(infos: &[gio::FileInfo]) -> gtk::Widget {
         };
         group.add(&row(&gettext("Size"), &size));
     }
-    page(&icon, &title, &subtitle, &[&group])
+    page(&icon, &title, &subtitle, &[&group]).0
+}
+
+/// How many items the pane lists; nothing for a folder that could not be opened, or that is
+/// still being read with nothing in it yet, which is not empty for that.
+fn items_of(view: &BrowserView) -> String {
+    let model = view.model();
+    let n = model.n_top_items();
+    if model.error_message().is_some() || model.loading() && n == 0 {
+        return String::new();
+    }
+    file_utils::items_string(u64::from(n))
+}
+
+/// Show `value` in `row`, or hide the row while there is none.
+fn show_value(row: &adw::ActionRow, value: &str) {
+    if !value.is_empty() {
+        row.set_subtitle(value);
+    }
+    row.set_visible(!value.is_empty());
 }
 
 /// A row for `group` that stays hidden until what it says has been read.
@@ -418,13 +457,13 @@ fn hidden_row(group: &adw::PreferencesGroup, title: &str) -> adw::ActionRow {
 }
 
 /// The panel's column: a picture, a name and what it is, the facts, and the way into
-/// Properties for the same files.
+/// Properties for the same files. The label saying what it is comes back with it.
 fn page(
     icon: &gtk::Image,
     title: &str,
     subtitle: &str,
     groups: &[&adw::PreferencesGroup],
-) -> gtk::Widget {
+) -> (gtk::Widget, gtk::Label) {
     let page = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(18)
@@ -450,9 +489,9 @@ fn page(
             .build()
     };
     head.append(&label(title, "title-4"));
-    if !subtitle.is_empty() {
-        head.append(&label(subtitle, "dim-label"));
-    }
+    let what = label(subtitle, "dim-label");
+    what.set_visible(!subtitle.is_empty());
+    head.append(&what);
     page.append(&head);
     for group in groups {
         page.append(*group);
@@ -465,5 +504,5 @@ fn page(
             .build(),
     );
     page.append(&actions);
-    page.upcast()
+    (page.upcast(), what)
 }

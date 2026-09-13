@@ -1265,6 +1265,18 @@ impl SpiralWindow {
             view,
             move |_, _, _, _| details(&view)
         ));
+        // Its count waits for the listing, and is not given for a folder that failed.
+        let model = view.model();
+        model.connect_loading_notify(glib::clone!(
+            #[weak]
+            view,
+            move |_| details(&view)
+        ));
+        model.connect_error_message_notify(glib::clone!(
+            #[weak]
+            view,
+            move |_| details(&view)
+        ));
         view.connect_can_go_back_notify(sync);
         view.connect_can_go_forward_notify(sync);
         // A search the view ends itself, going back out of it, takes the search bar with it.
