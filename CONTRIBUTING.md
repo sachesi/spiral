@@ -5,7 +5,8 @@ problems do not, see [SECURITY.md](SECURITY.md).
 
 Before a change goes in:
 
-- `just check` and `just test` pass.
+- `just check` and `just test` pass. CI runs both on Fedora 44, with `cargo deny check`, for
+  every push and pull request.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
   `fix:`, `feat:`, `perf:`, `docs:` and so on, with a subject that says what changed for
   someone using Spiral.
