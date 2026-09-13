@@ -19,6 +19,7 @@ datadir := destdir + prefix + "/share"
 release := "target/release"
 schema_dir := "target/schemas"
 pot_dir := "target/pot"
+check_dir := "target/check"
 version := `sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml`
 
 default:
@@ -50,9 +51,10 @@ run-portal: build-debug schemas
 check:
     cargo fmt --check
     cargo clippy --all-targets -- -D warnings
-    blueprint-compiler batch-compile /tmp/spiral-blp-check data/ui data/ui/*.blp >/dev/null
+    mkdir -p {{check_dir}}
+    blueprint-compiler batch-compile {{check_dir}} data/ui data/ui/*.blp >/dev/null
     desktop-file-validate data/{{app_id}}.desktop
-    sed 's|@libexecdir@|/usr/libexec|' data/xdg-desktop-portal-spiral.desktop.in > /tmp/spiral-blp-check/portal.desktop && desktop-file-validate /tmp/spiral-blp-check/portal.desktop
+    sed 's|@libexecdir@|/usr/libexec|' data/xdg-desktop-portal-spiral.desktop.in > {{check_dir}}/portal.desktop && desktop-file-validate {{check_dir}}/portal.desktop
     appstreamcli validate --no-net data/{{app_id}}.metainfo.xml
     for lang in $(cat po/LINGUAS); do msgfmt -c -o /dev/null po/$lang.po; done
 
@@ -162,6 +164,6 @@ setup-portal:
 
 # Remove the portal preference again, from whichever file setup-portal wrote it to.
 unset-portal:
-    sed -i '/^org.freedesktop.impl.portal.FileChooser=spiral$/d' "${XDG_CONFIG_HOME:-$HOME/.config}/xdg-desktop-portal/"*portals.conf
+    for f in "${XDG_CONFIG_HOME:-$HOME/.config}/xdg-desktop-portal/"*portals.conf; do [ -f "$f" ] && sed -i '/^org.freedesktop.impl.portal.FileChooser=spiral$/d' "$f"; done; true
     rm -f "${XDG_CONFIG_HOME:-$HOME/.config}/environment.d/60-spiral-qt-portal.conf"
     systemctl --user restart xdg-desktop-portal.service
