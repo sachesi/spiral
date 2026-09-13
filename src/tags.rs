@@ -509,23 +509,57 @@ pub fn attribute_value(names: &[String]) -> Option<String> {
 }
 
 // The index: `tag<TAB>uri` lines, shared as a `gtk::StringList` so a view listing a tag
-// can follow `items-changed`, the way Favorites follow theirs.
+// can follow `items-changed`, the way Favorites follow theirs. Every Spiral running, the
+// file chooser too, keeps one and follows the file, so a file tagged in one shows up
+// under the tag in all.
 
 fn index_path() -> PathBuf {
     glib::user_data_dir().join("spiral").join("tags")
 }
 
+/// The index file's lines, none if there is no file yet, and `None` if it cannot be read.
+fn read_index() -> Option<Vec<String>> {
+    match std::fs::read_to_string(index_path()) {
+        Ok(text) => Some(
+            text.lines()
+                .filter(|l| l.contains('\t'))
+                .map(String::from)
+                .collect(),
+        ),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Some(Vec::new()),
+        Err(e) => {
+            glib::g_warning!("spiral", "cannot read tag index: {e}");
+            None
+        }
+    }
+}
+
 thread_local! {
     static INDEX: gtk::StringList = {
-        let text = std::fs::read_to_string(index_path()).unwrap_or_default();
-        gtk::StringList::new(
-            &text
-                .lines()
-                .filter(|l| l.contains('\t'))
-                .collect::<Vec<_>>(),
-        )
+        let lines = read_index().unwrap_or_default();
+        let list = gtk::StringList::new(&lines.iter().map(String::as_str).collect::<Vec<_>>());
+        BASE.with(|b| b.replace(lines));
+        match gio::File::for_path(index_path()).monitor_file(
+            gio::FileMonitorFlags::NONE,
+            gio::Cancellable::NONE,
+        ) {
+            Ok(monitor) => {
+                monitor.connect_changed(|_, _, _, event| {
+                    if event != gio::FileMonitorEvent::Changed {
+                        schedule_sync();
+                    }
+                });
+                MONITOR.with(|m| m.replace(Some(monitor)));
+            }
+            Err(e) => glib::g_warning!("spiral", "cannot follow tag index: {e}"),
+        }
+        list
     };
-    static SAVE_QUEUED: Cell<bool> = const { Cell::new(false) };
+    /// The file's lines as last read or written here, which tells a change made here from
+    /// one another Spiral wrote.
+    static BASE: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+    static MONITOR: RefCell<Option<gio::FileMonitor>> = const { RefCell::new(None) };
+    static SYNC_QUEUED: Cell<bool> = const { Cell::new(false) };
     /// The entries the index let go with what was trashed since Spiral started, for a
     /// restore to put back.
     static TRASHED: RefCell<Vec<(String, String)>> = const { RefCell::new(Vec::new()) };
@@ -588,7 +622,7 @@ pub fn note(file: &gio::File, names: &[String]) {
         }
     }
     if added {
-        schedule_save();
+        schedule_sync();
     }
 }
 
@@ -597,7 +631,7 @@ pub fn forget(name: &str, file: &gio::File) {
     let pos = list.find(&line(name, &file.uri()));
     if pos != gtk::INVALID_LIST_POSITION {
         list.remove(pos);
-        schedule_save();
+        schedule_sync();
     }
 }
 
@@ -662,7 +696,7 @@ pub fn restored(original: &gio::File, at: &gio::File) {
     if !lines.is_empty() {
         let refs: Vec<&str> = lines.iter().map(String::as_str).collect();
         list.splice(list.n_items(), 0, &refs);
-        schedule_save();
+        schedule_sync();
     }
 }
 
@@ -683,27 +717,66 @@ fn rewrite_index(f: impl Fn(String, String) -> Option<(String, String)>) {
     let list = index();
     let refs: Vec<&str> = lines.iter().map(String::as_str).collect();
     list.splice(0, list.n_items(), &refs);
-    schedule_save();
+    schedule_sync();
 }
 
 /// A listing notes its tagged files one by one; the file is written once they are in.
-fn schedule_save() {
-    if SAVE_QUEUED.replace(true) {
+/// Another Spiral writing it brings it here the same way.
+fn schedule_sync() {
+    if SYNC_QUEUED.replace(true) {
         return;
     }
     glib::idle_add_local_once(|| {
-        SAVE_QUEUED.set(false);
-        let list = index();
-        let text: String = (0..list.n_items())
-            .filter_map(|i| list.string(i))
-            .map(|s| format!("{s}\n"))
-            .collect();
+        SYNC_QUEUED.set(false);
+        sync();
+    });
+}
+
+/// Bring the index and its file together. What changed here since they last agreed goes
+/// over what the file has now, which may hold what another Spiral changed meanwhile.
+fn sync() {
+    let Some(disk) = read_index() else {
+        return;
+    };
+    let list = index();
+    let ours: Vec<String> = (0..list.n_items())
+        .filter_map(|i| list.string(i))
+        .map(String::from)
+        .collect();
+    let merged = BASE.with(|b| merge(&b.borrow(), &ours, &disk));
+    if merged != disk {
         let p = index_path();
         let _ = p.parent().map(std::fs::create_dir_all);
-        if let Err(e) = std::fs::write(&p, text) {
+        let text: String = merged.iter().map(|l| format!("{l}\n")).collect();
+        if let Err(e) = glib::file_set_contents(&p, text.as_bytes()) {
             glib::g_warning!("spiral", "cannot save tag index: {e}");
+            return;
         }
-    });
+    }
+    if merged != ours {
+        let refs: Vec<&str> = merged.iter().map(String::as_str).collect();
+        list.splice(0, list.n_items(), &refs);
+    }
+    BASE.with(|b| b.replace(merged));
+}
+
+/// `theirs` with what `ours` added to `base` and without what it took away.
+fn merge(base: &[String], ours: &[String], theirs: &[String]) -> Vec<String> {
+    use std::collections::HashSet;
+    let base: HashSet<&String> = base.iter().collect();
+    let kept: HashSet<&String> = ours.iter().collect();
+    let mut merged: Vec<String> = theirs
+        .iter()
+        .filter(|l| kept.contains(l) || !base.contains(l))
+        .cloned()
+        .collect();
+    let mut have: HashSet<String> = merged.iter().cloned().collect();
+    for l in ours.iter().filter(|l| !base.contains(l)) {
+        if have.insert(l.clone()) {
+            merged.push(l.clone());
+        }
+    }
+    merged
 }
 
 #[cfg(test)]
@@ -725,6 +798,18 @@ mod tests {
         assert!(under("file:///home/u/dir/a/b.txt"));
         assert!(!under("file:///home/u/dir2"));
         assert!(!under("file:///home/u"));
+    }
+
+    #[test]
+    fn merge_keeps_changes_from_both_sides() {
+        let v = |s: &[&str]| s.iter().map(|l| l.to_string()).collect::<Vec<_>>();
+        let base = v(&["a", "b", "c"]);
+        // Here b went and d came; in the file c went and e came.
+        let ours = v(&["a", "c", "d"]);
+        let theirs = v(&["a", "b", "e"]);
+        assert_eq!(merge(&base, &ours, &theirs), v(&["a", "e", "d"]));
+        // Nothing changed here: the file wins.
+        assert_eq!(merge(&base, &base, &theirs), theirs);
     }
 
     #[test]
