@@ -299,7 +299,6 @@ mod imp {
             klass.add_binding_action(Key::t, M::CONTROL_MASK | M::SHIFT_MASK, "win.restore-tab");
             klass.add_binding_action(Key::o, M::CONTROL_MASK | M::SHIFT_MASK, "win.tab-overview");
             klass.add_binding_action(Key::h, M::CONTROL_MASK, "win.show-hidden");
-            klass.add_binding_action(Key::F8, M::empty(), "win.details-visible");
             klass.add_binding_action(Key::F9, M::empty(), "win.sidebar-visible");
             // F10 opens the menu of the current folder, not the main menu, see `constructed`.
             klass.add_binding_action(Key::F10, M::empty(), "win.location-menu");

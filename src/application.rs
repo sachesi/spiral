@@ -332,6 +332,9 @@ impl SpiralApplication {
         self.set_accels_for_action("app.quit", &["<Control>q"]);
         self.set_accels_for_action("app.new-window", &["<Control>n"]);
         self.set_accels_for_action("window.close", &["<Control><Shift>w"]);
+        // Not a binding of the window: the panes of a tab sit in a GtkPaned, whose own F8
+        // puts the keyboard on its handle before the window hears of the key.
+        self.set_accels_for_action("win.details-visible", &["F8"]);
     }
 
     fn show_about(&self) {
