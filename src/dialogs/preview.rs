@@ -62,6 +62,10 @@ const SOUND_SHAPE: (i32, i32) = (420, 234);
 const INFO_SHAPE: (i32, i32) = (340, 214);
 /// How long one page of the preview takes to fade into the next.
 const CROSSFADE: Duration = Duration::from_millis(120);
+/// How long a file may take to load before a spinner says it is loading.
+const SPINNER_DELAY: Duration = Duration::from_millis(400);
+/// How far, in pixels, a new shape may differ from the one the dialog has and be ignored.
+const SHAPE_JITTER: i32 = 2;
 
 /// How long the PDF tool may take over one page before it is killed.
 const TOOL_TIMEOUT: Duration = Duration::from_secs(20);
@@ -157,26 +161,12 @@ impl PreviewDialog {
         // rather than the largest one it has held.
         imp.content.set_vexpand(true);
         imp.content
-            .set_transition_type(gtk::StackTransitionType::Crossfade);
-        imp.content
             .set_transition_duration(CROSSFADE.as_millis() as u32);
         imp.content.set_hhomogeneous(false);
         imp.content.set_vhomogeneous(false);
         imp.content.connect_transition_running_notify(|stack| {
-            if stack.is_transition_running() {
-                return;
-            }
-            let shown = stack.visible_child();
-            let mut pages: Vec<gtk::Widget> = Vec::new();
-            let mut child = stack.first_child();
-            while let Some(page) = child {
-                child = page.next_sibling();
-                if Some(&page) != shown.as_ref() {
-                    pages.push(page);
-                }
-            }
-            for page in pages {
-                stack.remove(&page);
+            if !stack.is_transition_running() {
+                drop_hidden(stack);
             }
         });
         let toolbar = adw::ToolbarView::new();
@@ -301,24 +291,39 @@ impl PreviewDialog {
         let imp = self.imp();
         let generation = imp.generation.get() + 1;
         imp.generation.set(generation);
-        self.stop_media();
         imp.flip.take();
         imp.zoom.take();
         imp.page_size.set(None);
         imp.page_count.set(None);
-        imp.title.set_title(&file_utils::display_name(info));
-        imp.title.set_subtitle(&subtitle(info));
-        // The shape comes from headers on disk, read off the main thread. Until it is
-        // known the page on screen stays, so nothing is drawn in a shape it will not keep.
+        // The shape comes from headers on disk, read off the main thread, and so does the
+        // thumbnail that holds the place of the content. Until they are known the page on
+        // screen stays, so nothing is drawn in a shape it will not keep.
         let probe = Probe::of(info);
-        let shape = gio::spawn_blocking(move || probe.shape())
-            .await
-            .unwrap_or(Shape::Fixed(INFO_SHAPE));
+        let (shape, placeholder) =
+            gio::spawn_blocking(move || (probe.shape(), probe.placeholder()))
+                .await
+                .unwrap_or((Shape::Fixed(INFO_SHAPE), None));
         if imp.generation.get() != generation {
             return;
         }
-        self.apply_shape(shape);
-        self.show_child(&spinner());
+        // The name, the shape and what stands in for the content change in one frame, and
+        // at once: the page on its way out would otherwise fade in a shape not its own.
+        self.stop_media();
+        imp.title.set_title(&file_utils::display_name(info));
+        imp.title.set_subtitle(&subtitle(info));
+        let reshaped = self.apply_shape(shape);
+        let showing_video = imp
+            .content
+            .visible_child()
+            .is_some_and(|page| page.is::<gtk::Video>());
+        match placeholder {
+            Some(texture) => self.show_child(&picture(&texture), false),
+            // A stopped video is a black box.
+            None if reshaped || showing_video => self.show_child(&spinner(), false),
+            // Same shape and nothing to stand in: the page on screen stays until the next
+            // one fades in over it, rather than blinking out.
+            None => {}
+        }
         let info = info.clone();
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = dialog)]
@@ -330,16 +335,18 @@ impl PreviewDialog {
                     return;
                 }
                 let child = dialog.build_content(&info).await;
-                if dialog.imp().generation.get() == generation {
-                    dialog.show_child(&child);
+                if let Some(child) = child
+                    && dialog.imp().generation.get() == generation
+                {
+                    dialog.show_child(&child, true);
                 }
             }
         ));
     }
 
-    /// Fade `child` in over whatever is on screen. The page it replaces is dropped when
-    /// the fade is over, not while it is still being drawn.
-    fn show_child(&self, child: &impl IsA<gtk::Widget>) {
+    /// Put `child` on screen, fading it in over whatever is there when `fade` is set. The
+    /// page it replaces is dropped when the fade is over, not while it is still being drawn.
+    fn show_child(&self, child: &impl IsA<gtk::Widget>, fade: bool) {
         let stack = &self.imp().content;
         // The video on its way out holds the one player, and a video with autoplay pauses
         // its stream when it goes. It goes after the fade, by which time the next file is
@@ -352,23 +359,35 @@ impl PreviewDialog {
             }
         }
         stack.add_child(child);
+        stack.set_transition_type(if fade {
+            gtk::StackTransitionType::Crossfade
+        } else {
+            gtk::StackTransitionType::None
+        });
         stack.set_visible_child(child);
+        // No fade, or none while the dialog is not on screen yet: nothing waits for the
+        // pages replaced.
+        if !stack.is_transition_running() {
+            drop_hidden(stack);
+        }
     }
 
-    async fn build_content(&self, info: &gio::FileInfo) -> gtk::Widget {
+    /// The page for `info`, or `None` for a video, which puts itself on screen once it has
+    /// a frame to show.
+    async fn build_content(&self, info: &gio::FileInfo) -> Option<gtk::Widget> {
         let file = file_utils::file_of(info);
         let content_type = crate::file_utils::content_type_of(info)
             .unwrap_or_default()
             .to_string();
         if file_utils::is_dir(info) {
-            return self.info_page(info);
+            return Some(self.info_page(info));
         }
         if content_type.starts_with("image/")
             && crate::file_utils::size_of(info) <= IMAGE_LIMIT as u64
             && let Some(texture) = load_texture(&file).await
         {
             self.shape_to(&texture);
-            return self.zoomable(&picture(&texture), &[]);
+            return Some(self.zoomable(&picture(&texture), &[]));
         }
         if content_type.starts_with("video/") {
             return self.video(info, &file);
@@ -376,21 +395,21 @@ impl PreviewDialog {
         if content_type.starts_with("audio/") {
             // The cover takes the place of the icon and its size, so waiting for one to be
             // made costs nothing but the wait: the player is the same shape either way.
-            return self.sound(info, &file);
+            return Some(self.sound(info, &file));
         }
         if gio::content_type_is_a(&content_type, "text/plain")
             && let Some(text) = load_text(&file).await
         {
-            return text_view(&text, info, &content_type);
+            return Some(text_view(&text, info, &content_type));
         }
         if content_type == "application/pdf"
             && let Some(path) = file.path()
             && let Some(widget) = self.pdf(path).await
         {
-            return widget;
+            return Some(widget);
         }
         // The file being looked at goes before any row waiting behind it.
-        match crate::thumbnails::load(info, 0).await {
+        Some(match crate::thumbnails::load(info, 0).await {
             Some(texture) => {
                 self.shape_to(&texture);
                 picture(&texture).upcast()
@@ -400,7 +419,7 @@ impl PreviewDialog {
                 self.shape(INFO_SHAPE.0, INFO_SHAPE.1);
                 self.info_page(info)
             }
-        }
+        })
     }
 
     /// The one player, pointed at `file`, with this dialog listening to it until the next
@@ -417,7 +436,7 @@ impl PreviewDialog {
                 // A file the pipeline cannot play shows what it would have shown anyway,
                 // in the shape the dialog already has.
                 if player.error().is_some() && dialog.imp().generation.get() == generation {
-                    dialog.show_child(&dialog.info_page(&info));
+                    dialog.show_child(&dialog.info_page(&info), true);
                 }
             }
         ));
@@ -428,21 +447,35 @@ impl PreviewDialog {
     /// Video fills the room there is in its own proportions, whatever its pixel count: a
     /// small clip is worth a window one can watch. The stream only confirms the shape the
     /// thumbnail or the container gave, or corrects the one most video has.
-    fn video(&self, info: &gio::FileInfo, file: &gio::File) -> gtk::Widget {
+    ///
+    /// The page goes on screen with its first frame, over the thumbnail or the spinner
+    /// holding its place, and not before: a video with nothing to draw is a black box.
+    fn video(&self, info: &gio::FileInfo, file: &gio::File) -> Option<gtk::Widget> {
         let Some(player) = self.player(info, file) else {
-            return self.info_page(info);
+            return Some(self.info_page(info));
         };
         let video = gtk::Video::for_media_stream(Some(&player));
         video.set_autoplay(true);
+        let generation = self.imp().generation.get();
         // The size comes with the first frame, which may be after the stream is prepared.
+        // Strong, because nothing else holds the page until it is shown; the handlers go
+        // with the next file or the close.
         let reshape = glib::clone!(
             #[weak(rename_to = dialog)]
             self,
+            #[strong]
+            video,
             move |player: &crate::player::Player| {
+                if !player.is_prepared() || dialog.imp().generation.get() != generation {
+                    return;
+                }
                 let (w, h) = (player.intrinsic_width(), player.intrinsic_height());
                 glib::g_debug!("spiral", "preview: the stream reports {w}x{h}");
                 if w > 0 && h > 0 {
                     dialog.shape_filled(w as f64, h as f64);
+                }
+                if video.parent().is_none() && (w > 0 && h > 0 || !player.has_video()) {
+                    dialog.show_child(&video, true);
                 }
             }
         );
@@ -459,7 +492,7 @@ impl PreviewDialog {
             )),
         ];
         self.imp().player_handlers.borrow_mut().extend(handlers);
-        video.upcast()
+        None
     }
 
     /// Sound has its icon to draw, and the cover in its place once the file has given one
@@ -789,7 +822,7 @@ impl PreviewDialog {
 
     /// Give the dialog the shape a probe found for the file, before its content is loaded,
     /// so that it opens at its size instead of growing into it a moment later.
-    fn apply_shape(&self, shape: Shape) {
+    fn apply_shape(&self, shape: Shape) -> bool {
         match shape {
             Shape::Fitted(width, height) => self.shape_fitted(width, height),
             Shape::Filled(width, height) => self.shape_filled(width, height),
@@ -800,7 +833,9 @@ impl PreviewDialog {
     /// Give the dialog the proportions of what it holds, within the bounds it may take.
     /// `width` and `height` are for the content itself; the header is added on top of them,
     /// so a picture asked for in its own proportions is drawn in them and not letterboxed.
-    fn shape(&self, width: i32, height: i32) {
+    /// Whether the dialog changed size: a pixel or two either way is left alone, as the
+    /// rounding of a thumbnail's proportions against the stream's.
+    fn shape(&self, width: i32, height: i32) -> bool {
         let header = self
             .imp()
             .header
@@ -812,10 +847,16 @@ impl PreviewDialog {
             width.clamp(MIN_SIDE, most_width),
             height.clamp(MIN_SIDE, most_height),
         );
+        let (was_width, was_height) = self.imp().shaped.get();
+        if (width - was_width).abs() <= SHAPE_JITTER && (height - was_height).abs() <= SHAPE_JITTER
+        {
+            return false;
+        }
         self.imp().shaped.set((width, height));
         glib::g_debug!("spiral", "preview: shaped {width}x{height}");
         self.set_content_width(width);
         self.set_content_height(height + header);
+        true
     }
 
     fn shape_to(&self, paintable: &impl IsA<gdk::Paintable>) {
@@ -828,19 +869,17 @@ impl PreviewDialog {
 
     /// `width` by `height` scaled to fill the room there is, up as well as down: what is
     /// shown at a size of its own choosing keeps its proportions but not its pixel count.
-    fn shape_filled(&self, width: f64, height: f64) {
-        if let Some((width, height)) = filled(width, height, self.imp().bounds.get()) {
-            self.shape(width, height);
-        }
+    fn shape_filled(&self, width: f64, height: f64) -> bool {
+        filled(width, height, self.imp().bounds.get())
+            .is_some_and(|(width, height)| self.shape(width, height))
     }
 
     /// A `width` by `height` picture at its own size, within the room there is and not
     /// below the floor: a thumbnail should not open a window the size of a wall, nor a
     /// small photograph one the size of a stamp.
-    fn shape_fitted(&self, width: f64, height: f64) {
-        if let Some((width, height)) = fitted(width, height, self.imp().bounds.get()) {
-            self.shape(width, height);
-        }
+    fn shape_fitted(&self, width: f64, height: f64) -> bool {
+        fitted(width, height, self.imp().bounds.get())
+            .is_some_and(|(width, height)| self.shape(width, height))
     }
 
     /// Stop listening to the player and take its file away; the player itself stays for
@@ -881,15 +920,42 @@ fn page_text(page: u32, pages: u32) -> String {
         .replace("%n", &pages.to_string())
 }
 
+/// A spinner that shows itself only once the wait has gone on for `SPINNER_DELAY`: one
+/// flashed up for a moment by every file that loads at once is a blink.
 fn spinner() -> gtk::Widget {
-    adw::Spinner::builder()
+    let spinner = adw::Spinner::builder()
         .width_request(32)
         .height_request(32)
         .halign(gtk::Align::Center)
         .valign(gtk::Align::Center)
         .vexpand(true)
-        .build()
-        .upcast()
+        .opacity(0.0)
+        .build();
+    glib::timeout_add_local_once(
+        SPINNER_DELAY,
+        glib::clone!(
+            #[weak]
+            spinner,
+            move || spinner.set_opacity(1.0)
+        ),
+    );
+    spinner.upcast()
+}
+
+/// Drop every page of `stack` but the one on screen.
+fn drop_hidden(stack: &gtk::Stack) {
+    let shown = stack.visible_child();
+    let mut pages: Vec<gtk::Widget> = Vec::new();
+    let mut child = stack.first_child();
+    while let Some(page) = child {
+        child = page.next_sibling();
+        if Some(&page) != shown.as_ref() {
+            pages.push(page);
+        }
+    }
+    for page in pages {
+        stack.remove(&page);
+    }
 }
 
 /// A picture that fills the dialog, which is shaped like it: a small one is enlarged
@@ -1254,6 +1320,7 @@ struct Probe {
     /// the file. Looking for it is a read, so it waits for the worker with the rest.
     uri: String,
     mtime: u64,
+    size: u64,
 }
 
 /// The shape a file wants: at its own size, raised to the floor; filling the room there is
@@ -1306,7 +1373,22 @@ impl Probe {
                 .modification_date_time()
                 .map(|d| d.to_unix() as u64)
                 .unwrap_or(0),
+            size: file_utils::size_of(info),
         }
+    }
+
+    /// The thumbnail the cache already holds, to stand in for the content while it loads:
+    /// not for folders, sound or text, whose pages look nothing like one.
+    fn placeholder(&self) -> Option<gdk::Texture> {
+        let content_type = self.content_type.as_str();
+        if self.is_dir
+            || content_type.starts_with("audio/")
+            || gio::content_type_is_a(content_type, "text/plain")
+        {
+            return None;
+        }
+        let png = crate::thumbnails::cached_png(&self.uri, self.mtime)?;
+        gdk::Texture::from_filename(png).ok()
     }
 
     fn shape(&self) -> Shape {
@@ -1315,9 +1397,19 @@ impl Probe {
             return Shape::Fixed(INFO_SHAPE);
         }
         if content_type.starts_with("image/") {
-            // Reading the header of an image is a few bytes, not a decode.
-            return match self.path.as_deref().and_then(image_size) {
-                Some((width, height)) => Shape::Fitted(width as f64, height as f64),
+            // Reading the header of an image is a few bytes, not a decode. One too large to
+            // decode shows its thumbnail, and so opens in the thumbnail's shape; so does one
+            // whose header says nothing.
+            let decoded = self
+                .path
+                .as_deref()
+                .and_then(image_size)
+                .filter(|&(width, height)| {
+                    self.size <= IMAGE_LIMIT as u64 && width as i64 * height as i64 <= IMAGE_PIXELS
+                })
+                .map(|(width, height)| (width as f64, height as f64));
+            return match decoded.or_else(|| self.thumbnail_size()) {
+                Some((width, height)) => Shape::Fitted(width, height),
                 None => Shape::Fixed(IMAGE_SHAPE),
             };
         }
