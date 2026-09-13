@@ -21,7 +21,7 @@ Before a change goes in:
     data/style.css         structural CSS, colours come from libadwaita
     src/bin/               the three executables, thin mains
     src/application.rs     GtkApplication subclass, app actions, FileManager1 registration
-    src/window.rs          tabs, header bar, location entry, win.* actions
+    src/window.rs          the window; in window/ its win.* actions, tabs, panes, header bar
     src/browser_view.rs    one tab: grid and list, view mode, sort; in browser_view/ its
                            navigation, opening, selection, cells, columns, drag and drop
     src/browser_actions.rs view.* actions; in browser_actions/ transfers, making and
