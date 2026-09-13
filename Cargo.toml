@@ -2,7 +2,7 @@
 name = "spiral"
 version = "0.15.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.92"
 license = "GPL-3.0-or-later"
 description = "A GTK4 file manager with a file chooser portal backend"
 repository = "https://github.com/sachesi/spiral"
