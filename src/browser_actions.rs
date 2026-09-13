@@ -294,6 +294,12 @@ impl BrowserView {
                 ));
             }
         ));
+        // A folder that fails to open takes no files, and the other pane stops offering it.
+        self.model().connect_error_message_notify(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |_| view.update_other_pane()
+        ));
         let clipboard_handler = self.clipboard().connect_changed(glib::clone!(
             #[strong]
             update,
@@ -1088,7 +1094,8 @@ impl BrowserView {
         let virtual_dir = dir.uri().starts_with("trash:")
             || crate::starred::is_starred_location(&dir)
             || crate::tags::is_tag_location(&dir);
-        (!virtual_dir && other.imp().can_write.get()).then_some((other, dir))
+        let takes_files = other.imp().can_write.get() && other.model().error_message().is_none();
+        (!virtual_dir && takes_files).then_some((other, dir))
     }
 
     /// Copy or move the selection into the folder the other pane shows, and select it
