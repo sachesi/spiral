@@ -48,9 +48,8 @@ const WINDOW_SHARE: f64 = 0.82;
 const MAX_WIDTH: i32 = 900;
 const MAX_HEIGHT: i32 = 620;
 const MIN_SIDE: i32 = 180;
-/// The area a picture smaller than this opens with, in its own proportions: it is drawn at
-/// its own size in the middle, and the dialog is not a stamp its name and the zoom
-/// buttons do not fit on.
+/// The area a picture smaller than this opens with, in its own proportions and enlarged to
+/// fill it: a dialog the size of a stamp has no room for its name or the zoom buttons.
 const FLOOR_AREA: f64 = 560.0 * 420.0;
 /// Shapes for content whose proportions are not known before it is loaded: text to read,
 /// an image whose header could not be read, the sound player, and the icon for everything
@@ -66,7 +65,8 @@ const CROSSFADE: Duration = Duration::from_millis(120);
 
 /// How long the PDF tool may take over one page before it is killed.
 const TOOL_TIMEOUT: Duration = Duration::from_secs(20);
-/// Zoom: one step of the buttons or the wheel, and how far it goes either way.
+/// Zoom: one step of the buttons or the wheel, and how far it goes either way; in, that is
+/// past the fit or the picture's own size, whichever is larger.
 const ZOOM_STEP: f64 = 1.25;
 const ZOOM_MIN: f64 = 0.05;
 const ZOOM_MAX: f64 = 8.0;
@@ -647,7 +647,7 @@ impl PreviewDialog {
                 let next = if step <= 0.0 {
                     0.0
                 } else {
-                    let wanted = (before * step).clamp(ZOOM_MIN, ZOOM_MAX);
+                    let wanted = (before * step).clamp(ZOOM_MIN, ZOOM_MAX * fit.max(1.0));
                     // Zooming out stops at the fit instead of counting below it, where the
                     // picture cannot follow the number any further.
                     if wanted <= fit { 0.0 } else { wanted }
@@ -659,8 +659,7 @@ impl PreviewDialog {
                 scroll.set_cursor_from_name(pan_cursor(next));
                 if next <= 0.0 {
                     scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never);
-                    // Fitting never blows a small picture up; zooming is what does that.
-                    picture.set_content_fit(gtk::ContentFit::ScaleDown);
+                    picture.set_content_fit(gtk::ContentFit::Contain);
                     picture.set_size_request(-1, -1);
                     label.set_label(&gettext("Fit"));
                     return;
@@ -893,18 +892,20 @@ fn spinner() -> gtk::Widget {
         .upcast()
 }
 
+/// A picture that fills the dialog, which is shaped like it: a small one is enlarged
+/// rather than framed by empty space.
 fn picture(paintable: &impl IsA<gdk::Paintable>) -> gtk::Picture {
     gtk::Picture::builder()
         .paintable(paintable)
         .can_shrink(true)
-        .content_fit(gtk::ContentFit::ScaleDown)
+        .content_fit(gtk::ContentFit::Contain)
         .hexpand(true)
         .vexpand(true)
         .build()
 }
 
 /// The scale a fitted picture is drawn at: where zooming starts and where zooming out
-/// ends. Never above 1, since fitting shows a small picture at its own size.
+/// ends. Above 1 for a picture smaller than the dialog, which fitting enlarges.
 fn fit_scale(picture: &gtk::Picture, scroll: &gtk::ScrolledWindow) -> f64 {
     let Some(paintable) = picture.paintable() else {
         return 1.0;
@@ -916,9 +917,7 @@ fn fit_scale(picture: &gtk::Picture, scroll: &gtk::ScrolledWindow) -> f64 {
     if width <= 0.0 || height <= 0.0 {
         return 1.0;
     }
-    (scroll.width() as f64 / width)
-        .min(scroll.height() as f64 / height)
-        .min(1.0)
+    (scroll.width() as f64 / width).min(scroll.height() as f64 / height)
 }
 
 /// The first `most` bytes of the file at `path`.
@@ -1350,7 +1349,7 @@ impl Probe {
             return Shape::Filled(width, height);
         }
         match self.thumbnail_size() {
-            // What will be shown is the thumbnail, at its own size.
+            // What will be shown is the thumbnail, shaped like any picture.
             Some((width, height)) => Shape::Fitted(width, height),
             None => Shape::Fixed(INFO_SHAPE),
         }
