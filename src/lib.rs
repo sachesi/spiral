@@ -7,15 +7,19 @@ pub use adw::{gdk, gio, glib, gtk};
 pub use gstreamer as gst;
 pub use libadwaita as adw;
 
-/// Register resources, set up i18n and initialize libadwaita.
-/// Must run before any widget is created, in every binary.
 /// Translations, resources, the application name: everything that does not touch GTK.
 ///
 /// Keep this the only thing an application does before it registers on the bus. GTK 4.22
 /// reads its settings from xdg-desktop-portal, and that portal may well be the one waiting
 /// on us to answer a D-Bus call, so initialising GTK first deadlocks the pair.
-pub fn init_early() {
-    gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
+///
+/// # Safety
+///
+/// Call it first in `main`, before any thread is started: it sets the locale, which reads
+/// the environment and changes state other threads may be reading.
+pub unsafe fn init_early() {
+    // SAFETY: the caller has started no thread yet.
+    unsafe { gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "") };
     gettextrs::bindtextdomain(config::GETTEXT_PACKAGE, config::LOCALEDIR).ok();
     gettextrs::bind_textdomain_codeset(config::GETTEXT_PACKAGE, "UTF-8").ok();
     gettextrs::textdomain(config::GETTEXT_PACKAGE).ok();
@@ -42,9 +46,9 @@ pub fn init_style() {
     }
 }
 
-/// Full setup for binaries without an `AdwApplication` of their own.
+/// GTK and the stylesheet, for binaries without an `AdwApplication` of their own, once
+/// [`init_early`] has run.
 pub fn init() {
-    init_early();
     adw::init().expect("libadwaita init");
     init_style();
 }
