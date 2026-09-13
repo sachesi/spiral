@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-13 14:15+0300\n"
+"POT-Creation-Date: 2026-09-13 14:26+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Ukrainian\n"
@@ -865,7 +865,7 @@ msgstr "Остаточно вилучені об’єкти неможливо �
 
 #: src/browser_actions.rs:1224 src/dialogs/batch_rename.rs:110
 #: src/dialogs/compress.rs:70 src/dialogs/connect_server.rs:66
-#: src/dialogs/open_with.rs:59 src/dialogs/properties.rs:939
+#: src/dialogs/open_with.rs:59 src/dialogs/properties.rs:944
 #: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:36
 #: src/ops/archive.rs:351 src/ops/conflict.rs:64 src/ops/conflict.rs:315
 #: src/ops/mod.rs:30 src/ops/walk.rs:350 src/places_sidebar.rs:949
@@ -942,7 +942,7 @@ msgid "The password dialog was dismissed."
 msgstr "Діалог пароля було закрито."
 
 #: src/browser_view.rs:1895 src/dialogs/open_with.rs:208
-#: src/dialogs/properties.rs:444 src/dialogs/properties.rs:750
+#: src/dialogs/properties.rs:444 src/dialogs/properties.rs:755
 #: src/ops/walk.rs:46 src/places_sidebar.rs:978
 #, no-c-format
 msgid "_OK"
@@ -1065,7 +1065,7 @@ msgstr "Тип MIME"
 
 #: src/details_panel.rs:150 src/details_panel.rs:169 src/details_panel.rs:343
 #: src/dialogs/preferences.rs:262 src/dialogs/properties.rs:316
-#: src/dialogs/properties.rs:573 src/file_utils.rs:231 src/file_utils.rs:246
+#: src/dialogs/properties.rs:578 src/file_utils.rs:231 src/file_utils.rs:246
 #, no-c-format
 msgid "Size"
 msgstr "Розмір"
@@ -1097,14 +1097,14 @@ msgid "Created"
 msgstr "Створено"
 
 #: src/details_panel.rs:191 src/details_panel.rs:255
-#: src/dialogs/properties.rs:760 src/dialogs/properties.rs:912
+#: src/dialogs/properties.rs:765 src/dialogs/properties.rs:917
 #: src/file_utils.rs:236 src/file_utils.rs:251
 #, no-c-format
 msgid "Owner"
 msgstr "Власник"
 
 #: src/details_panel.rs:195 src/details_panel.rs:256
-#: src/dialogs/properties.rs:761 src/dialogs/properties.rs:912
+#: src/dialogs/properties.rs:766 src/dialogs/properties.rs:917
 #: src/file_utils.rs:237 src/file_utils.rs:252
 #, no-c-format
 msgid "Group"
@@ -1116,7 +1116,7 @@ msgstr "Група"
 msgid "Permissions"
 msgstr "Права доступу"
 
-#: src/details_panel.rs:260 src/dialogs/properties.rs:475
+#: src/details_panel.rs:260 src/dialogs/properties.rs:480
 #, no-c-format
 msgid "Free"
 msgstr "Вільно"
@@ -1679,7 +1679,7 @@ msgid "First Modified"
 msgstr "Спочатку старі"
 
 #: src/dialogs/preferences.rs:263 src/dialogs/properties.rs:308
-#: src/dialogs/properties.rs:571 src/file_utils.rs:232 src/file_utils.rs:248
+#: src/dialogs/properties.rs:576 src/file_utils.rs:232 src/file_utils.rs:248
 #: ui/window.ui:403
 #, no-c-format
 msgid "Type"
@@ -1824,195 +1824,195 @@ msgstr "Вибрати піктограму"
 msgid "Could Not Change Icon"
 msgstr "Не вдалося змінити піктограму"
 
-#: src/dialogs/properties.rs:465
+#: src/dialogs/properties.rs:470
 #, no-c-format
 msgid "Usage"
 msgstr "Використання"
 
-#: src/dialogs/properties.rs:474
+#: src/dialogs/properties.rs:479
 #, no-c-format
 msgid "Used"
 msgstr "Зайнято"
 
-#: src/dialogs/properties.rs:476
+#: src/dialogs/properties.rs:481
 #, no-c-format
 msgid "Capacity"
 msgstr "Місткість"
 
-#: src/dialogs/properties.rs:529
+#: src/dialogs/properties.rs:534
 #, no-c-format
 msgid "Format"
 msgstr "Формат"
 
-#: src/dialogs/properties.rs:532
+#: src/dialogs/properties.rs:537
 #, no-c-format
 msgid "Label"
 msgstr "Мітка"
 
-#: src/dialogs/properties.rs:536
+#: src/dialogs/properties.rs:541
 #, no-c-format
 msgid "Mounted At"
 msgstr "Точка монтування"
 
-#: src/dialogs/properties.rs:540
+#: src/dialogs/properties.rs:545
 #, no-c-format
 msgid "Device"
 msgstr "Пристрій"
 
-#: src/dialogs/properties.rs:543
+#: src/dialogs/properties.rs:548
 #, no-c-format
 msgid "Subvolume"
 msgstr "Підтом"
 
-#: src/dialogs/properties.rs:549
+#: src/dialogs/properties.rs:554
 #, no-c-format
 msgid "Compression"
 msgstr "Стиснення"
 
-#: src/dialogs/properties.rs:552
+#: src/dialogs/properties.rs:557
 #, no-c-format
 msgid "Access"
 msgstr "Доступ"
 
-#: src/dialogs/properties.rs:552
+#: src/dialogs/properties.rs:557
 #, no-c-format
 msgid "Read-only"
 msgstr "Лише читання"
 
-#: src/dialogs/properties.rs:556
+#: src/dialogs/properties.rs:561
 #, no-c-format
 msgid "Encryption"
 msgstr "Шифрування"
 
-#: src/dialogs/properties.rs:560
+#: src/dialogs/properties.rs:565
 #, no-c-format
 msgid "Volume"
 msgstr "Том"
 
-#: src/dialogs/properties.rs:569
+#: src/dialogs/properties.rs:574
 #, no-c-format
 msgid "Model"
 msgstr "Модель"
 
-#: src/dialogs/properties.rs:576
+#: src/dialogs/properties.rs:581
 #, no-c-format
 msgid "Partition Table"
 msgstr "Таблиця розділів"
 
-#: src/dialogs/properties.rs:584
+#: src/dialogs/properties.rs:589
 #, no-c-format
 msgid "Partition"
 msgstr "Розділ"
 
-#: src/dialogs/properties.rs:587
+#: src/dialogs/properties.rs:592
 #, no-c-format
 msgid "Drive"
 msgstr "Накопичувач"
 
-#: src/dialogs/properties.rs:594
+#: src/dialogs/properties.rs:599
 #, no-c-format
 msgid "Open in Disks"
 msgstr "Відкрити в «Дисках»"
 
-#: src/dialogs/properties.rs:699
+#: src/dialogs/properties.rs:704
 #, no-c-format
 msgid "You are not the owner, so you cannot change these permissions."
 msgstr "Ви не власник, тому не можете змінити ці права доступу."
 
-#: src/dialogs/properties.rs:704 src/dialogs/properties.rs:711
-#: src/dialogs/properties.rs:901 src/dialogs/properties.rs:907
+#: src/dialogs/properties.rs:709 src/dialogs/properties.rs:716
+#: src/dialogs/properties.rs:906 src/dialogs/properties.rs:912
 #: src/file_utils.rs:245 src/tags.rs:38
 #, no-c-format
 msgid "None"
 msgstr "Немає"
 
-#: src/dialogs/properties.rs:705 src/dialogs/properties.rs:908
+#: src/dialogs/properties.rs:710 src/dialogs/properties.rs:913
 #, no-c-format
 msgid "List Files Only"
 msgstr "Лише перегляд списку"
 
-#: src/dialogs/properties.rs:706 src/dialogs/properties.rs:909
+#: src/dialogs/properties.rs:711 src/dialogs/properties.rs:914
 #, no-c-format
 msgid "Access Files"
 msgstr "Доступ до файлів"
 
-#: src/dialogs/properties.rs:707 src/dialogs/properties.rs:910
+#: src/dialogs/properties.rs:712 src/dialogs/properties.rs:915
 #, no-c-format
 msgid "Create and Delete Files"
 msgstr "Створення та вилучення файлів"
 
-#: src/dialogs/properties.rs:712 src/dialogs/properties.rs:902
+#: src/dialogs/properties.rs:717 src/dialogs/properties.rs:907
 #, no-c-format
 msgid "Read-Only"
 msgstr "Лише читання"
 
-#: src/dialogs/properties.rs:713 src/dialogs/properties.rs:903
+#: src/dialogs/properties.rs:718 src/dialogs/properties.rs:908
 #, no-c-format
 msgid "Read and Write"
 msgstr "Читання та запис"
 
-#: src/dialogs/properties.rs:747
+#: src/dialogs/properties.rs:752
 #, no-c-format
 msgid "Could Not Change Permissions"
 msgstr "Не вдалося змінити права доступу"
 
-#: src/dialogs/properties.rs:762 src/dialogs/properties.rs:912
+#: src/dialogs/properties.rs:767 src/dialogs/properties.rs:917
 #, no-c-format
 msgid "Others"
 msgstr "Інші"
 
-#: src/dialogs/properties.rs:810
+#: src/dialogs/properties.rs:815
 #, no-c-format
 msgid "Executable"
 msgstr "Виконуваний"
 
-#: src/dialogs/properties.rs:811
+#: src/dialogs/properties.rs:816
 #, no-c-format
 msgid "Allow running as a program"
 msgstr "Дозволити запуск як програми"
 
-#: src/dialogs/properties.rs:838
+#: src/dialogs/properties.rs:843
 #, no-c-format
 msgid "Change Permissions for Enclosed Files…"
 msgstr "Змінити права доступу вкладених файлів…"
 
-#: src/dialogs/properties.rs:889
+#: src/dialogs/properties.rs:894
 #, no-c-format
 msgid "Security Context"
 msgstr "Контекст безпеки"
 
-#: src/dialogs/properties.rs:898
+#: src/dialogs/properties.rs:903
 #, no-c-format
 msgid "Unchanged"
 msgstr "Без змін"
 
-#: src/dialogs/properties.rs:926 ui/shortcuts_dialog.ui:214 ui/window.ui:179
+#: src/dialogs/properties.rs:931 ui/shortcuts_dialog.ui:214 ui/window.ui:179
 #: ui/window.ui:222
 #, no-c-format
 msgid "Files"
 msgstr "Файли"
 
-#: src/dialogs/properties.rs:927 ui/window.ui:408
+#: src/dialogs/properties.rs:932 ui/window.ui:408
 #, no-c-format
 msgid "Folders"
 msgstr "Теки"
 
-#: src/dialogs/properties.rs:935
+#: src/dialogs/properties.rs:940
 #, no-c-format
 msgid "Change Permissions for Enclosed Files"
 msgstr "Змінити права доступу вкладених файлів"
 
-#: src/dialogs/properties.rs:936
+#: src/dialogs/properties.rs:941
 #, no-c-format
 msgid "For “%s” and everything in it."
 msgstr "Для «%s» і всього, що в ній."
 
-#: src/dialogs/properties.rs:940
+#: src/dialogs/properties.rs:945
 #, no-c-format
 msgid "_Change"
 msgstr "_Змінити"
 
-#: src/dialogs/properties.rs:988
+#: src/dialogs/properties.rs:993
 #, no-c-format
 msgid "%s (%d item)"
 msgid_plural "%s (%d items)"
@@ -2020,7 +2020,7 @@ msgstr[0] "%s (%d об’єкт)"
 msgstr[1] "%s (%d об’єкти)"
 msgstr[2] "%s (%d об’єктів)"
 
-#: src/dialogs/properties.rs:1053 src/prefs.rs:45
+#: src/dialogs/properties.rs:1058 src/prefs.rs:45
 #, no-c-format
 msgid "Unknown"
 msgstr "Невідомо"
@@ -2211,122 +2211,147 @@ msgstr "Система"
 msgid "Cancel"
 msgstr "Скасувати"
 
-#: src/metadata.rs:654
+#: src/metadata.rs:959
 #, no-c-format
 msgid "Title"
 msgstr "Назва"
 
-#: src/metadata.rs:655
+#: src/metadata.rs:960
+#, no-c-format
+msgid "Author"
+msgstr "Автор"
+
+#: src/metadata.rs:961
+#, no-c-format
+msgid "Pages"
+msgstr "Сторінки"
+
+#: src/metadata.rs:962
+#, no-c-format
+msgid "Page Size"
+msgstr "Розмір сторінки"
+
+#: src/metadata.rs:963
+#, no-c-format
+msgid "Words"
+msgstr "Слова"
+
+#: src/metadata.rs:964
+#, no-c-format
+msgid "Slides"
+msgstr "Слайди"
+
+#: src/metadata.rs:965
 #, no-c-format
 msgid "Artist"
 msgstr "Виконавець"
 
-#: src/metadata.rs:656
+#: src/metadata.rs:966
 #, no-c-format
 msgid "Album"
 msgstr "Альбом"
 
-#: src/metadata.rs:659
+#: src/metadata.rs:969
 #, no-c-format
 msgid "Album Artist"
 msgstr "Виконавець альбому"
 
-#: src/metadata.rs:663
+#: src/metadata.rs:975
 #, no-c-format
 msgid "Track"
 msgstr "Доріжка"
 
-#: src/metadata.rs:665
+#: src/metadata.rs:977
 #, no-c-format
 msgid "%s of %s"
 msgstr "%s з %s"
 
-#: src/metadata.rs:671
+#: src/metadata.rs:983
 #, no-c-format
 msgid "Year"
 msgstr "Рік"
 
-#: src/metadata.rs:672
+#: src/metadata.rs:984
 #, no-c-format
 msgid "Genre"
 msgstr "Жанр"
 
-#: src/metadata.rs:674
+#: src/metadata.rs:986
 #, no-c-format
 msgid "Dimensions"
 msgstr "Розміри"
 
-#: src/metadata.rs:679
+#: src/metadata.rs:991
 #, no-c-format
 msgid "Duration"
 msgstr "Тривалість"
 
-#: src/metadata.rs:680
+#: src/metadata.rs:992
 #, no-c-format
 msgid "Taken"
 msgstr "Знято"
 
-#: src/metadata.rs:681
+#: src/metadata.rs:993
 #, no-c-format
 msgid "Camera"
 msgstr "Камера"
 
-#: src/metadata.rs:682
+#: src/metadata.rs:994
 #, no-c-format
 msgid "Lens"
 msgstr "Об'єктив"
 
-#: src/metadata.rs:683
+#: src/metadata.rs:995
 #, no-c-format
 msgid "Exposure"
 msgstr "Експозиція"
 
-#: src/metadata.rs:684
+#: src/metadata.rs:996
 #, no-c-format
 msgid "Video"
 msgstr "Відео"
 
-#: src/metadata.rs:685 ui/window.ui:411
+#: src/metadata.rs:997 ui/window.ui:411
 #, no-c-format
 msgid "Audio"
 msgstr "Звук"
 
-#: src/metadata.rs:687
+#: src/metadata.rs:999
 #, no-c-format
 msgid "Audio Tracks"
 msgstr "Звукові доріжки"
 
-#: src/metadata.rs:691
+#: src/metadata.rs:1003
 #, no-c-format
 msgid "Subtitles"
 msgstr "Субтитри"
 
-#: src/metadata.rs:703
-#, no-c-format
-msgid "%s s"
-msgstr "%s с"
-
-#: src/metadata.rs:706
+#: src/metadata.rs:1016 src/metadata.rs:1034
 #, no-c-format
 msgid "%s mm"
 msgstr "%s мм"
 
-#: src/metadata.rs:717
+#: src/metadata.rs:1031
+#, no-c-format
+msgid "%s s"
+msgstr "%s с"
+
+#: src/metadata.rs:1045
 #, no-c-format
 msgid "%s fps"
 msgstr "%s кадр/с"
 
-#: src/metadata.rs:723
+#: src/metadata.rs:1051
 #, no-c-format
 msgid "Mono"
 msgstr "Моно"
 
-#: src/metadata.rs:724
+#: src/metadata.rs:1052
 #, no-c-format
 msgid "Stereo"
 msgstr "Стерео"
 
-#: src/metadata.rs:725
+#: src/metadata.rs:1053
 #, no-c-format
 msgid "%d channel"
 msgid_plural "%d channels"
@@ -2334,17 +2359,17 @@ msgstr[0] "%d канал"
 msgstr[1] "%d канали"
 msgstr[2] "%d каналів"
 
-#: src/metadata.rs:729
+#: src/metadata.rs:1057
 #, no-c-format
 msgid "%s kHz"
 msgstr "%s кГц"
 
-#: src/metadata.rs:732
+#: src/metadata.rs:1060
 #, no-c-format
 msgid "%s kbit/s"
 msgstr "%s кбіт/с"
 
-#: src/metadata.rs:735
+#: src/metadata.rs:1063
 #, no-c-format
 msgid "%s-bit"
 msgstr "%s біт"

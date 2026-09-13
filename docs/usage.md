@@ -385,15 +385,17 @@ camera included; a recording its title, artist, album, track, year and genre, it
 and its sound, with the bit depth of lossless sound and the average bitrate where the
 stream does not give one; a video its size, upright when the phone was held upright, its
 length, its video and sound streams, how many sound tracks it has and the languages of its
-subtitles. That is read by the bundled `spiral-thumbnailer` in the thumbnailers' sandbox,
-GStreamer for recordings and videos, and never by Spiral itself, so without bubblewrap
-there is none of it. Where a photo was taken is not read at all. Nothing selected: the
-folder itself, with its number of items and the free space on its disk. The Properties
-button at the bottom opens Properties for the same files, which is where anything is
-changed. The panel reads a file once the selection has stayed on it for a moment, so
-holding an arrow down does not read every file on the way. It stays open as you leave it,
-for new windows too, and a window narrower than roughly 900 px leaves it closed until it
-grows.
+subtitles; a PDF its pages, page size, title and author, from `pdfinfo` in poppler-utils;
+an OpenDocument or Microsoft Office file its title, author, pages and words, or slides; an
+EPUB its title and author. That is read by the bundled `spiral-thumbnailer` in the
+thumbnailers' sandbox, GStreamer for recordings and videos and `pdfinfo` for PDFs, and
+never by Spiral itself, so without bubblewrap there is none of it. Where a photo was taken
+is not read at all. Nothing selected: the folder itself, with its number of items and the
+free space on its disk. The Properties button at the bottom opens Properties for the same
+files, which is where anything is changed. The panel reads a file once the selection has
+stayed on it for a moment, so holding an arrow down does not read every file on the way.
+It stays open as you leave it, for new windows too, and a window narrower than roughly 900
+px leaves it closed until it grows.
 
 ## Command line
 

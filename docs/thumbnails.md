@@ -53,8 +53,8 @@ it to the next. Images with no system thumbnailer go to the bundled
 scales to fit, and applies the EXIF orientation. Anything else gets no thumbnail. The
 helper is a separate program because it is a decoder: it is sandboxed like any other
 thumbnailer, and nothing is ever decoded in the process drawing the window. The details
-panel asks the same helper, in the same sandbox, what a photo, a recording or a video says
-about itself.
+panel asks the same helper, in the same sandbox, what a photo, a recording, a video or a
+document says about itself.
 
 The in-memory cache is keyed by URI, modification time and size. The size is part of it
 because a file another program is still writing is seen empty first, and the verdict taken

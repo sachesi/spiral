@@ -29,6 +29,7 @@ gstreamer = "0.25"
 gstreamer-pbutils = { version = "0.25", features = ["v1_20"] }
 gstreamer-tag = "0.25"
 kamadak-exif = "0.6"
+miniz_oxide = "0.9"
 ashpd = { version = "0.13", default-features = false, features = ["backend", "file_chooser", "tokio"] }
 tokio = { version = "1", features = ["rt"] }
 async-channel = "2"
