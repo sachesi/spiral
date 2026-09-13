@@ -31,7 +31,7 @@ mod imp {
         fn startup(&self) {
             self.parent_startup();
             crate::init_style();
-            crate::thumbnails::check_sandbox();
+            crate::sandbox::check();
             let app = self.obj();
             self.job_manager.set(JobManager::new(&app)).ok();
             crate::templates::init();

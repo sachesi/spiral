@@ -204,7 +204,7 @@ thread_local! {
 fn run_probe(kind: &str, path: &Path) -> Option<Vec<u8>> {
     let helper = crate::thumbnails::own_thumbnailer()?;
     let helper_arg = helper.to_string_lossy().into_owned();
-    let sandbox = crate::thumbnails::sandbox_base(&helper_arg)?;
+    let sandbox = crate::sandbox::command(&helper_arg)?;
     let ext = path
         .extension()
         .map(|e| format!(".{}", e.to_string_lossy()))
@@ -222,7 +222,7 @@ fn run_probe(kind: &str, path: &Path) -> Option<Vec<u8>> {
         .arg(kind)
         .arg(&inside);
     // The seccomp memfd must stay open until the child has started.
-    let run = crate::thumbnails::run_bounded(&mut cmd, LIMIT);
+    let run = crate::sandbox::run_bounded(&mut cmd, LIMIT);
     drop(sandbox.seccomp);
     match run {
         Ok(ran) if ran.ok => Some(ran.stdout),

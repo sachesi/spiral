@@ -96,7 +96,7 @@ fresh `/tmp`, no network, a cleared environment, and a seccomp filter.
 In the filter, namespace, mount, ptrace, module,
 kexec, io_uring and similar system calls fail with EPERM, `clone` with `CLONE_NEWUSER` is
 refused, and `clone3` returns ENOSYS so libc falls back to `clone`. The exact list is in
-`src/thumbnails.rs`.
+`src/sandbox.rs`.
 
 A thumbnailer that crashes or misbehaves is confined to that sandbox. `bwrap` is required,
 and so is the filter: without either no thumbnail is generated at all, and a filter that

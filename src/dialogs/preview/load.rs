@@ -190,7 +190,7 @@ pub(super) fn run_tool<T>(
     ));
     // Not create_dir_all: a name another process got to first is refused, not adopted.
     std::fs::create_dir(&work).ok()?;
-    let sandbox = match crate::thumbnails::sandbox_base(&program.to_string_lossy()) {
+    let sandbox = match crate::sandbox::command(&program.to_string_lossy()) {
         Some(sandbox) => sandbox,
         None => {
             let _ = std::fs::remove_dir(&work);
@@ -216,7 +216,7 @@ pub(super) fn run_tool<T>(
     cmd.args(&argv);
     // Bounded like a thumbnailer: a document that stops the tool would otherwise leave
     // the preview on its spinner and the worker thread on the tool, for good.
-    let run = crate::thumbnails::run_bounded(&mut cmd, TOOL_TIMEOUT);
+    let run = crate::sandbox::run_bounded(&mut cmd, TOOL_TIMEOUT);
     // The seccomp memfd must stay open until the child has started.
     drop(sandbox.seccomp);
     let out = match run {

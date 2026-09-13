@@ -34,7 +34,9 @@ Before a change goes in:
     src/location_entry.rs  inline completion, and the path bar the choosers type in
     src/ops/               jobs: job.rs, manager.rs (queue and undo), walk.rs (copy, move,
                            trash, delete), conflict.rs (dialogs), archive.rs
-    src/thumbnails.rs      thumbnail lookup and generation, the bwrap sandbox, seccomp
+    src/thumbnails.rs      thumbnail lookup and generation
+    src/sandbox.rs         bubblewrap and the seccomp filter, for everything that reads
+                           untrusted files; runs bounded in time
     src/metadata.rs        what files say about themselves, read by the helper in the sandbox;
                            in metadata/ pictures, media, documents, and the wording
     src/details_panel.rs   the details panel beside the panes
@@ -102,7 +104,7 @@ compiles the catalogues and merges the desktop and metainfo translations with `m
 
 Anything that is a tool rather than a library (archives, terminals, thumbnailers) is
 discovered in `PATH` at use time and degrades to "not offered" when missing. Child
-processes that touch untrusted data go through `sandbox_base` in `thumbnails.rs`.
+processes that touch untrusted data go through `sandbox::command`.
 
 The portal backend must own its bus name before GTK is initialised, see
 [docs/integration.md](docs/integration.md).

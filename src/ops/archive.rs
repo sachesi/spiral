@@ -235,7 +235,7 @@ async fn run(
         gio::SubprocessFlags::STDOUT_PIPE | gio::SubprocessFlags::STDERR_MERGE,
     );
     // An archive is a file from anywhere and its tool is a parser: no sandbox, no run.
-    let Some(sandbox) = crate::thumbnails::sandbox_base(&cmd.argv[0]) else {
+    let Some(sandbox) = crate::sandbox::command(&cmd.argv[0]) else {
         return Err(Fail::Failed(gettext(
             "bubblewrap is not installed, so archive tools cannot be run safely",
         )));

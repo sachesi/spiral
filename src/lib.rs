@@ -76,6 +76,7 @@ pub mod player;
 pub mod portal;
 pub mod prefs;
 pub mod progress_indicator;
+pub mod sandbox;
 pub mod search;
 pub mod starred;
 pub mod tags;
