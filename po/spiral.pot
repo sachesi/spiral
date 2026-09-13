@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.15.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-13 16:46+0300\n"
+"POT-Creation-Date: 2026-09-13 18:50+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -702,217 +702,225 @@ msgstr ""
 msgid "translator-credits"
 msgstr ""
 
-#: src/browser_actions.rs:60
+#: src/browser_actions/create.rs:27
 #, no-c-format
 msgid "_Empty Document"
 msgstr ""
 
-#: src/browser_actions.rs:711
+#: src/browser_actions/create.rs:56
 #, no-c-format
-msgid "Extract To"
+msgid "Could Not Create Folder"
 msgstr ""
 
-#: src/browser_actions.rs:712 src/ops/archive.rs:352
+#: src/browser_actions/create.rs:113
 #, no-c-format
-msgid "_Extract"
+msgid "Untitled Document"
 msgstr ""
 
-#: src/browser_actions.rs:730
+#: src/browser_actions/create.rs:140 ui/path_bar.ui:16
 #, no-c-format
-msgid "Archive"
+msgid "New _Document"
 msgstr ""
 
-#: src/browser_actions.rs:780
+#: src/browser_actions/menus.rs:41 ui/path_bar.ui:32 ui/path_bar.ui:63
+#: ui/places_sidebar.ui:16 ui/places_sidebar.ui:58
+#, no-c-format
+msgid "Open in New _Tab"
+msgstr ""
+
+#: src/browser_actions/menus.rs:46 ui/path_bar.ui:36 ui/path_bar.ui:67
+#, no-c-format
+msgid "Open in New _Window"
+msgstr ""
+
+#: src/browser_actions/menus.rs:50 ui/browser_view.ui:379
+#, no-c-format
+msgid "Open in _Terminal"
+msgstr ""
+
+#: src/browser_actions/open.rs:180 src/browser_view/opening.rs:97
+#: src/browser_view/opening.rs:104 src/dialogs/open_with.rs:213
+#, no-c-format
+msgid "Could Not Open"
+msgstr ""
+
+#: src/browser_actions/tagging.rs:51
 #, no-c-format
 msgid "Removed “%s” from Favorites"
 msgstr ""
 
-#: src/browser_actions.rs:782
+#: src/browser_actions/tagging.rs:53
 #, no-c-format
 msgid "Removed %d item from Favorites"
 msgid_plural "Removed %d items from Favorites"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_actions.rs:835 src/places_sidebar.rs:533
+#: src/browser_actions/tagging.rs:106 src/places_sidebar/rows.rs:110
 #, no-c-format
 msgid "Could not tag “%s”"
 msgstr ""
 
-#: src/browser_actions.rs:1039
+#: src/browser_actions/transfer.rs:98
 #, no-c-format
 msgid "Could Not Paste Image"
 msgstr ""
 
-#: src/browser_actions.rs:1052
+#: src/browser_actions/transfer.rs:111
 #, no-c-format
 msgid "Move To"
 msgstr ""
 
-#: src/browser_actions.rs:1052
+#: src/browser_actions/transfer.rs:111
 #, no-c-format
 msgid "_Move"
 msgstr ""
 
-#: src/browser_actions.rs:1054
+#: src/browser_actions/transfer.rs:113
 #, no-c-format
 msgid "Copy To"
 msgstr ""
 
-#: src/browser_actions.rs:1054 ui/browser_view.ui:220
+#: src/browser_actions/transfer.rs:113 ui/browser_view.ui:220
 #, no-c-format
 msgid "_Copy"
 msgstr ""
 
-#: src/browser_actions.rs:1199 src/browser_view.rs:1824
-#: src/browser_view.rs:1831 src/dialogs/open_with.rs:205
-#, no-c-format
-msgid "Could Not Open"
-msgstr ""
-
-#: src/browser_actions.rs:1209
+#: src/browser_actions/transfer.rs:225
 #, no-c-format
 msgid "Permanently Delete “%s”?"
 msgstr ""
 
-#: src/browser_actions.rs:1211
+#: src/browser_actions/transfer.rs:227
 #, no-c-format
 msgid "Permanently Delete %d Item?"
 msgid_plural "Permanently Delete %d Items?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_actions.rs:1219
+#: src/browser_actions/transfer.rs:235
 #, no-c-format
 msgid "Permanently deleted items cannot be restored."
 msgstr ""
 
-#: src/browser_actions.rs:1224 src/dialogs/batch_rename.rs:110
+#: src/browser_actions/transfer.rs:240 src/dialogs/batch_rename.rs:110
 #: src/dialogs/compress.rs:70 src/dialogs/connect_server.rs:66
-#: src/dialogs/open_with.rs:59 src/dialogs/properties.rs:944
-#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:36
-#: src/ops/archive.rs:351 src/ops/conflict.rs:64 src/ops/conflict.rs:315
-#: src/ops/mod.rs:30 src/ops/walk.rs:350 src/places_sidebar.rs:949
-#: src/places_sidebar.rs:1310 src/portal/chooser_window.rs:884
+#: src/dialogs/open_with.rs:62 src/dialogs/properties/permissions.rs:285
+#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:39
+#: src/ops/archive.rs:349 src/ops/conflict.rs:64 src/ops/conflict.rs:315
+#: src/ops/mod.rs:30 src/ops/walk.rs:345 src/places_sidebar/devices.rs:221
+#: src/places_sidebar/menu.rs:188 src/portal/chooser_window.rs:886
 #, no-c-format
 msgid "_Cancel"
 msgstr ""
 
-#: src/browser_actions.rs:1225
+#: src/browser_actions/transfer.rs:241
 #, no-c-format
 msgid "_Delete"
 msgstr ""
 
-#: src/browser_actions.rs:1274
+#: src/browser_actions/transfer.rs:281
 #, no-c-format
-msgid "Could Not Create Folder"
+msgid "Extract To"
 msgstr ""
 
-#: src/browser_actions.rs:1331
+#: src/browser_actions/transfer.rs:282 src/ops/archive.rs:350
 #, no-c-format
-msgid "Untitled Document"
+msgid "_Extract"
 msgstr ""
 
-#: src/browser_actions.rs:1366 ui/path_bar.ui:32 ui/path_bar.ui:63
-#: ui/places_sidebar.ui:16 ui/places_sidebar.ui:58
+#: src/browser_actions/transfer.rs:300
 #, no-c-format
-msgid "Open in New _Tab"
+msgid "Archive"
 msgstr ""
 
-#: src/browser_actions.rs:1371 ui/path_bar.ui:36 ui/path_bar.ui:67
-#, no-c-format
-msgid "Open in New _Window"
-msgstr ""
-
-#: src/browser_actions.rs:1375 ui/browser_view.ui:379
-#, no-c-format
-msgid "Open in _Terminal"
-msgstr ""
-
-#: src/browser_actions.rs:1401 ui/path_bar.ui:16
-#, no-c-format
-msgid "New _Document"
-msgstr ""
-
-#: src/browser_view.rs:648
-#, no-c-format
-msgid "%d folder selected"
-msgid_plural "%d folders selected"
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/browser_view.rs:652
-#, no-c-format
-msgid "%d item selected"
-msgid_plural "%d items selected"
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/browser_view.rs:1077
-#, no-c-format
-msgid "Remove from Starred"
-msgstr ""
-
-#: src/browser_view.rs:1079
-#, no-c-format
-msgid "Add to Starred"
-msgstr ""
-
-#: src/browser_view.rs:1878
-#, no-c-format
-msgid "The password dialog was dismissed."
-msgstr ""
-
-#: src/browser_view.rs:1895 src/dialogs/open_with.rs:208
-#: src/dialogs/properties.rs:444 src/dialogs/properties.rs:755
-#: src/ops/walk.rs:46 src/places_sidebar.rs:978
-#, no-c-format
-msgid "_OK"
-msgstr ""
-
-#: src/browser_view.rs:1909
+#: src/browser_view.rs:912
 #, no-c-format
 msgid "Connecting to %s…"
 msgstr ""
 
-#: src/browser_view.rs:1914
+#: src/browser_view.rs:917
 #, no-c-format
 msgid "Could Not Connect"
 msgstr ""
 
-#: src/browser_view.rs:1917
+#: src/browser_view.rs:920
 #, no-c-format
 msgid "Reloading the folder tries again."
 msgstr ""
 
-#: src/browser_view.rs:1922 ui/browser_view.ui:124
+#: src/browser_view.rs:925 ui/browser_view.ui:124
 #, no-c-format
 msgid "Could Not Open Folder"
 msgstr ""
 
-#: src/browser_view.rs:1941
+#: src/browser_view.rs:944
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:1945
+#: src/browser_view.rs:948
 #, no-c-format
 msgid "No Servers Found"
 msgstr ""
 
-#: src/browser_view.rs:1949 ui/browser_view.ui:107
+#: src/browser_view.rs:952 ui/browser_view.ui:107
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
 
-#: src/browser_view.rs:2018
+#: src/browser_view/cells.rs:243
+#, no-c-format
+msgid "Remove from Starred"
+msgstr ""
+
+#: src/browser_view/cells.rs:245
+#, no-c-format
+msgid "Add to Starred"
+msgstr ""
+
+#: src/browser_view/columns.rs:208 src/dialogs/tags.rs:21
+#, no-c-format
+msgid "Name"
+msgstr ""
+
+#: src/browser_view/columns.rs:308 src/details_panel.rs:217
+#: src/dialogs/properties/general.rs:242 src/dialogs/properties/general.rs:304
+#, no-c-format
+msgid "Location"
+msgstr ""
+
+#: src/browser_view/columns.rs:318 src/details_panel.rs:226
+#: src/dialogs/properties/general.rs:282
+#, no-c-format
+msgid "Trashed On"
+msgstr ""
+
+#: src/browser_view/columns.rs:325
+#, no-c-format
+msgid "Original Location"
+msgstr ""
+
+#: src/browser_view/opening.rs:151
+#, no-c-format
+msgid "The password dialog was dismissed."
+msgstr ""
+
+#: src/browser_view/opening.rs:168 src/dialogs/open_with.rs:216
+#: src/dialogs/properties.rs:170 src/dialogs/properties/permissions.rs:92
+#: src/ops/walk.rs:46 src/places_sidebar/devices.rs:250
+#, no-c-format
+msgid "_OK"
+msgstr ""
+
+#: src/browser_view/opening.rs:185
 #, no-c-format
 msgid ""
 "Machines that announce themselves on the network appear here. Others are "
 "reached with “Connect to Server…”."
 msgstr ""
 
-#: src/browser_view.rs:2027
+#: src/browser_view/opening.rs:194
 #, no-c-format
 msgid ""
 "One server was found but left out: no gvfs backend for %s addresses is "
@@ -923,22 +931,36 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view.rs:2047
+#: src/browser_view/opening.rs:214
 #, no-c-format
 msgid "No gvfs backend for %s addresses is installed."
 msgstr ""
 
-#: src/browser_view.rs:2077
+#: src/browser_view/selection.rs:7
+#, no-c-format
+msgid "%d folder selected"
+msgid_plural "%d folders selected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/browser_view/selection.rs:11
+#, no-c-format
+msgid "%d item selected"
+msgid_plural "%d items selected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/browser_view/selection.rs:141
 #, no-c-format
 msgid "Loading…"
 msgstr ""
 
-#: src/browser_view.rs:2093
+#: src/browser_view/selection.rs:157
 #, no-c-format
 msgid "“%s” selected"
 msgstr ""
 
-#: src/browser_view.rs:2098
+#: src/browser_view/selection.rs:162
 #, no-c-format
 msgid "%d other item selected"
 msgid_plural "%d other items selected"
@@ -946,97 +968,81 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: %f is "%d folders selected", %n is "%d other items selected".
-#: src/browser_view.rs:2104
+#: src/browser_view/selection.rs:168
 #, no-c-format
 msgid "%f, %n"
 msgstr ""
 
-#: src/browser_view.rs:2892 src/dialogs/tags.rs:18
-#, no-c-format
-msgid "Name"
-msgstr ""
-
-#: src/browser_view.rs:2992 src/details_panel.rs:217
-#: src/dialogs/properties.rs:321 src/dialogs/properties.rs:383
-#, no-c-format
-msgid "Location"
-msgstr ""
-
-#: src/browser_view.rs:3002 src/details_panel.rs:226
-#: src/dialogs/properties.rs:361
-#, no-c-format
-msgid "Trashed On"
-msgstr ""
-
-#: src/browser_view.rs:3009
-#, no-c-format
-msgid "Original Location"
-msgstr ""
-
-#: src/details_panel.rs:185 src/dialogs/properties.rs:312 src/file_utils.rs:249
+#: src/details_panel.rs:185 src/dialogs/properties/general.rs:233
+#: src/file_utils.rs:249
 #, no-c-format
 msgid "MIME Type"
 msgstr ""
 
 #: src/details_panel.rs:190 src/details_panel.rs:209 src/details_panel.rs:427
-#: src/dialogs/preferences.rs:262 src/dialogs/properties.rs:316
-#: src/dialogs/properties.rs:578 src/file_utils.rs:231 src/file_utils.rs:246
+#: src/dialogs/preferences.rs:262 src/dialogs/properties/disk.rs:119
+#: src/dialogs/properties/general.rs:237 src/file_utils.rs:231
+#: src/file_utils.rs:246
 #, no-c-format
 msgid "Size"
 msgstr ""
 
-#: src/details_panel.rs:222 src/dialogs/properties.rs:333
+#: src/details_panel.rs:222 src/dialogs/properties/general.rs:254
 #, no-c-format
 msgid "Link Target"
 msgstr ""
 
-#: src/details_panel.rs:225 src/dialogs/properties.rs:351
+#: src/details_panel.rs:225 src/dialogs/properties/general.rs:272
 #, no-c-format
 msgid "Original Folder"
 msgstr ""
 
 #: src/details_panel.rs:227 src/details_panel.rs:298
-#: src/dialogs/properties.rs:366 src/file_utils.rs:233 ui/window.ui:424
+#: src/dialogs/properties/general.rs:287 src/file_utils.rs:233 ui/window.ui:424
 #, no-c-format
 msgid "Modified"
 msgstr ""
 
-#: src/details_panel.rs:228 src/dialogs/properties.rs:370 src/file_utils.rs:234
+#: src/details_panel.rs:228 src/dialogs/properties/general.rs:291
+#: src/file_utils.rs:234
 #, no-c-format
 msgid "Accessed"
 msgstr ""
 
-#: src/details_panel.rs:229 src/dialogs/properties.rs:374 src/file_utils.rs:235
+#: src/details_panel.rs:229 src/dialogs/properties/general.rs:295
+#: src/file_utils.rs:235
 #, no-c-format
 msgid "Created"
 msgstr ""
 
 #: src/details_panel.rs:231 src/details_panel.rs:299
-#: src/dialogs/properties.rs:765 src/dialogs/properties.rs:917
-#: src/file_utils.rs:236 src/file_utils.rs:251
+#: src/dialogs/properties/permissions.rs:102
+#: src/dialogs/properties/permissions.rs:258 src/file_utils.rs:236
+#: src/file_utils.rs:251
 #, no-c-format
 msgid "Owner"
 msgstr ""
 
 #: src/details_panel.rs:235 src/details_panel.rs:300
-#: src/dialogs/properties.rs:766 src/dialogs/properties.rs:917
-#: src/file_utils.rs:237 src/file_utils.rs:252
+#: src/dialogs/properties/permissions.rs:103
+#: src/dialogs/properties/permissions.rs:258 src/file_utils.rs:237
+#: src/file_utils.rs:252
 #, no-c-format
 msgid "Group"
 msgstr ""
 
 #: src/details_panel.rs:239 src/details_panel.rs:301
-#: src/dialogs/properties.rs:139 src/file_utils.rs:238 src/file_utils.rs:250
+#: src/dialogs/properties.rs:146 src/file_utils.rs:238 src/file_utils.rs:250
 #, no-c-format
 msgid "Permissions"
 msgstr ""
 
-#: src/details_panel.rs:302 src/dialogs/properties.rs:480
+#: src/details_panel.rs:302 src/dialogs/properties/disk.rs:21
 #, no-c-format
 msgid "Free"
 msgstr ""
 
-#: src/details_panel.rs:410 src/dialogs/properties.rs:297
+#: src/details_panel.rs:410 src/dialogs/properties/general.rs:218
 #, no-c-format
 msgid "%d Item"
 msgid_plural "%d Items"
@@ -1048,7 +1054,7 @@ msgstr[1] ""
 msgid "%s, folders not counted"
 msgstr ""
 
-#: src/details_panel.rs:502 src/dialogs/properties.rs:121
+#: src/details_panel.rs:502 src/dialogs/properties.rs:128
 #: ui/shortcuts_dialog.ui:325
 #, no-c-format
 msgid "Properties"
@@ -1097,7 +1103,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/dialogs/batch_rename.rs:115 src/naming.rs:202 src/ops/conflict.rs:72
-#: src/places_sidebar.rs:1336
+#: src/places_sidebar/menu.rs:214
 #, no-c-format
 msgid "_Rename"
 msgstr ""
@@ -1176,7 +1182,7 @@ msgstr ""
 msgid "_Format"
 msgstr ""
 
-#: src/dialogs/compress.rs:35 src/ops/archive.rs:335
+#: src/dialogs/compress.rs:35 src/ops/archive.rs:333
 #, no-c-format
 msgid "_Password"
 msgstr ""
@@ -1226,52 +1232,52 @@ msgstr ""
 msgid "Forget This Server"
 msgstr ""
 
-#: src/dialogs/folder_chooser.rs:32 src/portal/chooser_window.rs:132
+#: src/dialogs/folder_chooser.rs:32 src/portal/chooser_window.rs:135
 #: ui/shortcuts_dialog.ui:81 ui/window.ui:301 ui/window.ui:539
 #, no-c-format
 msgid "Back"
 msgstr ""
 
-#: src/dialogs/folder_chooser.rs:37 src/portal/chooser_window.rs:137
+#: src/dialogs/folder_chooser.rs:37 src/portal/chooser_window.rs:140
 #: ui/shortcuts_dialog.ui:87 ui/window.ui:309 ui/window.ui:547
 #, no-c-format
 msgid "Forward"
 msgstr ""
 
-#: src/dialogs/folder_chooser.rs:63 src/portal/chooser_window.rs:292
+#: src/dialogs/folder_chooser.rs:63 src/portal/chooser_window.rs:295
 #: ui/shortcuts_dialog.ui:188 ui/window.ui:291
 #, no-c-format
 msgid "Show Sidebar"
 msgstr ""
 
 #: src/dialogs/folder_chooser.rs:69 src/naming.rs:287
-#: src/portal/chooser_window.rs:273 ui/shortcuts_dialog.ui:271
+#: src/portal/chooser_window.rs:276 ui/shortcuts_dialog.ui:271
 #, no-c-format
 msgid "New Folder"
 msgstr ""
 
-#: src/dialogs/open_with.rs:47
+#: src/dialogs/open_with.rs:50
 #, no-c-format
 msgid "Open With"
 msgstr ""
 
-#: src/dialogs/open_with.rs:69 src/portal/chooser_window.rs:309
+#: src/dialogs/open_with.rs:72 src/portal/chooser_window.rs:312
 #: ui/browser_view.ui:185 ui/places_sidebar.ui:12 ui/places_sidebar.ui:54
 #, no-c-format
 msgid "_Open"
 msgstr ""
 
-#: src/dialogs/open_with.rs:97
+#: src/dialogs/open_with.rs:100
 #, no-c-format
 msgid "Show All Applications"
 msgstr ""
 
-#: src/dialogs/open_with.rs:105
+#: src/dialogs/open_with.rs:108
 #, no-c-format
 msgid "Always use for this file type"
 msgstr ""
 
-#: src/dialogs/open_with.rs:175
+#: src/dialogs/open_with.rs:178
 #, no-c-format
 msgid "Default"
 msgstr ""
@@ -1282,7 +1288,7 @@ msgid "Preferences"
 msgstr ""
 
 #: src/dialogs/preferences.rs:15 src/dialogs/preferences.rs:20
-#: src/dialogs/properties.rs:127 ui/shortcuts_dialog.ui:12
+#: src/dialogs/properties.rs:134 ui/shortcuts_dialog.ui:12
 #, no-c-format
 msgid "General"
 msgstr ""
@@ -1353,7 +1359,7 @@ msgid "Off, Ctrl copies and dragging inside Spiral moves without asking"
 msgstr ""
 
 #: src/dialogs/preferences.rs:62 src/file_utils.rs:418
-#: src/places_sidebar.rs:776
+#: src/places_sidebar.rs:491
 #, no-c-format
 msgid "Network"
 msgstr ""
@@ -1421,7 +1427,7 @@ msgstr ""
 msgid "Sidebar"
 msgstr ""
 
-#: src/dialogs/preferences.rs:133 src/places_sidebar.rs:694
+#: src/dialogs/preferences.rs:133 src/places_sidebar.rs:409
 #, no-c-format
 msgid "Root"
 msgstr ""
@@ -1432,7 +1438,7 @@ msgid "The top of the filesystem, above the bookmarks"
 msgstr ""
 
 #: src/dialogs/preferences.rs:139 src/file_utils.rs:421 src/path_bar.rs:366
-#: src/places_sidebar.rs:702
+#: src/places_sidebar.rs:417
 #, no-c-format
 msgid "Favorites"
 msgstr ""
@@ -1573,9 +1579,9 @@ msgstr ""
 msgid "First Modified"
 msgstr ""
 
-#: src/dialogs/preferences.rs:263 src/dialogs/properties.rs:308
-#: src/dialogs/properties.rs:576 src/file_utils.rs:232 src/file_utils.rs:248
-#: ui/window.ui:403
+#: src/dialogs/preferences.rs:263 src/dialogs/properties/disk.rs:117
+#: src/dialogs/properties/general.rs:229 src/file_utils.rs:232
+#: src/file_utils.rs:248 ui/window.ui:403
 #, no-c-format
 msgid "Type"
 msgstr ""
@@ -1610,313 +1616,321 @@ msgstr ""
 msgid "Terminal"
 msgstr ""
 
-#: src/dialogs/preview.rs:148 ui/shortcuts_dialog.ui:289
+#: src/dialogs/preview.rs:156 ui/shortcuts_dialog.ui:289
 #, no-c-format
 msgid "Preview"
 msgstr ""
 
-#: src/dialogs/preview.rs:588
-#, no-c-format
-msgid "Previous Page"
-msgstr ""
-
-#: src/dialogs/preview.rs:590
-#, no-c-format
-msgid "Next Page"
-msgstr ""
-
-#: src/dialogs/preview.rs:664 src/dialogs/preview.rs:716
-#, no-c-format
-msgid "Fit"
-msgstr ""
-
-#: src/dialogs/preview.rs:666 ui/shortcuts_dialog.ui:170 ui/window.ui:491
-#: ui/window.ui:575
-#, no-c-format
-msgid "Zoom Out"
-msgstr ""
-
-#: src/dialogs/preview.rs:667
-#, no-c-format
-msgid "Fit to Window"
-msgstr ""
-
-#: src/dialogs/preview.rs:668 ui/shortcuts_dialog.ui:164 ui/window.ui:501
-#: ui/window.ui:585
-#, no-c-format
-msgid "Zoom In"
-msgstr ""
-
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:932
+#: src/dialogs/preview.rs:480
 #, no-c-format
 msgid "%t, %s"
 msgstr ""
 
 #. Translators: %p is the page being shown, %n the number of pages in the document.
-#: src/dialogs/preview.rs:937
+#: src/dialogs/preview/viewers.rs:8
 #, no-c-format
 msgid "%p of %n"
 msgstr ""
 
-#: src/dialogs/properties.rs:133
+#: src/dialogs/preview/viewers.rs:258
+#, no-c-format
+msgid "Previous Page"
+msgstr ""
+
+#: src/dialogs/preview/viewers.rs:260
+#, no-c-format
+msgid "Next Page"
+msgstr ""
+
+#: src/dialogs/preview/viewers.rs:334 src/dialogs/preview/viewers.rs:386
+#, no-c-format
+msgid "Fit"
+msgstr ""
+
+#: src/dialogs/preview/viewers.rs:336 ui/shortcuts_dialog.ui:170
+#: ui/window.ui:491 ui/window.ui:575
+#, no-c-format
+msgid "Zoom Out"
+msgstr ""
+
+#: src/dialogs/preview/viewers.rs:337
+#, no-c-format
+msgid "Fit to Window"
+msgstr ""
+
+#: src/dialogs/preview/viewers.rs:338 ui/shortcuts_dialog.ui:164
+#: ui/window.ui:501 ui/window.ui:585
+#, no-c-format
+msgid "Zoom In"
+msgstr ""
+
+#: src/dialogs/properties.rs:140
 #, no-c-format
 msgid "Disk"
 msgstr ""
 
-#: src/dialogs/properties.rs:212
-#, no-c-format
-msgid "Change Icon…"
-msgstr ""
-
-#: src/dialogs/properties.rs:216
-#, no-c-format
-msgid "Reset Icon"
-msgstr ""
-
-#: src/dialogs/properties.rs:280
-#, no-c-format
-msgid "Could Not Reset Icon"
-msgstr ""
-
-#: src/dialogs/properties.rs:316
-#, no-c-format
-msgid "Calculating…"
-msgstr ""
-
-#: src/dialogs/properties.rs:324
-#, no-c-format
-msgid "Open Parent Folder"
-msgstr ""
-
-#: src/dialogs/properties.rs:338
-#, no-c-format
-msgid "Open Link Target Location"
-msgstr ""
-
-#: src/dialogs/properties.rs:354
-#, no-c-format
-msgid "Open Original Folder"
-msgstr ""
-
-#: src/dialogs/properties.rs:380
-#, no-c-format
-msgid "Default Application"
-msgstr ""
-
-#: src/dialogs/properties.rs:406 ui/window.ui:410
-#, no-c-format
-msgid "Images"
-msgstr ""
-
-#: src/dialogs/properties.rs:411
-#, no-c-format
-msgid "Select Custom Icon"
-msgstr ""
-
-#: src/dialogs/properties.rs:435
-#, no-c-format
-msgid "Could Not Change Icon"
-msgstr ""
-
-#: src/dialogs/properties.rs:470
+#: src/dialogs/properties/disk.rs:11
 #, no-c-format
 msgid "Usage"
 msgstr ""
 
-#: src/dialogs/properties.rs:479
+#: src/dialogs/properties/disk.rs:20
 #, no-c-format
 msgid "Used"
 msgstr ""
 
-#: src/dialogs/properties.rs:481
+#: src/dialogs/properties/disk.rs:22
 #, no-c-format
 msgid "Capacity"
 msgstr ""
 
-#: src/dialogs/properties.rs:534
+#: src/dialogs/properties/disk.rs:75
 #, no-c-format
 msgid "Format"
 msgstr ""
 
-#: src/dialogs/properties.rs:537
+#: src/dialogs/properties/disk.rs:78
 #, no-c-format
 msgid "Label"
 msgstr ""
 
-#: src/dialogs/properties.rs:541
+#: src/dialogs/properties/disk.rs:82
 #, no-c-format
 msgid "Mounted At"
 msgstr ""
 
-#: src/dialogs/properties.rs:545
+#: src/dialogs/properties/disk.rs:86
 #, no-c-format
 msgid "Device"
 msgstr ""
 
-#: src/dialogs/properties.rs:548
+#: src/dialogs/properties/disk.rs:89
 #, no-c-format
 msgid "Subvolume"
 msgstr ""
 
-#: src/dialogs/properties.rs:554
+#: src/dialogs/properties/disk.rs:95
 #, no-c-format
 msgid "Compression"
 msgstr ""
 
-#: src/dialogs/properties.rs:557
+#: src/dialogs/properties/disk.rs:98
 #, no-c-format
 msgid "Access"
 msgstr ""
 
-#: src/dialogs/properties.rs:557
+#: src/dialogs/properties/disk.rs:98
 #, no-c-format
 msgid "Read-only"
 msgstr ""
 
-#: src/dialogs/properties.rs:561
+#: src/dialogs/properties/disk.rs:102
 #, no-c-format
 msgid "Encryption"
 msgstr ""
 
-#: src/dialogs/properties.rs:565
+#: src/dialogs/properties/disk.rs:106
 #, no-c-format
 msgid "Volume"
 msgstr ""
 
-#: src/dialogs/properties.rs:574
+#: src/dialogs/properties/disk.rs:115
 #, no-c-format
 msgid "Model"
 msgstr ""
 
-#: src/dialogs/properties.rs:581
+#: src/dialogs/properties/disk.rs:122
 #, no-c-format
 msgid "Partition Table"
 msgstr ""
 
-#: src/dialogs/properties.rs:589
+#: src/dialogs/properties/disk.rs:130
 #, no-c-format
 msgid "Partition"
 msgstr ""
 
-#: src/dialogs/properties.rs:592
+#: src/dialogs/properties/disk.rs:133
 #, no-c-format
 msgid "Drive"
 msgstr ""
 
-#: src/dialogs/properties.rs:599
+#: src/dialogs/properties/disk.rs:140
 #, no-c-format
 msgid "Open in Disks"
 msgstr ""
 
-#: src/dialogs/properties.rs:704
-#, no-c-format
-msgid "You are not the owner, so you cannot change these permissions."
-msgstr ""
-
-#: src/dialogs/properties.rs:709 src/dialogs/properties.rs:716
-#: src/dialogs/properties.rs:906 src/dialogs/properties.rs:912
-#: src/file_utils.rs:245 src/tags.rs:38
-#, no-c-format
-msgid "None"
-msgstr ""
-
-#: src/dialogs/properties.rs:710 src/dialogs/properties.rs:913
-#, no-c-format
-msgid "List Files Only"
-msgstr ""
-
-#: src/dialogs/properties.rs:711 src/dialogs/properties.rs:914
-#, no-c-format
-msgid "Access Files"
-msgstr ""
-
-#: src/dialogs/properties.rs:712 src/dialogs/properties.rs:915
-#, no-c-format
-msgid "Create and Delete Files"
-msgstr ""
-
-#: src/dialogs/properties.rs:717 src/dialogs/properties.rs:907
-#, no-c-format
-msgid "Read-Only"
-msgstr ""
-
-#: src/dialogs/properties.rs:718 src/dialogs/properties.rs:908
-#, no-c-format
-msgid "Read and Write"
-msgstr ""
-
-#: src/dialogs/properties.rs:752
-#, no-c-format
-msgid "Could Not Change Permissions"
-msgstr ""
-
-#: src/dialogs/properties.rs:767 src/dialogs/properties.rs:917
-#, no-c-format
-msgid "Others"
-msgstr ""
-
-#: src/dialogs/properties.rs:815
-#, no-c-format
-msgid "Executable"
-msgstr ""
-
-#: src/dialogs/properties.rs:816
-#, no-c-format
-msgid "Allow running as a program"
-msgstr ""
-
-#: src/dialogs/properties.rs:843
-#, no-c-format
-msgid "Change Permissions for Enclosed Files…"
-msgstr ""
-
-#: src/dialogs/properties.rs:894
-#, no-c-format
-msgid "Security Context"
-msgstr ""
-
-#: src/dialogs/properties.rs:903
-#, no-c-format
-msgid "Unchanged"
-msgstr ""
-
-#: src/dialogs/properties.rs:931 ui/shortcuts_dialog.ui:214 ui/window.ui:179
-#: ui/window.ui:222
-#, no-c-format
-msgid "Files"
-msgstr ""
-
-#: src/dialogs/properties.rs:932 ui/window.ui:408
-#, no-c-format
-msgid "Folders"
-msgstr ""
-
-#: src/dialogs/properties.rs:940
-#, no-c-format
-msgid "Change Permissions for Enclosed Files"
-msgstr ""
-
-#: src/dialogs/properties.rs:941
-#, no-c-format
-msgid "For “%s” and everything in it."
-msgstr ""
-
-#: src/dialogs/properties.rs:945
-#, no-c-format
-msgid "_Change"
-msgstr ""
-
-#: src/dialogs/properties.rs:993
+#: src/dialogs/properties/general.rs:10
 #, no-c-format
 msgid "%s (%d item)"
 msgid_plural "%s (%d items)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/dialogs/properties.rs:1058 src/prefs.rs:45
+#: src/dialogs/properties/general.rs:75 src/prefs.rs:66
 #, no-c-format
 msgid "Unknown"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:133
+#, no-c-format
+msgid "Change Icon…"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:137
+#, no-c-format
+msgid "Reset Icon"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:201
+#, no-c-format
+msgid "Could Not Reset Icon"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:237
+#, no-c-format
+msgid "Calculating…"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:245
+#, no-c-format
+msgid "Open Parent Folder"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:259
+#, no-c-format
+msgid "Open Link Target Location"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:275
+#, no-c-format
+msgid "Open Original Folder"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:301
+#, no-c-format
+msgid "Default Application"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:327 ui/window.ui:410
+#, no-c-format
+msgid "Images"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:332
+#, no-c-format
+msgid "Select Custom Icon"
+msgstr ""
+
+#: src/dialogs/properties/general.rs:356
+#, no-c-format
+msgid "Could Not Change Icon"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:41
+#, no-c-format
+msgid "You are not the owner, so you cannot change these permissions."
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:46
+#: src/dialogs/properties/permissions.rs:53
+#: src/dialogs/properties/permissions.rs:247
+#: src/dialogs/properties/permissions.rs:253 src/file_utils.rs:245
+#: src/tags.rs:39
+#, no-c-format
+msgid "None"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:47
+#: src/dialogs/properties/permissions.rs:254
+#, no-c-format
+msgid "List Files Only"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:48
+#: src/dialogs/properties/permissions.rs:255
+#, no-c-format
+msgid "Access Files"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:49
+#: src/dialogs/properties/permissions.rs:256
+#, no-c-format
+msgid "Create and Delete Files"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:54
+#: src/dialogs/properties/permissions.rs:248
+#, no-c-format
+msgid "Read-Only"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:55
+#: src/dialogs/properties/permissions.rs:249
+#, no-c-format
+msgid "Read and Write"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:89
+#, no-c-format
+msgid "Could Not Change Permissions"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:104
+#: src/dialogs/properties/permissions.rs:258
+#, no-c-format
+msgid "Others"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:152
+#, no-c-format
+msgid "Executable"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:153
+#, no-c-format
+msgid "Allow running as a program"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:180
+#, no-c-format
+msgid "Change Permissions for Enclosed Files…"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:231
+#, no-c-format
+msgid "Security Context"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:244
+#, no-c-format
+msgid "Unchanged"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:272 ui/shortcuts_dialog.ui:214
+#: ui/window.ui:179 ui/window.ui:222
+#, no-c-format
+msgid "Files"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:273 ui/window.ui:408
+#, no-c-format
+msgid "Folders"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:281
+#, no-c-format
+msgid "Change Permissions for Enclosed Files"
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:282
+#, no-c-format
+msgid "For “%s” and everything in it."
+msgstr ""
+
+#: src/dialogs/properties/permissions.rs:286
+#, no-c-format
+msgid "_Change"
 msgstr ""
 
 #: src/dialogs/select_pattern.rs:12
@@ -1939,22 +1953,22 @@ msgstr ""
 msgid "Select Items Matching"
 msgstr ""
 
-#: src/dialogs/tags.rs:31
+#: src/dialogs/tags.rs:34
 #, no-c-format
 msgid "New Tag"
 msgstr ""
 
-#: src/dialogs/tags.rs:36
+#: src/dialogs/tags.rs:39
 #, no-c-format
 msgid "_Add"
 msgstr ""
 
-#: src/dialogs/tags.rs:154 src/places_sidebar.rs:1234
+#: src/dialogs/tags.rs:157 src/places_sidebar/menu.rs:112
 #, no-c-format
 msgid "Custom…"
 msgstr ""
 
-#: src/dialogs/tags.rs:177 src/places_sidebar.rs:1028
+#: src/dialogs/tags.rs:180 src/places_sidebar.rs:556
 #, no-c-format
 msgid "Tag Colour"
 msgstr ""
@@ -1999,7 +2013,7 @@ msgstr ""
 msgid "Grid View"
 msgstr ""
 
-#: src/enums.rs:56 src/portal/chooser_window.rs:162 ui/shortcuts_dialog.ui:152
+#: src/enums.rs:56 src/portal/chooser_window.rs:165 ui/shortcuts_dialog.ui:152
 #: ui/window.ui:480 ui/window.ui:564
 #, no-c-format
 msgid "List View"
@@ -2080,12 +2094,12 @@ msgid_plural "%d items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:412 src/path_bar.rs:360 src/places_sidebar.rs:676
+#: src/file_utils.rs:412 src/path_bar.rs:360 src/places_sidebar.rs:391
 #, no-c-format
 msgid "Home"
 msgstr ""
 
-#: src/file_utils.rs:415 src/path_bar.rs:363 src/places_sidebar.rs:709
+#: src/file_utils.rs:415 src/path_bar.rs:363 src/places_sidebar.rs:424
 #, no-c-format
 msgid "Trash"
 msgstr ""
@@ -2095,169 +2109,169 @@ msgstr ""
 msgid "System"
 msgstr ""
 
-#: src/location_entry.rs:153 src/progress_indicator.rs:296 ui/window.ui:363
+#: src/location_entry.rs:156 src/progress_indicator.rs:296 ui/window.ui:363
 #, no-c-format
 msgid "Cancel"
 msgstr ""
 
-#: src/metadata.rs:1101
+#: src/metadata/display.rs:14
 #, no-c-format
 msgid "Title"
 msgstr ""
 
-#: src/metadata.rs:1102
+#: src/metadata/display.rs:15
 #, no-c-format
 msgid "Author"
 msgstr ""
 
-#: src/metadata.rs:1103
+#: src/metadata/display.rs:16
 #, no-c-format
 msgid "Pages"
 msgstr ""
 
-#: src/metadata.rs:1104
+#: src/metadata/display.rs:17
 #, no-c-format
 msgid "Page Size"
 msgstr ""
 
-#: src/metadata.rs:1105
+#: src/metadata/display.rs:18
 #, no-c-format
 msgid "Words"
 msgstr ""
 
-#: src/metadata.rs:1106
+#: src/metadata/display.rs:19
 #, no-c-format
 msgid "Slides"
 msgstr ""
 
-#: src/metadata.rs:1107
+#: src/metadata/display.rs:20
 #, no-c-format
 msgid "Artist"
 msgstr ""
 
-#: src/metadata.rs:1108
+#: src/metadata/display.rs:21
 #, no-c-format
 msgid "Album"
 msgstr ""
 
-#: src/metadata.rs:1111
+#: src/metadata/display.rs:24
 #, no-c-format
 msgid "Album Artist"
 msgstr ""
 
-#: src/metadata.rs:1117
+#: src/metadata/display.rs:30
 #, no-c-format
 msgid "Track"
 msgstr ""
 
-#: src/metadata.rs:1119
+#: src/metadata/display.rs:32
 #, no-c-format
 msgid "%s of %s"
 msgstr ""
 
-#: src/metadata.rs:1125
+#: src/metadata/display.rs:38
 #, no-c-format
 msgid "Year"
 msgstr ""
 
-#: src/metadata.rs:1126
+#: src/metadata/display.rs:39
 #, no-c-format
 msgid "Genre"
 msgstr ""
 
-#: src/metadata.rs:1128
+#: src/metadata/display.rs:41
 #, no-c-format
 msgid "Dimensions"
 msgstr ""
 
-#: src/metadata.rs:1133
+#: src/metadata/display.rs:46
 #, no-c-format
 msgid "Duration"
 msgstr ""
 
-#: src/metadata.rs:1134
+#: src/metadata/display.rs:47
 #, no-c-format
 msgid "Taken"
 msgstr ""
 
-#: src/metadata.rs:1135
+#: src/metadata/display.rs:48
 #, no-c-format
 msgid "Camera"
 msgstr ""
 
-#: src/metadata.rs:1136
+#: src/metadata/display.rs:49
 #, no-c-format
 msgid "Lens"
 msgstr ""
 
-#: src/metadata.rs:1137
+#: src/metadata/display.rs:50
 #, no-c-format
 msgid "Exposure"
 msgstr ""
 
-#: src/metadata.rs:1138
+#: src/metadata/display.rs:51
 #, no-c-format
 msgid "Video"
 msgstr ""
 
-#: src/metadata.rs:1139 ui/window.ui:411
+#: src/metadata/display.rs:52 ui/window.ui:411
 #, no-c-format
 msgid "Audio"
 msgstr ""
 
-#: src/metadata.rs:1141
+#: src/metadata/display.rs:54
 #, no-c-format
 msgid "Audio Tracks"
 msgstr ""
 
-#: src/metadata.rs:1145
+#: src/metadata/display.rs:58
 #, no-c-format
 msgid "Subtitles"
 msgstr ""
 
-#: src/metadata.rs:1158 src/metadata.rs:1176
+#: src/metadata/display.rs:71 src/metadata/display.rs:89
 #, no-c-format
 msgid "%s mm"
 msgstr ""
 
-#: src/metadata.rs:1173
+#: src/metadata/display.rs:86
 #, no-c-format
 msgid "%s s"
 msgstr ""
 
-#: src/metadata.rs:1187
+#: src/metadata/display.rs:100
 #, no-c-format
 msgid "%s fps"
 msgstr ""
 
-#: src/metadata.rs:1193
+#: src/metadata/display.rs:106
 #, no-c-format
 msgid "Mono"
 msgstr ""
 
-#: src/metadata.rs:1194
+#: src/metadata/display.rs:107
 #, no-c-format
 msgid "Stereo"
 msgstr ""
 
-#: src/metadata.rs:1195
+#: src/metadata/display.rs:108
 #, no-c-format
 msgid "%d channel"
 msgid_plural "%d channels"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/metadata.rs:1199
+#: src/metadata/display.rs:112
 #, no-c-format
 msgid "%s kHz"
 msgstr ""
 
-#: src/metadata.rs:1202
+#: src/metadata/display.rs:115
 #, no-c-format
 msgid "%s kbit/s"
 msgstr ""
 
-#: src/metadata.rs:1205
+#: src/metadata/display.rs:118
 #, no-c-format
 msgid "%s-bit"
 msgstr ""
@@ -2367,67 +2381,67 @@ msgstr ""
 msgid "Widely supported, larger archives"
 msgstr ""
 
-#: src/ops/archive.rs:241
+#: src/ops/archive.rs:240
 #, no-c-format
 msgid "bubblewrap is not installed, so archive tools cannot be run safely"
 msgstr ""
 
-#: src/ops/archive.rs:326
+#: src/ops/archive.rs:324
 #, no-c-format
 msgid "Cannot extract “%s”: install %t"
 msgstr ""
 
-#: src/ops/archive.rs:344
+#: src/ops/archive.rs:342
 #, no-c-format
 msgid "Enter Password"
 msgstr ""
 
-#: src/ops/archive.rs:345
+#: src/ops/archive.rs:343
 #, no-c-format
 msgid "“%s” is password protected"
 msgstr ""
 
-#: src/ops/archive.rs:389
+#: src/ops/archive.rs:387
 #, no-c-format
 msgid "Archives can only be extracted to local folders"
 msgstr ""
 
-#: src/ops/archive.rs:408 src/ops/archive.rs:530 src/ops/job.rs:170
+#: src/ops/archive.rs:406 src/ops/archive.rs:528 src/ops/job.rs:170
 #, no-c-format
 msgid "Extracting “%s”"
 msgstr ""
 
-#: src/ops/archive.rs:527 src/ops/walk.rs:659
+#: src/ops/archive.rs:525 src/ops/walk.rs:656
 #, no-c-format
 msgid "Waiting for your answer"
 msgstr ""
 
-#: src/ops/archive.rs:616
+#: src/ops/archive.rs:614
 #, no-c-format
 msgid "Archives can only be created in local folders"
 msgstr ""
 
-#: src/ops/archive.rs:621
+#: src/ops/archive.rs:619
 #, no-c-format
 msgid "Archives can only be created from local files"
 msgstr ""
 
-#: src/ops/archive.rs:635
+#: src/ops/archive.rs:633
 #, no-c-format
 msgid "Creating zip archives needs zip or 7-Zip"
 msgstr ""
 
-#: src/ops/archive.rs:643
+#: src/ops/archive.rs:641
 #, no-c-format
 msgid "7-Zip is required to create 7z archives"
 msgstr ""
 
-#: src/ops/archive.rs:651
+#: src/ops/archive.rs:649
 #, no-c-format
 msgid "tar is required to create tar archives"
 msgstr ""
 
-#: src/ops/archive.rs:656
+#: src/ops/archive.rs:654
 #, no-c-format
 msgid "Compressing…"
 msgstr ""
@@ -2476,7 +2490,7 @@ msgstr ""
 msgid "_Merge"
 msgstr ""
 
-#: src/ops/conflict.rs:81 src/portal/chooser_window.rs:885
+#: src/ops/conflict.rs:81 src/portal/chooser_window.rs:887
 #, no-c-format
 msgid "_Replace"
 msgstr ""
@@ -2855,7 +2869,7 @@ msgstr ""
 msgid "All items in the Trash will be permanently deleted."
 msgstr ""
 
-#: src/ops/mod.rs:31 src/places_sidebar.rs:951 ui/browser_view.ui:393
+#: src/ops/mod.rs:31 src/places_sidebar/devices.rs:223 ui/browser_view.ui:393
 #, no-c-format
 msgid "_Empty Trash"
 msgstr ""
@@ -2876,83 +2890,83 @@ msgid "The destination folder is inside the source folder."
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:104
+#: src/ops/walk.rs:103
 #, no-c-format
 msgid "Trashing"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:146
+#: src/ops/walk.rs:145
 #, no-c-format
 msgid "Renaming"
 msgstr ""
 
-#: src/ops/walk.rs:197
+#: src/ops/walk.rs:194
 #, no-c-format
 msgid "The permissions of %d item could not be changed."
 msgid_plural "The permissions of %d items could not be changed."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ops/walk.rs:276
+#: src/ops/walk.rs:271
 #, no-c-format
 msgid "Links can only point at local files"
 msgstr ""
 
-#: src/ops/walk.rs:339
+#: src/ops/walk.rs:334
 #, no-c-format
 msgid ""
 "This location does not support trashing. Delete it permanently instead, "
 "along with any other item that cannot be trashed either?"
 msgstr ""
 
-#: src/ops/walk.rs:342
+#: src/ops/walk.rs:337
 #, no-c-format
 msgid "This location does not support trashing. Delete it permanently instead?"
 msgstr ""
 
-#: src/ops/walk.rs:345
+#: src/ops/walk.rs:340
 #, no-c-format
 msgid "Cannot Move “%s” to Trash"
 msgstr ""
 
-#: src/ops/walk.rs:351
+#: src/ops/walk.rs:346
 #, no-c-format
 msgid "_Delete Permanently"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:487
+#: src/ops/walk.rs:481
 #, no-c-format
 msgid "Moving"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:490
+#: src/ops/walk.rs:484
 #, no-c-format
 msgid "Copying"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:690
+#: src/ops/walk.rs:683
 #, no-c-format
 msgid "Deleting"
 msgstr ""
 
 #. Translators: name of a symbolic link, as in “Link to report.pdf”.
-#: src/ops/walk.rs:721
+#: src/ops/walk.rs:724
 #, no-c-format
 msgid "Link to %s"
 msgstr ""
 
 #. Translators: file name given to an image pasted from the clipboard.
-#: src/ops/walk.rs:743
+#: src/ops/walk.rs:746
 #, no-c-format
 msgid "Pasted Image"
 msgstr ""
 
 #. Translators: goes into duplicate names, as in “report (copy).pdf”.
-#: src/ops/walk.rs:765
+#: src/ops/walk.rs:768
 #, no-c-format
 msgid "copy"
 msgstr ""
@@ -2962,156 +2976,156 @@ msgstr ""
 msgid "Edit Location"
 msgstr ""
 
-#: src/places_sidebar.rs:686
+#: src/places_sidebar.rs:401
 #, no-c-format
 msgid "Desktop"
 msgstr ""
 
-#: src/places_sidebar.rs:830
+#: src/places_sidebar/devices.rs:102
 #, no-c-format
 msgid "Disconnect"
 msgstr ""
 
-#: src/places_sidebar.rs:832
+#: src/places_sidebar/devices.rs:104
 #, no-c-format
 msgid "Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:867
+#: src/places_sidebar/devices.rs:139
 #, no-c-format
 msgid "Could Not Mount"
 msgstr ""
 
-#: src/places_sidebar.rs:906
+#: src/places_sidebar/devices.rs:178
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:908
+#: src/places_sidebar/devices.rs:180
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr ""
 
-#: src/places_sidebar.rs:927
+#: src/places_sidebar/devices.rs:199
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr ""
 
-#: src/places_sidebar.rs:933
+#: src/places_sidebar/devices.rs:205
 #, no-c-format
 msgid "Could Not Eject"
 msgstr ""
 
-#: src/places_sidebar.rs:944
+#: src/places_sidebar/devices.rs:216
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr ""
 
-#: src/places_sidebar.rs:946
+#: src/places_sidebar/devices.rs:218
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
 "trashed items on the volume will be permanently lost."
 msgstr ""
 
-#: src/places_sidebar.rs:950
+#: src/places_sidebar/devices.rs:222
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr ""
 
-#: src/places_sidebar.rs:1295
+#: src/places_sidebar/menu.rs:173
 #, no-c-format
 msgid "Remove Tag “%s”?"
 msgstr ""
 
-#: src/places_sidebar.rs:1297
+#: src/places_sidebar/menu.rs:175
 #, no-c-format
 msgid "No file carries it."
 msgstr ""
 
-#: src/places_sidebar.rs:1300
+#: src/places_sidebar/menu.rs:178
 #, no-c-format
 msgid "It will be taken off the %d file that carries it."
 msgid_plural "It will be taken off the %d files that carry it."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/places_sidebar.rs:1311 ui/places_sidebar.ui:28
+#: src/places_sidebar/menu.rs:189 ui/places_sidebar.ui:28
 #, no-c-format
 msgid "_Remove"
 msgstr ""
 
-#: src/portal/chooser_window.rs:205 ui/window.ui:91
+#: src/portal/chooser_window.rs:208 ui/window.ui:91
 #, no-c-format
 msgid "_A-Z"
 msgstr ""
 
-#: src/portal/chooser_window.rs:206 ui/window.ui:96
+#: src/portal/chooser_window.rs:209 ui/window.ui:96
 #, no-c-format
 msgid "_Z-A"
 msgstr ""
 
-#: src/portal/chooser_window.rs:207 ui/window.ui:101
+#: src/portal/chooser_window.rs:210 ui/window.ui:101
 #, no-c-format
 msgid "Last _Modified"
 msgstr ""
 
-#: src/portal/chooser_window.rs:208 ui/window.ui:106
+#: src/portal/chooser_window.rs:211 ui/window.ui:106
 #, no-c-format
 msgid "_First Modified"
 msgstr ""
 
-#: src/portal/chooser_window.rs:209 ui/window.ui:111
+#: src/portal/chooser_window.rs:212 ui/window.ui:111
 #, no-c-format
 msgid "_Size"
 msgstr ""
 
-#: src/portal/chooser_window.rs:210 ui/window.ui:116
+#: src/portal/chooser_window.rs:213 ui/window.ui:116
 #, no-c-format
 msgid "_Type"
 msgstr ""
 
-#: src/portal/chooser_window.rs:218 ui/window.ui:89
+#: src/portal/chooser_window.rs:221 ui/window.ui:89
 #, no-c-format
 msgid "Sort"
 msgstr ""
 
-#: src/portal/chooser_window.rs:225
+#: src/portal/chooser_window.rs:228
 #, no-c-format
 msgid "Search this folder"
 msgstr ""
 
-#: src/portal/chooser_window.rs:234 ui/window.ui:382
+#: src/portal/chooser_window.rs:237 ui/window.ui:382
 #, no-c-format
 msgid "Search"
 msgstr ""
 
-#: src/portal/chooser_window.rs:310
+#: src/portal/chooser_window.rs:313
 #, no-c-format
 msgid "_Save"
 msgstr ""
 
-#: src/portal/chooser_window.rs:324
+#: src/portal/chooser_window.rs:327
 #, no-c-format
 msgid "Visible Files Filter"
 msgstr ""
 
-#: src/portal/chooser_window.rs:358
+#: src/portal/chooser_window.rs:361
 #, no-c-format
 msgid "File Name"
 msgstr ""
 
-#: src/portal/chooser_window.rs:370
+#: src/portal/chooser_window.rs:373
 #, no-c-format
 msgid "Show Options"
 msgstr ""
 
-#: src/portal/chooser_window.rs:876
+#: src/portal/chooser_window.rs:878
 #, no-c-format
 msgid "Replace “%s”?"
 msgstr ""
 
-#: src/portal/chooser_window.rs:878
+#: src/portal/chooser_window.rs:880
 #, no-c-format
 msgid ""
 "A file with that name already exists. Replacing it will overwrite its "
@@ -3123,42 +3137,42 @@ msgstr ""
 msgid "Show File Operations"
 msgstr ""
 
-#: src/tags.rs:28
+#: src/tags.rs:29
 #, no-c-format
 msgid "Custom"
 msgstr ""
 
-#: src/tags.rs:31
+#: src/tags.rs:32
 #, no-c-format
 msgid "Red"
 msgstr ""
 
-#: src/tags.rs:32
+#: src/tags.rs:33
 #, no-c-format
 msgid "Orange"
 msgstr ""
 
-#: src/tags.rs:33
+#: src/tags.rs:34
 #, no-c-format
 msgid "Yellow"
 msgstr ""
 
-#: src/tags.rs:34
+#: src/tags.rs:35
 #, no-c-format
 msgid "Green"
 msgstr ""
 
-#: src/tags.rs:35
+#: src/tags.rs:36
 #, no-c-format
 msgid "Blue"
 msgstr ""
 
-#: src/tags.rs:36
+#: src/tags.rs:37
 #, no-c-format
 msgid "Purple"
 msgstr ""
 
-#: src/tags.rs:37
+#: src/tags.rs:38
 #, no-c-format
 msgid "Grey"
 msgstr ""
@@ -3173,17 +3187,17 @@ msgstr ""
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:832 src/window.rs:898 ui/shortcuts_dialog.ui:337
+#: src/window.rs:614 src/window.rs:670 ui/shortcuts_dialog.ui:337
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:859
+#: src/window.rs:641
 #, no-c-format
 msgid "Open Folder"
 msgstr ""
 
-#: src/window.rs:1382 ui/window.ui:73
+#: src/window/header.rs:97 ui/window.ui:73
 #, no-c-format
 msgid "_Columns"
 msgstr ""
