@@ -638,12 +638,13 @@ fn crc32(bytes: &[u8]) -> u32 {
 }
 
 /// A `bwrap` command line up to (not including) the caller's own binds and `--`, for running
-/// helpers over untrusted input. None when bwrap is not installed, and then the helper is
-/// not run at all: everything this sandbox holds reads files chosen by whoever wrote them.
+/// helpers over untrusted input. None when bwrap is not installed or the seccomp filter
+/// cannot be built, and then the helper is not run at all: everything this sandbox holds
+/// reads files chosen by whoever wrote them.
 pub(crate) struct Sandbox {
     pub argv: Vec<String>,
     /// Inherited memfd holding the seccomp program named in `argv`.
-    pub seccomp: Option<std::fs::File>,
+    pub seccomp: std::fs::File,
 }
 
 /// Try the sandbox once at startup and say what is wrong with it if anything is. Nothing
@@ -664,7 +665,11 @@ pub fn check_sandbox() {
 
 fn sandbox_trouble() -> Option<String> {
     let Some(sandbox) = sandbox_base("/") else {
-        return Some("bwrap (bubblewrap) is not installed".into());
+        return Some(if glib::find_program_in_path("bwrap").is_none() {
+            "bwrap (bubblewrap) is not installed".into()
+        } else {
+            "the seccomp filter could not be built".into()
+        });
     };
     // Something harmless to run inside it, only to see whether the sandbox itself starts.
     let inside = glib::find_program_in_path("true")?;
@@ -681,12 +686,13 @@ fn sandbox_trouble() -> Option<String> {
 
 pub(crate) fn sandbox_base(program: &str) -> Option<Sandbox> {
     let bwrap = glib::find_program_in_path("bwrap")?;
-    let seccomp = seccomp_filter();
-    let mut argv = vec![bwrap.to_string_lossy().into_owned()];
-    if let Some(fd) = &seccomp {
-        argv.push("--seccomp".into());
-        argv.push(fd.as_raw_fd().to_string());
-    }
+    // A helper that would run without its filter does not run.
+    let seccomp = seccomp_filter()?;
+    let mut argv = vec![
+        bwrap.to_string_lossy().into_owned(),
+        "--seccomp".into(),
+        seccomp.as_raw_fd().to_string(),
+    ];
     argv.extend(
         [
             "--ro-bind",
@@ -747,7 +753,8 @@ pub(crate) fn sandbox_base(program: &str) -> Option<Sandbox> {
 }
 
 /// BPF program denying the syscalls a thumbnailer has no business making, in a memfd that
-/// the child inherits for `bwrap --seccomp`.
+/// the child inherits for `bwrap --seccomp`. None when any rule cannot be added: a filter
+/// with holes in it is not handed out.
 fn seccomp_filter() -> Option<std::fs::File> {
     use libseccomp::{ScmpAction, ScmpArgCompare, ScmpCompareOp, ScmpFilterContext, ScmpSyscall};
     use std::os::fd::FromRawFd;
@@ -799,13 +806,13 @@ fn seccomp_filter() -> Option<std::fs::File> {
     ] {
         // Names unknown on this architecture are not filtered.
         if let Ok(sc) = ScmpSyscall::from_name(name) {
-            let _ = ctx.add_rule(deny, sc);
+            ctx.add_rule(deny, sc).ok()?;
         }
     }
     // clone()/clone3() with CLONE_NEWUSER, and ioctl(TIOCSTI) terminal injection.
     let newuser = libc::CLONE_NEWUSER as u64;
     if let Ok(sc) = ScmpSyscall::from_name("clone") {
-        let _ = ctx.add_rule_conditional(
+        ctx.add_rule_conditional(
             deny,
             sc,
             &[ScmpArgCompare::new(
@@ -813,18 +820,20 @@ fn seccomp_filter() -> Option<std::fs::File> {
                 ScmpCompareOp::MaskedEqual(newuser),
                 newuser,
             )],
-        );
+        )
+        .ok()?;
     }
     // ENOSYS, not EPERM: glibc then falls back to clone(), which the rule above screens.
     if let Ok(sc) = ScmpSyscall::from_name("clone3") {
-        let _ = ctx.add_rule(ScmpAction::Errno(libc::ENOSYS), sc);
+        ctx.add_rule(ScmpAction::Errno(libc::ENOSYS), sc).ok()?;
     }
     if let Ok(sc) = ScmpSyscall::from_name("ioctl") {
-        let _ = ctx.add_rule_conditional(
+        ctx.add_rule_conditional(
             deny,
             sc,
             &[ScmpArgCompare::new(1, ScmpCompareOp::Equal, libc::TIOCSTI)],
-        );
+        )
+        .ok()?;
     }
     // No MFD_CLOEXEC on purpose: bwrap reads the program through this very fd.
     let fd = unsafe { libc::memfd_create(c"spiral-seccomp".as_ptr(), 0) };

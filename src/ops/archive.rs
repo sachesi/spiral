@@ -231,7 +231,6 @@ async fn run(
     progress: &mut dyn FnMut(&str) -> bool,
 ) -> Result<(), Fail> {
     let mut argv: Vec<String> = Vec::new();
-    let mut seccomp: Option<OwnedFd> = None;
     let launcher = gio::SubprocessLauncher::new(
         gio::SubprocessFlags::STDOUT_PIPE | gio::SubprocessFlags::STDERR_MERGE,
     );
@@ -250,14 +249,13 @@ async fn run(
     argv.push("--chdir".into());
     argv.push(cmd.cwd.to_string_lossy().into_owned());
     argv.push("--".into());
-    if let Some(fd) = sandbox.seccomp {
-        let fd = OwnedFd::from(fd);
-        launcher.take_fd(
-            fd.try_clone().map_err(|e| Fail::Failed(e.to_string()))?,
-            &fd,
-        );
-        seccomp = Some(fd);
-    }
+    let seccomp = OwnedFd::from(sandbox.seccomp);
+    launcher.take_fd(
+        seccomp
+            .try_clone()
+            .map_err(|e| Fail::Failed(e.to_string()))?,
+        &seccomp,
+    );
     argv.extend(cmd.argv);
     let os_argv: Vec<&std::ffi::OsStr> = argv.iter().map(std::ffi::OsStr::new).collect();
     let child = launcher

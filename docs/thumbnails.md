@@ -98,8 +98,9 @@ kexec, io_uring and similar system calls fail with EPERM, `clone` with `CLONE_NE
 refused, and `clone3` returns ENOSYS so libc falls back to `clone`. The exact list is in
 `src/thumbnails.rs`.
 
-A thumbnailer that crashes or misbehaves is confined to that sandbox. `bwrap` is required:
-without it no thumbnail is generated at all. Spiral tries the sandbox once at startup and
+A thumbnailer that crashes or misbehaves is confined to that sandbox. `bwrap` is required,
+and so is the filter: without either no thumbnail is generated at all, and a filter that
+could not be built in full counts as none. Spiral tries the sandbox once at startup and
 says what is wrong with it if anything is, so a system with `bwrap` missing or with user
 namespaces turned off gives a reason rather than empty icons. There is
 no unsandboxed path, because the input is a file the reader did not write.
