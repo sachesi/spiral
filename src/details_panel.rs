@@ -3,13 +3,14 @@
 //!
 //! Nearly everything comes from the listing the pane already holds. Reading more is kept
 //! to what is cheap and safe to do for every file the selection stops on: the thumbnail,
-//! made by the sandboxed thumbnailers as for the views; what a picture, a recording or a
-//! video says about itself, read in the same sandbox; the number of items in a folder; the
-//! folder's own record and free space.
+//! made by the sandboxed thumbnailers as for the views; what a photo, a recording, a video
+//! or a document says about itself, read in the same sandbox; the number of items in a
+//! folder; the folder's own record and free space.
 
 use std::cell::{Cell, RefCell};
 use std::future::Future;
-use std::time::Duration;
+use std::hash::{Hash, Hasher};
+use std::time::{Duration, Instant};
 
 use gettextrs::{gettext, ngettext};
 
@@ -23,6 +24,9 @@ use crate::{adw, file_utils, gio, glib, gtk, prefs};
 /// walks through files faster than their thumbnails can be read, and only the file it
 /// stops on is worth reading.
 const SETTLE: Duration = Duration::from_millis(80);
+/// Changes that keep coming, a large folder being listed, hold the panel back no longer
+/// than this: it would go on showing the folder that was left.
+const MAX_WAIT: Duration = Duration::from_secs(1);
 const ICON_SIZE: i32 = 128;
 
 mod imp {
@@ -33,6 +37,10 @@ mod imp {
         pub scroll: gtk::ScrolledWindow,
         pub view: RefCell<Option<glib::WeakRef<BrowserView>>>,
         pub pending: RefCell<Option<glib::SourceId>>,
+        /// Since when the update that is pending has been put off.
+        pub waiting_since: Cell<Option<Instant>>,
+        /// What the page on show was made for, see `shown_for`.
+        pub shown: Cell<Option<u64>>,
         /// Counts the updates, so what an earlier one is still reading is not shown.
         pub generation: Cell<u64>,
     }
@@ -76,12 +84,21 @@ impl DetailsPanel {
     /// The selection or the folder of the pane followed changed.
     pub fn queue_update(&self) {
         let imp = self.imp();
+        if !self.is_mapped() {
+            if let Some(id) = imp.pending.take() {
+                id.remove();
+            }
+            imp.waiting_since.set(None);
+            return;
+        }
+        let since = imp.waiting_since.get().unwrap_or_else(Instant::now);
+        if imp.pending.borrow().is_some() && since.elapsed() >= MAX_WAIT {
+            return;
+        }
         if let Some(id) = imp.pending.take() {
             id.remove();
         }
-        if !self.is_mapped() {
-            return;
-        }
+        imp.waiting_since.set(Some(since));
         let id = glib::timeout_add_local_once(
             SETTLE,
             glib::clone!(
@@ -89,6 +106,7 @@ impl DetailsPanel {
                 self,
                 move || {
                     panel.imp().pending.take();
+                    panel.imp().waiting_since.set(None);
                     panel.update();
                 }
             ),
@@ -98,19 +116,35 @@ impl DetailsPanel {
 
     fn update(&self) {
         let imp = self.imp();
-        imp.generation.set(imp.generation.get() + 1);
         let view = imp.view.borrow().as_ref().and_then(|w| w.upgrade());
         let Some(view) = view else {
+            imp.shown.set(None);
             imp.scroll.set_child(gtk::Widget::NONE);
             return;
         };
         let infos = view.model().selected_infos();
+        // Another file of the folder changing is no reason to build the page again, which
+        // would take it back to the top and the keyboard out of it.
+        let key = shown_for(&view, &infos);
+        if imp.shown.get() == Some(key) {
+            return;
+        }
+        imp.shown.set(Some(key));
+        imp.generation.set(imp.generation.get() + 1);
+        let focused = self
+            .root()
+            .and_then(|root| root.focus())
+            .is_some_and(|focus| focus.is_ancestor(self));
         let page = match infos.as_slice() {
             [] => self.folder_page(&view),
             [info] => self.file_page(&view, info),
             _ => many_page(&infos),
         };
         imp.scroll.set_child(Some(&page));
+        // The keyboard was in the page that went: it goes on in the new one, at its button.
+        if focused {
+            page.child_focus(gtk::DirectionType::TabBackward);
+        }
     }
 
     /// Hand what `fut` answers to `show`, unless the panel has moved on by then.
@@ -309,9 +343,37 @@ impl DetailsPanel {
                 },
             );
         }
-        let count = file_utils::items_string(u64::from(model.n_items()));
+        let count = file_utils::items_string(u64::from(model.n_top_items()));
         page(&icon, &view.location_title(), &count, &[&group])
     }
+}
+
+/// What a page shows is made from: the pane, and the files selected in it as the listing has
+/// them, a changed file being a new record there; with none selected, the folder. The record
+/// of the first item stands for a listing read again, as it is after a change of preference.
+fn shown_for(view: &BrowserView, infos: &[gio::FileInfo]) -> u64 {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    (view.as_ptr() as usize).hash(&mut hasher);
+    let model = view.model();
+    if infos.is_empty() {
+        view.location()
+            .map(|l| l.uri().to_string())
+            .hash(&mut hasher);
+        model.searching().hash(&mut hasher);
+        model.n_top_items().hash(&mut hasher);
+        model
+            .info_at(0)
+            .map(|i| i.as_ptr() as usize)
+            .hash(&mut hasher);
+    }
+    for info in infos {
+        (info.as_ptr() as usize).hash(&mut hasher);
+        file_utils::size_of(info).hash(&mut hasher);
+        info.modification_date_time()
+            .map(|d| d.to_unix())
+            .hash(&mut hasher);
+    }
+    hasher.finish()
 }
 
 /// Several files: how many, their type where they share one, and what the files among

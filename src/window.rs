@@ -1079,6 +1079,15 @@ impl SpiralWindow {
         let imp = self.imp();
         let show =
             imp.settings.boolean("details-visible") && !imp.narrow.get() && !imp.cramped.get();
+        // Hidden with the keyboard in it, the panel hands the keyboard back to the pane: it
+        // would otherwise be on nothing, and the keys of the files with it.
+        if !show
+            && gtk::prelude::GtkWindowExt::focus(self)
+                .is_some_and(|focus| focus.is_ancestor(&*imp.details_sidebar))
+            && let Some(view) = self.current_view()
+        {
+            view.grab_view_focus();
+        }
         // Hidden, it is taken out of the layout as well: the split view still measures a
         // hidden sidebar, at whatever width is left while the window changes breakpoint.
         imp.details_sidebar.set_visible(show);

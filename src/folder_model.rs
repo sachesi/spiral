@@ -696,6 +696,14 @@ impl FolderModel {
         self.selection().n_items()
     }
 
+    /// Items of the folder itself, leaving out those of the folders unfolded in the list.
+    pub fn n_top_items(&self) -> u32 {
+        self.selection()
+            .model()
+            .and_downcast::<gtk::TreeListModel>()
+            .map_or_else(|| self.n_items(), |tree| tree.model().n_items())
+    }
+
     /// Position of `file` in the current view order, if visible.
     pub fn position_of(&self, file: &gio::File) -> Option<u32> {
         (0..self.n_items()).find(|&i| {
