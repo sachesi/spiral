@@ -263,6 +263,7 @@ impl BrowserView {
                 // Writability is looked up once per folder, off the main loop's back.
                 view.imp().can_write.set(true);
                 update();
+                view.update_other_pane();
                 let Some(dir) = view.location() else { return };
                 glib::spawn_future_local(glib::clone!(
                     #[weak]
@@ -282,6 +283,7 @@ impl BrowserView {
                         if view.location().is_some_and(|l| l.equal(&dir)) {
                             view.imp().can_write.set(writable);
                             update();
+                            view.update_other_pane();
                             // Cells bound before the answer arrived assumed a writable
                             // folder; rebind them so their lock emblems follow.
                             if !writable {
@@ -1062,14 +1064,26 @@ impl BrowserView {
         ));
     }
 
-    /// The other pane of a split tab and its folder, when that folder takes files.
-    fn other_pane(&self) -> Option<(BrowserView, gio::File)> {
+    /// The other pane of a split tab.
+    fn sibling(&self) -> Option<BrowserView> {
         let paned = self.parent().and_downcast::<gtk::Paned>()?;
-        let other = [paned.start_child(), paned.end_child()]
+        [paned.start_child(), paned.end_child()]
             .into_iter()
             .flatten()
             .find(|c| c != self.upcast_ref::<gtk::Widget>())
-            .and_downcast::<BrowserView>()?;
+            .and_downcast()
+    }
+
+    /// Whether the other pane can put files here follows what this one shows.
+    fn update_other_pane(&self) {
+        if let Some(other) = self.sibling() {
+            other.update_action_state();
+        }
+    }
+
+    /// The other pane of a split tab and its folder, when that folder takes files.
+    fn other_pane(&self) -> Option<(BrowserView, gio::File)> {
+        let other = self.sibling()?;
         let dir = other.location()?;
         let virtual_dir = dir.uri().starts_with("trash:")
             || crate::starred::is_starred_location(&dir)
