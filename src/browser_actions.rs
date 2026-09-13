@@ -200,6 +200,8 @@ impl BrowserView {
             add("paste-link", |v| v.paste_link()),
             add("copy-to", |v| v.transfer_to(false)),
             add("move-to", |v| v.transfer_to(true)),
+            add("copy-to-other-pane", |v| v.transfer_to_other_pane(false)),
+            add("move-to-other-pane", |v| v.transfer_to_other_pane(true)),
             add("run", |v| v.run_selected()),
             add("rename", |v| v.rename_selected()),
             add("new-file", |v| v.new_document(None)),
@@ -567,6 +569,15 @@ impl BrowserView {
             "move-to",
             n > 0 && !in_trash && can_delete && shown("show-move-to"),
         );
+        // Only with a second pane, and one showing a folder that takes files.
+        let other_dir = self.other_pane().map(|(_, dir)| dir);
+        let copy_other = n > 0 && !in_trash && !pointers && other_dir.is_some();
+        self.set_enabled("copy-to-other-pane", copy_other);
+        let same_dir = match (&other_dir, self.location()) {
+            (Some(dir), Some(here)) => dir.equal(&here),
+            _ => false,
+        };
+        self.set_enabled("move-to-other-pane", copy_other && can_delete && !same_dir);
         self.set_enabled("run", n == 1 && file_utils::is_program(&infos[0]));
         // A device listed in the folder can be sent away from here, as it can from the
         // sidebar; a drive that takes its medium back is ejected, the rest unmounted.
@@ -1049,6 +1060,37 @@ impl BrowserView {
                 }
             }
         ));
+    }
+
+    /// The other pane of a split tab and its folder, when that folder takes files.
+    fn other_pane(&self) -> Option<(BrowserView, gio::File)> {
+        let paned = self.parent().and_downcast::<gtk::Paned>()?;
+        let other = [paned.start_child(), paned.end_child()]
+            .into_iter()
+            .flatten()
+            .find(|c| c != self.upcast_ref::<gtk::Widget>())
+            .and_downcast::<BrowserView>()?;
+        let dir = other.location()?;
+        let virtual_dir = dir.uri().starts_with("trash:")
+            || crate::starred::is_starred_location(&dir)
+            || crate::tags::is_tag_location(&dir);
+        (!virtual_dir && other.imp().can_write.get()).then_some((other, dir))
+    }
+
+    /// Copy or move the selection into the folder the other pane shows, and select it
+    /// there once it has landed.
+    fn transfer_to_other_pane(&self, is_move: bool) {
+        let files = self.selected();
+        let Some((other, dest)) = self.other_pane() else {
+            return;
+        };
+        // Moving onto the folder the files already live in is a no-op.
+        let home = |f: &gio::File| f.parent().is_some_and(|p| p.equal(&dest));
+        if files.is_empty() || is_move && files.iter().all(home) {
+            return;
+        }
+        let pairs = files.into_iter().map(|f| (f, dest.clone())).collect();
+        other.submit_and_select(JobKind::Transfer { pairs, is_move });
     }
 
     fn paste_link(&self) {

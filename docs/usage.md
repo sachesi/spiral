@@ -36,7 +36,10 @@ move to a bar at the bottom.
 ## Two panes
 
 F3, or "Split View" in the view menu, splits every tab down the middle: two folders side
-by side, dragging between them, copying from one to the other. It stays as you leave it,
+by side, dragging between them, copying from one to the other. Ctrl+Shift+C copies what is
+selected into the folder the other pane shows and Ctrl+Shift+X moves it there, "Copy to
+Other Pane" and "Move to Other Pane" in the context menu too; what arrives is selected
+there. It stays as you leave it,
 for new tabs and windows too. F6 moves between the panes, and so does clicking in one.
 The pane in charge is outlined, and the path bar, the header buttons and the keyboard all
 act on that one. Drag the handle to give a pane more room. A window too narrow for two

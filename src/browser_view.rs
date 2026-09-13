@@ -163,6 +163,16 @@ mod imp {
             klass.add_binding_action(Key::c, M::CONTROL_MASK, "view.copy-network-address");
             klass.add_binding_action(Key::x, M::CONTROL_MASK, "view.cut");
             klass.add_binding_action(Key::v, M::CONTROL_MASK, "view.paste");
+            klass.add_binding_action(
+                Key::c,
+                M::CONTROL_MASK | M::SHIFT_MASK,
+                "view.copy-to-other-pane",
+            );
+            klass.add_binding_action(
+                Key::x,
+                M::CONTROL_MASK | M::SHIFT_MASK,
+                "view.move-to-other-pane",
+            );
             klass.add_binding_action(Key::a, M::CONTROL_MASK, "view.select-all");
             klass.add_binding_action(Key::s, M::CONTROL_MASK, "view.select-pattern");
             klass.add_binding_action(

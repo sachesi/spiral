@@ -958,6 +958,8 @@ impl SpiralWindow {
         };
         imp.active_view.replace(Some(view.downgrade()));
         self.insert_action_group("view", Some(&view.imp().actions));
+        // What the other pane shows decides whether files can go there.
+        view.update_action_state();
         if let Some(page) = imp.tab_view.selected_page()
             && view.location().is_some()
         {

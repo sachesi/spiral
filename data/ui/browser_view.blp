@@ -188,6 +188,16 @@ menu item_menu {
       hidden-when: "action-disabled";
     }
     item {
+      label: _("Copy to Other Pane");
+      action: "view.copy-to-other-pane";
+      hidden-when: "action-disabled";
+    }
+    item {
+      label: _("Move to Other Pane");
+      action: "view.move-to-other-pane";
+      hidden-when: "action-disabled";
+    }
+    item {
       label: _("_Paste Into Folder");
       action: "view.paste-into";
       hidden-when: "action-disabled";
