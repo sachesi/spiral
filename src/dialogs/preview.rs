@@ -261,7 +261,7 @@ impl PreviewDialog {
     /// that keep it inside a compressed object stream where nothing else can read it.
     /// Without this the dialog would open upright and turn itself over a moment later.
     pub async fn shape_ahead(&self, info: &gio::FileInfo) {
-        let probe = Probe::of(info);
+        let probe = Probe::of(info, &crate::thumbnails::on_disk(info).await);
         if probe.content_type != "application/pdf" {
             return;
         }
@@ -298,7 +298,7 @@ impl PreviewDialog {
         // The shape comes from headers on disk, read off the main thread, and so does the
         // thumbnail that holds the place of the content. Until they are known the page on
         // screen stays, so nothing is drawn in a shape it will not keep.
-        let probe = Probe::of(info);
+        let probe = Probe::of(info, &crate::thumbnails::on_disk(info).await);
         let (shape, placeholder) =
             gio::spawn_blocking(move || (probe.shape(), probe.placeholder()))
                 .await
@@ -393,7 +393,8 @@ impl PreviewDialog {
     /// The page for `info`, or `None` for a video, which puts itself on screen once it has
     /// a frame to show.
     async fn build_content(&self, info: &gio::FileInfo) -> Option<gtk::Widget> {
-        let file = file_utils::file_of(info);
+        // An item in the trash is read from the file on the disk it is.
+        let file = crate::thumbnails::on_disk(info).await;
         let content_type = crate::file_utils::content_type_of(info)
             .unwrap_or_default()
             .to_string();
@@ -1381,14 +1382,15 @@ fn fitted(width: f64, height: f64, room: (i32, i32)) -> Option<(i32, i32)> {
 }
 
 impl Probe {
-    fn of(info: &gio::FileInfo) -> Self {
+    /// What is known of `info`, whose content is in `file`.
+    fn of(info: &gio::FileInfo, file: &gio::File) -> Self {
         Self {
             is_dir: file_utils::is_dir(info),
             content_type: crate::file_utils::content_type_of(info)
                 .unwrap_or_default()
                 .to_string(),
-            path: file_utils::file_of(info).path(),
-            uri: file_utils::file_of(info).uri().to_string(),
+            path: file.path(),
+            uri: file.uri().to_string(),
             mtime: info
                 .modification_date_time()
                 .map(|d| d.to_unix() as u64)

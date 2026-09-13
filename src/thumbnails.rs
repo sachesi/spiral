@@ -103,19 +103,9 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
     if info.file_type() == gio::FileType::Directory {
         return None;
     }
-    // An item in the trash is a local file under another name: the thumbnail is that
-    // file's, allowed and made as for any other local file.
-    let file = crate::file_utils::file_of(info);
-    let file = if file.has_uri_scheme("trash") {
-        match info.attribute_string("standard::target-uri") {
-            Some(uri) => Some(gio::File::for_uri(&uri)),
-            None => in_trashed_folder(&file).await,
-        }
-        .filter(|target| target.is_native())
-        .unwrap_or(file)
-    } else {
-        file
-    };
+    // The thumbnail of an item in the trash is that of the file on the disk, allowed and
+    // made as for any other local file.
+    let file = on_disk(info).await;
     let uri = file.uri().to_string();
     // Checked before the cache so a preference change takes effect on the next reload.
     if !crate::prefs::thumbnails_for(&file) {
@@ -181,6 +171,21 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         glib::spawn_future_local(generate_task(key, source, at));
     }
     rx.await.ok().flatten()
+}
+
+/// The file of `info` on the disk: an item in the trash is a local file under another
+/// name, and what is read of it is read from that file.
+pub(crate) async fn on_disk(info: &gio::FileInfo) -> gio::File {
+    let file = crate::file_utils::file_of(info);
+    if !file.has_uri_scheme("trash") {
+        return file;
+    }
+    match info.attribute_string("standard::target-uri") {
+        Some(uri) => Some(gio::File::for_uri(&uri)),
+        None => in_trashed_folder(&file).await,
+    }
+    .filter(|target| target.is_native())
+    .unwrap_or(file)
 }
 
 /// Where a file inside a folder in the trash is on the disk. The trash says so only for

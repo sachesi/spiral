@@ -896,10 +896,11 @@ fn unescape(text: &str) -> String {
 // ---- in the file manager --------------------------------------------------------------------
 
 /// Read what the file of `info` says about itself, in the sandbox, or `None` where it is not
-/// a local file of a kind the helper reads, or the helper cannot be run. Kept per version of
-/// the file, so going back to one is not another run.
+/// a local file of a kind the helper reads, or the helper cannot be run; an item in the trash
+/// is the file on the disk it is. Kept per version of the file, so going back to one is not
+/// another run.
 pub async fn read(info: &gio::FileInfo) -> Option<Rc<Facts>> {
-    let file = file_utils::file_of(info);
+    let file = crate::thumbnails::on_disk(info).await;
     let kind = kind_of(&file_utils::content_type_of(info)?)?;
     let path = file.path().filter(|_| file.is_native())?;
     let key = (
