@@ -1,10 +1,11 @@
-//! Starred files: one URI per line under the user data dir, shared as a `gtk::StringList`
-//! so views can follow `items-changed`.
+//! Starred files: one URI per line under the user data dir, kept in [`Lines`] so views
+//! can follow a change.
 
 use std::path::PathBuf;
 
-use crate::gtk::prelude::*;
-use crate::{gio, glib, gtk};
+use crate::gio::prelude::*;
+use crate::lines::{Lines, WatchId};
+use crate::{gio, glib};
 
 pub const URI: &str = "starred:///";
 
@@ -17,65 +18,65 @@ fn path() -> PathBuf {
 }
 
 thread_local! {
-    static LIST: gtk::StringList = {
+    static LIST: Lines = {
         let text = std::fs::read_to_string(path()).unwrap_or_default();
-        gtk::StringList::new(&text.lines().filter(|l| !l.is_empty()).collect::<Vec<_>>())
+        Lines::new(text.lines().filter(|l| !l.is_empty()).map(String::from).collect())
     };
 }
 
-/// The shared list of starred URIs.
-pub fn list() -> gtk::StringList {
-    LIST.with(|l| l.clone())
+/// Call `f` whenever the starred files change.
+pub fn watch(f: impl Fn() + 'static) -> WatchId {
+    LIST.with(|l| l.watch(f))
+}
+
+pub fn unwatch(id: WatchId) {
+    LIST.with(|l| l.unwatch(id));
 }
 
 pub fn files() -> Vec<gio::File> {
-    let list = list();
-    (0..list.n_items())
-        .filter_map(|i| list.string(i))
-        .map(|u| gio::File::for_uri(&u))
+    LIST.with(|l| l.to_vec())
+        .iter()
+        .map(|u| gio::File::for_uri(u))
         .collect()
 }
 
 pub fn is_starred(file: &gio::File) -> bool {
-    list().find(&file.uri()) != gtk::INVALID_LIST_POSITION
+    LIST.with(|l| l.contains(&file.uri()))
 }
 
 pub fn set_starred(file: &gio::File, starred: bool) {
-    let list = list();
-    let uri = file.uri();
-    match (list.find(&uri), starred) {
-        (gtk::INVALID_LIST_POSITION, true) => list.append(&uri),
-        (gtk::INVALID_LIST_POSITION, false) => return,
-        (_, true) => return,
-        (i, false) => list.remove(i),
-    }
-    save(&list);
+    let uri = file.uri().to_string();
+    LIST.with(|list| {
+        match (list.position(&uri), starred) {
+            (None, true) => list.push(uri),
+            (None, false) | (Some(_), true) => return,
+            (Some(i), false) => list.remove(i),
+        }
+        save(list);
+    });
 }
 
 /// `file` was trashed or deleted, and so was everything below it: none of it stays
 /// starred, and a restore does not star it again. One change, so Favorites loads once.
 pub fn forget_all(file: &gio::File) {
-    let list = list();
     let uri = file.uri().to_string();
     let below = format!("{uri}/");
-    let kept: Vec<String> = (0..list.n_items())
-        .filter_map(|i| list.string(i))
-        .map(String::from)
-        .filter(|u| *u != uri && !u.starts_with(&below))
-        .collect();
-    if kept.len() as u32 == list.n_items() {
-        return;
-    }
-    let refs: Vec<&str> = kept.iter().map(String::as_str).collect();
-    list.splice(0, list.n_items(), &refs);
-    save(&list);
+    LIST.with(|list| {
+        let kept: Vec<String> = list
+            .to_vec()
+            .into_iter()
+            .filter(|u| *u != uri && !u.starts_with(&below))
+            .collect();
+        if kept.len() == list.len() {
+            return;
+        }
+        list.replace(kept);
+        save(list);
+    });
 }
 
-fn save(list: &gtk::StringList) {
-    let text: String = (0..list.n_items())
-        .filter_map(|i| list.string(i))
-        .map(|s| format!("{s}\n"))
-        .collect();
+fn save(list: &Lines) {
+    let text: String = list.to_vec().iter().map(|s| format!("{s}\n")).collect();
     let p = path();
     let _ = p.parent().map(std::fs::create_dir_all);
     if let Err(e) = std::fs::write(&p, text) {

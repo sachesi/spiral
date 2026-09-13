@@ -14,6 +14,7 @@ use gettextrs::gettext;
 use glib::translate::*;
 
 use crate::gtk::prelude::*;
+use crate::lines::{Lines, WatchId};
 use crate::{gdk, gio, glib, gtk};
 
 /// The extended attribute, as GIO names it.
@@ -520,8 +521,8 @@ pub fn attribute_value(names: &[String]) -> Option<String> {
     (!names.is_empty()).then(|| escape(&names.join(",")))
 }
 
-// The index: `tag<TAB>uri` lines, shared as a `gtk::StringList` so a view listing a tag
-// can follow `items-changed`, the way Favorites follow theirs. Every Spiral running, the
+// The index: `tag<TAB>uri` lines, kept in [`Lines`] so a view listing a tag can follow
+// a change, the way Favorites follow theirs. Every Spiral running, the
 // file chooser too, keeps one and follows the file, so a file tagged in one shows up
 // under the tag in all.
 
@@ -547,9 +548,9 @@ fn read_index() -> Option<Vec<String>> {
 }
 
 thread_local! {
-    static INDEX: gtk::StringList = {
+    static INDEX: Lines = {
         let lines = read_index().unwrap_or_default();
-        let list = gtk::StringList::new(&lines.iter().map(String::as_str).collect::<Vec<_>>());
+        let list = Lines::new(lines.clone());
         BASE.with(|b| b.replace(lines));
         match gio::File::for_path(index_path()).monitor_file(
             gio::FileMonitorFlags::NONE,
@@ -577,8 +578,13 @@ thread_local! {
     static TRASHED: RefCell<Vec<(String, String)>> = const { RefCell::new(Vec::new()) };
 }
 
-pub fn index() -> gtk::StringList {
-    INDEX.with(|l| l.clone())
+/// Call `f` whenever the index changes.
+pub fn watch(f: impl Fn() + 'static) -> WatchId {
+    INDEX.with(|l| l.watch(f))
+}
+
+pub fn unwatch(id: WatchId) {
+    INDEX.with(|l| l.unwatch(id));
 }
 
 fn line(tag: &str, uri: &str) -> String {
@@ -586,9 +592,9 @@ fn line(tag: &str, uri: &str) -> String {
 }
 
 fn entries() -> Vec<(String, String)> {
-    let list = index();
-    (0..list.n_items())
-        .filter_map(|i| list.string(i))
+    INDEX
+        .with(|l| l.to_vec())
+        .iter()
         .filter_map(|l| {
             l.split_once('\t')
                 .map(|(t, u)| (t.to_string(), u.to_string()))
@@ -623,13 +629,12 @@ pub fn indexed(file: &gio::File) -> Vec<String> {
 /// one just renamed or removed here must not come back through a cell bound a moment
 /// before.
 pub fn note(file: &gio::File, names: &[String]) {
-    let list = index();
     let uri = file.uri();
     let mut added = false;
     for name in names.iter().filter(|n| exists(n)) {
         let l = line(name, &uri);
-        if list.find(&l) == gtk::INVALID_LIST_POSITION {
-            list.append(&l);
+        if !INDEX.with(|list| list.contains(&l)) {
+            INDEX.with(|list| list.push(l));
             added = true;
         }
     }
@@ -639,10 +644,8 @@ pub fn note(file: &gio::File, names: &[String]) {
 }
 
 pub fn forget(name: &str, file: &gio::File) {
-    let list = index();
-    let pos = list.find(&line(name, &file.uri()));
-    if pos != gtk::INVALID_LIST_POSITION {
-        list.remove(pos);
+    if let Some(pos) = INDEX.with(|list| list.position(&line(name, &file.uri()))) {
+        INDEX.with(|list| list.remove(pos));
         schedule_sync();
     }
 }
@@ -698,16 +701,14 @@ pub fn restored(original: &gio::File, at: &gio::File) {
         back
     });
     let (from, to) = (original.uri(), at.uri());
-    let list = index();
     let lines: Vec<String> = back
         .iter()
         .filter(|(tag, _)| exists(tag))
         .map(|(tag, uri)| line(tag, &format!("{to}{}", &uri[from.len()..])))
-        .filter(|l| list.find(l) == gtk::INVALID_LIST_POSITION)
+        .filter(|l| !INDEX.with(|list| list.contains(l)))
         .collect();
     if !lines.is_empty() {
-        let refs: Vec<&str> = lines.iter().map(String::as_str).collect();
-        list.splice(list.n_items(), 0, &refs);
+        INDEX.with(|list| list.extend(lines));
         schedule_sync();
     }
 }
@@ -726,9 +727,7 @@ fn rewrite_index(f: impl Fn(String, String) -> Option<(String, String)>) {
         .filter_map(|(t, u)| f(t, u))
         .map(|(t, u)| line(&t, &u))
         .collect();
-    let list = index();
-    let refs: Vec<&str> = lines.iter().map(String::as_str).collect();
-    list.splice(0, list.n_items(), &refs);
+    INDEX.with(|list| list.replace(lines));
     schedule_sync();
 }
 
@@ -750,11 +749,7 @@ fn sync() {
     let Some(disk) = read_index() else {
         return;
     };
-    let list = index();
-    let ours: Vec<String> = (0..list.n_items())
-        .filter_map(|i| list.string(i))
-        .map(String::from)
-        .collect();
+    let ours = INDEX.with(|l| l.to_vec());
     let merged = BASE.with(|b| merge(&b.borrow(), &ours, &disk));
     if merged != disk {
         let p = index_path();
@@ -765,11 +760,10 @@ fn sync() {
             return;
         }
     }
+    BASE.with(|b| b.replace(merged.clone()));
     if merged != ours {
-        let refs: Vec<&str> = merged.iter().map(String::as_str).collect();
-        list.splice(0, list.n_items(), &refs);
+        INDEX.with(|list| list.replace(merged));
     }
-    BASE.with(|b| b.replace(merged));
 }
 
 /// `theirs` with what `ours` added to `base` and without what it took away.

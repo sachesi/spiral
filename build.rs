@@ -38,10 +38,26 @@ fn main() {
         "spiral.gresource",
     );
 
+    // The settings schema, compiled for the tests: they read it from here, with a memory
+    // backend, whatever is installed on the machine.
+    let schemas = out.join("schemas");
+    fs::create_dir_all(&schemas).unwrap();
+    fs::copy(
+        "data/io.github.sachesi.spiral.gschema.xml",
+        schemas.join("io.github.sachesi.spiral.gschema.xml"),
+    )
+    .unwrap();
+    let status = Command::new("glib-compile-schemas")
+        .arg(&schemas)
+        .status()
+        .expect("glib-compile-schemas not found; it comes with GLib");
+    assert!(status.success(), "glib-compile-schemas failed");
+
     println!("cargo:rerun-if-changed=data/ui");
     println!("cargo:rerun-if-changed=data/icons");
     println!("cargo:rerun-if-changed=data/spiral.gresource.xml");
     println!("cargo:rerun-if-changed=data/style.css");
+    println!("cargo:rerun-if-changed=data/io.github.sachesi.spiral.gschema.xml");
 }
 
 fn copy_dir(src: impl AsRef<std::path::Path>, dst: &std::path::Path) {

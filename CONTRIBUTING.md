@@ -28,6 +28,8 @@
     src/naming.rs          name validation, rename popover, new folder dialog
     src/tags.rs            colour tags: the xattr on the file, the index, the setting
     src/file_utils.rs      names, dates, sizes, icons
+    src/object_data.rs     values kept on widgets, under keys that carry their type
+    src/lines.rs           the tag index and the favorites in memory, and who watches them
 
 Widgets are GObject subclasses with composite templates from the Blueprint files. Actions
 use the usual prefixes: `app.`, `win.`, `view.` on the browser view (the chooser reuses
@@ -48,9 +50,14 @@ says they have changed.
 
     just run [PATH]      # debug build with the schema compiled into target/schemas
     just run-portal      # the backend, needs a session bus and xdg-desktop-portal
-    just check           # what CI would run: fmt, clippy -D warnings, blueprint, validators
+    just check           # fmt, clippy -D warnings, blueprint, validators, catalogues
+    just test            # the unit tests
 
 `G_MESSAGES_DEBUG=spiral` enables the debug log domain.
+
+The tests of the file operations run real jobs on temporary folders. The settings they
+read come from the schema `build.rs` compiles into the build directory, kept in memory, so
+neither what is installed nor what you have chosen changes them.
 
 To poke at the backend without xdg-desktop-portal, start it on a private bus and call it
 with `gdbus`:

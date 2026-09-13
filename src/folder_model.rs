@@ -89,8 +89,8 @@ mod imp {
         /// The location `list_store` holds the files of.
         pub(super) list_of: RefCell<Option<gio::File>>,
         pub list_gen: Cell<u64>,
-        starred_handler: RefCell<Option<glib::SignalHandlerId>>,
-        tags_handler: RefCell<Option<glib::SignalHandlerId>>,
+        starred_handler: RefCell<Option<crate::lines::WatchId>>,
+        tags_handler: RefCell<Option<crate::lines::WatchId>>,
         /// The handlers sit on objects that outlive the model -- the starred list, the tag
         /// index and the settings -- and a column view makes and drops models as it walks,
         /// so they have to come off again.
@@ -211,10 +211,10 @@ mod imp {
     impl ObjectImpl for FolderModel {
         fn dispose(&self) {
             if let Some(id) = self.starred_handler.take() {
-                crate::starred::list().disconnect(id);
+                crate::starred::unwatch(id);
             }
             if let Some(id) = self.tags_handler.take() {
-                crate::tags::index().disconnect(id);
+                crate::tags::unwatch(id);
             }
             if let Some(id) = self.tree_handler.take() {
                 crate::prefs::settings().disconnect(id);
@@ -253,20 +253,20 @@ mod imp {
                     }
                 }
             ));
-            let id = crate::starred::list().connect_items_changed(glib::clone!(
+            let id = crate::starred::watch(glib::clone!(
                 #[weak]
                 obj,
-                move |_, _, _, _| {
+                move || {
                     if obj.imp().is_starred() {
                         obj.load_list();
                     }
                 }
             ));
             self.starred_handler.replace(Some(id));
-            let id = crate::tags::index().connect_items_changed(glib::clone!(
+            let id = crate::tags::watch(glib::clone!(
                 #[weak]
                 obj,
-                move |_, _, _, _| {
+                move || {
                     if obj.imp().is_tag() {
                         obj.load_list();
                     }

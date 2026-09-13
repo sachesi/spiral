@@ -779,3 +779,209 @@ async fn unique_copy_name(dir: &gio::File, original: &str) -> String {
         n += 1;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::{Path, PathBuf};
+
+    use super::*;
+    use crate::ops::manager::undo_for;
+
+    /// A folder of its own under `base`, removed again when dropped.
+    struct Scratch(PathBuf);
+
+    impl Scratch {
+        fn new(name: &str) -> Self {
+            Self::under(&std::env::temp_dir(), name)
+        }
+
+        fn under(base: &Path, name: &str) -> Self {
+            let dir = base.join(format!("spiral-test-{name}-{}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&dir);
+            std::fs::create_dir_all(&dir).unwrap();
+            Self(dir)
+        }
+
+        fn path(&self, rel: &str) -> PathBuf {
+            self.0.join(rel)
+        }
+
+        fn file(&self, rel: &str) -> gio::File {
+            gio::File::for_path(self.path(rel))
+        }
+    }
+
+    impl Drop for Scratch {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// A file at the top, one a folder down and one two folders down.
+    fn tree(at: &Path) {
+        std::fs::create_dir_all(at.join("sub/deep")).unwrap();
+        std::fs::write(at.join("a.txt"), "a").unwrap();
+        std::fs::write(at.join("sub/b.txt"), "b").unwrap();
+        std::fs::write(at.join("sub/deep/c.txt"), "c").unwrap();
+    }
+
+    /// Every file under `at` with what it holds, by its path from `at`.
+    fn contents(at: &Path) -> Vec<(String, String)> {
+        fn walk(root: &Path, dir: &Path, out: &mut Vec<(String, String)>) {
+            for entry in std::fs::read_dir(dir).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    walk(root, &path, out);
+                } else {
+                    let rel = path
+                        .strip_prefix(root)
+                        .unwrap()
+                        .to_string_lossy()
+                        .into_owned();
+                    out.push((rel, std::fs::read_to_string(&path).unwrap()));
+                }
+            }
+        }
+        let mut out = Vec::new();
+        walk(at, at, &mut out);
+        out.sort();
+        out
+    }
+
+    /// Run a job to its end on a main context of its own; the jobs here never ask anything.
+    fn run_job(kind: JobKind) -> Job {
+        let ctx = glib::MainContext::new();
+        ctx.with_thread_default(|| {
+            let mgr = glib::Object::new::<JobManager>();
+            let job = Job::new(kind);
+            assert!(
+                ctx.block_on(run(&job, &mgr)).is_ok(),
+                "the job did not finish"
+            );
+            job
+        })
+        .unwrap()
+    }
+
+    fn undo(job: &Job) -> Job {
+        run_job(undo_for(job).expect("the job can be undone"))
+    }
+
+    #[test]
+    fn a_copied_folder_holds_everything_and_undo_takes_the_copy_away() {
+        let s = Scratch::new("copy");
+        tree(&s.path("src/tree"));
+        std::fs::create_dir(s.path("dest")).unwrap();
+        let job = run_job(JobKind::Transfer {
+            pairs: vec![(s.file("src/tree"), s.file("dest"))],
+            is_move: false,
+        });
+        assert_eq!(
+            contents(&s.path("dest/tree")),
+            contents(&s.path("src/tree"))
+        );
+        undo(&job);
+        assert!(!s.path("dest/tree").exists());
+        assert_eq!(contents(&s.path("src/tree")).len(), 3);
+    }
+
+    #[test]
+    fn a_moved_folder_leaves_nothing_behind_and_undo_brings_it_back() {
+        let s = Scratch::new("move");
+        tree(&s.path("src/tree"));
+        let before = contents(&s.path("src/tree"));
+        std::fs::create_dir(s.path("dest")).unwrap();
+        let job = run_job(JobKind::Transfer {
+            pairs: vec![(s.file("src/tree"), s.file("dest"))],
+            is_move: true,
+        });
+        assert!(!s.path("src/tree").exists());
+        assert_eq!(contents(&s.path("dest/tree")), before);
+        undo(&job);
+        assert!(!s.path("dest/tree").exists());
+        assert_eq!(contents(&s.path("src/tree")), before);
+    }
+
+    /// Where the temporary directory and the build directory are on different filesystems,
+    /// this is the move that copies what the folder holds and removes the folder after.
+    #[test]
+    fn a_folder_moved_to_another_place_arrives_whole() {
+        let from = Scratch::new("far-from");
+        let to = Scratch::under(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join("target"),
+            "far-to",
+        );
+        tree(&from.path("tree"));
+        let before = contents(&from.path("tree"));
+        run_job(JobKind::Transfer {
+            pairs: vec![(from.file("tree"), to.file(""))],
+            is_move: true,
+        });
+        assert!(!from.path("tree").exists());
+        assert_eq!(contents(&to.path("tree")), before);
+    }
+
+    #[test]
+    fn a_copy_beside_the_original_is_named_as_one() {
+        let s = Scratch::new("beside");
+        std::fs::write(s.path("report.txt"), "r").unwrap();
+        for _ in 0..2 {
+            run_job(JobKind::Transfer {
+                pairs: vec![(s.file("report.txt"), s.file(""))],
+                is_move: false,
+            });
+        }
+        let names: Vec<String> = contents(&s.0).into_iter().map(|(name, _)| name).collect();
+        assert_eq!(
+            names,
+            ["report (copy 2).txt", "report (copy).txt", "report.txt"]
+        );
+    }
+
+    #[test]
+    fn a_deleted_folder_is_gone_with_everything_in_it() {
+        let s = Scratch::new("delete");
+        tree(&s.path("tree"));
+        run_job(JobKind::Delete {
+            files: vec![s.file("tree")],
+        });
+        assert!(!s.path("tree").exists());
+    }
+
+    #[test]
+    fn a_rename_is_undone_to_the_old_name() {
+        let s = Scratch::new("rename");
+        std::fs::write(s.path("old.txt"), "o").unwrap();
+        let job = run_job(JobKind::Rename {
+            renames: vec![(s.file("old.txt"), "new.txt".into())],
+        });
+        assert!(s.path("new.txt").exists() && !s.path("old.txt").exists());
+        undo(&job);
+        assert!(s.path("old.txt").exists() && !s.path("new.txt").exists());
+    }
+
+    #[test]
+    fn a_new_folder_with_a_selection_holds_it_until_undone() {
+        let s = Scratch::new("gather");
+        std::fs::write(s.path("x.txt"), "x").unwrap();
+        std::fs::write(s.path("y.txt"), "y").unwrap();
+        let job = run_job(JobKind::NewFolderWith {
+            parent: s.file(""),
+            name: "Box".into(),
+            files: vec![s.file("x.txt"), s.file("y.txt")],
+        });
+        assert_eq!(
+            contents(&s.0),
+            [
+                ("Box/x.txt".into(), "x".into()),
+                ("Box/y.txt".into(), "y".into())
+            ]
+        );
+        undo(&job);
+        assert!(!s.path("Box").exists());
+        assert_eq!(
+            contents(&s.0),
+            [("x.txt".into(), "x".into()), ("y.txt".into(), "y".into())]
+        );
+    }
+}

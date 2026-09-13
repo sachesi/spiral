@@ -79,6 +79,7 @@ po: pot
     for lang in $(cat po/LINGUAS); do msgmerge --update --backup=none --quiet po/$lang.po po/spiral.pot; done
     for lang in $(cat po/LINGUAS); do msgfmt --statistics -o /dev/null po/$lang.po; done
 
+# Unit tests.
 test:
     cargo test
 

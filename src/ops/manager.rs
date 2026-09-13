@@ -323,7 +323,7 @@ const DONE: &str = "operations-done";
 const SLOW: std::time::Duration = std::time::Duration::from_secs(3);
 
 /// The job that reverses `job`, derived from what it actually did.
-fn undo_for(job: &Job) -> Option<JobKind> {
+pub(super) fn undo_for(job: &Job) -> Option<JobKind> {
     let out = job.imp().outcome.borrow();
     match job.kind() {
         JobKind::Transfer { is_move: false, .. }

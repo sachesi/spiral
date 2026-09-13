@@ -58,6 +58,7 @@ pub mod disks;
 pub mod enums;
 pub mod file_utils;
 pub mod folder_model;
+pub mod lines;
 pub mod location_entry;
 pub mod metadata;
 pub mod miller;

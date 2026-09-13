@@ -7,7 +7,28 @@ use crate::{gio, glib};
 use gio::prelude::*;
 
 thread_local! {
-    static SETTINGS: gio::Settings = gio::Settings::new(crate::config::APP_ID);
+    static SETTINGS: gio::Settings = new_settings();
+}
+
+#[cfg(not(test))]
+fn new_settings() -> gio::Settings {
+    gio::Settings::new(crate::config::APP_ID)
+}
+
+/// The tests read the schema compiled into the build directory and keep what they set in
+/// memory, whatever is installed and whatever the user has chosen.
+#[cfg(test)]
+fn new_settings() -> gio::Settings {
+    let source = gio::SettingsSchemaSource::from_directory(
+        concat!(env!("OUT_DIR"), "/schemas"),
+        None,
+        false,
+    )
+    .expect("schema compiled by build.rs");
+    let schema = source
+        .lookup(crate::config::APP_ID, false)
+        .expect("Spiral's schema");
+    gio::Settings::new_full(&schema, Some(&gio::memory_settings_backend_new()), None)
 }
 
 pub fn settings() -> gio::Settings {
