@@ -1019,7 +1019,12 @@ impl FolderModel {
                 // A file the index has under two paths -- a folder reached through a
                 // link or a bind mount as well as where it is -- is one file, listed
                 // once: the index keeps both, as each is true.
-                let attributes = format!("{},id::file", file_utils::ATTRIBUTES);
+                // The change time as well, which moves with the mode, the owner and the
+                // tags, so a row can tell it is stale.
+                let attributes = format!(
+                    "{},id::file,time::changed,time::changed-usec",
+                    file_utils::ATTRIBUTES
+                );
                 let mut seen = std::collections::HashSet::new();
                 for file in files {
                     match file
@@ -1072,6 +1077,18 @@ impl FolderModel {
                 let store = &imp.list_store;
                 let same = imp.list_of.replace(Some(location.clone()));
                 let key = |i: &gio::FileInfo| file_utils::file_of(i).uri();
+                let changed = |old: &gio::FileInfo, new: &gio::FileInfo| {
+                    let ctime = |i: &gio::FileInfo| {
+                        (
+                            i.attribute_uint64("time::changed"),
+                            i.attribute_uint32("time::changed-usec"),
+                        )
+                    };
+                    ctime(old) != ctime(new)
+                        || old.modification_date_time() != new.modification_date_time()
+                        || old.attribute_string(crate::tags::ATTRIBUTE)
+                            != new.attribute_string(crate::tags::ATTRIBUTE)
+                };
                 let mut fresh: std::collections::HashMap<glib::GString, gio::FileInfo> =
                     infos.iter().map(|i| (key(i), i.clone())).collect();
                 let old: Vec<gio::FileInfo> = store.iter().flatten().collect();
@@ -1080,12 +1097,7 @@ impl FolderModel {
                         let pos = pos as u32;
                         match fresh.remove(&key(old)) {
                             None => store.remove(pos),
-                            Some(new)
-                                if old.attribute_string(crate::tags::ATTRIBUTE)
-                                    != new.attribute_string(crate::tags::ATTRIBUTE)
-                                    || old.modification_date_time()
-                                        != new.modification_date_time() =>
-                            {
+                            Some(new) if changed(old, &new) => {
                                 store.splice(pos, 1, &[new])
                             }
                             Some(_) => {}
