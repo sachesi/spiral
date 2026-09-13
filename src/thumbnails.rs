@@ -103,15 +103,19 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
     if info.file_type() == gio::FileType::Directory {
         return None;
     }
-    // An item in the trash is a local file under another name, and so is one in recent
-    // files: the thumbnail is that file's, allowed and made as for any other local file.
+    // An item in the trash is a local file under another name: the thumbnail is that
+    // file's, allowed and made as for any other local file.
     let file = crate::file_utils::file_of(info);
-    let file = match info.attribute_string("standard::target-uri") {
-        Some(uri) => Some(gio::File::for_uri(&uri)),
-        None => in_trashed_folder(&file).await,
-    }
-    .filter(|target| target.is_native())
-    .unwrap_or(file);
+    let file = if file.has_uri_scheme("trash") {
+        match info.attribute_string("standard::target-uri") {
+            Some(uri) => Some(gio::File::for_uri(&uri)),
+            None => in_trashed_folder(&file).await,
+        }
+        .filter(|target| target.is_native())
+        .unwrap_or(file)
+    } else {
+        file
+    };
     let uri = file.uri().to_string();
     // Checked before the cache so a preference change takes effect on the next reload.
     if !crate::prefs::thumbnails_for(&file) {
@@ -184,9 +188,6 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
 async fn in_trashed_folder(file: &gio::File) -> Option<gio::File> {
     thread_local! {
         static TARGETS: RefCell<HashMap<glib::GString, gio::File>> = RefCell::new(HashMap::new());
-    }
-    if !file.has_uri_scheme("trash") {
-        return None;
     }
     let mut top = file.parent().filter(|p| p.parent().is_some())?;
     while let Some(parent) = top.parent().filter(|p| p.parent().is_some()) {
