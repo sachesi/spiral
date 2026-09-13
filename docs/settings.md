@@ -43,6 +43,7 @@ Changes apply immediately to open windows.
 | `list-zoom` | 16 to 64 | 32 | |
 | `window-size`, `window-maximized` | | 1000x680, false | |
 | `sidebar-visible` | bool | true | |
+| `details-visible` | bool | false | the details panel |
 
 Notes on a few of them:
 

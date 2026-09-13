@@ -28,6 +28,7 @@ Ctrl+? shows this list inside the application.
 | Ctrl++, Ctrl+- | Zoom |
 | Ctrl+0 | Normal size |
 | Ctrl+H | Hidden files |
+| F8 | Details panel |
 | F9 | Sidebar |
 | Ctrl+A | Select all |
 | Ctrl+S | Select the items matching a pattern |

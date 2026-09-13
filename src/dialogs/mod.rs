@@ -20,6 +20,8 @@ pub use folder_chooser::folder_chooser_dialog;
 pub use open_with::OpenWithDialog;
 pub use preferences::preferences_dialog;
 pub use preview::PreviewDialog;
+pub(crate) use preview::image_size;
 pub use properties::PropertiesDialog;
+pub(crate) use properties::row as property_row;
 pub use select_pattern::select_pattern_dialog;
 pub use tags::new_tag_dialog;

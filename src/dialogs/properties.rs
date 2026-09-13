@@ -446,7 +446,7 @@ impl PropertiesDialog {
     }
 }
 
-fn row(label: &str, value: &str) -> adw::ActionRow {
+pub(crate) fn row(label: &str, value: &str) -> adw::ActionRow {
     let r = adw::ActionRow::builder()
         .title(label)
         .subtitle(value)

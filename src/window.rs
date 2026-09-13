@@ -5,6 +5,7 @@ use std::cell::RefCell;
 
 use crate::application::SpiralApplication;
 use crate::browser_view::BrowserView;
+use crate::details_panel::DetailsPanel;
 use crate::enums::{SortKey, ViewMode};
 use crate::file_utils;
 use crate::path_bar::PathBar;
@@ -36,6 +37,12 @@ mod imp {
         #[template_child]
         pub sidebar: TemplateChild<PlacesSidebar>,
         #[template_child]
+        pub details_view: TemplateChild<adw::OverlaySplitView>,
+        #[template_child]
+        pub details_sidebar: TemplateChild<adw::ToolbarView>,
+        #[template_child]
+        pub details: TemplateChild<DetailsPanel>,
+        #[template_child]
         pub progress_indicator: TemplateChild<ProgressIndicator>,
         #[template_child]
         pub path_bar: TemplateChild<PathBar>,
@@ -64,6 +71,8 @@ mod imp {
         pub active_view: RefCell<Option<glib::WeakRef<BrowserView>>>,
         /// Set while the window is too narrow for a second pane.
         pub narrow: std::cell::Cell<bool>,
+        /// Set while the window is too narrow for the details panel.
+        pub cramped: std::cell::Cell<bool>,
         /// Where each tab's second pane was looking when it was folded away.
         pub folded: RefCell<Vec<(glib::WeakRef<adw::TabPage>, gio::File)>>,
         /// Locations of tabs closed in this window, most recent last.
@@ -82,6 +91,9 @@ mod imp {
                 tab_view: Default::default(),
                 split_view: Default::default(),
                 sidebar: Default::default(),
+                details_view: Default::default(),
+                details_sidebar: Default::default(),
+                details: Default::default(),
                 progress_indicator: Default::default(),
                 path_bar: Default::default(),
                 toolbar_switcher: Default::default(),
@@ -106,6 +118,7 @@ mod imp {
                 ),
                 active_view: Default::default(),
                 narrow: Default::default(),
+                cramped: Default::default(),
                 folded: Default::default(),
                 closed_tabs: Default::default(),
                 menu_page: Default::default(),
@@ -122,6 +135,7 @@ mod imp {
 
         fn class_init(klass: &mut Self::Class) {
             BrowserView::ensure_type();
+            DetailsPanel::ensure_type();
             PathBar::ensure_type();
             PlacesSidebar::ensure_type();
             ProgressIndicator::ensure_type();
@@ -285,6 +299,7 @@ mod imp {
             klass.add_binding_action(Key::t, M::CONTROL_MASK | M::SHIFT_MASK, "win.restore-tab");
             klass.add_binding_action(Key::o, M::CONTROL_MASK | M::SHIFT_MASK, "win.tab-overview");
             klass.add_binding_action(Key::h, M::CONTROL_MASK, "win.show-hidden");
+            klass.add_binding_action(Key::F8, M::empty(), "win.details-visible");
             klass.add_binding_action(Key::F9, M::empty(), "win.sidebar-visible");
             // F10 opens the menu of the current folder, not the main menu, see `constructed`.
             klass.add_binding_action(Key::F10, M::empty(), "win.location-menu");
@@ -364,7 +379,12 @@ mod imp {
             self.parent_constructed();
             let obj = self.obj();
 
-            for key in ["show-hidden", "sidebar-visible", "split-view"] {
+            for key in [
+                "show-hidden",
+                "sidebar-visible",
+                "details-visible",
+                "split-view",
+            ] {
                 obj.add_action(&self.settings.create_action(key));
             }
             obj.action_set_enabled("win.stop", false);
@@ -379,6 +399,15 @@ mod imp {
                     move |_, _| win.apply_split()
                 ),
             );
+            self.settings.connect_changed(
+                Some("details-visible"),
+                glib::clone!(
+                    #[weak(rename_to = win)]
+                    obj,
+                    move |_, _| win.apply_details()
+                ),
+            );
+            obj.apply_details();
             // Which pane is in charge follows the focus, and stays put while the focus is
             // off in the sidebar or the path bar.
             obj.connect_focus_widget_notify(|win| {
@@ -668,12 +697,27 @@ mod imp {
         fn on_narrow(&self, _breakpoint: &adw::Breakpoint) {
             self.narrow.set(true);
             self.obj().apply_split();
+            self.obj().apply_details();
         }
 
         #[template_callback]
         fn on_wide(&self, _breakpoint: &adw::Breakpoint) {
             self.narrow.set(false);
             self.obj().apply_split();
+            self.obj().apply_details();
+        }
+
+        /// Too narrow for the details panel: hide it, keeping the setting.
+        #[template_callback]
+        fn on_cramped(&self, _breakpoint: &adw::Breakpoint) {
+            self.cramped.set(true);
+            self.obj().apply_details();
+        }
+
+        #[template_callback]
+        fn on_roomy(&self, _breakpoint: &adw::Breakpoint) {
+            self.cramped.set(false);
+            self.obj().apply_details();
         }
 
         /// The tab menu is opening for `page`, or closing when it is `None`.
@@ -958,6 +1002,7 @@ impl SpiralWindow {
         };
         imp.active_view.replace(Some(view.downgrade()));
         self.insert_action_group("view", Some(&view.imp().actions));
+        imp.details.set_view(&view);
         // What the other pane shows decides whether files can go there.
         view.update_action_state();
         if let Some(page) = imp.tab_view.selected_page()
@@ -1028,6 +1073,17 @@ impl SpiralWindow {
             }
         }
         self.refresh_active();
+    }
+
+    /// Show the details panel as the setting says, while the window has room for it.
+    fn apply_details(&self) {
+        let imp = self.imp();
+        let show =
+            imp.settings.boolean("details-visible") && !imp.narrow.get() && !imp.cramped.get();
+        // Hidden, it is taken out of the layout as well: the split view still measures a
+        // hidden sidebar, at whatever width is left while the window changes breakpoint.
+        imp.details_sidebar.set_visible(show);
+        imp.details_view.set_show_sidebar(show);
     }
 
     fn remember_folded(&self, page: &adw::TabPage, location: gio::File) {
@@ -1181,6 +1237,25 @@ impl SpiralWindow {
                     win.action_set_enabled("win.stop", model.loading());
                 }
             }
+        ));
+        // The details panel follows the selection of the pane in charge, and its folder.
+        let details = |v: &BrowserView| {
+            if let Some(win) = Self::of(v)
+                && win.current_view().as_ref() == Some(v)
+            {
+                win.imp().details.queue_update();
+            }
+        };
+        let selection = view.model().selection();
+        selection.connect_selection_changed(glib::clone!(
+            #[weak]
+            view,
+            move |_, _, _| details(&view)
+        ));
+        selection.connect_items_changed(glib::clone!(
+            #[weak]
+            view,
+            move |_, _, _, _| details(&view)
         ));
         view.connect_can_go_back_notify(sync);
         view.connect_can_go_forward_notify(sync);

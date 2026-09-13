@@ -735,7 +735,7 @@ struct CountCache {
 const COUNT_CACHE_ENTRIES: usize = 4096;
 
 /// Number of direct children of `dir` as of `stamp`, the time it last changed.
-async fn count_children_at(dir: &gio::File, stamp: i64) -> Option<u64> {
+pub(crate) async fn count_children_at(dir: &gio::File, stamp: i64) -> Option<u64> {
     let key = (dir.uri().to_string(), stamp);
     if let Some(n) = COUNTS.with(|c| c.borrow().seen.get(&key).copied()) {
         return Some(n);

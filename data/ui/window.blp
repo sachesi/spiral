@@ -136,6 +136,10 @@ menu view_menu {
       action: "win.sidebar-visible";
     }
     item {
+      label: _("Show _Details");
+      action: "win.details-visible";
+    }
+    item {
       label: _("Spl_it View");
       action: "win.split-view";
     }
@@ -175,6 +179,14 @@ template $SpiralWindow : Adw.ApplicationWindow {
   height-request: 294;
 
   styles ["view"]
+
+  // Too narrow for the details panel beside the header's own controls. Listed first: of
+  // the breakpoints that fit, the last one is used, and the narrow one hides it too.
+  Adw.Breakpoint {
+    condition ("max-width: 900sp")
+    apply => $on_cramped() swapped;
+    unapply => $on_roomy() swapped;
+  }
 
   Adw.Breakpoint {
     condition ("max-width: 682sp")
@@ -230,256 +242,280 @@ template $SpiralWindow : Adw.ApplicationWindow {
           };
         };
 
-        content: Adw.ToastOverlay toast_overlay {
-          child: Adw.ToolbarView {
-          [top]
-          Adw.HeaderBar {
-            [start]
-            ToggleButton show_sidebar_button {
-              visible: false;
-              active: bind split_view.show-sidebar bidirectional;
-              icon-name: "sidebar-show-symbolic";
-              tooltip-text: _("Show Sidebar");
-            }
+        content: Adw.OverlaySplitView details_view {
+          sidebar-position: end;
+          show-sidebar: false;
+          pin-sidebar: true;
+          sidebar-width-fraction: 0.25;
+          min-sidebar-width: 220;
+          max-sidebar-width: 300;
+          enable-show-gesture: false;
+          enable-hide-gesture: false;
 
-            [start]
-            Box history_box {
-              spacing: 6;
+          sidebar: Adw.ToolbarView details_sidebar {
+            visible: false;
 
-              Button back_button {
-                icon-name: "go-previous-symbolic";
-                action-name: "win.back";
-                tooltip-text: _("Back");
-                valign: center;
-              }
-
-              Button forward_button {
-                icon-name: "go-next-symbolic";
-                action-name: "win.forward";
-                tooltip-text: _("Forward");
-                valign: center;
-              }
-
-              Button up_button {
-                icon-name: "go-up-symbolic";
-                action-name: "win.up";
-                tooltip-text: _("Parent Folder");
-                valign: center;
-              }
-            }
-
-            title-widget: Box {
-              spacing: 6;
-              hexpand: true;
-
-              Stack toolbar_switcher {
-                valign: center;
-                hexpand: true;
-                hhomogeneous: false;
-                transition-type: crossfade;
-
-                StackPage {
-                  name: "pathbar";
-                  child: $SpiralPathBar path_bar {
-                    valign: center;
-                    navigate => $on_path_bar_navigate() swapped;
-                    edit-location => $on_edit_location() swapped;
-                  };
-                }
-
-                StackPage {
-                  name: "location";
-                  child: Box {
-                    styles ["linked"]
-
-                    Entry location_entry {
-                      hexpand: true;
-                      primary-icon-name: "folder-symbolic";
-                      activate => $on_location_entry_activate() swapped;
-                    }
-
-                    Button {
-                      icon-name: "window-close-symbolic";
-                      tooltip-text: _("Cancel");
-                      clicked => $on_location_entry_cancel() swapped;
-                    }
-                  };
-                }
-
-                StackPage {
-                  name: "search";
-                  child: Box {
-                    styles ["linked"]
-
-                    SearchEntry search_entry {
-                      hexpand: true;
-                      placeholder-text: _("Search");
-                      search-changed => $on_search_changed() swapped;
-                      stop-search => $on_stop_search() swapped;
-                    }
-
-                    MenuButton {
-                      icon-name: "filter-symbolic";
-                      tooltip-text: _("Search Filters");
-                      valign: center;
-
-                      popover: Popover {
-                        child: ListBox {
-                          selection-mode: none;
-                          width-request: 320;
-                          styles ["boxed-list"]
-
-                          Adw.ComboRow search_kind_row {
-                            title: _("Type");
-                            model: StringList {
-                              strings [_("Anything"), _("Folders"), _("Documents"), _("Images"), _("Audio"), _("Videos"), _("PDF"), _("Text"), _("Spreadsheets")]
-                            };
-                            notify::selected => $on_search_filter_changed() swapped;
-                          }
-
-                          Adw.ComboRow search_date_row {
-                            title: _("Modified");
-                            model: StringList {
-                              strings [_("Any Time"), _("Today"), _("Yesterday"), _("Past Week"), _("Past Month"), _("Past Year")]
-                            };
-                            notify::selected => $on_search_filter_changed() swapped;
-                          }
-
-                          Adw.ComboRow search_match_row {
-                            title: _("Match");
-                            model: StringList {
-                              strings [_("Only Filename"), _("Content & Filename"), _("Only Contents")]
-                            };
-                            notify::selected => $on_search_filter_changed() swapped;
-                          }
-                        };
-                      };
-                    }
-                  };
-                }
-              }
-
-              ToggleButton search_button {
-                icon-name: "system-search-symbolic";
-                tooltip-text: _("Search Current Folder");
-                valign: center;
-                toggled => $on_search_toggled() swapped;
-              }
-            };
-
-            [end]
-            Adw.SplitButton view_split_button {
-              icon-name: "view-list-symbolic";
-              tooltip-text: _("List View");
-              dropdown-tooltip: _("View Options");
-              action-name: "win.toggle-view-mode";
-              valign: center;
-
-              popover: PopoverMenu {
-                menu-model: view_menu;
-
-                [zoom-out]
-                Button {
-                  icon-name: "zoom-out-symbolic";
-                  action-name: "win.zoom-out";
-                  tooltip-text: _("Zoom Out");
-                  styles ["flat"]
-                }
-
-                [zoom-in]
-                Button {
-                  icon-name: "zoom-in-symbolic";
-                  action-name: "win.zoom-in";
-                  tooltip-text: _("Zoom In");
-                  styles ["flat"]
-                }
+            [top]
+            Adw.HeaderBar {
+              title-widget: Adw.WindowTitle {
+                title: _("Details");
               };
             }
 
-          }
-
-          [top]
-          Adw.TabBar {
-            view: tab_view;
-            autohide: true;
-          }
-
-          content: Adw.TabView tab_view {
-            menu-model: tab_menu;
-            notify::selected-page => $on_selected_page_changed() swapped;
-            setup-menu => $on_setup_menu() swapped;
-            create-window => $on_create_window() swapped;
-            page-detached => $on_page_detached() swapped;
-            close-page => $on_close_page() swapped;
+            content: $SpiralDetailsPanel details {};
           };
 
-          [bottom]
-          ActionBar action_bar {
-            revealed: false;
-
-            [start]
-            Box {
-              spacing: 6;
-
-              Button {
-                icon-name: "go-previous-symbolic";
-                action-name: "win.back";
-                tooltip-text: _("Back");
-                valign: center;
+          content: Adw.ToastOverlay toast_overlay {
+            child: Adw.ToolbarView {
+            [top]
+            Adw.HeaderBar {
+              [start]
+              ToggleButton show_sidebar_button {
+                visible: false;
+                active: bind split_view.show-sidebar bidirectional;
+                icon-name: "sidebar-show-symbolic";
+                tooltip-text: _("Show Sidebar");
               }
 
-              Button {
-                icon-name: "go-next-symbolic";
-                action-name: "win.forward";
-                tooltip-text: _("Forward");
-                valign: center;
-              }
+              [start]
+              Box history_box {
+                spacing: 6;
 
-              Button {
-                icon-name: "go-up-symbolic";
-                action-name: "win.up";
-                tooltip-text: _("Parent Folder");
-                valign: center;
-              }
-            }
-
-            [end]
-            Adw.SplitButton view_split_button_bottom {
-              icon-name: "view-list-symbolic";
-              tooltip-text: _("List View");
-              dropdown-tooltip: _("View Options");
-              action-name: "win.toggle-view-mode";
-              valign: center;
-
-              popover: PopoverMenu {
-                menu-model: view_menu;
-
-                [zoom-out]
-                Button {
-                  icon-name: "zoom-out-symbolic";
-                  action-name: "win.zoom-out";
-                  tooltip-text: _("Zoom Out");
-                  styles ["flat"]
+                Button back_button {
+                  icon-name: "go-previous-symbolic";
+                  action-name: "win.back";
+                  tooltip-text: _("Back");
+                  valign: center;
                 }
 
-                [zoom-in]
-                Button {
-                  icon-name: "zoom-in-symbolic";
-                  action-name: "win.zoom-in";
-                  tooltip-text: _("Zoom In");
-                  styles ["flat"]
+                Button forward_button {
+                  icon-name: "go-next-symbolic";
+                  action-name: "win.forward";
+                  tooltip-text: _("Forward");
+                  valign: center;
+                }
+
+                Button up_button {
+                  icon-name: "go-up-symbolic";
+                  action-name: "win.up";
+                  tooltip-text: _("Parent Folder");
+                  valign: center;
+                }
+              }
+
+              title-widget: Box {
+                spacing: 6;
+                hexpand: true;
+
+                Stack toolbar_switcher {
+                  valign: center;
+                  hexpand: true;
+                  hhomogeneous: false;
+                  transition-type: crossfade;
+
+                  StackPage {
+                    name: "pathbar";
+                    child: $SpiralPathBar path_bar {
+                      valign: center;
+                      navigate => $on_path_bar_navigate() swapped;
+                      edit-location => $on_edit_location() swapped;
+                    };
+                  }
+
+                  StackPage {
+                    name: "location";
+                    child: Box {
+                      styles ["linked"]
+
+                      Entry location_entry {
+                        hexpand: true;
+                        primary-icon-name: "folder-symbolic";
+                        activate => $on_location_entry_activate() swapped;
+                      }
+
+                      Button {
+                        icon-name: "window-close-symbolic";
+                        tooltip-text: _("Cancel");
+                        clicked => $on_location_entry_cancel() swapped;
+                      }
+                    };
+                  }
+
+                  StackPage {
+                    name: "search";
+                    child: Box {
+                      styles ["linked"]
+
+                      SearchEntry search_entry {
+                        hexpand: true;
+                        placeholder-text: _("Search");
+                        search-changed => $on_search_changed() swapped;
+                        stop-search => $on_stop_search() swapped;
+                      }
+
+                      MenuButton {
+                        icon-name: "filter-symbolic";
+                        tooltip-text: _("Search Filters");
+                        valign: center;
+
+                        popover: Popover {
+                          child: ListBox {
+                            selection-mode: none;
+                            width-request: 320;
+                            styles ["boxed-list"]
+
+                            Adw.ComboRow search_kind_row {
+                              title: _("Type");
+                              model: StringList {
+                                strings [_("Anything"), _("Folders"), _("Documents"), _("Images"), _("Audio"), _("Videos"), _("PDF"), _("Text"), _("Spreadsheets")]
+                              };
+                              notify::selected => $on_search_filter_changed() swapped;
+                            }
+
+                            Adw.ComboRow search_date_row {
+                              title: _("Modified");
+                              model: StringList {
+                                strings [_("Any Time"), _("Today"), _("Yesterday"), _("Past Week"), _("Past Month"), _("Past Year")]
+                              };
+                              notify::selected => $on_search_filter_changed() swapped;
+                            }
+
+                            Adw.ComboRow search_match_row {
+                              title: _("Match");
+                              model: StringList {
+                                strings [_("Only Filename"), _("Content & Filename"), _("Only Contents")]
+                              };
+                              notify::selected => $on_search_filter_changed() swapped;
+                            }
+                          };
+                        };
+                      }
+                    };
+                  }
+                }
+
+                ToggleButton search_button {
+                  icon-name: "system-search-symbolic";
+                  tooltip-text: _("Search Current Folder");
+                  valign: center;
+                  toggled => $on_search_toggled() swapped;
                 }
               };
+
+              [end]
+              Adw.SplitButton view_split_button {
+                icon-name: "view-list-symbolic";
+                tooltip-text: _("List View");
+                dropdown-tooltip: _("View Options");
+                action-name: "win.toggle-view-mode";
+                valign: center;
+
+                popover: PopoverMenu {
+                  menu-model: view_menu;
+
+                  [zoom-out]
+                  Button {
+                    icon-name: "zoom-out-symbolic";
+                    action-name: "win.zoom-out";
+                    tooltip-text: _("Zoom Out");
+                    styles ["flat"]
+                  }
+
+                  [zoom-in]
+                  Button {
+                    icon-name: "zoom-in-symbolic";
+                    action-name: "win.zoom-in";
+                    tooltip-text: _("Zoom In");
+                    styles ["flat"]
+                  }
+                };
+              }
+
             }
 
-            [end]
-            Adw.TabButton {
+            [top]
+            Adw.TabBar {
               view: tab_view;
-              action-name: "win.tab-overview";
+              autohide: true;
             }
-          }
+
+            content: Adw.TabView tab_view {
+              menu-model: tab_menu;
+              notify::selected-page => $on_selected_page_changed() swapped;
+              setup-menu => $on_setup_menu() swapped;
+              create-window => $on_create_window() swapped;
+              page-detached => $on_page_detached() swapped;
+              close-page => $on_close_page() swapped;
+            };
+
+            [bottom]
+            ActionBar action_bar {
+              revealed: false;
+
+              [start]
+              Box {
+                spacing: 6;
+
+                Button {
+                  icon-name: "go-previous-symbolic";
+                  action-name: "win.back";
+                  tooltip-text: _("Back");
+                  valign: center;
+                }
+
+                Button {
+                  icon-name: "go-next-symbolic";
+                  action-name: "win.forward";
+                  tooltip-text: _("Forward");
+                  valign: center;
+                }
+
+                Button {
+                  icon-name: "go-up-symbolic";
+                  action-name: "win.up";
+                  tooltip-text: _("Parent Folder");
+                  valign: center;
+                }
+              }
+
+              [end]
+              Adw.SplitButton view_split_button_bottom {
+                icon-name: "view-list-symbolic";
+                tooltip-text: _("List View");
+                dropdown-tooltip: _("View Options");
+                action-name: "win.toggle-view-mode";
+                valign: center;
+
+                popover: PopoverMenu {
+                  menu-model: view_menu;
+
+                  [zoom-out]
+                  Button {
+                    icon-name: "zoom-out-symbolic";
+                    action-name: "win.zoom-out";
+                    tooltip-text: _("Zoom Out");
+                    styles ["flat"]
+                  }
+
+                  [zoom-in]
+                  Button {
+                    icon-name: "zoom-in-symbolic";
+                    action-name: "win.zoom-in";
+                    tooltip-text: _("Zoom In");
+                    styles ["flat"]
+                  }
+                };
+              }
+
+              [end]
+              Adw.TabButton {
+                view: tab_view;
+                action-name: "win.tab-overview";
+              }
+            }
+          };
+          };
         };
-      };
     };
   };
 }
