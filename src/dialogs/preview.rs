@@ -1018,13 +1018,7 @@ fn head_of(path: &Path, most: usize) -> Option<Vec<u8>> {
 /// Width and height of a local image from its header alone, turned the way its EXIF tag
 /// says, which is the way it will be drawn.
 fn image_size(path: &Path) -> Option<(i32, i32)> {
-    let (width, height, jpeg) = match head_of(path, IMAGE_HEAD).and_then(|h| header_size(&h)) {
-        Some(size) => size,
-        None => {
-            let (format, width, height) = gtk::gdk_pixbuf::Pixbuf::file_info(path)?;
-            (width, height, format.name().as_deref() == Some("jpeg"))
-        }
-    };
+    let (width, height, jpeg) = crate::metadata::picture_size(path)?;
     if width <= 0 || height <= 0 {
         return None;
     }
@@ -1034,77 +1028,6 @@ fn image_size(path: &Path) -> Option<(i32, i32)> {
     } else {
         (width, height)
     })
-}
-
-/// How much of a picture is read for its size: a JPEG may keep a thumbnail and a colour
-/// profile ahead of the frame header that says it.
-const IMAGE_HEAD: usize = 256 * 1024;
-
-/// Width and height from the header of a PNG, a JPEG, a GIF or a WebP, and whether it is a
-/// JPEG. gdk-pixbuf asks a loader in a process of its own for the size of any picture,
-/// which for a large one takes as long as decoding it.
-fn header_size(head: &[u8]) -> Option<(i32, i32, bool)> {
-    // The number in the `len` bytes at `at`, the most significant first when `big`.
-    let int = |at: usize, len: usize, big: bool| {
-        let bytes = head.get(at..at + len)?;
-        let add = |n: i64, b: &u8| (n << 8) | i64::from(*b);
-        Some(if big {
-            bytes.iter().fold(0, add)
-        } else {
-            bytes.iter().rev().fold(0, add)
-        })
-    };
-    let size = |width: i64, height: i64, jpeg: bool| {
-        Some((
-            i32::try_from(width).ok()?,
-            i32::try_from(height).ok()?,
-            jpeg,
-        ))
-    };
-    if head.starts_with(b"\x89PNG\r\n\x1a\n") && head.get(12..16) == Some(b"IHDR") {
-        return size(int(16, 4, true)?, int(20, 4, true)?, false);
-    }
-    if head.starts_with(b"GIF87a") || head.starts_with(b"GIF89a") {
-        return size(int(6, 2, false)?, int(8, 2, false)?, false);
-    }
-    if head.starts_with(b"RIFF") && head.get(8..12) == Some(b"WEBP") {
-        return match head.get(12..16)? {
-            b"VP8 " if head.get(23..26) == Some(&[0x9d, 0x01, 0x2a]) => size(
-                int(26, 2, false)? & 0x3fff,
-                int(28, 2, false)? & 0x3fff,
-                false,
-            ),
-            b"VP8L" if head.get(20) == Some(&0x2f) => {
-                let bits = int(21, 4, false)?;
-                size((bits & 0x3fff) + 1, ((bits >> 14) & 0x3fff) + 1, false)
-            }
-            b"VP8X" => size(int(24, 3, false)? + 1, int(27, 3, false)? + 1, false),
-            _ => None,
-        };
-    }
-    if !head.starts_with(&[0xff, 0xd8]) {
-        return None;
-    }
-    // A JPEG: segments, each a marker and most with a length, up to the frame header.
-    let mut at = 2;
-    loop {
-        if *head.get(at)? != 0xff {
-            return None;
-        }
-        while *head.get(at)? == 0xff {
-            at += 1;
-        }
-        let marker = head[at];
-        at += 1;
-        match marker {
-            0xc0..=0xcf if !matches!(marker, 0xc4 | 0xc8 | 0xcc) => {
-                return size(int(at + 5, 2, true)?, int(at + 3, 2, true)?, true);
-            }
-            0xd9 => return None,
-            0x01 | 0xd0..=0xd8 => {}
-            _ => at += int(at, 2, true)? as usize,
-        }
-    }
 }
 
 /// Width and height of a local video as it will be shown, from the container's header
@@ -1896,37 +1819,6 @@ mod tests {
         assert_eq!(exif_orientation(&jpeg_with_orientation(true, 1)), 1);
         assert_eq!(exif_orientation(b"\xff\xd8no exif here"), 1);
         assert_eq!(exif_orientation(b"Exif\0\0MM"), 1);
-    }
-
-    #[test]
-    fn a_picture_says_its_size_in_its_header() {
-        let mut png = b"\x89PNG\r\n\x1a\n\0\0\0\x0dIHDR".to_vec();
-        png.extend(640u32.to_be_bytes());
-        png.extend(480u32.to_be_bytes());
-        assert_eq!(header_size(&png), Some((640, 480, false)));
-        assert_eq!(
-            header_size(b"GIF89a\x40\x01\xf0\x00"),
-            Some((320, 240, false))
-        );
-        let webp = |chunk: &[u8], body: &[u8]| {
-            [b"RIFF\0\0\0\0WEBP".as_slice(), chunk, &[0; 4], body].concat()
-        };
-        let lossy = webp(
-            b"VP8 ",
-            &[0, 0, 0, 0x9d, 0x01, 0x2a, 0x20, 0x03, 0x58, 0x02],
-        );
-        assert_eq!(header_size(&lossy), Some((800, 600, false)));
-        let bits: u32 = 99 | (49 << 14);
-        let lossless = webp(b"VP8L", &[&[0x2f], bits.to_le_bytes().as_slice()].concat());
-        assert_eq!(header_size(&lossless), Some((100, 50, false)));
-        let extended = webp(b"VP8X", &[0, 0, 0, 0, 0x7f, 0x07, 0, 0x37, 0x04, 0]);
-        assert_eq!(header_size(&extended), Some((1920, 1080, false)));
-        // EXIF and a Huffman table, then a fill byte, ahead of the frame header.
-        let jpeg = b"\xff\xd8\xff\xe1\0\x08Exif\0\0\xff\xc4\0\x04\0\0\xff\xff\xc0\0\x11\x08\x01\xe0\x02\x80";
-        assert_eq!(header_size(jpeg), Some((640, 480, true)));
-        assert_eq!(header_size(&jpeg[..20]), None);
-        assert_eq!(header_size(b"\xff\xd8\xff\xd9"), None);
-        assert_eq!(header_size(b"BM"), None);
     }
 
     #[test]
