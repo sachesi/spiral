@@ -191,8 +191,13 @@ impl OpenWithDialog {
         let Some(app) = app_of(row) else { return };
         if imp.set_default.is_active()
             && let Some(ct) = imp.content_type.borrow().as_deref()
+            && let Err(e) = app.set_as_default_for_type(ct)
         {
-            let _ = app.set_as_default_for_type(ct);
+            glib::g_warning!(
+                "spiral",
+                "cannot make {} the default for {ct}: {e}",
+                app.name()
+            );
         }
         let files = imp.files.borrow().clone();
         let ctx = self.display().app_launch_context();

@@ -246,7 +246,13 @@ pub fn rename(old: &str, new: &str) {
                 let mut names = read(&file);
                 if let Some(name) = names.iter_mut().find(|name| **name == o) {
                     *name = n.clone();
-                    let _ = write(&file, &names);
+                    if let Err(e) = write(&file, &names) {
+                        glib::g_warning!(
+                            "spiral",
+                            "cannot rewrite the tags of {}: {e}",
+                            file.uri()
+                        );
+                    }
                 }
             }
         })
@@ -279,7 +285,13 @@ pub fn remove(name: &str) {
                 let mut names = read(&file);
                 if names.contains(&n) {
                     names.retain(|name| *name != n);
-                    let _ = write(&file, &names);
+                    if let Err(e) = write(&file, &names) {
+                        glib::g_warning!(
+                            "spiral",
+                            "cannot rewrite the tags of {}: {e}",
+                            file.uri()
+                        );
+                    }
                 }
             }
         })
