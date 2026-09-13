@@ -86,6 +86,8 @@ mod imp {
         /// the moment it is told to stop.
         pub stopped_store: gio::ListStore,
         pub list_store: gio::ListStore,
+        /// The location `list_store` holds the files of.
+        pub(super) list_of: RefCell<Option<gio::File>>,
         pub list_gen: Cell<u64>,
         starred_handler: RefCell<Option<glib::SignalHandlerId>>,
         tags_handler: RefCell<Option<glib::SignalHandlerId>>,
@@ -182,6 +184,7 @@ mod imp {
                 filtered,
                 stopped_store: gio::ListStore::new::<gio::FileInfo>(),
                 list_store: gio::ListStore::new::<gio::FileInfo>(),
+                list_of: Default::default(),
                 list_gen: Default::default(),
                 starred_handler: Default::default(),
                 tags_handler: Default::default(),
@@ -1064,14 +1067,15 @@ impl FolderModel {
                 }
                 // A file tagged, starred or let go in another window or another Spiral
                 // touches only its own row, so the rest keep the selection, the focus and
-                // the scroll. A list that shares no file with the one before, as on coming
-                // from another location, goes in whole.
+                // the scroll. The list of another location goes in whole, so nothing
+                // selected in the one before stays selected in it.
                 let store = &imp.list_store;
+                let same = imp.list_of.replace(Some(location.clone()));
                 let key = |i: &gio::FileInfo| file_utils::file_of(i).uri();
                 let mut fresh: std::collections::HashMap<glib::GString, gio::FileInfo> =
                     infos.iter().map(|i| (key(i), i.clone())).collect();
                 let old: Vec<gio::FileInfo> = store.iter().flatten().collect();
-                if old.iter().any(|i| fresh.contains_key(&key(i))) {
+                if same.is_some_and(|l| l.equal(&location)) {
                     for (pos, old) in old.iter().enumerate().rev() {
                         let pos = pos as u32;
                         match fresh.remove(&key(old)) {
