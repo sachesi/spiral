@@ -1958,6 +1958,10 @@ impl BrowserView {
                 _ => "list",
             }
         };
+        // A page that held the keyboard hands it on as it goes: left on a page off screen,
+        // it would stay there and the keys bound to the view with it.
+        let hand_on =
+            imp.stack.visible_child_name().is_some_and(|n| n != name) && self.view_has_focus();
         imp.stack.set_visible_child_name(name);
         // Only the view on screen holds the model. A list keeps two hundred rows bound
         // and a grid thirty rows of cells, drawn or not, so the views on the other pages
@@ -1971,6 +1975,9 @@ impl BrowserView {
             imp.column_view.set_model((name == "list").then_some(&sel));
             imp.miller_list
                 .set_model((name == "columns").then_some(&sel));
+        }
+        if hand_on {
+            self.grab_view_focus();
         }
     }
 
@@ -2700,10 +2707,12 @@ impl BrowserView {
             Some("grid") => imp.grid_view.grab_focus(),
             Some("columns") => imp.miller_list.grab_focus(),
             Some("list") => imp.column_view.grab_focus(),
-            // The empty and the error page have no view to hand the keyboard to. Handing
-            // it to one that is not on screen leaves it on a widget outside everything the
-            // window looks at, and the keys bound to the window stop working until
-            // something else is clicked.
+            // The empty and the error page have no view to hand the keyboard to, so the box
+            // around each takes it. Handing it to a view that is not on screen leaves it on
+            // a widget outside everything the window looks at, and the keys bound to the
+            // window stop working until something else is clicked.
+            Some("empty") => imp.empty_page.parent().is_some_and(|p| p.grab_focus()),
+            Some("error") => imp.error_page.parent().is_some_and(|p| p.grab_focus()),
             _ => false,
         };
     }

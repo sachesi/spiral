@@ -74,17 +74,30 @@ template $SpiralBrowserView : Box {
 
       StackPage {
         name: "empty";
-        child: Adw.StatusPage empty_page {
-          icon-name: "folder-symbolic";
-          title: _("Folder is Empty");
+        // Both pages take the keyboard for want of a view, so the keys bound to the view
+        // act on this pane and not on the one that had them before. A status page only
+        // ever passes the focus on to what it holds, so the box around it takes it.
+        child: Box {
+          focusable: true;
+
+          Adw.StatusPage empty_page {
+            hexpand: true;
+            icon-name: "folder-symbolic";
+            title: _("Folder is Empty");
+          }
         };
       }
 
       StackPage {
         name: "error";
-        child: Adw.StatusPage error_page {
-          icon-name: "dialog-error-symbolic";
-          title: _("Could Not Open Folder");
+        child: Box {
+          focusable: true;
+
+          Adw.StatusPage error_page {
+            hexpand: true;
+            icon-name: "dialog-error-symbolic";
+            title: _("Could Not Open Folder");
+          }
         };
       }
     };
