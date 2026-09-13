@@ -282,15 +282,19 @@ PDF, and Return hands the file to its application. The preview has no close butt
 a preview, and the keys that opened it close it again.
 
 The preview takes the proportions of what it holds, and takes them before it opens, so it
-does not resize itself in front of you. It is as large as the window it opens over allows:
-a picture keeps its own, read from the file header and turned the way its EXIF tag says; a
-PDF opens at the size of its page, upright when the file keeps that size to itself, and a
-video at the proportions its thumbnail or the header of its container gives, and only a file with neither opens in the shape most video has and moves once the stream reports; text gets a page to read on
-and the sound player is no larger than its controls. Ctrl with + and -, Ctrl and the
-wheel, which zooms around the pointer, or the buttons in the bar over the picture zoom a
-picture or a page; Ctrl+0 fits it back into the window, zooming out stops there rather
-than counting below it, and a zoomed picture is moved by dragging it. Nothing in the
-preview shows scrollbars.
+does not resize itself in front of you. A picture opens at its own size, read from the
+file header and turned the way its EXIF tag says, within the window it opens over; one
+with fewer pixels than 560 by 420 is enlarged to that many in its own proportions, so the
+preview is not the size of a stamp and has no empty space around it. A PDF page and a video fill as much of the window as their proportions allow:
+a PDF upright when the file keeps its page size to itself, a video in the proportions its
+thumbnail or the header of its container gives, and only a video with neither opens in the
+shape most video has and moves once the stream reports. Text gets a page to read on and
+the sound player is no larger than its controls. Walking to the next file shows its
+thumbnail, where there is one already, until the file itself has loaded. Ctrl with + and -,
+Ctrl and the wheel, which zooms around the pointer, or the buttons in the bar over the
+picture zoom a picture or a page; Ctrl+0 fits it back into the window, zooming out stops
+there rather than counting below it, and a zoomed picture is moved by dragging it. Nothing
+in the preview shows scrollbars.
 
 A sound file is shown with the cover it carries, cut square and drawn at the size of the
 icon it stands in for, and with that icon until there is one. Anything else falls back to
