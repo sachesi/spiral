@@ -37,7 +37,7 @@ After an update, quit the old processes: `pkill -x spiral; pkill -f xdg-desktop-
 - [File operations](docs/file-operations.md)
 - [Archives](docs/archives.md), [thumbnails](docs/thumbnails.md), [terminal](docs/terminal.md)
 - [Portal and D-Bus integration](docs/integration.md)
-- [Contributing](CONTRIBUTING.md), including where things are in the code
+- [Contributing](CONTRIBUTING.md), including where things are in the code, and [reporting a vulnerability](SECURITY.md)
 
 Search walks subfolders and can look inside text files, without an index. Tabs are not
 restored between runs. The interface is available in English, Russian and Ukrainian.

@@ -1,5 +1,18 @@
 # Contributing
 
+Bugs and ideas go to the [issue tracker](https://github.com/sachesi/spiral/issues); security
+problems do not, see [SECURITY.md](SECURITY.md).
+
+Before a change goes in:
+
+- `just check` and `just test` pass.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
+  `fix:`, `feat:`, `perf:`, `docs:` and so on, with a subject that says what changed for
+  someone using Spiral.
+- Every string the user sees goes through `gettext`. `just po` updates the catalogues in
+  `po/`, and a change that adds strings brings their translations along where it can.
+- Behaviour described in `docs/` changes with the code that implements it.
+
 ## Where things are
 
     build.rs               runs blueprint-compiler, bundles the GResource
