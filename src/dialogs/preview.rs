@@ -48,14 +48,14 @@ const WINDOW_SHARE: f64 = 0.82;
 const MAX_WIDTH: i32 = 900;
 const MAX_HEIGHT: i32 = 620;
 const MIN_SIDE: i32 = 180;
+/// The area a picture smaller than this opens with, in its own proportions: it is drawn at
+/// its own size in the middle, and the dialog is not a stamp its name and the zoom
+/// buttons do not fit on.
+const FLOOR_AREA: f64 = 560.0 * 420.0;
 /// Shapes for content whose proportions are not known before it is loaded: text to read,
-/// video before its stream says how big it is, an image whose header could not be read, a
-/// page before it is rendered, the sound player, and the icon for everything else.
+/// an image whose header could not be read, the sound player, and the icon for everything
+/// else.
 const TEXT_SHAPE: (i32, i32) = (760, 514);
-/// Video is shown at the size of its proportions, not of its pixel count: a small clip is
-/// worth a window one can watch, and the shape then matches the one guessed before the
-/// stream reported anything, so nothing has to move.
-const VIDEO_BOX: (i32, i32) = (720, 405);
 const IMAGE_SHAPE: (i32, i32) = (720, 494);
 /// A4 upright in points, which is what most PDFs turn out to be.
 const PAGE_POINTS: (f64, f64) = (595.28, 841.89);
@@ -293,7 +293,7 @@ impl PreviewDialog {
         }
         self.imp().page_size.set(Some(size));
         self.imp().page_count.set(Some(pages));
-        self.shape_boxed(size.0, size.1, self.imp().bounds.get());
+        self.shape_filled(size.0, size.1);
     }
 
     /// Show `info`: the header at once, the content when it has loaded.
@@ -425,8 +425,9 @@ impl PreviewDialog {
         Some(player)
     }
 
-    /// Video keeps its own proportions once the stream knows them; until then the dialog
-    /// holds the shape most video has.
+    /// Video fills the room there is in its own proportions, whatever its pixel count: a
+    /// small clip is worth a window one can watch. The stream only confirms the shape the
+    /// thumbnail or the container gave, or corrects the one most video has.
     fn video(&self, info: &gio::FileInfo, file: &gio::File) -> gtk::Widget {
         let Some(player) = self.player(info, file) else {
             return self.info_page(info);
@@ -441,7 +442,7 @@ impl PreviewDialog {
                 let (w, h) = (player.intrinsic_width(), player.intrinsic_height());
                 glib::g_debug!("spiral", "preview: the stream reports {w}x{h}");
                 if w > 0 && h > 0 {
-                    dialog.shape_boxed(w as f64, h as f64, VIDEO_BOX);
+                    dialog.shape_filled(w as f64, h as f64);
                 }
             }
         );
@@ -526,7 +527,7 @@ impl PreviewDialog {
         let (shaped_width, shaped_height) = self.imp().shaped.get();
         let shaped = shaped_width as f64 / shaped_height as f64;
         if ((size.0 / size.1) / shaped - 1.0).abs() > SHAPE_SLACK {
-            self.shape_boxed(size.0, size.1, self.imp().bounds.get());
+            self.shape_filled(size.0, size.1);
         }
         let first = pdf_page(path.clone(), 1).await?;
         let page = Rc::new(Cell::new(1u32));
@@ -792,8 +793,7 @@ impl PreviewDialog {
     fn apply_shape(&self, shape: Shape) {
         match shape {
             Shape::Fitted(width, height) => self.shape_fitted(width, height),
-            Shape::Page(width, height) => self.shape_boxed(width, height, self.imp().bounds.get()),
-            Shape::Video(width, height) => self.shape_boxed(width, height, VIDEO_BOX),
+            Shape::Filled(width, height) => self.shape_filled(width, height),
             Shape::Fixed((width, height)) => self.shape(width, height),
         }
     }
@@ -827,29 +827,21 @@ impl PreviewDialog {
         );
     }
 
-    /// `width` by `height` scaled to fill `box_`, up as well as down: what is shown at a
-    /// size of its own choosing keeps its proportions but not its pixel count.
-    fn shape_boxed(&self, width: f64, height: f64, box_: (i32, i32)) {
-        let bounds = self.imp().bounds.get();
-        let box_ = (box_.0.min(bounds.0), box_.1.min(bounds.1));
-        if width <= 0.0 || height <= 0.0 {
-            return;
+    /// `width` by `height` scaled to fill the room there is, up as well as down: what is
+    /// shown at a size of its own choosing keeps its proportions but not its pixel count.
+    fn shape_filled(&self, width: f64, height: f64) {
+        if let Some((width, height)) = filled(width, height, self.imp().bounds.get()) {
+            self.shape(width, height);
         }
-        let scale = (box_.0 as f64 / width).min(box_.1 as f64 / height);
-        self.shape((width * scale) as i32, (height * scale) as i32);
     }
 
-    /// A `width` by `height` picture scaled into the largest shape allowed, never blown up
-    /// past its own size: a thumbnail should not open a window the size of a wall.
+    /// A `width` by `height` picture at its own size, within the room there is and not
+    /// below the floor: a thumbnail should not open a window the size of a wall, nor a
+    /// small photograph one the size of a stamp.
     fn shape_fitted(&self, width: f64, height: f64) {
-        if width <= 0.0 || height <= 0.0 {
-            return;
+        if let Some((width, height)) = fitted(width, height, self.imp().bounds.get()) {
+            self.shape(width, height);
         }
-        let (most_width, most_height) = self.imp().bounds.get();
-        let scale = (most_width as f64 / width)
-            .min(most_height as f64 / height)
-            .min(1.0);
-        self.shape((width * scale) as i32, (height * scale) as i32);
     }
 
     /// Stop listening to the player and take its file away; the player itself stays for
@@ -1265,14 +1257,41 @@ struct Probe {
     mtime: u64,
 }
 
-/// The shape a file wants: at its own size, never enlarged; as proportions to fill the
-/// room there is, or the video box, with; or one of the fixed shapes for content whose
-/// proportions are not known until it is loaded.
+/// The shape a file wants: at its own size, raised to the floor; filling the room there is
+/// in its own proportions; or one of the fixed shapes for content whose proportions are not
+/// known until it is loaded.
 enum Shape {
     Fitted(f64, f64),
-    Page(f64, f64),
-    Video(f64, f64),
+    Filled(f64, f64),
     Fixed((i32, i32)),
+}
+
+/// `width` by `height` scaled to fill `room`, up or down.
+fn filled(width: f64, height: f64, room: (i32, i32)) -> Option<(i32, i32)> {
+    if width <= 0.0 || height <= 0.0 {
+        return None;
+    }
+    let scale = (room.0 as f64 / width).min(room.1 as f64 / height);
+    Some((
+        (width * scale).round() as i32,
+        (height * scale).round() as i32,
+    ))
+}
+
+/// `width` by `height` as it is, enlarged to `FLOOR_AREA` when it is smaller, and reduced
+/// to fit `room` when it is larger than that.
+fn fitted(width: f64, height: f64, room: (i32, i32)) -> Option<(i32, i32)> {
+    if width <= 0.0 || height <= 0.0 {
+        return None;
+    }
+    let floor = (FLOOR_AREA / (width * height)).sqrt().max(1.0);
+    let scale = (room.0 as f64 / width)
+        .min(room.1 as f64 / height)
+        .min(floor);
+    Some((
+        (width * scale).round() as i32,
+        (height * scale).round() as i32,
+    ))
 }
 
 impl Probe {
@@ -1311,7 +1330,7 @@ impl Probe {
                 .thumbnail_size()
                 .or_else(|| video_size(self.path.as_deref()?))
                 .unwrap_or((16.0, 9.0));
-            return Shape::Video(width, height);
+            return Shape::Filled(width, height);
         }
         if content_type.starts_with("audio/") {
             return Shape::Fixed(SOUND_SHAPE);
@@ -1328,7 +1347,7 @@ impl Probe {
                 .thumbnail_size()
                 .or_else(|| pdf_page_size(self.path.as_deref()?))
                 .unwrap_or(PAGE_POINTS);
-            return Shape::Page(width, height);
+            return Shape::Filled(width, height);
         }
         match self.thumbnail_size() {
             // What will be shown is the thumbnail, at its own size.
@@ -1689,6 +1708,24 @@ mod tests {
         assert_eq!(exif_orientation(&jpeg_with_orientation(true, 1)), 1);
         assert_eq!(exif_orientation(b"\xff\xd8no exif here"), 1);
         assert_eq!(exif_orientation(b"Exif\0\0MM"), 1);
+    }
+
+    #[test]
+    fn a_picture_opens_at_its_own_size_between_the_floor_and_the_room() {
+        let room = (1148, 656);
+        // Small: raised to the floor, in its own proportions.
+        assert_eq!(fitted(320.0, 240.0, room), Some((560, 420)));
+        assert_eq!(fitted(48.0, 48.0, room), Some((485, 485)));
+        // In between: as it is.
+        assert_eq!(fitted(800.0, 600.0, room), Some((800, 600)));
+        // Large: reduced to the room.
+        assert_eq!(fitted(1920.0, 1080.0, room), Some((1148, 646)));
+        // The floor never takes it past the room.
+        assert_eq!(fitted(100.0, 400.0, (400, 300)), Some((75, 300)));
+        assert_eq!(fitted(0.0, 10.0, room), None);
+        // Video and pages fill the room whatever their size.
+        assert_eq!(filled(320.0, 240.0, room), Some((875, 656)));
+        assert_eq!(filled(720.0, 1280.0, room), Some((369, 656)));
     }
 
     #[test]
