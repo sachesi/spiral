@@ -43,8 +43,9 @@ Before a change goes in:
     src/terminal.rs        terminal discovery
     src/portal/            the chooser backend: backend.rs (ashpd), chooser_window.rs
     src/dbus/              FileManager1
-    src/dialogs/           preferences, properties, open with, compress, folder chooser, and
-                           the Space preview, with its sizing, viewers and loading in preview/
+    src/dialogs/           preferences, properties (a file per page in properties/), open
+                           with, compress, folder chooser, and the Space preview, with its
+                           sizing, viewers and loading in preview/
     src/prefs.rs           settings that affect formatting and loading
     src/naming.rs          name validation, rename popover, new folder dialog
     src/tags.rs            colour tags: the xattr on the file, the index, the setting
