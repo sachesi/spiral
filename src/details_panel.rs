@@ -351,6 +351,7 @@ impl DetailsPanel {
 /// What a page shows is made from: the pane, and the files selected in it as the listing has
 /// them, a changed file being a new record there; with none selected, the folder. The record
 /// of the first item stands for a listing read again, as it is after a change of preference.
+/// A record's address is only a hint: one let go leaves it to the next.
 fn shown_for(view: &BrowserView, infos: &[gio::FileInfo]) -> u64 {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     (view.as_ptr() as usize).hash(&mut hasher);
@@ -368,6 +369,7 @@ fn shown_for(view: &BrowserView, infos: &[gio::FileInfo]) -> u64 {
     }
     for info in infos {
         (info.as_ptr() as usize).hash(&mut hasher);
+        file_utils::file_of(info).uri().hash(&mut hasher);
         file_utils::size_of(info).hash(&mut hasher);
         info.modification_date_time()
             .map(|d| d.to_unix())
