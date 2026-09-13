@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.15.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-13 14:26+0300\n"
+"POT-Creation-Date: 2026-09-13 16:46+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -956,13 +956,13 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: src/browser_view.rs:2992 src/details_panel.rs:177
+#: src/browser_view.rs:2992 src/details_panel.rs:217
 #: src/dialogs/properties.rs:321 src/dialogs/properties.rs:383
 #, no-c-format
 msgid "Location"
 msgstr ""
 
-#: src/browser_view.rs:3002 src/details_panel.rs:186
+#: src/browser_view.rs:3002 src/details_panel.rs:226
 #: src/dialogs/properties.rs:361
 #, no-c-format
 msgid "Trashed On"
@@ -973,82 +973,82 @@ msgstr ""
 msgid "Original Location"
 msgstr ""
 
-#: src/details_panel.rs:145 src/dialogs/properties.rs:312 src/file_utils.rs:249
+#: src/details_panel.rs:185 src/dialogs/properties.rs:312 src/file_utils.rs:249
 #, no-c-format
 msgid "MIME Type"
 msgstr ""
 
-#: src/details_panel.rs:150 src/details_panel.rs:169 src/details_panel.rs:343
+#: src/details_panel.rs:190 src/details_panel.rs:209 src/details_panel.rs:427
 #: src/dialogs/preferences.rs:262 src/dialogs/properties.rs:316
 #: src/dialogs/properties.rs:578 src/file_utils.rs:231 src/file_utils.rs:246
 #, no-c-format
 msgid "Size"
 msgstr ""
 
-#: src/details_panel.rs:182 src/dialogs/properties.rs:333
+#: src/details_panel.rs:222 src/dialogs/properties.rs:333
 #, no-c-format
 msgid "Link Target"
 msgstr ""
 
-#: src/details_panel.rs:185 src/dialogs/properties.rs:351
+#: src/details_panel.rs:225 src/dialogs/properties.rs:351
 #, no-c-format
 msgid "Original Folder"
 msgstr ""
 
-#: src/details_panel.rs:187 src/details_panel.rs:254
+#: src/details_panel.rs:227 src/details_panel.rs:298
 #: src/dialogs/properties.rs:366 src/file_utils.rs:233 ui/window.ui:424
 #, no-c-format
 msgid "Modified"
 msgstr ""
 
-#: src/details_panel.rs:188 src/dialogs/properties.rs:370 src/file_utils.rs:234
+#: src/details_panel.rs:228 src/dialogs/properties.rs:370 src/file_utils.rs:234
 #, no-c-format
 msgid "Accessed"
 msgstr ""
 
-#: src/details_panel.rs:189 src/dialogs/properties.rs:374 src/file_utils.rs:235
+#: src/details_panel.rs:229 src/dialogs/properties.rs:374 src/file_utils.rs:235
 #, no-c-format
 msgid "Created"
 msgstr ""
 
-#: src/details_panel.rs:191 src/details_panel.rs:255
+#: src/details_panel.rs:231 src/details_panel.rs:299
 #: src/dialogs/properties.rs:765 src/dialogs/properties.rs:917
 #: src/file_utils.rs:236 src/file_utils.rs:251
 #, no-c-format
 msgid "Owner"
 msgstr ""
 
-#: src/details_panel.rs:195 src/details_panel.rs:256
+#: src/details_panel.rs:235 src/details_panel.rs:300
 #: src/dialogs/properties.rs:766 src/dialogs/properties.rs:917
 #: src/file_utils.rs:237 src/file_utils.rs:252
 #, no-c-format
 msgid "Group"
 msgstr ""
 
-#: src/details_panel.rs:199 src/details_panel.rs:257
+#: src/details_panel.rs:239 src/details_panel.rs:301
 #: src/dialogs/properties.rs:139 src/file_utils.rs:238 src/file_utils.rs:250
 #, no-c-format
 msgid "Permissions"
 msgstr ""
 
-#: src/details_panel.rs:260 src/dialogs/properties.rs:480
+#: src/details_panel.rs:302 src/dialogs/properties.rs:480
 #, no-c-format
 msgid "Free"
 msgstr ""
 
-#: src/details_panel.rs:326 src/dialogs/properties.rs:297
+#: src/details_panel.rs:410 src/dialogs/properties.rs:297
 #, no-c-format
 msgid "%d Item"
 msgid_plural "%d Items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/details_panel.rs:341
+#: src/details_panel.rs:425
 #, no-c-format
 msgid "%s, folders not counted"
 msgstr ""
 
-#: src/details_panel.rs:399 src/dialogs/properties.rs:121
+#: src/details_panel.rs:502 src/dialogs/properties.rs:121
 #: ui/shortcuts_dialog.ui:325
 #, no-c-format
 msgid "Properties"
@@ -1610,51 +1610,51 @@ msgstr ""
 msgid "Terminal"
 msgstr ""
 
-#: src/dialogs/preview.rs:144 ui/shortcuts_dialog.ui:289
+#: src/dialogs/preview.rs:148 ui/shortcuts_dialog.ui:289
 #, no-c-format
 msgid "Preview"
 msgstr ""
 
-#: src/dialogs/preview.rs:535
+#: src/dialogs/preview.rs:588
 #, no-c-format
 msgid "Previous Page"
 msgstr ""
 
-#: src/dialogs/preview.rs:537
+#: src/dialogs/preview.rs:590
 #, no-c-format
 msgid "Next Page"
 msgstr ""
 
-#: src/dialogs/preview.rs:611 src/dialogs/preview.rs:664
+#: src/dialogs/preview.rs:664 src/dialogs/preview.rs:716
 #, no-c-format
 msgid "Fit"
 msgstr ""
 
-#: src/dialogs/preview.rs:613 ui/shortcuts_dialog.ui:170 ui/window.ui:491
+#: src/dialogs/preview.rs:666 ui/shortcuts_dialog.ui:170 ui/window.ui:491
 #: ui/window.ui:575
 #, no-c-format
 msgid "Zoom Out"
 msgstr ""
 
-#: src/dialogs/preview.rs:614
+#: src/dialogs/preview.rs:667
 #, no-c-format
 msgid "Fit to Window"
 msgstr ""
 
-#: src/dialogs/preview.rs:615 ui/shortcuts_dialog.ui:164 ui/window.ui:501
+#: src/dialogs/preview.rs:668 ui/shortcuts_dialog.ui:164 ui/window.ui:501
 #: ui/window.ui:585
 #, no-c-format
 msgid "Zoom In"
 msgstr ""
 
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:883
+#: src/dialogs/preview.rs:932
 #, no-c-format
 msgid "%t, %s"
 msgstr ""
 
 #. Translators: %p is the page being shown, %n the number of pages in the document.
-#: src/dialogs/preview.rs:888
+#: src/dialogs/preview.rs:937
 #, no-c-format
 msgid "%p of %n"
 msgstr ""
@@ -2100,164 +2100,164 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: src/metadata.rs:959
+#: src/metadata.rs:1101
 #, no-c-format
 msgid "Title"
 msgstr ""
 
-#: src/metadata.rs:960
+#: src/metadata.rs:1102
 #, no-c-format
 msgid "Author"
 msgstr ""
 
-#: src/metadata.rs:961
+#: src/metadata.rs:1103
 #, no-c-format
 msgid "Pages"
 msgstr ""
 
-#: src/metadata.rs:962
+#: src/metadata.rs:1104
 #, no-c-format
 msgid "Page Size"
 msgstr ""
 
-#: src/metadata.rs:963
+#: src/metadata.rs:1105
 #, no-c-format
 msgid "Words"
 msgstr ""
 
-#: src/metadata.rs:964
+#: src/metadata.rs:1106
 #, no-c-format
 msgid "Slides"
 msgstr ""
 
-#: src/metadata.rs:965
+#: src/metadata.rs:1107
 #, no-c-format
 msgid "Artist"
 msgstr ""
 
-#: src/metadata.rs:966
+#: src/metadata.rs:1108
 #, no-c-format
 msgid "Album"
 msgstr ""
 
-#: src/metadata.rs:969
+#: src/metadata.rs:1111
 #, no-c-format
 msgid "Album Artist"
 msgstr ""
 
-#: src/metadata.rs:975
+#: src/metadata.rs:1117
 #, no-c-format
 msgid "Track"
 msgstr ""
 
-#: src/metadata.rs:977
+#: src/metadata.rs:1119
 #, no-c-format
 msgid "%s of %s"
 msgstr ""
 
-#: src/metadata.rs:983
+#: src/metadata.rs:1125
 #, no-c-format
 msgid "Year"
 msgstr ""
 
-#: src/metadata.rs:984
+#: src/metadata.rs:1126
 #, no-c-format
 msgid "Genre"
 msgstr ""
 
-#: src/metadata.rs:986
+#: src/metadata.rs:1128
 #, no-c-format
 msgid "Dimensions"
 msgstr ""
 
-#: src/metadata.rs:991
+#: src/metadata.rs:1133
 #, no-c-format
 msgid "Duration"
 msgstr ""
 
-#: src/metadata.rs:992
+#: src/metadata.rs:1134
 #, no-c-format
 msgid "Taken"
 msgstr ""
 
-#: src/metadata.rs:993
+#: src/metadata.rs:1135
 #, no-c-format
 msgid "Camera"
 msgstr ""
 
-#: src/metadata.rs:994
+#: src/metadata.rs:1136
 #, no-c-format
 msgid "Lens"
 msgstr ""
 
-#: src/metadata.rs:995
+#: src/metadata.rs:1137
 #, no-c-format
 msgid "Exposure"
 msgstr ""
 
-#: src/metadata.rs:996
+#: src/metadata.rs:1138
 #, no-c-format
 msgid "Video"
 msgstr ""
 
-#: src/metadata.rs:997 ui/window.ui:411
+#: src/metadata.rs:1139 ui/window.ui:411
 #, no-c-format
 msgid "Audio"
 msgstr ""
 
-#: src/metadata.rs:999
+#: src/metadata.rs:1141
 #, no-c-format
 msgid "Audio Tracks"
 msgstr ""
 
-#: src/metadata.rs:1003
+#: src/metadata.rs:1145
 #, no-c-format
 msgid "Subtitles"
 msgstr ""
 
-#: src/metadata.rs:1016 src/metadata.rs:1034
+#: src/metadata.rs:1158 src/metadata.rs:1176
 #, no-c-format
 msgid "%s mm"
 msgstr ""
 
-#: src/metadata.rs:1031
+#: src/metadata.rs:1173
 #, no-c-format
 msgid "%s s"
 msgstr ""
 
-#: src/metadata.rs:1045
+#: src/metadata.rs:1187
 #, no-c-format
 msgid "%s fps"
 msgstr ""
 
-#: src/metadata.rs:1051
+#: src/metadata.rs:1193
 #, no-c-format
 msgid "Mono"
 msgstr ""
 
-#: src/metadata.rs:1052
+#: src/metadata.rs:1194
 #, no-c-format
 msgid "Stereo"
 msgstr ""
 
-#: src/metadata.rs:1053
+#: src/metadata.rs:1195
 #, no-c-format
 msgid "%d channel"
 msgid_plural "%d channels"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/metadata.rs:1057
+#: src/metadata.rs:1199
 #, no-c-format
 msgid "%s kHz"
 msgstr ""
 
-#: src/metadata.rs:1060
+#: src/metadata.rs:1202
 #, no-c-format
 msgid "%s kbit/s"
 msgstr ""
 
-#: src/metadata.rs:1063
+#: src/metadata.rs:1205
 #, no-c-format
 msgid "%s-bit"
 msgstr ""
@@ -3183,7 +3183,7 @@ msgstr ""
 msgid "Open Folder"
 msgstr ""
 
-#: src/window.rs:1361 ui/window.ui:73
+#: src/window.rs:1382 ui/window.ui:73
 #, no-c-format
 msgid "_Columns"
 msgstr ""
