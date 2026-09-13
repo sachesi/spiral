@@ -319,10 +319,28 @@ impl PreviewDialog {
         match placeholder {
             Some(texture) => self.show_child(&picture(&texture), false),
             // A stopped video is a black box.
-            None if reshaped || showing_video => self.show_child(&spinner(), false),
+            None if reshaped || showing_video => self.show_child(&spinner(SPINNER_DELAY), false),
             // Same shape and nothing to stand in: the page on screen stays until the next
-            // one fades in over it, rather than blinking out.
-            None => {}
+            // one fades in over it, rather than blinking out. It is not this file's, though,
+            // so a file slow to load has it give way to the spinner.
+            None => {
+                let shown = imp.content.visible_child();
+                glib::timeout_add_local_once(
+                    SPINNER_DELAY,
+                    glib::clone!(
+                        #[weak(rename_to = dialog)]
+                        self,
+                        move || {
+                            let imp = dialog.imp();
+                            if imp.generation.get() == generation
+                                && imp.content.visible_child() == shown
+                            {
+                                dialog.show_child(&spinner(Duration::ZERO), false);
+                            }
+                        }
+                    ),
+                );
+            }
         }
         let info = info.clone();
         glib::spawn_future_local(glib::clone!(
@@ -920,25 +938,27 @@ fn page_text(page: u32, pages: u32) -> String {
         .replace("%n", &pages.to_string())
 }
 
-/// A spinner that shows itself only once the wait has gone on for `SPINNER_DELAY`: one
-/// flashed up for a moment by every file that loads at once is a blink.
-fn spinner() -> gtk::Widget {
+/// A spinner that shows itself only once the wait has gone on for `delay`: one flashed up
+/// for a moment by every file that loads at once is a blink.
+fn spinner(delay: Duration) -> gtk::Widget {
     let spinner = adw::Spinner::builder()
         .width_request(32)
         .height_request(32)
         .halign(gtk::Align::Center)
         .valign(gtk::Align::Center)
         .vexpand(true)
-        .opacity(0.0)
         .build();
-    glib::timeout_add_local_once(
-        SPINNER_DELAY,
-        glib::clone!(
-            #[weak]
-            spinner,
-            move || spinner.set_opacity(1.0)
-        ),
-    );
+    if !delay.is_zero() {
+        spinner.set_opacity(0.0);
+        glib::timeout_add_local_once(
+            delay,
+            glib::clone!(
+                #[weak]
+                spinner,
+                move || spinner.set_opacity(1.0)
+            ),
+        );
+    }
     spinner.upcast()
 }
 
