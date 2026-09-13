@@ -1097,9 +1097,7 @@ impl FolderModel {
                         let pos = pos as u32;
                         match fresh.remove(&key(old)) {
                             None => store.remove(pos),
-                            Some(new) if changed(old, &new) => {
-                                store.splice(pos, 1, &[new])
-                            }
+                            Some(new) if changed(old, &new) => store.splice(pos, 1, &[new]),
                             Some(_) => {}
                         }
                     }
