@@ -1,6 +1,7 @@
 //! Helper run inside the thumbnail sandbox: renders one image into a PNG with gdk-pixbuf, so
 //! image decoders never run in the file manager process. With `--probe`, it prints what a
-//! picture, a recording or a video says about itself instead, for the details panel.
+//! photo, a recording, a video or a document says about itself instead, for the details
+//! panel.
 
 use std::process::ExitCode;
 

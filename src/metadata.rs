@@ -130,7 +130,7 @@ fn one_line(text: &str) -> String {
 
 fn probe_image(path: &Path, raw: bool) -> Vec<(&'static str, String)> {
     let mut out = Vec::new();
-    let blocks = read_exif(path);
+    let blocks = read_exif(path, raw);
     // By number, in whichever block has it: a CR3 keeps the camera and the exposure in
     // separate ones. Never the GPS block, never the thumbnail's directory.
     let field = |number: u16| {
@@ -164,15 +164,22 @@ fn probe_image(path: &Path, raw: bool) -> Vec<(&'static str, String)> {
     // The size the picture is drawn at: turned the way the camera was held. A raw file is
     // not a picture gdk-pixbuf can size, or it sizes the preview inside; the camera says the
     // size of the picture in the EXIF.
-    let size = if raw {
-        number(PIXEL_X)
+    // Only a JPEG, as in the preview, and a raw file are turned by their tag: HEIF and AVIF
+    // carry a turn of their own in the container, and the tag beside it would turn them twice.
+    let (size, follows_tag) = if raw {
+        let size = number(PIXEL_X)
             .zip(number(PIXEL_Y))
-            .map(|(w, h)| (w as i32, h as i32))
+            .map(|(w, h)| (w as i32, h as i32));
+        (size, true)
     } else {
-        crate::gtk::gdk_pixbuf::Pixbuf::file_info(path).map(|(_, w, h)| (w, h))
+        match crate::gtk::gdk_pixbuf::Pixbuf::file_info(path) {
+            Some((format, w, h)) => (Some((w, h)), format.name().as_deref() == Some("jpeg")),
+            None => (None, false),
+        }
     };
     if let Some((width, height)) = size.filter(|&(w, h)| w > 0 && h > 0) {
-        let turned = matches!(field(ORIENTATION).and_then(|v| v.get_uint(0)), Some(5..=8));
+        let turned =
+            follows_tag && matches!(field(ORIENTATION).and_then(|v| v.get_uint(0)), Some(5..=8));
         let (width, height) = if turned {
             (height, width)
         } else {
@@ -181,17 +188,26 @@ fn probe_image(path: &Path, raw: bool) -> Vec<(&'static str, String)> {
         out.push(("width", width.to_string()));
         out.push(("height", height.to_string()));
     }
-    let original = field(DATE_TIME_ORIGINAL).or_else(|| field(DATE_TIME));
-    if let Some(exif::Value::Ascii(parts)) = original
-        && let Some(mut date) = parts
-            .first()
-            .and_then(|p| exif::DateTime::from_ascii(p).ok())
-    {
-        if let Some(exif::Value::Ascii(offset)) = field(OFFSET_TIME_ORIGINAL)
+    // When the shutter went, or failing that when the picture was scanned; never the plain
+    // DateTime, which is when a program last changed the file.
+    let taken = [
+        (DATE_TIME_ORIGINAL, OFFSET_TIME_ORIGINAL),
+        (DATE_TIME_DIGITIZED, OFFSET_TIME_DIGITIZED),
+    ]
+    .into_iter()
+    .find_map(|(date, offset)| {
+        let Some(exif::Value::Ascii(parts)) = field(date) else {
+            return None;
+        };
+        let mut date = exif::DateTime::from_ascii(parts.first()?).ok()?;
+        if let Some(exif::Value::Ascii(offset)) = field(offset)
             && let Some(offset) = offset.first()
         {
             let _ = date.parse_offset(offset);
         }
+        Some(date)
+    });
+    if let Some(date) = taken {
         out.push(("taken", iso8601(&date)));
     }
     let make = text(MAKE);
@@ -217,12 +233,13 @@ fn probe_image(path: &Path, raw: bool) -> Vec<(&'static str, String)> {
 const MAKE: u16 = 0x010f;
 const MODEL: u16 = 0x0110;
 const ORIENTATION: u16 = 0x0112;
-const DATE_TIME: u16 = 0x0132;
 const EXPOSURE_TIME: u16 = 0x829a;
 const F_NUMBER: u16 = 0x829d;
 const ISO: u16 = 0x8827;
 const DATE_TIME_ORIGINAL: u16 = 0x9003;
+const DATE_TIME_DIGITIZED: u16 = 0x9004;
 const OFFSET_TIME_ORIGINAL: u16 = 0x9011;
+const OFFSET_TIME_DIGITIZED: u16 = 0x9012;
 const FOCAL_LENGTH: u16 = 0x920a;
 const PIXEL_X: u16 = 0xa002;
 const PIXEL_Y: u16 = 0xa003;
@@ -230,42 +247,66 @@ const LENS_MODEL: u16 = 0xa434;
 
 /// How much of a file is searched for EXIF the reader does not find on its own.
 const EXIF_SCAN: usize = 4 * 1024 * 1024;
+/// How much of a TIFF, or of a raw file built on one, is read. The reader would otherwise
+/// take the whole file, a hundred megabytes for a raw file and more for a scan, to find a
+/// directory that is nearly always at the head; one written at the end of a larger file is
+/// not found.
+const TIFF_MAX: usize = 64 * 1024 * 1024;
 /// How much is handed to the reader from each TIFF header found in it.
 const EXIF_BLOCK: usize = 512 * 1024;
 /// How many TIFF headers are tried before the search gives up.
 const EXIF_TRIES: usize = 32;
 
-/// The EXIF of the file at `path`: where the reader knows the container (JPEG, TIFF and the
-/// raw files built on it, HEIF and AVIF, PNG, WebP), as it reads it. Elsewhere, what can be
-/// found in the head of the file: an Olympus or Panasonic raw file is a TIFF under another
-/// signature, and a Fujifilm raw file, the metadata boxes of a CR3 and the Exif box of a
-/// JPEG XL each hold TIFF blocks the reader can take one by one.
-fn read_exif(path: &Path) -> Vec<exif::Exif> {
+/// The JPEG XL container, whose Exif box the reader does not know.
+const JXL: &[u8] = b"\0\0\0\x0cJXL \r\n\x87\n";
+
+/// The EXIF of the file at `path`. A TIFF, and a raw file built on one, from its head; an
+/// Olympus or Panasonic raw file is a TIFF under another signature. Other containers the
+/// reader knows (JPEG, HEIF and AVIF, PNG, WebP) as it reads them. Beyond those, for a raw
+/// file or a JPEG XL, what can be found in the head of the file: a Fujifilm raw file, the
+/// metadata boxes of a CR3 and the Exif box of a JPEG XL hold TIFF blocks the reader can
+/// take one by one. A picture without EXIF is not searched for any.
+fn read_exif(path: &Path, raw: bool) -> Vec<exif::Exif> {
     let reader = exif::Reader::new();
     let Ok(file) = std::fs::File::open(path) else {
         return Vec::new();
     };
-    if let Ok(exif) = reader.read_from_container(&mut std::io::BufReader::new(&file)) {
+    let head_of = |most: usize| {
+        let mut head = Vec::new();
+        std::io::Seek::rewind(&mut &file).ok()?;
+        std::io::Read::read_to_end(&mut std::io::Read::take(&file, most as u64), &mut head).ok()?;
+        Some(head)
+    };
+    let Some(signature) = head_of(JXL.len()) else {
+        return Vec::new();
+    };
+    let tiff_under = match signature.get(..4) {
+        Some(b"II*\0" | b"MM\0*") => Some(None),
+        Some(b"IIU\0" | b"IIRO" | b"IIRS") => Some(Some([0x2a, 0])),
+        Some(b"MMOR") => Some(Some([0, 0x2a])),
+        _ => None,
+    };
+    if let Some(magic) = tiff_under {
+        let Some(mut head) = head_of(TIFF_MAX) else {
+            return Vec::new();
+        };
+        if let Some(magic) = magic {
+            head[2..4].copy_from_slice(&magic);
+        }
+        if let Ok(exif) = reader.read_raw(head) {
+            return vec![exif];
+        }
+    } else if std::io::Seek::rewind(&mut &file).is_ok()
+        && let Ok(exif) = reader.read_from_container(&mut std::io::BufReader::new(&file))
+    {
         return vec![exif];
     }
-    // The reader above has moved through the file.
-    let mut head = Vec::new();
-    if std::io::Seek::rewind(&mut &file).is_err() {
+    if !raw && signature != JXL {
         return Vec::new();
     }
-    let _ =
-        std::io::Read::read_to_end(&mut std::io::Read::take(&file, EXIF_SCAN as u64), &mut head);
-    match head.get(..4) {
-        Some(b"IIU\0" | b"IIRO" | b"IIRS") => {
-            head[2..4].copy_from_slice(&[0x2a, 0]);
-            return reader.read_raw(head).into_iter().collect();
-        }
-        Some(b"MMOR") => {
-            head[2..4].copy_from_slice(&[0, 0x2a]);
-            return reader.read_raw(head).into_iter().collect();
-        }
-        _ => {}
-    }
+    let Some(head) = head_of(EXIF_SCAN) else {
+        return Vec::new();
+    };
     let mut blocks = Vec::new();
     let mut at = 0;
     let mut tries = 0;
@@ -340,7 +381,12 @@ fn probe_media(path: &Path) -> Vec<(&'static str, String)> {
     // The title of a song is a tag of the file, or of its one sound stream where the file has
     // no tags of its own (Ogg, FLAC). The streams of a video are titled after the track
     // ("Audio", "English"), which says nothing of the video.
-    let videos = info.video_streams();
+    // A picture in the file, a cover, is listed with the video; it is not one.
+    let videos: Vec<_> = info
+        .video_streams()
+        .into_iter()
+        .filter(|v| !v.is_image())
+        .collect();
     let audios = info.audio_streams();
     let global = info
         .stream_info()
@@ -677,7 +723,12 @@ fn element(xml: &str, name: &str) -> Option<String> {
     if tag.ends_with('/') {
         return None;
     }
-    let text = &rest[..rest.find("</")?];
+    let text = rest.trim_start();
+    if let Some(cdata) = text.strip_prefix("<![CDATA[") {
+        let text = &cdata[..cdata.find("]]>")?];
+        return Some(text.trim().to_string()).filter(|t| !t.is_empty());
+    }
+    let text = &text[..text.find("</")?];
     Some(unescape(text.trim())).filter(|t| !t.is_empty())
 }
 
@@ -691,9 +742,11 @@ fn attribute(xml: &str, name: &str, attr: &str) -> Option<String> {
         if matches!(
             before,
             Some(':') | Some(' ') | Some('\t') | Some('\n') | Some('\r')
-        ) && let Some(value) = after.strip_prefix("=\"")
+        ) && let Some(quote) = after.strip_prefix('=').and_then(|a| a.chars().next())
+            && (quote == '"' || quote == '\'')
         {
-            return Some(unescape(&value[..value.find('"')?])).filter(|v| !v.is_empty());
+            let value = &after[2..];
+            return Some(unescape(&value[..value.find(quote)?])).filter(|v| !v.is_empty());
         }
         rest = after;
     }
@@ -757,8 +810,8 @@ fn unescape(text: &str) -> String {
 // ---- in the file manager --------------------------------------------------------------------
 
 /// Read what the file of `info` says about itself, in the sandbox, or `None` where it is not
-/// a local picture, recording or video, or the helper cannot be run. Kept per version of the
-/// file, so going back to one is not another run.
+/// a local file of a kind the helper reads, or the helper cannot be run. Kept per version of
+/// the file, so going back to one is not another run.
 pub async fn read(info: &gio::FileInfo) -> Option<Rc<Facts>> {
     let file = file_utils::file_of(info);
     let kind = kind_of(&file_utils::content_type_of(info)?)?;
@@ -842,6 +895,8 @@ fn run_probe(kind: &str, path: &Path) -> Option<Vec<u8>> {
     drop(sandbox.seccomp);
     match run {
         Ok(ran) if ran.ok => Some(ran.stdout),
+        // A file the helper fails on is one it will fail on again, and says nothing: kept
+        // as such. One it ran out of time on may have been waiting for a busy disk.
         Ok(ran) => {
             glib::g_debug!(
                 "spiral",
@@ -849,7 +904,7 @@ fn run_probe(kind: &str, path: &Path) -> Option<Vec<u8>> {
                 path.display(),
                 ran.trouble
             );
-            None
+            (!ran.timed_out).then(Vec::new)
         }
         Err(e) => {
             glib::g_debug!("spiral", "probe of {} could not start: {e}", path.display());
@@ -1054,7 +1109,7 @@ impl Facts {
         });
         let rate = self
             .rate
-            .map(|hz| unit(gettext("%s kHz").replace("%s", &trimmed(f64::from(hz) / 1000.0, 1))));
+            .map(|hz| unit(gettext("%s kHz").replace("%s", &trimmed(f64::from(hz) / 1000.0, 3))));
         let bitrate = self
             .bitrate
             .map(|b| unit(gettext("%s kbit/s").replace("%s", &(b / 1000).to_string())));
@@ -1098,9 +1153,10 @@ fn trimmed(n: f64, places: usize) -> String {
     }
 }
 
-/// A shutter speed as photographers write it: 1/250 below a second, 2.5 above.
+/// A shutter speed as photographers write it: 1/250 up to a quarter of a second, 0.6 and
+/// 2.5 above.
 fn shutter(seconds: f64) -> String {
-    if seconds < 1.0 {
+    if seconds <= 0.25 {
         format!("1/{}", (1.0 / seconds).round())
     } else {
         trimmed(seconds, 1)
@@ -1152,7 +1208,11 @@ mod tests {
     #[test]
     fn numbers_read_as_photographers_write_them() {
         assert_eq!(shutter(0.004), "1/250");
+        assert_eq!(shutter(0.25), "1/4");
+        assert_eq!(shutter(0.6), "0.6");
         assert_eq!(shutter(2.5), "2.5");
+        assert_eq!(trimmed(22.05, 3), "22.05");
+        assert_eq!(trimmed(44.1, 3), "44.1");
         assert_eq!(trimmed(2.8, 1), "2.8");
         assert_eq!(trimmed(35.0, 1), "35");
         assert_eq!(trimmed(29.97, 2), "29.97");
@@ -1312,6 +1372,23 @@ mod tests {
     }
 
     #[test]
+    fn taken_is_when_the_shutter_went_not_when_a_program_saved() {
+        let edited = tiff(true, &[(0x0132, V::A("2025:01:02 03:04:05"))]);
+        assert_eq!(probe_bytes("image", &edited).taken, None);
+        let scanned = tiff(
+            true,
+            &[
+                (0x0132, V::A("2025:01:02 03:04:05")),
+                (DATE_TIME_DIGITIZED, V::A("1999:12:31 23:59:00")),
+            ],
+        );
+        assert_eq!(
+            probe_bytes("image", &scanned).taken.as_deref(),
+            Some("1999-12-31T23:59:00")
+        );
+    }
+
+    #[test]
     fn exif_is_found_inside_containers_the_reader_does_not_know() {
         // A Fujifilm raw file: a header, then a JPEG preview carrying the EXIF.
         let mut raf = b"FUJIFILMCCD-RAW 0201FF383501".to_vec();
@@ -1458,10 +1535,12 @@ mod tests {
             unescape("&lt;a&gt; &amp;amp; &#233; &#x41; & plain &bogus;"),
             "<a> &amp; é A & plain &bogus;"
         );
-        let xml = "<r><x:item x:count=\"3\" size=\"4\">text</x:item><empty/></r>";
+        let xml = "<r><x:item x:count=\"3\" size='4'>text</x:item><empty/>\
+                   <note><![CDATA[a <b> & c]]></note></r>";
         assert_eq!(element(xml, "item").as_deref(), Some("text"));
         assert_eq!(attribute(xml, "item", "count").as_deref(), Some("3"));
         assert_eq!(attribute(xml, "item", "size").as_deref(), Some("4"));
+        assert_eq!(element(xml, "note").as_deref(), Some("a <b> & c"));
         assert_eq!(element(xml, "empty"), None);
         assert_eq!(element(xml, "missing"), None);
     }
