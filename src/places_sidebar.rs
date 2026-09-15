@@ -41,6 +41,8 @@ mod imp {
         pub monitor: gio::VolumeMonitor,
         /// Handlers on the monitor, which is shared by every window and outlives them.
         pub monitor_handlers: RefCell<Vec<glib::SignalHandlerId>>,
+        /// Handlers on the application's settings, which outlive the window as well.
+        pub settings_handlers: RefCell<Vec<glib::SignalHandlerId>>,
         pub bookmarks_monitor: RefCell<Option<gio::FileMonitor>>,
         pub trash_monitor: RefCell<Option<gio::FileMonitor>>,
         /// Whether the trash is known to hold nothing, so emptying it is not offered.
@@ -66,6 +68,7 @@ mod imp {
                 tag_menu: Default::default(),
                 monitor: gio::VolumeMonitor::get(),
                 monitor_handlers: Default::default(),
+                settings_handlers: Default::default(),
                 bookmarks_monitor: Default::default(),
                 trash_monitor: Default::default(),
                 trash_empty: Default::default(),
@@ -99,6 +102,10 @@ mod imp {
         fn dispose(&self) {
             for id in self.monitor_handlers.take() {
                 self.monitor.disconnect(id);
+            }
+            let settings = crate::prefs::settings();
+            for id in self.settings_handlers.take() {
+                settings.disconnect(id);
             }
         }
 
@@ -185,7 +192,7 @@ mod imp {
                 "use-tags",
                 "tags",
             ] {
-                crate::prefs::settings().connect_changed(
+                let id = crate::prefs::settings().connect_changed(
                     Some(key),
                     glib::clone!(
                         #[strong]
@@ -193,6 +200,7 @@ mod imp {
                         move |_, _| rebuild()
                     ),
                 );
+                self.settings_handlers.borrow_mut().push(id);
             }
 
             // The GTK file chooser and other file managers edit the same bookmarks file.

@@ -37,6 +37,8 @@ mod imp {
         /// Kept for its mount signals: a chain drawn before its share was mounted is drawn
         /// again from the mount once there is one.
         pub monitor: RefCell<Option<gio::VolumeMonitor>>,
+        /// Handlers on the monitor, which is shared by every window and outlives them.
+        pub monitor_handlers: RefCell<Vec<glib::SignalHandlerId>>,
         /// A location and the name it was listed under, standing in for the mount it has
         /// not got: a server reached by a bare address, found on the network.
         pub given: RefCell<Option<(gio::File, String)>>,
@@ -72,6 +74,14 @@ mod imp {
             })
         }
 
+        fn dispose(&self) {
+            if let Some(monitor) = self.monitor.borrow().as_ref() {
+                for id in self.monitor_handlers.take() {
+                    monitor.disconnect(id);
+                }
+            }
+        }
+
         fn constructed(&self) {
             self.parent_constructed();
             let monitor = gio::VolumeMonitor::get();
@@ -84,8 +94,10 @@ mod imp {
                     }
                 }
             );
-            monitor.connect_mount_added(again.clone());
-            monitor.connect_mount_removed(again);
+            self.monitor_handlers.replace(vec![
+                monitor.connect_mount_added(again.clone()),
+                monitor.connect_mount_removed(again),
+            ]);
             self.monitor.replace(Some(monitor));
             // Keep the current folder in view as the bar fills up.
             let adj = self.scrolled.hadjustment();
