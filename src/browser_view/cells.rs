@@ -457,5 +457,6 @@ impl BrowserView {
                 }
             });
         }
+        self.refresh_side_cells();
     }
 }

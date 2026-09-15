@@ -21,6 +21,11 @@ use crate::file_utils;
 use crate::folder_model::FolderModel;
 use crate::{gdk, gio, glib, gtk};
 
+/// The file a cell of a side column shows. Those cells stay out of `remember_list_item`,
+/// whose positions are taken to be in the current folder.
+static SIDE_INFO: crate::object_data::Key<gio::FileInfo> =
+    crate::object_data::Key::new("side-info");
+
 /// Width of one column.
 const COLUMN_WIDTH: i32 = 240;
 /// How long a selection has to hold still before the folder it points at is listed, so
@@ -579,6 +584,9 @@ impl BrowserView {
             label.set_text(&info.display_name());
             item.set_accessible_label(&info.display_name());
             bind_tags(&bx, None, &info);
+            if !current {
+                SIDE_INFO.set(&bx, info);
+            }
         });
         factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
@@ -591,6 +599,27 @@ impl BrowserView {
             }
         });
         factory
+    }
+
+    /// What `refresh_cells` does for the current folder, for the columns beside it: the
+    /// cut dimming and the tag washes, which live outside the file info.
+    pub(crate) fn refresh_side_cells(&self) {
+        fn each(widget: &gtk::Widget) {
+            let mut child = widget.first_child();
+            while let Some(c) = child {
+                match SIDE_INFO.get(&c) {
+                    Some(info) => {
+                        set_cut(&c, &info);
+                        bind_tags(&c, None, &info);
+                    }
+                    None => each(&c),
+                }
+                child = c.next_sibling();
+            }
+        }
+        for root in side_roots(self) {
+            each(root.upcast_ref());
+        }
     }
 
     /// Left steps out to the parent folder, right into the selected one: the arrows of a
