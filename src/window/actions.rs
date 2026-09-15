@@ -102,6 +102,9 @@ pub(super) fn install(klass: &mut <imp::SpiralWindow as ObjectSubclass>::Class) 
     });
     klass.install_action("win.bookmark", None, |win, _, _| {
         if let Some(v) = win.current_view() {
+            // The bookmarks may have changed since the view last looked, in another
+            // window or another program, and a disabled action ignores the key.
+            v.update_action_state();
             v.action_group().activate_action("bookmark", None);
         }
     });
