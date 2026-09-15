@@ -14,10 +14,8 @@ impl BrowserView {
     /// with the pasted files picked out, ready for the next thing done to them. Only if
     /// the view is still in that folder when the job ends: one that has moved on to
     /// another keeps the selection it has there.
-    pub(super) fn submit_and_select(&self, kind: JobKind) {
-        let Some(job) = self.manager().map(|m| m.submit(kind)) else {
-            return;
-        };
+    pub(super) fn submit_and_select(&self, kind: JobKind) -> Option<crate::ops::Job> {
+        let job = self.manager().map(|m| m.submit(kind))?;
         let location = self.location();
         job.connect_status_notify(glib::clone!(
             #[weak(rename_to = view)]
@@ -32,6 +30,7 @@ impl BrowserView {
                 }
             }
         ));
+        Some(job)
     }
 
     pub fn submit_kind(&self, kind: JobKind) {
@@ -71,13 +70,32 @@ impl BrowserView {
                 let Some((files, cut)) = clipboard::read(&cb).await else {
                     return;
                 };
+                let uris: Vec<String> = files.iter().map(|f| f.uri().to_string()).collect();
                 let pairs = files.into_iter().map(|f| (f, dest.clone())).collect();
-                view.submit_and_select(JobKind::Transfer {
+                let job = view.submit_and_select(JobKind::Transfer {
                     pairs,
                     is_move: cut,
                 });
-                if cut {
-                    cb.set_content(gtk::gdk::ContentProvider::NONE).ok();
+                // The cut is used up once the files have moved. Until then it stays, so a
+                // move that is cancelled or fails can be pasted again; and it is only
+                // cleared if the clipboard still holds it, not what was copied meanwhile.
+                if let (true, Some(job)) = (cut, job) {
+                    job.connect_status_notify(move |job| {
+                        if job.status() != JobStatus::Done {
+                            return;
+                        }
+                        let (cb, uris) = (cb.clone(), uris.clone());
+                        glib::spawn_future_local(async move {
+                            if let Some((files, true)) = clipboard::read(&cb).await
+                                && files
+                                    .iter()
+                                    .map(|f| f.uri().to_string())
+                                    .eq(uris.iter().cloned())
+                            {
+                                cb.set_content(gtk::gdk::ContentProvider::NONE).ok();
+                            }
+                        });
+                    });
                 }
             }
         ));
@@ -90,10 +108,12 @@ impl BrowserView {
             self,
             async move {
                 match cb.read_texture_future().await {
-                    Ok(Some(image)) => view.submit_and_select(JobKind::SaveImage {
-                        parent: dest,
-                        image,
-                    }),
+                    Ok(Some(image)) => {
+                        view.submit_and_select(JobKind::SaveImage {
+                            parent: dest,
+                            image,
+                        });
+                    }
                     Ok(None) => {}
                     Err(e) => view.show_error(&gettext("Could Not Paste Image"), e.message()),
                 }
