@@ -22,6 +22,12 @@
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.16.1" date="2026-09-15">
+      <description>
+        <p>Opening the network, or a server on it, no longer freezes the window while it is reached: the folder shows at once and fills in when the servers answer.</p>
+        <p>Favorites and each tag keep the order and view they were last given, as a folder does, instead of losing them on the next visit.</p>
+      </description>
+    </release>
     <release version="0.16.0" date="2026-09-13">
       <description>
         <p>A details panel beside the panes, on F8: what a file is, how big it is, when it was made and changed, and what it says about itself. Photos give their camera, lens, exposure and the time they were taken, camera raw files as well; recordings and videos their length, streams and tags; PDFs, office documents and e-books their pages, title and author. Where a photo was taken is never read out. The panel keeps its place and the keyboard, and follows the folder it describes as the folder changes.</p>
