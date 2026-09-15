@@ -547,7 +547,6 @@ pub async fn extract(
     Ok(())
 }
 
-/// Size of everything under `path`, keyed by the path a verbose tool prints for it.
 /// Move what an archive left in `work` to its final name in `dest`: a single entry
 /// keeps its own name, anything else is a folder named after the archive.
 fn place(work: &Path, dest: &Path, file_name: &str) -> std::io::Result<PathBuf> {
