@@ -162,6 +162,47 @@ pub fn remember_view() -> bool {
     SETTINGS.with(|s| s.boolean("remember-view")) && per_folder_available()
 }
 
+/// By location, the attributes favorites and each tag keep their view and order in.
+type ListViews = std::collections::HashMap<String, std::collections::HashMap<String, String>>;
+
+fn list_views() -> ListViews {
+    SETTINGS.with(|s| s.get("list-views"))
+}
+
+fn save_list_views(views: ListViews) {
+    if let Err(e) = SETTINGS.with(|s| s.set("list-views", views)) {
+        glib::g_warning!("spiral", "cannot save the view of a list: {e}");
+    }
+}
+
+/// What the list at `uri` remembers: `metadata::` attributes and their values, as a
+/// folder would have them.
+pub fn list_view(uri: &str) -> std::collections::HashMap<String, String> {
+    list_views().remove(uri).unwrap_or_default()
+}
+
+pub fn set_list_view(uri: &str, attribute: &str, value: &str) {
+    let mut views = list_views();
+    views
+        .entry(uri.to_string())
+        .or_default()
+        .insert(attribute.to_string(), value.to_string());
+    save_list_views(views);
+}
+
+/// What the list at `from` remembers goes to `to`, or is forgotten for `None`: a tag
+/// renamed, or removed.
+pub fn move_list_view(from: &str, to: Option<&str>) {
+    let mut views = list_views();
+    let Some(view) = views.remove(from) else {
+        return;
+    };
+    if let Some(to) = to {
+        views.insert(to.to_string(), view);
+    }
+    save_list_views(views);
+}
+
 pub fn guess_view() -> bool {
     SETTINGS.with(|s| s.boolean("guess-view"))
 }
@@ -195,4 +236,22 @@ pub fn thumbnail_limit() -> u64 {
 
 pub fn recursive_search_for(file: &gio::File) -> bool {
     scope_allows("recursive-search", file)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_list_view_follows_its_tag() {
+        set_list_view("tag:///Red", "metadata::spiral-sort", "size-desc");
+        set_list_view("tag:///Red", "metadata::spiral-view", "list");
+        move_list_view("tag:///Red", Some("tag:///Work"));
+        assert!(list_view("tag:///Red").is_empty());
+        let view = list_view("tag:///Work");
+        assert_eq!(view["metadata::spiral-sort"], "size-desc");
+        assert_eq!(view["metadata::spiral-view"], "list");
+        move_list_view("tag:///Work", None);
+        assert!(list_view("tag:///Work").is_empty());
+    }
 }

@@ -5,7 +5,7 @@ use super::*;
 
 /// Favorites and tags are lists of files, not folders: nothing is listed or watched, the
 /// files are asked about one by one.
-pub(super) fn is_list_location(file: &gio::File) -> bool {
+pub(crate) fn is_list_location(file: &gio::File) -> bool {
     crate::starred::is_starred_location(file) || crate::tags::is_tag_location(file)
 }
 

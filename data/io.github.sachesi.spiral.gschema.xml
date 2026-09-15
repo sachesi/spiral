@@ -107,6 +107,11 @@
       <summary>Offer the column view</summary>
       <description>Adds the columns to the views the view button and the menu switch between.</description>
     </key>
+    <key name="list-views" type="a{sa{ss}}">
+      <default>{}</default>
+      <summary>The view and order of favorites and of each tag</summary>
+      <description>By location, the metadata attributes a folder keeps its own view and order in. Favorites and tags are lists of files, with no folder to keep them on.</description>
+    </key>
     <key name="remember-view" type="b">
       <default>true</default>
       <summary>Remember the view mode of each folder</summary>

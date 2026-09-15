@@ -26,7 +26,7 @@ use crate::{gio, glib, gtk};
 mod lists;
 mod search;
 
-use lists::*;
+pub(crate) use lists::is_list_location;
 
 mod imp {
     use super::*;

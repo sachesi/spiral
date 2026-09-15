@@ -13,8 +13,8 @@ use std::time::Duration;
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
 use crate::browser_view::{
-    BrowserView, bind_tags, emblem_image, preferred_action, remember_list_item, remembered_sort,
-    set_cut, unbind_icon,
+    BrowserView, bind_tags, emblem_image, keeps_own_view, preferred_action, remember_list_item,
+    remembered, remembered_sort, set_cut, unbind_icon,
 };
 use crate::enums::ViewMode;
 use crate::file_utils;
@@ -454,18 +454,11 @@ impl BrowserView {
         if let Some(file) = &mark {
             mark_when_loaded(&model, &list, file.clone());
         }
-        if !self.chooser_mode() && crate::prefs::remember_view() {
+        if !self.chooser_mode() && keeps_own_view(dir) {
             let (weak_model, weak_list) = (model.downgrade(), list.downgrade());
             let (dir, own_sort) = (dir.clone(), own_sort.clone());
             glib::spawn_future_local(async move {
-                let Ok(info) = dir
-                    .query_info_future(
-                        "metadata::spiral-sort",
-                        gio::FileQueryInfoFlags::NONE,
-                        glib::Priority::DEFAULT,
-                    )
-                    .await
-                else {
+                let Some(info) = remembered(&dir, "metadata::spiral-sort").await else {
                     return;
                 };
                 let (Some((key, reversed)), Some(model), Some(list)) = (

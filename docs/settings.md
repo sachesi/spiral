@@ -28,6 +28,7 @@ Changes apply immediately to open windows.
 | `date-format` | `relative`, `full` | `relative` | Date Format |
 | `terminal` | executable name or empty | empty | Terminal (see [terminal.md](terminal.md)) |
 | `remember-view` | bool | true | Remember View per Folder |
+| `list-views` | location to attributes | empty | |
 | `guess-view` | bool | true | Grid View for Media Folders |
 | `thumbnails` | `local`, `always`, `never` | `local` | Show Thumbnails |
 | `thumbnail-limit` | megabytes | 50 | |
@@ -49,7 +50,9 @@ Notes on a few of them:
 
 `remember-view` on means the grid/list switch and the sort order only affect the folder
 you are in; they are kept in the folder's `metadata::spiral-view` and
-`metadata::spiral-sort` attributes. Off, the switch changes `view-mode`, and sorting
+`metadata::spiral-sort` attributes. Favorites and each tag are lists, with no folder to keep
+them on, so theirs go in `list-views` under the same names; a tag renamed or removed takes
+its entry along. Off, the switch changes `view-mode`, and sorting
 changes `sort-key` and `sort-reversed`, for everything. Both attributes need gvfs running its
 metadata backend; without it there is nowhere to keep them, so the preference is greyed
 out and the keys for everything are used instead. `chooser-view-mode` is the same thing for portal file dialogs,

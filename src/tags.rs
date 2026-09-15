@@ -266,6 +266,7 @@ pub fn rename(old: &str, new: &str) {
             save_all(&tags);
         }
         rewrite_index(|tag, uri| Some((if tag == old { new.clone() } else { tag }, uri)));
+        crate::prefs::move_list_view(&location(&old).uri(), Some(&location(&new).uri()));
         TRASHED.with(|t| {
             for (tag, _) in t.borrow_mut().iter_mut().filter(|(tag, _)| *tag == old) {
                 tag.clone_from(&new);
@@ -301,6 +302,7 @@ pub fn remove(name: &str) {
         tags.retain(|t| t.name != name);
         save_all(&tags);
         rewrite_index(|tag, uri| (tag != name).then_some((tag, uri)));
+        crate::prefs::move_list_view(&location(&name).uri(), None);
         TRASHED.with(|t| t.borrow_mut().retain(|(tag, _)| *tag != name));
     });
 }

@@ -643,6 +643,10 @@ fn global_view_mode(settings: &gio::Settings, key: &str) -> ViewMode {
 
 /// Store a per-folder metadata attribute without waiting for the metadata daemon.
 fn remember(dir: gio::File, attribute: &'static str, value: String) {
+    if crate::folder_model::is_list_location(&dir) {
+        crate::prefs::set_list_view(&dir.uri(), attribute, &value);
+        return;
+    }
     let info = gio::FileInfo::new();
     info.set_attribute_string(attribute, &value);
     glib::spawn_future_local(async move {
@@ -679,6 +683,38 @@ fn mostly_media(model: &FolderModel) -> bool {
         }
     }
     files >= 4 && media * 2 >= files
+}
+
+/// Whether `dir` keeps a view and an order of its own. A folder keeps them in gvfs
+/// metadata, which may not be there; favorites and tags are lists, with no folder to keep
+/// them on, and keep them in the settings.
+pub(crate) fn keeps_own_view(dir: &gio::File) -> bool {
+    if crate::folder_model::is_list_location(dir) {
+        crate::prefs::settings().boolean("remember-view")
+    } else {
+        crate::prefs::remember_view()
+    }
+}
+
+/// The `metadata::` `attributes` `dir` keeps, wherever it keeps them.
+pub(crate) async fn remembered(dir: &gio::File, attributes: &str) -> Option<gio::FileInfo> {
+    if !crate::folder_model::is_list_location(dir) {
+        return dir
+            .query_info_future(
+                attributes,
+                gio::FileQueryInfoFlags::NONE,
+                glib::Priority::DEFAULT,
+            )
+            .await
+            .ok();
+    }
+    let info = gio::FileInfo::new();
+    for (attribute, value) in crate::prefs::list_view(&dir.uri()) {
+        if attributes.split(',').any(|a| a == attribute) {
+            info.set_attribute_string(&attribute, &value);
+        }
+    }
+    Some(info)
 }
 
 /// The order a folder remembers, from an info asked for `metadata::spiral-sort`.
@@ -778,7 +814,7 @@ impl BrowserView {
                 let _ = imp.settings.set_string(key_name, key.nick());
                 let _ = imp.settings.set_boolean(reversed_name, reversed);
             }
-            Some(dir) if crate::prefs::remember_view() => {
+            Some(dir) if keeps_own_view(&dir) => {
                 imp.folder_sort.set(Some((key, reversed)));
                 let value = format!("{}-{}", key.nick(), if reversed { "desc" } else { "asc" });
                 remember(dir, "metadata::spiral-sort", value);
@@ -813,7 +849,7 @@ impl BrowserView {
         if !keep {
             self.set_view_mode(global_view_mode(&imp.settings, "view-mode"));
         }
-        let remember = crate::prefs::remember_view();
+        let remember = keeps_own_view(file);
         // Nor are the columns ever traded for a grid by a guess.
         let guess = crate::prefs::guess_view() && self.view_mode() != ViewMode::Columns;
         if !remember && !guess {
@@ -826,13 +862,8 @@ impl BrowserView {
             file,
             async move {
                 if remember
-                    && let Ok(info) = file
-                        .query_info_future(
-                            "metadata::spiral-view,metadata::spiral-sort",
-                            gio::FileQueryInfoFlags::NONE,
-                            glib::Priority::DEFAULT,
-                        )
-                        .await
+                    && let Some(info) =
+                        remembered(&file, "metadata::spiral-view,metadata::spiral-sort").await
                     && view.imp().nav_gen.get() == generation
                 {
                     if let Some((key, dir)) = remembered_sort(&info) {
@@ -893,7 +924,7 @@ impl BrowserView {
             _ if self.chooser_mode() => {
                 let _ = self.imp().settings.set_string("chooser-view-mode", nick);
             }
-            Some(dir) if crate::prefs::remember_view() => {
+            Some(dir) if keeps_own_view(&dir) => {
                 self.imp().folder_view.set(Some(next));
                 remember(dir, "metadata::spiral-view", nick.to_string());
             }
