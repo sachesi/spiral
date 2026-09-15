@@ -351,6 +351,8 @@ mod imp {
         /// Destination being written right now; removed if the job is cancelled mid-file.
         pub in_flight: RefCell<Option<gio::File>>,
         pub hold: RefCell<Option<gio::ApplicationHoldGuard>>,
+        /// The window the job was started from, which its questions go to while it is open.
+        pub window: glib::WeakRef<gtk::Window>,
         pub last_notify: Cell<i64>,
         /// Monotonic time when the transfer itself began, for speed and time left.
         pub started: Cell<i64>,

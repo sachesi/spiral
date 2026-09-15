@@ -44,7 +44,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                             ))
                             .build();
                         dialog.add_response("ok", &gettext("_OK"));
-                        dialog.choose_future(Some(&mgr.parent_window())).await;
+                        dialog.choose_future(Some(&mgr.parent_window(job))).await;
                     }
                     continue;
                 }
@@ -81,7 +81,9 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                             break;
                         }
                         Err(e) if e.matches(gio::IOErrorEnum::NotSupported) => {
-                            if !delete_allowed && !confirm_permanent_delete(mgr, &f, more).await {
+                            if !delete_allowed
+                                && !confirm_permanent_delete(job, mgr, &f, more).await
+                            {
                                 return Err(Fail::Cancelled);
                             }
                             delete_allowed = true;
@@ -100,7 +102,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                         }
                         Err(e) => {
                             // Translators: fills %v in “Error While %v “%s””.
-                            match ask_error(&mgr.parent_window(), &gettext("Trashing"), &f, &e)
+                            match ask_error(&mgr.parent_window(job), &gettext("Trashing"), &f, &e)
                                 .await
                             {
                                 ErrorChoice::Skip => break,
@@ -144,8 +146,13 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                         Err(e) if single => return Err(Fail::Failed(e.message().to_string())),
                         Err(e) => {
                             // Translators: fills %v in “Error While %v “%s””.
-                            match ask_error(&mgr.parent_window(), &gettext("Renaming"), &file, &e)
-                                .await
+                            match ask_error(
+                                &mgr.parent_window(job),
+                                &gettext("Renaming"),
+                                &file,
+                                &e,
+                            )
+                            .await
                             {
                                 ErrorChoice::Skip => break,
                                 ErrorChoice::Retry => continue,
@@ -331,7 +338,12 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
 
 /// `more`: other items come after this one, and the answer covers those the trash cannot
 /// take either.
-async fn confirm_permanent_delete(mgr: &JobManager, file: &gio::File, more: bool) -> bool {
+async fn confirm_permanent_delete(
+    job: &Job,
+    mgr: &JobManager,
+    file: &gio::File,
+    more: bool,
+) -> bool {
     let body = if more {
         gettext(
             "This location does not support trashing. Delete it permanently instead, along with any other item that cannot be trashed either?",
@@ -349,7 +361,7 @@ async fn confirm_permanent_delete(mgr: &JobManager, file: &gio::File, more: bool
         ("delete", &gettext("_Delete Permanently")),
     ]);
     dialog.set_response_appearance("delete", adw::ResponseAppearance::Destructive);
-    dialog.choose_future(Some(&mgr.parent_window())).await == "delete"
+    dialog.choose_future(Some(&mgr.parent_window(job))).await == "delete"
 }
 
 /// First counting pass: total files and bytes, so progress is meaningful. Errors are ignored.
@@ -517,7 +529,7 @@ async fn transfer_one(
                     continue;
                 }
                 Err(e) if e.matches(gio::IOErrorEnum::Cancelled) => return Err(Fail::Cancelled),
-                Err(e) => match ask_error(&mgr.parent_window(), &verb, src, &e).await {
+                Err(e) => match ask_error(&mgr.parent_window(job), &verb, src, &e).await {
                     ErrorChoice::Skip => return Ok(None),
                     ErrorChoice::Retry => continue,
                     ErrorChoice::Cancel => return Err(Fail::Cancelled),
@@ -530,7 +542,7 @@ async fn transfer_one(
             .await
         {
             Ok(i) => i,
-            Err(e) => match ask_error(&mgr.parent_window(), &verb, src, &e).await {
+            Err(e) => match ask_error(&mgr.parent_window(job), &verb, src, &e).await {
                 ErrorChoice::Skip => return Ok(None),
                 ErrorChoice::Retry => continue,
                 ErrorChoice::Cancel => return Err(Fail::Cancelled),
@@ -547,7 +559,7 @@ async fn transfer_one(
                             Step::Skip => return Ok(None),
                             Step::Overwrite => {
                                 // Replacing a file with a folder: remove the file first.
-                                if !dest_is_dir && !delete_or_ask(mgr, &verb, &dest).await? {
+                                if !dest_is_dir && !delete_or_ask(job, mgr, &verb, &dest).await? {
                                     return Ok(None);
                                 }
                                 overwrite = true;
@@ -560,7 +572,7 @@ async fn transfer_one(
                         }
                     }
                 }
-                Err(e) => match ask_error(&mgr.parent_window(), &verb, src, &e).await {
+                Err(e) => match ask_error(&mgr.parent_window(job), &verb, src, &e).await {
                     ErrorChoice::Skip => return Ok(None),
                     ErrorChoice::Retry => continue,
                     ErrorChoice::Cancel => return Err(Fail::Cancelled),
@@ -582,7 +594,7 @@ async fn transfer_one(
             }
             // What it held has moved; a folder that cannot be removed then stays behind,
             // empty, and says why.
-            if is_move && all_moved && delete_or_ask(mgr, &verb, src).await? {
+            if is_move && all_moved && delete_or_ask(job, mgr, &verb, src).await? {
                 crate::tags::relocate(src, &dest);
                 crate::starred::relocate(src, &dest);
                 crate::bookmarks::relocate(src, &dest);
@@ -611,7 +623,7 @@ async fn transfer_one(
                 if is_move {
                     // The copy is made; a source that cannot be removed leaves the file in
                     // both places, and it does not count as moved.
-                    if !delete_or_ask(mgr, &verb, src).await? {
+                    if !delete_or_ask(job, mgr, &verb, src).await? {
                         return Ok(None);
                     }
                     crate::tags::relocate(src, &dest);
@@ -634,7 +646,7 @@ async fn transfer_one(
             Err(e) if e.matches(gio::IOErrorEnum::Cancelled) => return Err(Fail::Cancelled),
             Err(e) => {
                 job.set_bytes_done(base);
-                match ask_error(&mgr.parent_window(), &verb, src, &e).await {
+                match ask_error(&mgr.parent_window(job), &verb, src, &e).await {
                     ErrorChoice::Skip => return Ok(None),
                     ErrorChoice::Retry => continue,
                     ErrorChoice::Cancel => return Err(Fail::Cancelled),
@@ -663,7 +675,7 @@ async fn resolve_conflict(
         None => {
             job.set_status(super::JobStatus::WaitingUser);
             job.set_detail(gettext("Waiting for your answer"));
-            let (r, all) = ask_conflict(&mgr.parent_window(), src, dest, is_dir).await;
+            let (r, all) = ask_conflict(&mgr.parent_window(job), src, dest, is_dir).await;
             job.set_status(super::JobStatus::Running);
             job.report(true);
             if all && matches!(r, Resolution::Skip | Resolution::Replace) {
@@ -689,7 +701,7 @@ async fn delete_recursive(job: &Job, mgr: &JobManager, file: &gio::File) -> Res<
         }
     }
     // Translators: fills %v in “Error While %v “%s””.
-    delete_or_ask(mgr, &gettext("Deleting"), file).await?;
+    delete_or_ask(job, mgr, &gettext("Deleting"), file).await?;
     job.set_files_done(job.files_done() + 1);
     job.report(false);
     Ok(())
@@ -697,12 +709,12 @@ async fn delete_recursive(job: &Job, mgr: &JobManager, file: &gio::File) -> Res<
 
 /// Delete `file`, asking what to do when it cannot be. False when the answer was to skip
 /// it; one already gone counts as deleted.
-async fn delete_or_ask(mgr: &JobManager, verb: &str, file: &gio::File) -> Res<bool> {
+async fn delete_or_ask(job: &Job, mgr: &JobManager, verb: &str, file: &gio::File) -> Res<bool> {
     loop {
         match file.delete_future(PRIO).await {
             Ok(()) => return Ok(true),
             Err(e) if e.matches(gio::IOErrorEnum::NotFound) => return Ok(true),
-            Err(e) => match ask_error(&mgr.parent_window(), verb, file, &e).await {
+            Err(e) => match ask_error(&mgr.parent_window(job), verb, file, &e).await {
                 ErrorChoice::Skip => return Ok(false),
                 ErrorChoice::Retry => {}
                 ErrorChoice::Cancel => return Err(Fail::Cancelled),

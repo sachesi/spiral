@@ -131,8 +131,12 @@ impl JobManager {
         self.imp().app.upgrade().expect("application gone")
     }
 
-    /// Window to parent dialogs on: the active one, or a fresh one if all were closed.
-    pub fn parent_window(&self) -> gtk::Window {
+    /// Window to parent `job`'s dialogs on: the one it was started from, or when that has
+    /// been closed the active one, or a fresh one if all were closed.
+    pub fn parent_window(&self, job: &Job) -> gtk::Window {
+        if let Some(w) = job.imp().window.upgrade().filter(|w| w.is_visible()) {
+            return w;
+        }
         let app = self.app();
         if let Some(w) = app.active_window() {
             return w;
@@ -152,6 +156,7 @@ impl JobManager {
         let imp = self.imp();
         let job = Job::new(kind);
         job.imp().hold.replace(Some(self.app().hold()));
+        job.imp().window.set(self.app().active_window().as_ref());
         imp.jobs.append(&job);
         imp.running.set(imp.running.get() + 1);
         self.notify_running();

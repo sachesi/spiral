@@ -523,7 +523,7 @@ pub async fn extract(
             .await?;
             job.set_status(JobStatus::WaitingUser);
             job.set_detail(gettext("Waiting for your answer"));
-            let answer = ask_password(&mgr.parent_window(), archive).await;
+            let answer = ask_password(&mgr.parent_window(job), archive).await;
             job.set_status(JobStatus::Running);
             job.set_detail(gettext("Extracting “%s”").replace("%s", &name(archive)));
             password = Some(answer.ok_or(Fail::Cancelled)?);
