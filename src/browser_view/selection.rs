@@ -69,6 +69,29 @@ impl BrowserView {
     /// renamed, and a fresh row came in its place, and give the first of them back the
     /// keyboard if the view had it, which went with the old row. After the change, as for
     /// the neighbour, and not in a file chooser either.
+    /// Files landing above the top of the list, as a copy into the folder brings them,
+    /// leave the list where it was: at the top. GTK's column view instead follows the row
+    /// that was at the top down the list, and in a window opened after the first one it
+    /// gets lost doing so, showing no rows at all until it is scrolled. Once per burst.
+    pub(super) fn queue_keep_top(&self) {
+        let imp = self.imp();
+        if imp.column_view.model().is_none() || imp.top_pending.replace(true) {
+            return;
+        }
+        glib::idle_add_local_once(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move || {
+                let imp = view.imp();
+                imp.top_pending.set(false);
+                if view.model().n_items() > 0 && imp.list_scroll.vadjustment().value() == 0.0 {
+                    imp.column_view
+                        .scroll_to(0, None, gtk::ListScrollFlags::NONE, None);
+                }
+            }
+        ));
+    }
+
     pub(super) fn queue_select_replaced(&self) {
         if self.chooser_mode() || !self.model().expects_back() {
             return;

@@ -99,6 +99,8 @@ mod imp {
         pub columns_pending: Cell<bool>,
         /// Set while the columns of the list are waiting to be fitted to a new width.
         pub fit_pending: Cell<bool>,
+        /// Set while the list waits to be put back at its top after files landed above it.
+        pub top_pending: Cell<bool>,
         /// Set while the bar and the actions are waiting to be told the selection changed.
         pub selection_pending: Cell<bool>,
         /// Whether the selection among search results is the first result, picked by the
@@ -245,6 +247,7 @@ mod imp {
                 preview_gen: Default::default(),
                 columns_pending: Default::default(),
                 fit_pending: Default::default(),
+                top_pending: Default::default(),
                 selection_pending: Default::default(),
                 first_picked: Default::default(),
                 picking: Default::default(),
@@ -611,6 +614,7 @@ mod imp {
                     }
                     if added > 0 {
                         obj.queue_select_replaced();
+                        obj.queue_keep_top();
                     }
                 }
             ));
