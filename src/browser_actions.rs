@@ -269,7 +269,8 @@ impl BrowserView {
                 // Files cut to the clipboard are dimmed, so follow every change.
                 let cb = cb.clone();
                 glib::spawn_future_local(async move {
-                    if clipboard::refresh_cut(&cb).await {
+                    let generation = clipboard::refresh_cut(&cb).await;
+                    if view.imp().cut_gen.replace(generation) != generation {
                         view.refresh_cells();
                     }
                 });

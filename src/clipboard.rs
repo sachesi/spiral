@@ -1,7 +1,7 @@
 //! File clipboard using `x-special/gnome-copied-files` plus a `gdk::FileList`,
 //! which GDK serialises as `text/uri-list` and as plain-text paths for terminals and editors.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 
 use crate::gtk::prelude::*;
@@ -13,14 +13,19 @@ const URI_LIST: &str = "text/uri-list";
 thread_local! {
     /// URIs of the files the clipboard currently holds as a cut, so views can dim them.
     static CUT: RefCell<HashSet<String>> = RefCell::new(HashSet::new());
+    /// Bumped whenever the cut set changes. The set is shared by every view, so only the
+    /// first view to re-read the clipboard would see it change; each view compares this
+    /// with the count it last drew instead.
+    static CUT_GEN: Cell<u64> = const { Cell::new(0) };
 }
 
 pub fn is_cut(file: &gio::File) -> bool {
     CUT.with(|c| c.borrow().contains(file.uri().as_str()))
 }
 
-/// Re-read the clipboard into the cut set. Returns whether the set changed.
-pub async fn refresh_cut(clipboard: &gdk::Clipboard) -> bool {
+/// Re-read the clipboard into the cut set. Returns the set's generation, which differs
+/// from any earlier one once the set has changed.
+pub async fn refresh_cut(clipboard: &gdk::Clipboard) -> u64 {
     let mut cut = HashSet::new();
     if has_files(clipboard)
         && let Some((files, true)) = read(clipboard).await
@@ -28,10 +33,12 @@ pub async fn refresh_cut(clipboard: &gdk::Clipboard) -> bool {
         cut = files.iter().map(|f| f.uri().to_string()).collect();
     }
     CUT.with(|c| {
-        let changed = *c.borrow() != cut;
-        *c.borrow_mut() = cut;
-        changed
-    })
+        if *c.borrow() != cut {
+            *c.borrow_mut() = cut;
+            CUT_GEN.set(CUT_GEN.get() + 1);
+        }
+    });
+    CUT_GEN.get()
 }
 
 pub fn set(clipboard: &gdk::Clipboard, files: &[gio::File], cut: bool) {

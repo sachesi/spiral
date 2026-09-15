@@ -163,6 +163,8 @@ mod imp {
         pub settings: gio::Settings,
         /// The handler on the display's clipboard, which outlives the view.
         pub clipboard_handler: RefCell<Option<glib::SignalHandlerId>>,
+        /// The generation of the cut set the cells were last dimmed for.
+        pub cut_gen: Cell<u64>,
     }
 
     #[glib::object_subclass]
@@ -288,6 +290,7 @@ mod imp {
                 history_pos: Default::default(),
                 settings: gio::Settings::new(crate::config::APP_ID),
                 clipboard_handler: Default::default(),
+                cut_gen: Default::default(),
             }
         }
     }
