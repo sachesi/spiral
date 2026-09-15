@@ -235,6 +235,7 @@ mod imp {
                 move |dl| {
                     let imp = obj.imp();
                     if !dl.is_loading() {
+                        imp.watch_listed();
                         imp.show_listing();
                         if imp.sort_deferred.replace(false) {
                             imp.sorted.set_sorter(Some(&imp.sorter));
@@ -389,13 +390,44 @@ mod imp {
 
         pub(super) fn set_location(&self, file: Option<gio::File>) {
             let list = file.as_ref().is_some_and(is_list_location);
+            // Watching a folder is a blocking call, and gvfs answers it for a location
+            // on another machine only once that is mounted: the first visit to the
+            // network waits for the whole network to be browsed. Such a location is
+            // watched once it has been listed, which mounts it without blocking.
+            let remote = file.as_ref().is_some_and(|f| !f.is_native());
+            self.dir_list.set_monitored(false);
             self.start_listing(file.as_ref().filter(|_| !list));
+            self.dir_list.set_monitored(!remote);
             if let Some(old) = self.monitor.take() {
                 old.cancel();
             }
-            if let Some(dir) = file.as_ref().filter(|_| !list)
-                && let Ok(monitor) = dir
-                    .monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
+            if let Some(dir) = file.as_ref().filter(|_| !list && !remote) {
+                self.watch(dir);
+            }
+            self.location.replace(file);
+            self.replaced.take();
+            if list {
+                self.filtered.set_model(Some(&self.list_store));
+                self.obj().load_list();
+            }
+            self.sync_hidden();
+        }
+
+        /// Watch a location that was listed unwatched, now that it has been reached.
+        fn watch_listed(&self) {
+            if self.dir_list.is_monitored() || self.dir_list.error().is_some() {
+                return;
+            }
+            let Some(dir) = self.dir_list.file() else {
+                return;
+            };
+            self.dir_list.set_monitored(true);
+            self.watch(&dir);
+        }
+
+        fn watch(&self, dir: &gio::File) {
+            if let Ok(monitor) =
+                dir.monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
             {
                 monitor.connect_changed(glib::clone!(
                     #[weak(rename_to = obj)]
@@ -420,13 +452,6 @@ mod imp {
                 ));
                 self.monitor.replace(Some(monitor));
             }
-            self.location.replace(file);
-            self.replaced.take();
-            if list {
-                self.filtered.set_model(Some(&self.list_store));
-                self.obj().load_list();
-            }
-            self.sync_hidden();
         }
 
         pub(super) fn is_starred(&self) -> bool {

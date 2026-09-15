@@ -103,12 +103,12 @@ impl BrowserView {
             [info] if file_utils::is_dir(info) => file_utils::file_of(info),
             _ => return None,
         };
-        dir.path()
+        local_path(self, &dir)
     }
 
     /// The folder on screen, local only.
     pub(super) fn folder_dir(&self) -> Option<std::path::PathBuf> {
-        self.location()?.path()
+        local_path(self, &self.location()?)
     }
 
     /// `folder` ignores the selection, for the menu opened over empty space.
@@ -242,4 +242,14 @@ impl BrowserView {
             }
         ));
     }
+}
+
+/// Where `dir` is on this machine's filesystem, if anywhere. A file on another machine has
+/// a path only where gvfs mounted it through FUSE, and asking before gvfs has reached the
+/// folder waits for the mount on the main loop.
+fn local_path(view: &BrowserView, dir: &gio::File) -> Option<std::path::PathBuf> {
+    if !dir.is_native() && !view.imp().reached.get() {
+        return None;
+    }
+    dir.path()
 }

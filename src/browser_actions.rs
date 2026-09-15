@@ -214,8 +214,12 @@ impl BrowserView {
             #[strong]
             update,
             move |view| {
-                // Writability is looked up once per folder, off the main loop's back.
+                // Writability is looked up once per folder, off the main loop's back, and
+                // its answer also says that gvfs has reached the folder.
                 view.imp().can_write.set(true);
+                view.imp()
+                    .reached
+                    .set(view.location().is_none_or(|l| l.is_native()));
                 update();
                 view.update_other_pane();
                 let Some(dir) = view.location() else { return };
@@ -236,6 +240,7 @@ impl BrowserView {
                             .unwrap_or(true);
                         if view.location().is_some_and(|l| l.equal(&dir)) {
                             view.imp().can_write.set(writable);
+                            view.imp().reached.set(true);
                             update();
                             view.update_other_pane();
                             // Cells bound before the answer arrived assumed a writable

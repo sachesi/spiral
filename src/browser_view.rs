@@ -133,6 +133,9 @@ mod imp {
         pub folder_sort: Cell<Option<(SortKey, bool)>>,
         /// Whether the current folder accepts new files, looked up when it is entered.
         pub can_write: Cell<bool>,
+        /// Whether gvfs has answered for the current folder. Until it has, asking a file
+        /// on another machine for its local path blocks for as long as mounting takes.
+        pub reached: Cell<bool>,
         /// Bumped per navigation so late view lookups for an old folder are dropped.
         pub nav_gen: Cell<u64>,
         #[property(get, nullable)]
@@ -276,6 +279,7 @@ mod imp {
                 folder_view: Default::default(),
                 folder_sort: Default::default(),
                 can_write: Cell::new(true),
+                reached: Cell::new(true),
                 nav_gen: Default::default(),
                 location: Default::default(),
                 history: Default::default(),

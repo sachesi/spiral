@@ -368,7 +368,9 @@ fn root_icon_and_name(
     if crate::tags::is_tag_location(root) {
         return ("tag-symbolic", file_utils::location_name(root));
     }
-    if root.path().is_some_and(|p| p.as_os_str() == "/") {
+    // Only a native file can be the root; asking another for its path blocks until gvfs
+    // has mounted it.
+    if root.is_native() && root.path().is_some_and(|p| p.as_os_str() == "/") {
         let name = glib::os_info("NAME")
             .map(|s| s.to_string())
             .unwrap_or_else(|| gettext("System"));
