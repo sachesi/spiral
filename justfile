@@ -100,7 +100,7 @@ install:
     install -Dm644 data/spiral.portal {{datadir}}/xdg-desktop-portal/portals/spiral.portal
     install -Dm644 data/spiral-odf.thumbnailer {{datadir}}/thumbnailers/spiral-odf.thumbnailer
     mkdir -p {{datadir}}/dbus-1/services
-    sed 's|@bindir@|{{prefix}}/bin|' data/org.freedesktop.FileManager1.service.in > {{datadir}}/dbus-1/services/org.freedesktop.FileManager1.service
+    sed 's|@bindir@|{{prefix}}/bin|' data/io.github.sachesi.spiral.FileManager1.service.in > {{datadir}}/dbus-1/services/io.github.sachesi.spiral.FileManager1.service
     sed 's|@libexecdir@|{{prefix}}/libexec|' data/org.freedesktop.impl.portal.desktop.spiral.service.in > {{datadir}}/dbus-1/services/org.freedesktop.impl.portal.desktop.spiral.service
     sed 's|@libexecdir@|{{prefix}}/libexec|' data/xdg-desktop-portal-spiral.desktop.in > {{datadir}}/applications/xdg-desktop-portal-spiral.desktop.in
     msgfmt --desktop --template={{datadir}}/applications/xdg-desktop-portal-spiral.desktop.in -d po -o {{datadir}}/applications/xdg-desktop-portal-spiral.desktop
@@ -118,7 +118,7 @@ uninstall:
     rm -f {{datadir}}/icons/hicolor/scalable/apps/{{app_id}}.svg {{datadir}}/icons/hicolor/symbolic/apps/{{app_id}}-symbolic.svg
     rm -f {{datadir}}/xdg-desktop-portal/portals/spiral.portal
     rm -f {{datadir}}/thumbnailers/spiral-odf.thumbnailer
-    rm -f {{datadir}}/dbus-1/services/org.freedesktop.FileManager1.service {{datadir}}/dbus-1/services/org.freedesktop.impl.portal.desktop.spiral.service
+    rm -f {{datadir}}/dbus-1/services/io.github.sachesi.spiral.FileManager1.service {{datadir}}/dbus-1/services/org.freedesktop.impl.portal.desktop.spiral.service
     for lang in $(cat po/LINGUAS); do rm -f {{datadir}}/locale/$lang/LC_MESSAGES/spiral.mo; done
     glib-compile-schemas {{datadir}}/glib-2.0/schemas || true
     update-desktop-database -q {{datadir}}/applications || true

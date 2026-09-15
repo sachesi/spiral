@@ -75,6 +75,11 @@ Spiral owns `org.freedesktop.FileManager1` while running and is D-Bus activatabl
 with the files selected, `ShowItemProperties` the Properties dialog. The startup id is
 ignored.
 
+The service file is installed as `io.github.sachesi.spiral.FileManager1.service`, so it
+sits beside the one another file manager installs for the same name instead of replacing
+it. With both installed, which of them D-Bus starts is not defined; whichever is already
+running answers.
+
 The interface is served from a thread with a main context of its own, and the application
 registers on the bus before it starts GTK. Both matter: the caller is usually
 xdg-desktop-portal answering a browser's `OpenURI.OpenDirectory`, and it waits for our
