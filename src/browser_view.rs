@@ -165,6 +165,9 @@ mod imp {
         pub clipboard_handler: RefCell<Option<glib::SignalHandlerId>>,
         /// The generation of the cut set the cells were last dimmed for.
         pub cut_gen: Cell<u64>,
+        pub starred_handler: RefCell<Option<crate::lines::WatchId>>,
+        /// Set while a redraw for a change of the stars waits for the main loop.
+        pub star_queued: Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -291,6 +294,8 @@ mod imp {
                 settings: gio::Settings::new(crate::config::APP_ID),
                 clipboard_handler: Default::default(),
                 cut_gen: Default::default(),
+                starred_handler: Default::default(),
+                star_queued: Default::default(),
             }
         }
     }
@@ -315,6 +320,9 @@ mod imp {
         fn dispose(&self) {
             if let Some(id) = self.clipboard_handler.take() {
                 self.obj().clipboard().disconnect(id);
+            }
+            if let Some(id) = self.starred_handler.take() {
+                crate::starred::unwatch(id);
             }
         }
 
@@ -416,6 +424,27 @@ mod imp {
                     ),
                 );
             }
+            // So do the stars, whichever window starred the file. A selection is starred a
+            // file at a time, so the cells are redrawn once it is done.
+            let id = crate::starred::watch(glib::clone!(
+                #[weak]
+                obj,
+                move || {
+                    if obj.imp().star_queued.replace(true) {
+                        return;
+                    }
+                    glib::idle_add_local_once(glib::clone!(
+                        #[weak]
+                        obj,
+                        move || {
+                            obj.imp().star_queued.set(false);
+                            obj.refresh_cells();
+                            obj.update_action_state();
+                        }
+                    ));
+                }
+            ));
+            self.starred_handler.replace(Some(id));
             // Caption lines are read as a grid cell is bound, so changing them has to
             // build the cells again.
             self.settings.connect_changed(
