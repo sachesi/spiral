@@ -76,7 +76,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                     match f.trash_future(PRIO).await {
                         Ok(()) => {
                             crate::tags::trashed(&f);
-                            crate::starred::forget_all(&f);
+                            crate::starred::trashed(&f);
                             job.imp().outcome.borrow_mut().trashed.push(f.clone());
                             break;
                         }
@@ -305,6 +305,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                     // back, and its own tags are read from it as well, for an item trashed
                     // before Spiral last started.
                     crate::tags::restored(&original, &dest);
+                    crate::starred::restored(&original, &dest);
                     if let Ok(info) = dest
                         .query_info_future(
                             crate::tags::ATTRIBUTE,

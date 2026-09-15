@@ -1,6 +1,7 @@
 //! Starred files: one URI per line under the user data dir, kept in [`Lines`] so views
 //! can follow a change.
 
+use std::cell::RefCell;
 use std::path::PathBuf;
 
 use crate::gio::prelude::*;
@@ -22,6 +23,8 @@ thread_local! {
         let text = std::fs::read_to_string(path()).unwrap_or_default();
         Lines::new(text.lines().filter(|l| !l.is_empty()).map(String::from).collect())
     };
+    /// The stars the trash took since Spiral started, for a restore to put back.
+    static TRASHED: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
 }
 
 /// Call `f` whenever the starred files change.
@@ -56,22 +59,54 @@ pub fn set_starred(file: &gio::File, starred: bool) {
     });
 }
 
-/// `file` was trashed or deleted, and so was everything below it: none of it stays
-/// starred, and a restore does not star it again. One change, so Favorites loads once.
-pub fn forget_all(file: &gio::File) {
+/// `file` was deleted, and so was everything below it: none of it stays starred. One
+/// change, so Favorites loads once. Returns the stars let go.
+pub fn forget_all(file: &gio::File) -> Vec<String> {
     let uri = file.uri().to_string();
     let below = format!("{uri}/");
     LIST.with(|list| {
-        let kept: Vec<String> = list
+        let (gone, kept): (Vec<String>, Vec<String>) = list
             .to_vec()
             .into_iter()
-            .filter(|u| *u != uri && !u.starts_with(&below))
-            .collect();
-        if kept.len() == list.len() {
-            return;
+            .partition(|u| *u == uri || u.starts_with(&below));
+        if !gone.is_empty() {
+            list.replace(kept);
+            save(list);
         }
-        list.replace(kept);
-        save(list);
+        gone
+    })
+}
+
+/// `file` was trashed, with everything below it: unstarred as if deleted, but the stars
+/// are kept to hand for [`restored`] while Spiral runs.
+pub fn trashed(file: &gio::File) {
+    let gone = forget_all(file);
+    TRASHED.with(|t| t.borrow_mut().extend(gone));
+}
+
+/// What was trashed from `original` is back from the trash, at `at`: the stars it and
+/// everything below it had then come back, in one change.
+pub fn restored(original: &gio::File, at: &gio::File) {
+    let (from, to) = (original.uri(), at.uri());
+    let below = format!("{from}/");
+    let back: Vec<String> = TRASHED.with(|t| {
+        let (back, kept): (Vec<String>, Vec<String>) = t
+            .take()
+            .into_iter()
+            .partition(|u| *u == from || u.starts_with(&below));
+        t.replace(kept);
+        back
+    });
+    LIST.with(|list| {
+        let lines: Vec<String> = back
+            .iter()
+            .map(|u| format!("{to}{}", &u[from.len()..]))
+            .filter(|u| !list.contains(u))
+            .collect();
+        if !lines.is_empty() {
+            list.extend(lines);
+            save(list);
+        }
     });
 }
 
