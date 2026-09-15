@@ -75,6 +75,29 @@ pub fn forget_all(file: &gio::File) {
     });
 }
 
+/// `from` was moved or renamed to `to`, and so was everything below it: the stars go
+/// with them.
+pub fn relocate(from: &gio::File, to: &gio::File) {
+    let (from, to) = (from.uri(), to.uri());
+    let below = format!("{from}/");
+    LIST.with(|list| {
+        let lines = list.to_vec();
+        if !lines.iter().any(|u| *u == from || u.starts_with(&below)) {
+            return;
+        }
+        let moved = lines
+            .into_iter()
+            .map(|u| match u.strip_prefix(&below) {
+                _ if u == from => to.to_string(),
+                Some(rest) => format!("{to}/{rest}"),
+                None => u,
+            })
+            .collect();
+        list.replace(moved);
+        save(list);
+    });
+}
+
 fn save(list: &Lines) {
     let text: String = list.to_vec().iter().map(|s| format!("{s}\n")).collect();
     let p = path();
