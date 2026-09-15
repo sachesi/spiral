@@ -97,6 +97,28 @@ pub fn rename(file: &gio::File, label: &str) {
     save(&entries);
 }
 
+/// `from` was moved or renamed to `to`, and so was everything below it: the bookmarks
+/// follow them, keeping their labels.
+pub fn relocate(from: &gio::File, to: &gio::File) {
+    let mut entries = load();
+    let mut moved = false;
+    for (f, _) in &mut entries {
+        let new = if f.equal(from) {
+            Some(to.clone())
+        } else {
+            from.relative_path(f)
+                .map(|rest| to.resolve_relative_path(rest))
+        };
+        if let Some(new) = new {
+            *f = new;
+            moved = true;
+        }
+    }
+    if moved {
+        save(&entries);
+    }
+}
+
 /// Move `file` next to `anchor` (before it, or after when `after`), or to the end.
 pub fn move_to(file: &gio::File, anchor: Option<(&gio::File, bool)>) {
     // Dropped on itself: it stays where it is.

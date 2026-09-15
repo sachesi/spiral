@@ -135,6 +135,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                         Ok(new_file) => {
                             crate::tags::relocate(&file, &new_file);
                             crate::starred::relocate(&file, &new_file);
+                            crate::bookmarks::relocate(&file, &new_file);
                             job.imp().outcome.borrow_mut().renamed.push((new_file, old));
                             break;
                         }
@@ -500,6 +501,7 @@ async fn transfer_one(
                     job.report(false);
                     crate::tags::relocate(src, &dest);
                     crate::starred::relocate(src, &dest);
+                    crate::bookmarks::relocate(src, &dest);
                     return Ok(Some(dest));
                 }
                 Err(e)
@@ -582,6 +584,7 @@ async fn transfer_one(
             if is_move && all_moved && delete_or_ask(mgr, &verb, src).await? {
                 crate::tags::relocate(src, &dest);
                 crate::starred::relocate(src, &dest);
+                crate::bookmarks::relocate(src, &dest);
             }
             return Ok(Some(dest));
         }
@@ -612,6 +615,7 @@ async fn transfer_one(
                     }
                     crate::tags::relocate(src, &dest);
                     crate::starred::relocate(src, &dest);
+                    crate::bookmarks::relocate(src, &dest);
                 }
                 return Ok(Some(dest));
             }
