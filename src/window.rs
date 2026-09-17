@@ -160,34 +160,38 @@ mod imp {
             self.parent_constructed();
             let obj = self.obj();
 
-            for key in [
-                "show-hidden",
-                "sidebar-visible",
-                "details-visible",
-                "split-view",
+            obj.add_action(&self.settings.create_action("show-hidden"));
+            // The panels belong to the window they are toggled in; the setting is only what
+            // the next window starts with.
+            for (key, apply) in [
+                (
+                    "sidebar-visible",
+                    super::SpiralWindow::apply_sidebar as fn(&super::SpiralWindow),
+                ),
+                ("details-visible", super::SpiralWindow::apply_details),
+                ("split-view", super::SpiralWindow::apply_split),
             ] {
-                obj.add_action(&self.settings.create_action(key));
+                let action = gio::SimpleAction::new_stateful(
+                    key,
+                    None,
+                    &self.settings.boolean(key).to_variant(),
+                );
+                action.connect_change_state(glib::clone!(
+                    #[weak(rename_to = win)]
+                    obj,
+                    move |action, value| {
+                        let Some(value) = value else { return };
+                        action.set_state(value);
+                        let _ = win.imp().settings.set_value(key, value);
+                        apply(&win);
+                    }
+                ));
+                obj.add_action(&action);
             }
             obj.action_set_enabled("win.stop", false);
             obj.action_set_enabled("win.close-search", false);
             // The main menu takes F10 otherwise, ahead of the binding for the folder menu.
             obj.set_handle_menubar_accel(false);
-            self.settings.connect_changed(
-                Some("split-view"),
-                glib::clone!(
-                    #[weak(rename_to = win)]
-                    obj,
-                    move |_, _| win.apply_split()
-                ),
-            );
-            self.settings.connect_changed(
-                Some("details-visible"),
-                glib::clone!(
-                    #[weak(rename_to = win)]
-                    obj,
-                    move |_, _| win.apply_details()
-                ),
-            );
             obj.apply_details();
             // Which pane is in charge follows the focus, and stays put while the focus is
             // off in the sidebar or the path bar.
@@ -203,9 +207,7 @@ mod imp {
                     win.set_active_view(&view);
                 }
             });
-            self.settings
-                .bind("sidebar-visible", &*self.split_view, "show-sidebar")
-                .build();
+            obj.apply_sidebar();
 
             // "sort" is a string action ("name-asc", "size-desc", ...) on the current view.
             self.sort_action.connect_activate(glib::clone!(
@@ -484,6 +486,7 @@ mod imp {
         #[template_callback]
         fn on_wide(&self, _breakpoint: &adw::Breakpoint) {
             self.narrow.set(false);
+            self.obj().apply_sidebar();
             self.obj().apply_split();
             self.obj().apply_details();
         }
@@ -519,6 +522,19 @@ mod imp {
                 .application()
                 .and_downcast::<SpiralApplication>()?;
             Some(app.new_window().imp().tab_view.clone())
+        }
+
+        /// A tab brought over from another window takes this window's second pane, or its
+        /// lack of one. A new tab is attached before it has a view, and sees to it itself.
+        #[template_callback]
+        fn on_page_attached(&self, page: &adw::TabPage, _pos: i32, _tab_view: &adw::TabView) {
+            if page
+                .child()
+                .downcast_ref::<gtk::Paned>()
+                .is_some_and(|p| p.start_child().is_some())
+            {
+                self.obj().apply_split();
+            }
         }
 
         /// Closed or moved to another window: the last tab leaving closes the window.

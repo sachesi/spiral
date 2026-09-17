@@ -52,10 +52,10 @@ impl SpiralWindow {
         }
     }
 
-    /// Give every tab a second pane, or take it away, following the setting.
+    /// Give every tab a second pane, or take it away, following the window's toggle.
     pub(super) fn apply_split(&self) {
         let imp = self.imp();
-        let want = imp.settings.boolean("split-view") && !imp.narrow.get();
+        let want = self.toggled("split-view") && !imp.narrow.get();
         for i in 0..imp.tab_view.n_pages() {
             let page = imp.tab_view.nth_page(i);
             let Ok(paned) = page.child().downcast::<gtk::Paned>() else {
@@ -93,11 +93,26 @@ impl SpiralWindow {
         self.refresh_active();
     }
 
-    /// Show the details panel as the setting says, while the window has room for it.
+    /// Whether the window's own toggle `name` is on.
+    fn toggled(&self, name: &str) -> bool {
+        self.lookup_action(name)
+            .and_then(|a| a.state())
+            .and_then(|s| s.get::<bool>())
+            .unwrap_or_default()
+    }
+
+    /// Show the sidebar as the window's toggle says. Narrow, it lies over the files and is
+    /// opened and closed on its own, which leaves the toggle as it was for widening again.
+    pub(super) fn apply_sidebar(&self) {
+        self.imp()
+            .split_view
+            .set_show_sidebar(self.toggled("sidebar-visible"));
+    }
+
+    /// Show the details panel as the window's toggle says, while the window has room for it.
     pub(super) fn apply_details(&self) {
         let imp = self.imp();
-        let show =
-            imp.settings.boolean("details-visible") && !imp.narrow.get() && !imp.cramped.get();
+        let show = self.toggled("details-visible") && !imp.narrow.get() && !imp.cramped.get();
         // Hidden with the keyboard in it, the panel hands the keyboard back to the pane: it
         // would otherwise be on nothing, and the keys of the files with it.
         if !show

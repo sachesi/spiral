@@ -444,6 +444,7 @@ template $SpiralWindow : Adw.ApplicationWindow {
               notify::selected-page => $on_selected_page_changed() swapped;
               setup-menu => $on_setup_menu() swapped;
               create-window => $on_create_window() swapped;
+              page-attached => $on_page_attached() swapped;
               page-detached => $on_page_detached() swapped;
               close-page => $on_close_page() swapped;
             };
