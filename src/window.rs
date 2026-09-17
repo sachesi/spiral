@@ -486,9 +486,21 @@ mod imp {
         #[template_callback]
         fn on_wide(&self, _breakpoint: &adw::Breakpoint) {
             self.narrow.set(false);
-            self.obj().apply_sidebar();
             self.obj().apply_split();
             self.obj().apply_details();
+        }
+
+        /// Expanding again shows the sidebar whatever it was, and does so after `on_wide`
+        /// has run: put the window's own toggle back once it has.
+        #[template_callback]
+        fn on_collapsed_changed(
+            &self,
+            _pspec: glib::ParamSpec,
+            split_view: &adw::OverlaySplitView,
+        ) {
+            if !split_view.is_collapsed() {
+                self.obj().apply_sidebar();
+            }
         }
 
         /// Too narrow for the details panel: hide it, keeping the setting.

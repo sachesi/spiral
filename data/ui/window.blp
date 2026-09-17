@@ -211,6 +211,7 @@ template $SpiralWindow : Adw.ApplicationWindow {
         sidebar-width-fraction: 0.2;
         enable-show-gesture: false;
         enable-hide-gesture: false;
+        notify::collapsed => $on_collapsed_changed() swapped;
 
         sidebar: Adw.ToolbarView {
           reveal-bottom-bars: bind progress_indicator.has-jobs;
