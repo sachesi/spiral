@@ -44,6 +44,12 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.16.2" date="2026-09-17">
+      <description>
+        <p>Every window keeps to itself. A view, an order or a zoom changed in one pane stays in that pane; the sidebar, the details panel and the split view belong to the window they were opened in, and a sidebar hidden by hand stays hidden when the window is made wide again. A job asks its questions, and says it has finished, in the window it was started from. A star and a cut file are drawn the same in every window that shows them, not only in the first to hear of it.</p>
+        <p>Bookmarks and stars follow the files. Renaming or moving a folder carries its bookmark with it, Ctrl+D bookmarks a folder whose bookmark has gone elsewhere, a renamed or moved file keeps its star, and a file taken out of the trash gets its star back. A cut stays on the clipboard until the files have moved, the list stays where it is while files land above it, and a window lets go of the volume monitor and its settings when it closes.</p>
+      </description>
+    </release>
     <release version="0.16.1" date="2026-09-15">
       <description>
         <p>Opening the network, or a server on it, no longer freezes the window while it is reached: the folder shows at once and fills in when the servers answer.</p>
