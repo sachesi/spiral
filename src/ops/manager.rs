@@ -199,7 +199,7 @@ impl JobManager {
             Ok(Ok(())) => JobStatus::Done,
             Ok(Err(Fail::Cancelled)) => JobStatus::Cancelled,
             Ok(Err(Fail::Failed(msg))) => {
-                self.show_toast(&msg, false);
+                self.show_toast(job, &msg, false);
                 failure = Some(msg);
                 JobStatus::Failed
             }
@@ -234,9 +234,9 @@ impl JobManager {
             // to have been forgotten.
             if matches!(kind, JobKind::Trash { .. }) {
                 let undoable = record_undo && imp.undo.borrow().is_some();
-                self.show_toast(&job.done_message(), undoable);
+                self.show_toast(job, &job.done_message(), undoable);
             } else if let Some(folder) = kind.destination()
-                && let Some(win) = self.app().active_window().and_downcast::<SpiralWindow>()
+                && let Some(win) = self.toast_window(job)
             {
                 win.show_done_toast(&job.done_message(), &folder, job.landed(), took >= SLOW);
             }
@@ -312,8 +312,19 @@ impl JobManager {
         self.submit_inner(kind, true);
     }
 
-    fn show_toast(&self, message: &str, undoable: bool) {
-        if let Some(win) = self.app().active_window().and_downcast::<SpiralWindow>() {
+    /// Window to tell of `job`'s end in: the one it was started from while it is open, as
+    /// for its dialogs, or else the active one. Never a new one, just to say it is done.
+    fn toast_window(&self, job: &Job) -> Option<SpiralWindow> {
+        job.imp()
+            .window
+            .upgrade()
+            .filter(|w| w.is_visible())
+            .or_else(|| self.app().active_window())
+            .and_downcast::<SpiralWindow>()
+    }
+
+    fn show_toast(&self, job: &Job, message: &str, undoable: bool) {
+        if let Some(win) = self.toast_window(job) {
             win.show_toast(message, undoable);
         }
     }
