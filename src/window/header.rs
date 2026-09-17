@@ -34,34 +34,56 @@ impl SpiralWindow {
         imp.location_entry.set_position(-1);
     }
 
-    /// Back to the zoom the preference starts at, for the view on screen.
+    /// Back to the zoom a view starts at, for the view on screen.
     pub(super) fn zoom_reset(&self) {
-        let grid = self
-            .current_view()
-            .is_none_or(|v| v.view_mode() == ViewMode::Grid);
-        self.imp()
-            .settings
-            .reset(if grid { "grid-zoom" } else { "list-zoom" });
-        self.zoom(0);
-    }
-
-    pub(super) fn zoom(&self, step: i32) {
         let s = &self.imp().settings;
         let grid = self
             .current_view()
+            .is_none_or(|v| v.view_mode() == ViewMode::Grid);
+        let key = if grid { "grid-zoom" } else { "list-zoom" };
+        s.reset(key);
+        if let Some(view) = self.current_view() {
+            if grid {
+                view.set_icon_size(s.int(key));
+            } else {
+                view.set_list_icon_size(s.int(key));
+            }
+        }
+        self.zoom(0);
+    }
+
+    /// Zoom the view on screen `step` sizes in, and start new views at the size it ends up
+    /// at. Other views, here and in other windows, keep theirs.
+    pub(super) fn zoom(&self, step: i32) {
+        let s = &self.imp().settings;
+        let view = self.current_view();
+        let grid = view
+            .as_ref()
             .is_none_or(|v| v.view_mode() == ViewMode::Grid);
         let (key, sizes) = if grid {
             ("grid-zoom", &GRID_ZOOM_SIZES)
         } else {
             ("list-zoom", &LIST_ZOOM_SIZES)
         };
-        let current = s.int(key);
+        let current = match &view {
+            Some(v) if grid => v.icon_size(),
+            Some(v) => v.list_icon_size(),
+            None => s.int(key),
+        };
         let idx = sizes.iter().position(|&z| z >= current).unwrap_or(2) as i32;
         let next = (idx + step).clamp(0, sizes.len() as i32 - 1);
-        // Called with no step to light the buttons up, which must not write the setting:
-        // every window would store the size it just read.
-        if sizes[next as usize] != current {
-            let _ = s.set_int(key, sizes[next as usize]);
+        let size = sizes[next as usize];
+        // Called with no step to light the buttons up, which must change nothing.
+        if step != 0
+            && size != current
+            && let Some(v) = &view
+        {
+            if grid {
+                v.set_icon_size(size);
+            } else {
+                v.set_list_icon_size(size);
+            }
+            let _ = s.set_int(key, size);
         }
         self.action_set_enabled("win.zoom-in", next < sizes.len() as i32 - 1);
         self.action_set_enabled("win.zoom-out", next > 0);

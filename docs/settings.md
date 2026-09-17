@@ -48,12 +48,17 @@ Changes apply immediately to open windows.
 
 Notes on a few of them:
 
+`sidebar-visible`, `details-visible`, `split-view`, `grid-zoom` and `list-zoom` are what a
+new window or pane starts with. Toggling a panel or zooming changes the window or pane it
+is done in, and saves the result for the next one; windows already open keep theirs.
+
 `remember-view` on means the grid/list switch and the sort order only affect the folder
 you are in; they are kept in the folder's `metadata::spiral-view` and
 `metadata::spiral-sort` attributes. Favorites and each tag are lists, with no folder to keep
 them on, so theirs go in `list-views` under the same names; a tag renamed or removed takes
 its entry along. Off, the switch changes `view-mode`, and sorting
-changes `sort-key` and `sort-reversed`, for everything. Both attributes need gvfs running its
+changes `sort-key` and `sort-reversed`, for every folder opened from then on; other tabs,
+panes and windows keep what they show until they move to another folder. Both attributes need gvfs running its
 metadata backend; without it there is nowhere to keep them, so the preference is greyed
 out and the keys for everything are used instead. `chooser-view-mode` is the same thing for portal file dialogs,
 which never remember per folder.

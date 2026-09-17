@@ -390,20 +390,9 @@ mod imp {
             } else {
                 "view-mode"
             };
+            // The global default is read as a folder is opened: a view switched in another
+            // window or pane leaves this one as it is.
             obj.set_view_mode(global_view_mode(&self.settings, key));
-            // The global default only drives folders without a remembered view.
-            self.settings.connect_changed(
-                Some(key),
-                glib::clone!(
-                    #[weak]
-                    obj,
-                    move |s, _| {
-                        if obj.imp().folder_view.get().is_none() {
-                            obj.set_view_mode(global_view_mode(s, key));
-                        }
-                    }
-                ),
-            );
             // Turning the column view off puts the views that are in it back in the list.
             self.settings.connect_changed(
                 Some("use-column-view"),
@@ -484,13 +473,15 @@ mod imp {
             apply_click(&self.settings, "click-policy");
             self.settings
                 .connect_changed(Some("click-policy"), apply_click);
+            // Each view zooms on its own, starting from the size last zoomed to.
+            let start = gio::SettingsBindFlags::GET | gio::SettingsBindFlags::GET_NO_CHANGES;
             self.settings
                 .bind("grid-zoom", &*obj, "icon-size")
-                .flags(gio::SettingsBindFlags::GET)
+                .flags(start)
                 .build();
             self.settings
                 .bind("list-zoom", &*obj, "list-icon-size")
-                .flags(gio::SettingsBindFlags::GET)
+                .flags(start)
                 .build();
 
             // Ctrl+wheel zooms; small touchpad deltas add up to whole steps.
@@ -526,23 +517,8 @@ mod imp {
                 }
             ));
             obj.add_controller(scroll);
-            // The global sort order only drives folders without a remembered one.
+            // Read as a folder is opened too, like the view.
             obj.apply_global_sort();
-            let (sort_key, sort_reversed) = obj.sort_keys();
-            for key in [sort_key, sort_reversed] {
-                self.settings.connect_changed(
-                    Some(key),
-                    glib::clone!(
-                        #[weak]
-                        obj,
-                        move |_, _| {
-                            if obj.imp().folder_sort.get().is_none() {
-                                obj.apply_global_sort();
-                            }
-                        }
-                    ),
-                );
-            }
             self.settings
                 .bind("show-hidden", &self.model, "show-hidden")
                 .flags(gio::SettingsBindFlags::GET)
@@ -869,7 +845,9 @@ impl BrowserView {
         let generation = imp.nav_gen.get() + 1;
         imp.nav_gen.set(generation);
         imp.folder_view.set(None);
-        if imp.folder_sort.take().is_some() {
+        imp.folder_sort.set(None);
+        // The default may have changed meanwhile, from another window or pane.
+        if self.global_sort() != (imp.model.sort_key(), imp.model.sort_reversed()) {
             self.apply_global_sort();
         }
         // A chooser keeps one view of its own; per-folder memory and guessing are for
