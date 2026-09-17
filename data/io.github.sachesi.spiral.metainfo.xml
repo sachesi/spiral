@@ -21,6 +21,28 @@
   <url type="vcs-browser">https://github.com/sachesi/spiral</url>
   <developer id="io.github.sachesi"><name>sachesi</name></developer>
   <content_rating type="oars-1.1"/>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/01-grid-view.png</image>
+      <caption>Browse a folder as a grid of thumbnails</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/02-details-panel.png</image>
+      <caption>Read what a file holds beside the folder it is in</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/03-preview.png</image>
+      <caption>Look at a file with the Space key, without opening it</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/04-split-view.png</image>
+      <caption>Keep two folders side by side and drag between them</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/05-search.png</image>
+      <caption>Search through subfolders and see where each result lives</caption>
+    </screenshot>
+  </screenshots>
   <releases>
     <release version="0.16.1" date="2026-09-15">
       <description>

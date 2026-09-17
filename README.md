@@ -7,6 +7,8 @@ dialog.
 It does not depend on any desktop session. You need a Wayland compositor, a session bus,
 GTK 4.22 and libadwaita 1.9.
 
+![A folder of photos beside the details panel, which gives the size, the date taken, the camera, the lens and the exposure of the selected picture](data/screenshots/02-details-panel.png)
+
 Grid and list views, an optional column view, tabs, a places sidebar with devices,
 bookmarks and network shares, background file operations with progress, conflict handling
 and undo, archives through whatever tools are installed, thumbnails, a Space preview for
