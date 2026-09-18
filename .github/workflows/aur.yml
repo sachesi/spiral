@@ -10,6 +10,9 @@ on:
       version:
         description: Released version to build, without the v
         required: true
+      pkgrel:
+        description: Package release, raised for a fix to the packaging alone
+        default: "1"
       push:
         description: Push the result to the AUR
         type: boolean
@@ -29,6 +32,7 @@ jobs:
     env:
       PKGNAME: spiral-file-manager
       VERSION: ${{ inputs.version || github.ref_name }}
+      PKGREL: ${{ inputs.pkgrel || '1' }}
       # ssh takes its directory from root's passwd entry, not from the job's HOME.
       GIT_SSH_COMMAND: ssh -i /aur-ssh/key -o IdentitiesOnly=yes -o UserKnownHostsFile=/aur-ssh/known_hosts -o StrictHostKeyChecking=yes
     steps:
@@ -48,9 +52,10 @@ jobs:
           echo 'aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN' > /aur-ssh/known_hosts
       - name: Update the PKGBUILD and build it
         run: |
+          case "$PKGREL" in ''|*[!0-9]*) echo "pkgrel must be a number: $PKGREL" >&2; exit 1;; esac
           git clone "ssh://aur@aur.archlinux.org/$PKGNAME.git" aur
           cp packaging/aur/PKGBUILD aur/
-          sed -i "s/^pkgver=.*/pkgver=${VERSION#v}/; s/^pkgrel=.*/pkgrel=1/" aur/PKGBUILD
+          sed -i "s/^pkgver=.*/pkgver=${VERSION#v}/; s/^pkgrel=.*/pkgrel=$PKGREL/" aur/PKGBUILD
           chown -R builder aur
           su builder -c 'cd aur && updpkgsums && makepkg --printsrcinfo > .SRCINFO && makepkg --syncdeps --noconfirm'
       - name: Push
@@ -62,5 +67,5 @@ jobs:
           git add PKGBUILD .SRCINFO
           if git diff --cached --quiet; then echo "The AUR already has this"; exit 0; fi
           git -c user.name=sachesi -c user.email=107267487+sachesi@users.noreply.github.com \
-            commit -m "Update to ${VERSION#v}"
+            commit -m "Update to ${VERSION#v}-$PKGREL"
           git push origin HEAD:master
