@@ -128,7 +128,7 @@ fn seccomp_filter() -> Option<std::fs::File> {
     use std::os::fd::FromRawFd;
 
     let deny = ScmpAction::Errno(libc::EPERM);
-    let mut ctx = ScmpFilterContext::new_filter(ScmpAction::Allow).ok()?;
+    let mut ctx = ScmpFilterContext::new(ScmpAction::Allow).ok()?;
     for name in [
         "syslog",
         "uselib",
