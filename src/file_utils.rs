@@ -38,9 +38,17 @@ pub fn icon_of(info: &gio::FileInfo) -> gio::Icon {
 const ICON_PIXELS: i64 = 100_000_000;
 const ICON_SIDE: i32 = 512;
 
+/// A picture set as an icon, as it was when last modified: decoded, or on its way.
+struct Decoded {
+    modified: Option<(i64, i32)>,
+    texture: futures_util::future::Shared<
+        futures_util::future::LocalBoxFuture<'static, Option<gdk::Texture>>,
+    >,
+}
+
 thread_local! {
-    /// Pictures set as icons, decoded, by URI; `None` for one that could not be.
-    static ICONS: std::cell::RefCell<std::collections::HashMap<String, Option<gdk::Texture>>> =
+    /// Pictures set as icons, by URI; `None` for one that could not be decoded.
+    static ICONS: std::cell::RefCell<std::collections::HashMap<String, Decoded>> =
         std::cell::RefCell::default();
 }
 
@@ -57,18 +65,56 @@ pub fn custom_icon_file(info: &gio::FileInfo) -> Option<gio::File> {
     })
 }
 
-/// What decoding `file` as an icon gave, if it has been tried.
+/// What decoding `file` as an icon last gave, if it has been decoded.
 fn decoded_icon(file: &gio::File) -> Option<Option<gdk::Texture>> {
-    ICONS.with(|icons| icons.borrow().get(file.uri().as_str()).cloned())
+    ICONS.with(|icons| {
+        icons
+            .borrow()
+            .get(file.uri().as_str())?
+            .texture
+            .peek()
+            .cloned()
+    })
 }
 
 /// The picture in `file`, set as an icon, decoded off the main loop like any picture and
-/// kept for the session.
+/// kept for the session, until the picture is modified. Asked for again while it is being
+/// decoded, it is decoded once.
 pub async fn custom_icon(file: &gio::File) -> Option<gdk::Texture> {
-    if let Some(decoded) = decoded_icon(file) {
-        return decoded;
-    }
-    let texture = match file.path() {
+    use futures_util::FutureExt;
+    let modified = file
+        .query_info_future(
+            "time::modified,time::modified-usec",
+            gio::FileQueryInfoFlags::NONE,
+            glib::Priority::DEFAULT,
+        )
+        .await
+        .ok()
+        .and_then(|info| info.modification_date_time())
+        .map(|time| (time.to_unix(), time.microsecond()));
+    let uri = file.uri().to_string();
+    let texture = ICONS.with(|icons| {
+        let mut icons = icons.borrow_mut();
+        match icons.get(&uri) {
+            Some(decoded) if decoded.modified == modified => decoded.texture.clone(),
+            _ => {
+                let texture = decode_icon(file.clone()).boxed_local().shared();
+                icons.insert(
+                    uri,
+                    Decoded {
+                        modified,
+                        texture: texture.clone(),
+                    },
+                );
+                texture
+            }
+        }
+    });
+    texture.await
+}
+
+async fn decode_icon(file: gio::File) -> Option<gdk::Texture> {
+    match file.path() {
         Some(path) => gio::spawn_blocking(move || crate::picture::load_file(&path, ICON_PIXELS))
             .await
             .ok()
@@ -83,22 +129,16 @@ pub async fn custom_icon(file: &gio::File) -> Option<gdk::Texture> {
             Err(_) => None,
         },
     }
-    .and_then(|texture| crate::picture::shrunk(&texture, ICON_SIDE));
-    ICONS.with(|icons| {
-        icons
-            .borrow_mut()
-            .insert(file.uri().to_string(), texture.clone())
-    });
-    texture
+    .and_then(|texture| crate::picture::shrunk(&texture, ICON_SIDE))
 }
 
 /// Show the icon of `info` in `image`: [`icon_of`] now, and the picture set as its icon
-/// once that has been decoded.
+/// once that has been decoded, or decoded again for having been modified.
 pub fn set_icon(image: &gtk::Image, info: &gio::FileInfo) {
     image.set_from_gicon(&icon_of(info));
     match custom_icon_file(info) {
-        Some(file) if decoded_icon(&file).is_none() => show_custom_icon(image, file),
-        _ => {
+        Some(file) => show_custom_icon(image, file),
+        None => {
             ICON_FOR.take(image);
         }
     }
@@ -633,6 +673,47 @@ pub fn matches_pattern(name: &str, pattern: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A picture set as an icon is decoded once however many ask for it at once, and
+    /// again once it has been modified.
+    #[test]
+    fn custom_icons_follow_their_picture() {
+        if crate::glycin::get().is_none() && crate::thumbnails::own_thumbnailer().is_none() {
+            eprintln!("nothing here decodes pictures; nothing to test");
+            return;
+        }
+        let dir = std::env::temp_dir().join(format!("spiral-icon-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("icon.png");
+        let picture = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/data/screenshots/01-grid-view.png"
+        );
+        std::fs::copy(picture, &path).unwrap();
+        let modified = |seconds: u64| {
+            let time = std::time::UNIX_EPOCH + std::time::Duration::from_secs(seconds);
+            let file = std::fs::File::options().write(true).open(&path).unwrap();
+            file.set_modified(time).unwrap();
+        };
+        let file = gio::File::for_path(&path);
+        let context = glib::MainContext::new();
+        context
+            .with_thread_default(|| {
+                modified(1_000_000);
+                let (a, b) = context.block_on(futures_util::future::join(
+                    custom_icon(&file),
+                    custom_icon(&file),
+                ));
+                let (a, b) = (a.expect("decoded"), b.expect("decoded"));
+                assert_eq!(a, b, "decoded once");
+                assert_eq!(context.block_on(custom_icon(&file)), Some(a.clone()));
+                modified(2_000_000);
+                let c = context.block_on(custom_icon(&file)).expect("decoded again");
+                assert_ne!(a, c, "decoded again once modified");
+            })
+            .unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     fn pointing_at(uri: &str) -> gio::FileInfo {
         let info = gio::FileInfo::new();

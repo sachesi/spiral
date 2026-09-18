@@ -96,9 +96,10 @@ search. Reading a folder over a share is slower than reading one on a disk, whic
 thumbnails, item counts and searching subfolders are limited to local files unless you say
 otherwise (see [Settings](settings.md)).
 
-Going to a share that is not connected connects it: a bookmark or an address typed into the
-path bar asks for the password and then opens. Another application asking Spiral to show
-a folder there does not connect it; see [Integration](integration.md). Turning that question down leaves the folder unopened; going there again asks again.
+Going to a share that is not connected connects it: a bookmark or an address typed into
+the path bar asks for the password and then opens. Another application asking Spiral to
+show a folder there does not connect it; see [Integration](integration.md). Turning that
+question down leaves the folder unopened; going there again asks again.
 
 ## Search
 
@@ -303,24 +304,23 @@ and sound are read and decoded by `spiral-thumbnailer` in the same bubblewrap sa
 the thumbnailers, one run of it per file, which hands the pictures and the sound over as
 they are to be shown and heard; Spiral plays them through one GStreamer pipeline that it
 keeps for the whole session and points at one file after another. The helper gets the
-GPU's render nodes, and NVIDIA's device files where there are any, so video is decoded
-on the GPU through VA-API or NVIDIA's decoder as it was before, and the decoded pictures
-stay in GPU memory: the helper passes them to Spiral as DMA-BUFs in a format GTK can
-show, and takes each back once it has been shown. Where there is no GPU to use, or its
-decoder fails on the file before it plays, the file is decoded in software and the
-pictures come over as plain rows.
-Sound alone, going by the file's name, is decoded without the GPU.
-`G_MESSAGES_DEBUG=spiral` logs which decoder was picked, and what the helper says. A file on another machine, which
-the sandbox cannot reach, is read for the helper by Spiral. A seek lands
-on the moment asked for, not the nearest key frame. A format with no plugin installed
-for it shows its icon instead. PDFs
-need `pdftoppm` from poppler-utils, which runs in the same sandbox and, like the
-thumbnailers, is not run at all where bubblewrap is missing. Pictures, covers and the
-pages `pdftoppm` draws are decoded by glycin in its own sandbox where it is installed,
-turned the way their EXIF tag says and in their own depth and colour space; without it,
-`spiral-thumbnailer` decodes them in Spiral's sandbox and hands back the pixels. Text files are shown up to 256 kB, images up to 128 MB and 80 megapixels. A
-file is only loaded once it has been selected for a moment, so holding an arrow down runs
-through a folder without starting a decoder per file.
+GPU's render nodes, and NVIDIA's device files where there are any, so video is decoded on
+the GPU through VA-API or NVIDIA's decoder as it was before, and the decoded pictures stay
+in GPU memory: the helper passes them to Spiral as DMA-BUFs in a format GTK can show, and
+takes each back once it has been shown. Where there is no GPU to use, or its decoder fails
+on the file before it plays, the file is decoded in software and the pictures come over as
+plain rows. Sound alone, going by the file's name, is decoded without the GPU.
+`G_MESSAGES_DEBUG=spiral` logs which decoder was picked, and what the helper says. A file
+on another machine, which the sandbox cannot reach, is read for the helper by Spiral. A
+seek lands on the moment asked for, not the nearest key frame. A format with no plugin
+installed for it shows its icon instead. PDFs need `pdftoppm` from poppler-utils, which
+runs in the same sandbox and, like the thumbnailers, is not run at all where bubblewrap is
+missing. Pictures, covers and the pages `pdftoppm` draws are decoded by glycin in its own
+sandbox where it is installed, turned the way their EXIF tag says and in their own depth
+and colour space; without it, `spiral-thumbnailer` decodes them in Spiral's sandbox and
+hands back the pixels. Text files are shown up to 256 kB, images up to 128 MB and 80
+megapixels. A file is only loaded once it has been selected for a moment, so holding an
+arrow down runs through a folder without starting a decoder per file.
 
 ## Favorites
 

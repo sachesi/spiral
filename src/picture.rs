@@ -56,9 +56,10 @@ pub(crate) fn load_bytes(bytes: &glib::Bytes, max_pixels: i64) -> Option<gdk::Te
     // The sandbox takes a file, so the helper gets a private copy.
     let dir = crate::sandbox::private_dir("spiral-picture")?;
     let copy = dir.join("picture");
-    let texture = std::fs::write(&copy, bytes)
-        .ok()
-        .and_then(|()| sandboxed(&copy, exif_orientation(bytes), max_pixels));
+    let texture = std::fs::write(&copy, bytes).ok().and_then(|()| {
+        let head = &bytes[..bytes.len().min(EXIF_SCAN)];
+        sandboxed(&copy, exif_orientation(head), max_pixels)
+    });
     let _ = std::fs::remove_dir_all(&dir);
     texture
 }
@@ -99,8 +100,15 @@ fn orientation_of(path: &Path) -> u16 {
 }
 
 /// The EXIF orientation in `head`, 1 (upright) where there is none: the APP1 segment
-/// holds a TIFF header, and the first directory of that holds the tag.
+/// holds a TIFF header, and the first directory of that holds the tag. Only a JPEG or a
+/// WebP is turned by it. HEIF and AVIF say which way up they are in boxes of their own,
+/// which their decoder follows, and the EXIF tag they carry as well is not to be followed
+/// a second time.
 pub(crate) fn exif_orientation(head: &[u8]) -> u16 {
+    let webp = head.len() >= 12 && &head[..4] == b"RIFF" && &head[8..12] == b"WEBP";
+    if !head.starts_with(b"\xff\xd8\xff") && !webp {
+        return 1;
+    }
     fn read(head: &[u8], at: usize, big: bool, len: usize) -> Option<u32> {
         let bytes = head.get(at..at + len)?;
         let value = bytes.iter().fold(0u32, |n, &b| (n << 8) | u32::from(b));

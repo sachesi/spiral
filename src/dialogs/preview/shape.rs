@@ -553,6 +553,10 @@ mod tests {
         assert_eq!(exif_orientation(&jpeg_with_orientation(true, 1)), 1);
         assert_eq!(exif_orientation(b"\xff\xd8no exif here"), 1);
         assert_eq!(exif_orientation(b"Exif\0\0MM"), 1);
+        // A HEIF photograph carries the tag, and is turned by its own boxes instead.
+        let mut heif = b"\0\0\0\x18ftypheic".to_vec();
+        heif.extend(&jpeg_with_orientation(true, 6)[4..]);
+        assert_eq!(exif_orientation(&heif), 1);
     }
 
     #[test]

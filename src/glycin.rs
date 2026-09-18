@@ -8,10 +8,9 @@
 //! Glycin is always asked for its bubblewrap sandbox. Left to choose, it would load files
 //! with no sandbox at all where bubblewrap does not start.
 
-use std::cell::RefCell;
 use std::ffi::{c_char, c_int, c_void};
-use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::time::Duration;
 
 use gtk::prelude::*;
@@ -26,6 +25,11 @@ const LIMIT: Duration = crate::thumbnails::TIMEOUT;
 const GRACE: Duration = Duration::from_secs(2);
 /// `GLY_SANDBOX_SELECTOR_BWRAP`.
 const SANDBOX_BWRAP: c_int = 1;
+/// Bytes of pictures being cut down to a size at once, counted at eight a pixel: the
+/// frame glycin hands over and the copy made to shrink it. Thumbnails are made on every
+/// core but one, and a folder of large photographs would otherwise have them all whole
+/// in memory together.
+const SHRINKING_MAX: u64 = 1 << 30;
 
 type Ptr = *mut c_void;
 type Callback = gio::ffi::GAsyncReadyCallback;
@@ -212,8 +216,9 @@ impl Glycin {
     }
 
     /// The picture in `file`, of at most `max_pixels`. `fit` asks for it no larger than
-    /// that many pixels either way, which loaders that draw rather than decode, as SVG's
-    /// does, honour; the others give it at its own size.
+    /// that many pixels either way, in eight bits a channel: loaders that draw rather than
+    /// decode, as SVG's does, draw it so, and what the others give at its own size is cut
+    /// down here, a few pictures at a time (see [`SHRINKING_MAX`]).
     pub fn load_file(
         &self,
         file: &gio::File,
@@ -275,6 +280,7 @@ impl Glycin {
                 if i64::from(width) * i64::from(height) > max_pixels {
                     return Err(Refused::File(format!("{width}×{height} is too large")));
                 }
+                let _share = fit.map(|_| Share::take(u64::from(width) * u64::from(height) * 8));
                 let request = unsafe { self.own((api.frame_request_new)()) };
                 let request_ptr = request.as_ptr() as Ptr;
                 if let Some(side) = fit {
@@ -299,7 +305,14 @@ impl Glycin {
                     })
                 })
                 .map(|ptr| unsafe { self.own(ptr) })?;
-                self.texture(frame.as_ptr() as Ptr, max_pixels)
+                let texture = self.texture(frame.as_ptr() as Ptr, max_pixels)?;
+                match fit {
+                    Some(side) if texture.width().max(texture.height()) > side as i32 => {
+                        crate::picture::shrunk(&texture, side as i32)
+                            .ok_or_else(|| Refused::File("cannot shrink".into()))
+                    }
+                    _ => Ok(texture),
+                }
             })
             .map_err(|e| Refused::File(e.to_string()))?
     }
@@ -369,6 +382,34 @@ impl Glycin {
     }
 }
 
+/// A share of [`SHRINKING_MAX`], waited for and given back when dropped. A picture larger
+/// than all of it is let through alone.
+struct Share(u64);
+
+static SHRINKING: (Mutex<u64>, Condvar) = (Mutex::new(0), Condvar::new());
+
+impl Share {
+    fn take(bytes: u64) -> Self {
+        let bytes = bytes.min(SHRINKING_MAX);
+        let (taken, freed) = &SHRINKING;
+        let mut taken = freed
+            .wait_while(taken.lock().unwrap(), |taken| {
+                *taken + bytes > SHRINKING_MAX
+            })
+            .unwrap();
+        *taken += bytes;
+        Self(bytes)
+    }
+}
+
+impl Drop for Share {
+    fn drop(&mut self) {
+        let (taken, freed) = &SHRINKING;
+        *taken.lock().unwrap() -= self.0;
+        freed.notify_all();
+    }
+}
+
 /// The GDK format a `GlyMemoryFormat` names, and the bytes one pixel takes in it.
 fn memory_format(format: c_int) -> Option<(gdk::MemoryFormat, usize)> {
     use gdk::MemoryFormat as F;
@@ -402,20 +443,20 @@ fn memory_format(format: c_int) -> Option<(gdk::MemoryFormat, usize)> {
 
 /// Start one asynchronous step of glycin's with `start`, on `context`, which is this
 /// thread's default, and run the context until the step has finished: what it finished
-/// with, to hand its `finish` function. A step still running after [`LIMIT`] is cancelled, and
-/// one that does not finish even then is left to itself.
+/// with, to hand its `finish` function. A step still running after [`LIMIT`] is cancelled,
+/// and one that does not finish even then is left to a thread of its own (see [`drain`]).
 fn wait(
     context: &glib::MainContext,
     start: impl FnOnce(*mut gio::ffi::GCancellable, Callback, Ptr),
 ) -> Result<glib::Object, Refused> {
-    type Slot = RefCell<Option<glib::Object>>;
     unsafe extern "C" fn done(_: *mut GObject, result: *mut gio::ffi::GAsyncResult, data: Ptr) {
-        // SAFETY: `data` is the slot below, which outlives the step (or is leaked).
-        let slot = unsafe { &*(data as *const Slot) };
-        *slot.borrow_mut() = Some(unsafe { from_glib_none(result as *mut GObject) });
+        // SAFETY: `data` is the reference to the slot handed over below, given back here
+        // once, as the step finishes once.
+        let slot = unsafe { Arc::from_raw(data as *const Slot) };
+        *slot.lock().unwrap() = Some(Finished(unsafe { from_glib_none(result as *mut GObject) }));
     }
     let cancellable = gio::Cancellable::new();
-    let abandoned = std::sync::Arc::new(AtomicBool::new(false));
+    let abandoned = Arc::new(AtomicBool::new(false));
     let timer = glib::timeout_source_new(LIMIT, None, glib::Priority::DEFAULT, {
         let cancellable = cancellable.clone();
         move || {
@@ -432,26 +473,66 @@ fn wait(
         }
     });
     giving_up.attach(Some(context));
-    let slot: Box<Slot> = Box::default();
+    let slot: Arc<Slot> = Arc::default();
     start(
         cancellable.to_glib_none().0,
         Some(done),
-        &*slot as *const Slot as Ptr,
+        Arc::into_raw(slot.clone()) as Ptr,
     );
-    while slot.borrow().is_none() && !abandoned.load(Ordering::SeqCst) {
+    while slot.lock().unwrap().is_none() && !abandoned.load(Ordering::SeqCst) {
         context.iteration(true);
     }
     timer.destroy();
     giving_up.destroy();
-    let result = slot.borrow_mut().take();
+    let result = slot.lock().unwrap().take().map(|finished| finished.0);
     match result {
         Some(result) if !cancellable.is_cancelled() => Ok(result),
         Some(_) => Err(Refused::Time),
         None => {
-            // Still running: the slot stays for its callback to write into.
-            Box::leak(slot);
+            let context = context.clone();
+            std::thread::spawn(move || drain(&context, &slot));
             Err(Refused::Time)
         }
+    }
+}
+
+/// Where a step of glycin's puts what it finished with.
+type Slot = Mutex<Option<Finished>>;
+
+/// What a step finished with. Only the thread running the context the step finished on
+/// ever holds it, and a GObject counts its references atomically, so it may go over to
+/// the thread that takes the context over.
+struct Finished(glib::Object);
+
+// SAFETY: see above.
+unsafe impl Send for Finished {}
+
+/// Run `context` for a step that did not finish in time, until it does or for another
+/// [`LIMIT`]: glycin winds a cancelled step down, and its loader with it, on the context
+/// the step was started on. The thread that started it lets go of the context as soon as
+/// it has given up, and this one takes it over then.
+fn drain(context: &glib::MainContext, slot: &Slot) {
+    let started = std::time::Instant::now();
+    loop {
+        let ran = context.with_thread_default(|| {
+            let over = Arc::new(AtomicBool::new(false));
+            let timer = glib::timeout_source_new(LIMIT, None, glib::Priority::DEFAULT, {
+                let over = over.clone();
+                move || {
+                    over.store(true, Ordering::SeqCst);
+                    glib::ControlFlow::Break
+                }
+            });
+            timer.attach(Some(context));
+            while slot.lock().unwrap().is_none() && !over.load(Ordering::SeqCst) {
+                context.iteration(true);
+            }
+            timer.destroy();
+        });
+        if ran.is_ok() || started.elapsed() > GRACE {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(10));
     }
 }
 

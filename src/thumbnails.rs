@@ -616,7 +616,7 @@ fn generate(
     Err(worst)
 }
 
-/// A thumbnail of the picture at `path`, decoded by glycin, cut down to size here and
+/// A thumbnail of the picture at `path`, drawn by glycin at the size asked for and
 /// written to `tmp` with the words the spec asks for.
 fn glycin_thumbnail(
     glycin: &crate::glycin::Glycin,
@@ -626,9 +626,8 @@ fn glycin_thumbnail(
     tmp: &Path,
 ) -> Result<gdk::Texture, crate::glycin::Refused> {
     use crate::glycin::Refused;
-    let picture = glycin.load_file(&gio::File::for_path(path), SOURCE_PIXELS, Some(SIZE as u32))?;
     let thumbnail =
-        crate::picture::shrunk(&picture, SIZE).ok_or(Refused::File("cannot shrink".into()))?;
+        glycin.load_file(&gio::File::for_path(path), SOURCE_PIXELS, Some(SIZE as u32))?;
     let png = with_text(&thumbnail.save_to_png_bytes(), uri, mtime)
         .ok_or(Refused::File("cannot stamp".into()))?;
     std::fs::write(tmp, png).map_err(|e| Refused::File(e.to_string()))?;

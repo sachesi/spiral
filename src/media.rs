@@ -291,10 +291,7 @@ pub(crate) fn read_note(r: &mut impl Read) -> io::Result<Note> {
                 return Err(invalid("note of the wrong length"));
             }
             let colorimetry = &body[39..];
-            if !colorimetry
-                .iter()
-                .all(|&c| c.is_ascii_alphanumeric() || c == b':')
-            {
+            if !plain_colorimetry(colorimetry) {
                 return Err(invalid("colorimetry out of bounds"));
             }
             let picture = Picture {
@@ -343,6 +340,15 @@ pub(crate) fn read_note(r: &mut impl Read) -> io::Result<Note> {
         ),
         _ => return Err(invalid("unknown note")),
     })
+}
+
+/// Whether `colorimetry` is written in the letters GStreamer writes one in: its names, as
+/// `bt709` or `bt2100-pq`, or four numbers, as `1:3:5:1`. The player takes no other, so
+/// the helper sends no other.
+fn plain_colorimetry(colorimetry: &[u8]) -> bool {
+    colorimetry
+        .iter()
+        .all(|&c| c.is_ascii_alphanumeric() || c == b':' || c == b'-')
 }
 
 pub(crate) fn write_packet(w: &mut impl Write, packet: &Packet) -> io::Result<()> {
@@ -1027,7 +1033,7 @@ fn try_playing(session: &mut Session) -> Result<Tried, String> {
                 let colorimetry = drm
                     .and(caps(&video))
                     .and_then(|caps| caps.structure(0)?.get::<String>("colorimetry").ok())
-                    .filter(|c| c.len() <= COLORIMETRY_MAX);
+                    .filter(|c| c.len() <= COLORIMETRY_MAX && plain_colorimetry(c.as_bytes()));
                 let mut seeking = gst::query::Seeking::new(gst::Format::Time);
                 let seekable = pipeline.query(&mut seeking) && seeking.result().0;
                 send(
@@ -1380,6 +1386,10 @@ mod tests {
             caps.structure(0).unwrap().get::<String>("colorimetry").ok()
         };
         assert_eq!(colorimetry(Some("2:3:5:1")).as_deref(), Some("bt709"));
+        // Ten bits and HDR, as GStreamer names them.
+        for name in ["bt2020-10", "bt2100-pq", "bt2100-hlg"] {
+            assert_eq!(colorimetry(Some(name)).as_deref(), Some(name));
+        }
         // Full range, as phones record, is kept as such.
         assert_eq!(colorimetry(Some("1:3:5:1")).as_deref(), Some("1:3:5:1"));
         assert_eq!(colorimetry(Some("nonsense")), None);
@@ -1406,7 +1416,7 @@ mod tests {
                     par: (1, 1),
                 }),
                 drm: Some(2),
-                colorimetry: Some("bt2020:bt2020:smpte2084:bt2020".into()),
+                colorimetry: Some("bt2100-pq".into()),
                 seekable: true,
                 duration: Some(5_000_000_000),
             },

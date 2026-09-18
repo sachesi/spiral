@@ -37,31 +37,31 @@ folder as the folder is listed, which is two fifths of the time a folder of fift
 files takes to appear; asking it here means asking it for the rows that are actually
 shown. A file that defeats a thumbnailer here has a note left under `fail/spiral`, so the
 next run does not try it again. The notes other programs leave in their own directories
-under `fail/` are not read: they draw with other tools, and a file one
-of them gave up on before a codec was installed is not one this one cannot draw; writing the file again makes the note stale, as it carries the time the file
-was last changed. No note is left for a thumbnailer that ran out of time or could not be
-started: a machine busy with other decoders or a helper not installed yet say nothing about
-the file, and it is asked about again on the next visit. For generation, a picture glycin
-reads is drawn by glycin first, in its own sandbox, cut down to size in Spiral and written
-with the text chunks below; its loaders stay running between files, where a thumbnailer
-needs a sandbox started for each. Where glycin cannot draw it, the system's thumbnailers
-are asked. Otherwise the system `.thumbnailer` entries under
-`~/.local/share/thumbnailers` and `XDG_DATA_DIRS` are consulted first; an
-entry matches if its MIME type equals or is a supertype of the file's, and its `TryExec`
-has to be in `PATH`. Where several entries claim a type, the user's come before the
-system's and within a directory they are taken by file name, so the choice is the same on
-every machine; they are tried in that order, and one that fails or hangs on a file hands
-it to the next. Images with no system thumbnailer go to the bundled
-`spiral-thumbnailer`, a gdk-pixbuf loader that handles whatever loaders are installed
-(PNG, JPEG, GIF, BMP, TIFF, and WebP, AVIF, JPEG XL or SVG with their loader packages),
-scales to fit, and applies the EXIF orientation. Anything else gets no thumbnail. The
-helper is a separate program because it is a decoder: it is sandboxed like any other
-thumbnailer. A thumbnail found in the cache is decoded the same way as it is made, by
-glycin or by the helper, never in the process drawing the window: the cache holds what
-thumbnailers wrote, Spiral's and other programs', and one taken over by the file it read
-could have written anything. The details
-panel asks the same helper, in the same sandbox, what a photo, a recording, a video or a
-document says about itself.
+under `fail/` are not read: they draw with other tools, and a file one of them gave up on
+before a codec was installed is not one this one cannot draw; writing the file again makes
+the note stale, as it carries the time the file was last changed. No note is left for a
+thumbnailer that ran out of time or could not be started: a machine busy with other
+decoders or a helper not installed yet say nothing about the file, and it is asked about
+again on the next visit. For generation, a picture glycin reads is drawn by glycin first,
+in its own sandbox, cut down to size in Spiral and written with the text chunks below; its
+loaders stay running between files, where a thumbnailer needs a sandbox started for each.
+Large pictures are cut down a few at a time, so that a folder of them is not all held
+whole in memory at once. Where glycin cannot draw it, the system's thumbnailers are asked.
+Otherwise the system `.thumbnailer` entries under `~/.local/share/thumbnailers` and
+`XDG_DATA_DIRS` are consulted first; an entry matches if its MIME type equals or is a
+supertype of the file's, and its `TryExec` has to be in `PATH`. Where several entries
+claim a type, the user's come before the system's and within a directory they are taken by
+file name, so the choice is the same on every machine; they are tried in that order, and
+one that fails or hangs on a file hands it to the next. Images with no system thumbnailer
+go to the bundled `spiral-thumbnailer`, a gdk-pixbuf loader that handles whatever loaders
+are installed (PNG, JPEG, GIF, BMP, TIFF, and WebP, AVIF, JPEG XL or SVG with their loader
+packages), scales to fit, and applies the EXIF orientation. Anything else gets no
+thumbnail. The helper is a separate program because it is a decoder: it is sandboxed like
+any other thumbnailer. A thumbnail found in the cache is decoded the same way as it is
+made, by glycin or by the helper, never in the process drawing the window: the cache holds
+what thumbnailers wrote, Spiral's and other programs', and one taken over by the file it
+read could have written anything. The details panel asks the same helper, in the same
+sandbox, what a photo, a recording, a video or a document says about itself.
 
 The in-memory cache is keyed by URI, modification time and size. The size is part of it
 because a file another program is still writing is seen empty first, and the verdict taken
