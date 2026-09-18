@@ -23,27 +23,34 @@
   <content_rating type="oars-1.1"/>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/01-grid-view.png</image>
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.17.0/data/screenshots/01-grid-view.png</image>
       <caption>Browse a folder as a grid of thumbnails</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/02-details-panel.png</image>
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.17.0/data/screenshots/02-details-panel.png</image>
       <caption>Read what a file holds beside the folder it is in</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/03-preview.png</image>
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.17.0/data/screenshots/03-preview.png</image>
       <caption>Look at a file with the Space key, without opening it</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/04-split-view.png</image>
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.17.0/data/screenshots/04-split-view.png</image>
       <caption>Keep two folders side by side and drag between them</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.16.2/data/screenshots/05-search.png</image>
+      <image>https://raw.githubusercontent.com/sachesi/spiral/v0.17.0/data/screenshots/05-search.png</image>
       <caption>Search through subfolders and see where each result lives</caption>
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.17.0" date="2026-09-18">
+      <description>
+        <p>Video and sound in the preview are decoded inside the sandbox, as thumbnails are, and only the pictures and the sound reach Spiral. Video is still decoded on the GPU where there is one, and its pictures stay in GPU memory on their way to the screen, in the colours the file gives them: full range, BT.2020 and HDR included. A seek lands on the moment asked for, and a file with only sound or only pictures goes on playing after one.</p>
+        <p>Pictures are decoded by glycin in its own sandbox where it is installed, and in Spiral's otherwise: the preview's pictures and covers, the pages of a PDF, thumbnails found in the cache and pictures set as folder icons. Thumbnails of photos are made by glycin too, and large ones a few at a time, so a folder of them no longer fills the memory.</p>
+        <p>What a sandboxed helper leaves behind is no longer taken at its word: a link or a pipe in place of a thumbnail is refused. Another application asking Spiral to show a folder on a share it has not connected to no longer connects it, 7-Zip is told passwords on its standard input rather than its command line, and the save dialog refuses a name of “.” or “..”.</p>
+      </description>
+    </release>
     <release version="0.16.2" date="2026-09-17">
       <description>
         <p>Every window keeps to itself. A view, an order or a zoom changed in one pane stays in that pane; the sidebar, the details panel and the split view belong to the window they were opened in, and a sidebar hidden by hand stays hidden when the window is made wide again. A job asks its questions, and says it has finished, in the window it was started from. A star and a cut file are drawn the same in every window that shows them, not only in the first to hear of it.</p>
