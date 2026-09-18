@@ -18,9 +18,9 @@ use std::cell::{Cell, OnceCell, RefCell};
 use std::io::{Read, Write};
 use std::os::fd::{AsRawFd, OwnedFd};
 use std::os::unix::net::UnixStream;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use gstreamer_allocators as gst_allocators;
@@ -38,6 +38,8 @@ const TICK: Duration = Duration::from_millis(100);
 /// starting is not switched away from, since that is the race being avoided, so a file
 /// that never starts would otherwise hold the player for good.
 const START_LIMIT: Duration = Duration::from_secs(5);
+/// How long a reader waits for room before it looks again unasked.
+const ROOM_WAIT: Duration = Duration::from_millis(100);
 /// Notes from a helper waiting for the main loop. A helper sending faster than they are
 /// taken waits, rather than piling them up in this process.
 const NOTES_QUEUED: usize = 8;
@@ -98,6 +100,8 @@ mod imp {
         pub configured: Cell<bool>,
         /// What packets are taken: the session in the upper half, the seek in the lower.
         pub current: Arc<AtomicU64>,
+        /// Told when a source has room for more, or a seek has come: see [`Room`].
+        pub(super) room: [Arc<super::Room>; 2],
         pub(super) notes: OnceCell<async_channel::Sender<(u32, Option<Note>)>>,
         /// The DMA-BUF formats the sink takes, as the helper is told them.
         pub drm_formats: OnceCell<Vec<String>>,
@@ -166,6 +170,11 @@ mod imp {
             if self.pipeline().seek_simple(flags, position).is_err() {
                 self.seeking.set(false);
                 obj.seek_failed();
+                return;
+            }
+            obj.end_absent_streams();
+            for room in &self.room {
+                room.tell();
             }
         }
 
@@ -291,11 +300,34 @@ impl Player {
         gst::Element::link_many(&video).ok()?;
         gst::Element::link_many(&audio).ok()?;
         let sources = [video[0].clone(), audio[0].clone()];
-        for source in &sources {
+        let player: Self = glib::Object::new();
+        let imp = player.imp();
+        for (source, room) in sources.iter().zip(&imp.room) {
             source.set_property_from_str("format", "time");
-            source.set_property("block", true);
             // A seek is passed to the helper before the pipeline is told of it.
             source.connect("seek-data", false, |_| Some(true.to_value()));
+            source.connect("need-data", false, {
+                let room = room.clone();
+                move |_| {
+                    room.tell();
+                    None
+                }
+            });
+        }
+        // Each buffer is marked with the session and the seek it belongs to. One read just
+        // before a seek can reach its source only after the seek has flushed it, and would
+        // then stand in the new position's place: it goes no further.
+        for source in &sources {
+            let current = imp.current.clone();
+            source.static_pad("src")?.add_probe(
+                gst::PadProbeType::BUFFER,
+                move |_, info| match info.buffer() {
+                    Some(buffer) if buffer.offset() != current.load(Ordering::SeqCst) => {
+                        gst::PadProbeReturn::Drop
+                    }
+                    _ => gst::PadProbeReturn::Ok,
+                },
+            );
         }
         sources[1].set_property(
             "caps",
@@ -308,8 +340,6 @@ impl Player {
         );
         let paintable = sink.property::<gdk::Paintable>("paintable");
 
-        let player: Self = glib::Object::new();
-        let imp = player.imp();
         imp.pipeline.set(pipeline.clone()).ok();
         imp.sources.set(sources).ok();
         imp.video_queue.set(video[1].clone()).ok();
@@ -497,6 +527,7 @@ impl Player {
             let (gate, opened) = mpsc::channel();
             let reader = Reader {
                 source: imp.sources()[kind].clone(),
+                room: imp.room[kind].clone(),
                 current: imp.current.clone(),
                 id,
                 notes: notes.clone(),
@@ -585,7 +616,7 @@ impl Player {
         }
         imp.has_audio.set(audio);
         imp.has_video.set(video.is_some());
-        let [video_src, audio_src] = imp.sources();
+        let [video_src, _] = imp.sources();
         let kind = if seekable { "seekable" } else { "stream" };
         for source in imp.sources() {
             source.set_property_from_str("stream-type", kind);
@@ -642,13 +673,18 @@ impl Player {
                 exact: None,
             }));
         }
-        // A stream the file does not have is over before it starts, so the pipeline does
-        // not wait on it.
-        if video.is_none() {
-            let _ = video_src.emit_by_name::<gst::FlowReturn>("end-of-stream", &[]);
-        }
-        if !audio {
-            let _ = audio_src.emit_by_name::<gst::FlowReturn>("end-of-stream", &[]);
+        self.end_absent_streams();
+    }
+
+    /// A stream the file does not have is over before it starts, so the pipeline does not
+    /// wait on it. Said again after every seek, whose flush takes back what was said.
+    fn end_absent_streams(&self) {
+        let imp = self.imp();
+        let present = [imp.has_video.get(), imp.has_audio.get()];
+        for (source, present) in imp.sources().iter().zip(present) {
+            if !present {
+                let _ = source.emit_by_name::<gst::FlowReturn>("end-of-stream", &[]);
+            }
         }
     }
 
@@ -1019,9 +1055,33 @@ fn dmabuf_formats() -> Vec<String> {
     out
 }
 
+/// Where a reader waits for its source to have room.
+#[derive(Default)]
+struct Room {
+    told: Mutex<()>,
+    wake: std::sync::Condvar,
+}
+
+impl Room {
+    fn tell(&self) {
+        let _told = self.told.lock().unwrap();
+        self.wake.notify_all();
+    }
+}
+
+/// Whether `source` holds as much as it is set to.
+fn full(source: &gst::Element) -> bool {
+    let over = |level: &str, max: &str| {
+        let max = source.property::<u64>(max);
+        max > 0 && source.property::<u64>(level) >= max
+    };
+    over("current-level-buffers", "max-buffers") || over("current-level-bytes", "max-bytes")
+}
+
 /// Reads the packets of one stream from the helper and hands them to `source`.
 struct Reader {
     source: gst::Element,
+    room: Arc<Room>,
     current: Arc<AtomicU64>,
     id: u32,
     notes: async_channel::Sender<(u32, Option<Note>)>,
@@ -1051,8 +1111,8 @@ impl Reader {
                 | Packet::End { epoch }
                 | Packet::Frame { epoch, .. } => *epoch,
             };
-            let current =
-                self.current.load(Ordering::SeqCst) == u64::from(self.id) << 32 | u64::from(epoch);
+            let tag = u64::from(self.id) << 32 | u64::from(epoch);
+            let current = self.current.load(Ordering::SeqCst) == tag;
             match packet {
                 Packet::Data {
                     pts,
@@ -1064,10 +1124,13 @@ impl Reader {
                     if let Some(buffer) = buffer.get_mut() {
                         buffer.set_pts(pts.map(gst::ClockTime::from_nseconds));
                         buffer.set_duration(duration.map(gst::ClockTime::from_nseconds));
+                        buffer.set_offset(tag);
                     }
-                    self.push(buffer);
+                    self.push(buffer, tag);
                 }
-                Packet::End { .. } if current => {
+                // Asked again: a seek may have come since the packet was read, and an end
+                // carries no mark for the source to tell it by.
+                Packet::End { .. } if current && self.current.load(Ordering::SeqCst) == tag => {
                     let _ = self
                         .source
                         .emit_by_name::<gst::FlowReturn>("end-of-stream", &[]);
@@ -1101,16 +1164,34 @@ impl Reader {
                     if let Some(buffer) = buffer.get_mut() {
                         buffer.set_pts(pts.map(gst::ClockTime::from_nseconds));
                         buffer.set_duration(duration.map(gst::ClockTime::from_nseconds));
+                        buffer.set_offset(tag);
                         when_released(buffer.peek_memory(0), self.returns.clone(), id);
                     }
-                    self.push(buffer);
+                    self.push(buffer, tag);
                 }
                 _ => {}
             }
         }
     }
 
-    fn push(&self, buffer: gst::Buffer) {
+    /// Hand `buffer`, of the seek `tag` names, to the source once it has room for it,
+    /// or drop it if another seek comes first. The source is not left to wait for room
+    /// itself: a flush that empties it does not wake a push waiting there, which would
+    /// then wait for the next flush, with the picture stopped until then.
+    fn push(&self, buffer: gst::Buffer, tag: u64) {
+        let mut told = self.room.told.lock().unwrap();
+        loop {
+            if self.current.load(Ordering::SeqCst) != tag {
+                return;
+            }
+            if !full(&self.source) {
+                break;
+            }
+            // Told of room by the source, or of a seek by the player; asked again after
+            // a while all the same, since room can come between asking and waiting.
+            told = self.room.wake.wait_timeout(told, ROOM_WAIT).unwrap().0;
+        }
+        drop(told);
         let _ = self
             .source
             .emit_by_name::<gst::FlowReturn>("push-buffer", &[&buffer]);

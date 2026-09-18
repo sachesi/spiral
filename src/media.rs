@@ -183,6 +183,9 @@ pub(crate) enum Packet {
 
 /// The most memories or planes one picture may have.
 const PARTS_MAX: usize = 4;
+/// The most pictures in GPU memory sent and not yet handed back: more than the player
+/// holds at once, in its source, its queue and on screen.
+const FRAMES_AHEAD: usize = 16;
 
 fn time(t: u64) -> Option<u64> {
     (t != NONE).then_some(t)
@@ -649,6 +652,8 @@ struct Out {
     /// Pictures in GPU memory the player has not handed back yet, by the id they were
     /// sent with: the decoder must not draw the next one over them while they are shown.
     held: Mutex<HashMap<u64, gst::Buffer>>,
+    /// Told whenever one of them is handed back.
+    returned: std::sync::Condvar,
     next: AtomicU64,
 }
 
@@ -796,6 +801,7 @@ pub fn serve(
                 socket: Mutex::new(socket),
                 epoch: AtomicU32::new(0),
                 held: Mutex::default(),
+                returned: std::sync::Condvar::new(),
                 next: AtomicU64::new(0),
             })
         }),
@@ -821,6 +827,7 @@ pub fn serve(
             let mut id = [0; 8];
             while returned.read_exact(&mut id).is_ok() {
                 out.held.lock().unwrap().remove(&u64::from_le_bytes(id));
+                out.returned.notify_all();
             }
         }
     });
@@ -1300,7 +1307,16 @@ fn send_frame(out: &Out, sample: &gst::Sample, buffer: &gst::BufferRef) -> gst::
     let Some(owned) = sample.buffer_owned() else {
         return gst::FlowReturn::Ok;
     };
-    out.held.lock().unwrap().insert(id, owned);
+    // A picture in GPU memory is a few bytes on the socket, which would never fill: the
+    // decoder waits here instead, rather than run to the end of the file with a surface
+    // held for every picture on the way. The player hands one back for each it takes in.
+    let held = out.held.lock().unwrap();
+    let mut held = out
+        .returned
+        .wait_while(held, |held| held.len() >= FRAMES_AHEAD)
+        .unwrap();
+    held.insert(id, owned);
+    drop(held);
     let packet = Packet::Frame {
         epoch: out.epoch.load(Ordering::SeqCst),
         pts: stream_time(sample, buffer.pts()),
