@@ -41,7 +41,11 @@ under `fail/` are not read: they draw with other tools, and a file one
 of them gave up on before a codec was installed is not one this one cannot draw; writing the file again makes the note stale, as it carries the time the file
 was last changed. No note is left for a thumbnailer that ran out of time or could not be
 started: a machine busy with other decoders or a helper not installed yet say nothing about
-the file, and it is asked about again on the next visit. For generation, the system `.thumbnailer` entries under
+the file, and it is asked about again on the next visit. For generation, a picture glycin
+reads is drawn by glycin first, in its own sandbox, cut down to size in Spiral and written
+with the text chunks below; its loaders stay running between files, where a thumbnailer
+needs a sandbox started for each. Where glycin cannot draw it, the system's thumbnailers
+are asked. Otherwise the system `.thumbnailer` entries under
 `~/.local/share/thumbnailers` and `XDG_DATA_DIRS` are consulted first; an
 entry matches if its MIME type equals or is a supertype of the file's, and its `TryExec`
 has to be in `PATH`. Where several entries claim a type, the user's come before the
@@ -52,7 +56,10 @@ it to the next. Images with no system thumbnailer go to the bundled
 (PNG, JPEG, GIF, BMP, TIFF, and WebP, AVIF, JPEG XL or SVG with their loader packages),
 scales to fit, and applies the EXIF orientation. Anything else gets no thumbnail. The
 helper is a separate program because it is a decoder: it is sandboxed like any other
-thumbnailer, and nothing is ever decoded in the process drawing the window. The details
+thumbnailer. A thumbnail found in the cache is decoded the same way as it is made, by
+glycin or by the helper, never in the process drawing the window: the cache holds what
+thumbnailers wrote, Spiral's and other programs', and one taken over by the file it read
+could have written anything. The details
 panel asks the same helper, in the same sandbox, what a photo, a recording, a video or a
 document says about itself.
 
@@ -98,12 +105,23 @@ kexec, io_uring and similar system calls fail with EPERM, `clone` with `CLONE_NE
 refused, and `clone3` returns ENOSYS so libc falls back to `clone`. The exact list is in
 `src/sandbox.rs`.
 
-A thumbnailer that crashes or misbehaves is confined to that sandbox. `bwrap` is required,
+A thumbnailer that crashes or misbehaves is confined to that sandbox. What it leaves in
+the output directory is not trusted either: the PNG is read back only if it is a regular
+file, not a link or a pipe, under 32 MB and starting like a PNG, and it is copied into a
+file Spiral creates rather than moved into the cache. A thumbnailer taken over by the
+file it was reading could otherwise leave a link to one of the user's files, for Spiral
+to write the thumbnail's text chunks through. The preview's tools are read back the same
+way. `bwrap` is required,
 and so is the filter: without either no thumbnail is generated at all, and a filter that
 could not be built in full counts as none. Spiral tries the sandbox once at startup and
 says what is wrong with it if anything is, so a system with `bwrap` missing or with user
 namespaces turned off gives a reason rather than empty icons. There is
 no unsandboxed path, because the input is a file the reader did not write.
+
+Glycin is only used with its bubblewrap sandbox: Spiral asks for it, and tries it once by
+decoding a picture of one pixel. Where it does not start, glycin would decode with no
+sandbox at all, so Spiral decodes pictures in its own instead. `SPIRAL_GLYCIN=0` makes it
+do so anyway, to try that path where glycin works.
 
 ## Debugging
 

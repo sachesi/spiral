@@ -417,6 +417,11 @@ impl BrowserView {
             async move {
                 on_screen(&image).await;
                 folder_listed(&model).await;
+                if let Some(file) = file_utils::custom_icon_file(&info)
+                    && let Some(icon) = file_utils::custom_icon(&file).await
+                {
+                    image.set_from_gicon(&icon);
+                }
                 if let Some(texture) = crate::thumbnails::load(&info, at).await {
                     image.set_paintable(Some(&texture));
                     image.add_css_class("file-thumbnail");

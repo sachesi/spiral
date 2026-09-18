@@ -12,8 +12,12 @@ libgstreamer-plugins-base1.0-dev blueprint-compiler just`. `just check` also wan
 
 To run: GTK 4.22, libadwaita 1.9, GtkSourceView 5, `bwrap` from bubblewrap, a session bus,
 and xdg-desktop-portal if you want the file chooser. Bubblewrap is not optional: every
-thumbnailer, the PDF previewer and every archive tool runs inside it, and without it those
-are turned off rather than run unconfined. GtkSourceView colours the text files the preview shows. The
+thumbnailer, the PDF previewer, the preview's decoders of video and sound, and every
+archive tool runs inside it, and without it those are turned off rather than run
+unconfined. Pictures are decoded by glycin where `libglycin-2` and its loaders are
+installed (on Fedora `glycin-libs` and `glycin-loaders`, which gdk-pixbuf already pulls
+in), in glycin's own bubblewrap sandbox; without glycin, `spiral-thumbnailer` decodes them
+in Spiral's. GtkSourceView colours the text files the preview shows. The
 preview plays video and sound through GStreamer, which needs its base plugins and the GTK 4
 sink from gst-plugins-rs: on Fedora `gstreamer1-plugins-base
 gstreamer1-plugin-gtk4`, on Debian `libgstreamer-plugins-base1.0-0 gstreamer1.0-gtk4`, on

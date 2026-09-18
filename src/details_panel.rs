@@ -176,10 +176,8 @@ impl DetailsPanel {
         let file = file_utils::file_of(info);
         let is_dir = file_utils::is_dir(info);
         let content_type = file_utils::content_type_of(info).unwrap_or_default();
-        let icon = gtk::Image::builder()
-            .gicon(&file_utils::icon_of(info))
-            .pixel_size(ICON_SIZE)
-            .build();
+        let icon = gtk::Image::builder().pixel_size(ICON_SIZE).build();
+        file_utils::set_icon(&icon, info);
         let group = adw::PreferencesGroup::new();
         if !is_dir && !content_type.is_empty() {
             group.add(&row(&gettext("MIME Type"), &content_type));
@@ -333,7 +331,7 @@ impl DetailsPanel {
                 },
                 move |info| {
                     let Some(info) = info else { return };
-                    head.set_from_gicon(&file_utils::icon_of(&info));
+                    file_utils::set_icon(&head, &info);
                     let values = [
                         file_utils::modified_string(&info),
                         file_utils::caption(&info, "owner").unwrap_or_default(),

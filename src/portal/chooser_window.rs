@@ -611,7 +611,7 @@ async fn run(
                 }
                 Mode::Save => {
                     let name = name_entry.text().trim().to_string();
-                    if name.is_empty() || name.contains('/') {
+                    if name.is_empty() || name.contains('/') || name == "." || name == ".." {
                         name_entry.add_css_class("error");
                         return;
                     }

@@ -73,7 +73,11 @@ Spiral owns `org.freedesktop.FileManager1` while running and is D-Bus activatabl
 (`spiral --gapplication-service`), so browsers and chat clients can "Show in folder".
 `ShowFolders` opens a window with a tab per folder, `ShowItems` a window per parent folder
 with the files selected, `ShowItemProperties` the Properties dialog. The startup id is
-ignored.
+ignored. Anything the caller names on another machine is shown only if it is mounted
+already: Spiral does not connect to a server because another program asked, which would
+let that program choose the server and put a password prompt of its choosing in front of
+the user. Local files, the trash, recent files and `computer:///` are always shown; an
+address that is left out is logged under `G_MESSAGES_DEBUG=spiral`.
 
 The service file is installed as `io.github.sachesi.spiral.FileManager1.service`, so it
 sits beside the one another file manager installs for the same name instead of replacing

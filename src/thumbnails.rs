@@ -1,7 +1,10 @@
-//! Freedesktop thumbnails: reuse `~/.cache/thumbnails`, otherwise generate via the system
-//! `.thumbnailer` entries (or the bundled gdk-pixbuf helper for images without one), with
-//! bounded concurrency. Every thumbnailer runs inside bubblewrap, which is required: a
-//! decoder is fed files from anywhere and there is no unconfined path for it to take.
+//! Freedesktop thumbnails: reuse `~/.cache/thumbnails`, otherwise generate via glycin for
+//! the pictures it reads, then the system `.thumbnailer` entries (or the bundled gdk-pixbuf
+//! helper for images without one), with bounded concurrency. Glycin decodes in a sandbox
+//! of its own, and every thumbnailer runs inside bubblewrap, which is required: a decoder
+//! is fed files from anywhere and there is no unconfined path for it to take. A thumbnail
+//! found in the cache is decoded the same way, since a thumbnailer taken over by the file
+//! it read could have left anything there.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -15,6 +18,17 @@ use gtk::prelude::*;
 use crate::{gdk, gio, glib, gtk};
 
 const SIZE: i32 = 256;
+
+/// The eight bytes every PNG starts with.
+pub(crate) const PNG_SIGNATURE: &[u8] = b"\x89PNG\r\n\x1a\n";
+
+/// Largest thumbnail taken from a thumbnailer. One at the size asked for is a few hundred
+/// kilobytes; some draw larger than asked, none this large.
+const OUTPUT_LIMIT: u64 = 32 << 20;
+/// Largest thumbnail decoded from the cache; see [`OUTPUT_LIMIT`].
+const THUMBNAIL_PIXELS: i64 = 4096 * 4096;
+/// Largest picture glycin is asked to make a thumbnail of.
+const SOURCE_PIXELS: i64 = 150_000_000;
 
 /// Thumbnailers to run at once. One core is left to the interface, which is drawing the
 /// rows they are for; a folder of thousands of pictures is otherwise limited by a number
@@ -132,6 +146,7 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         .to_string();
     let source = Source {
         path: file.path(),
+        content_type: content_type.clone(),
         thumbnailers: thumbnailers_for(&content_type),
         // Images with no thumbnailer of their own go to the bundled helper.
         own: content_type.starts_with("image/"),
@@ -222,6 +237,7 @@ async fn in_trashed_folder(file: &gio::File) -> Option<gio::File> {
 struct Source {
     /// Only a local file can be handed to a thumbnailer.
     path: Option<PathBuf>,
+    content_type: String,
     /// Every system entry claiming the type, in the order they are tried.
     thumbnailers: Vec<Thumbnailer>,
     /// Whether the bundled helper would take it: images, which most thumbnailer entries
@@ -281,8 +297,17 @@ async fn generate_task(key: Key, source: Source, at: u32) {
                         return None;
                     }
                     let out = cache_path(&uri);
-                    match generate(&path, &uri, mtime, &out, &source.thumbnailers) {
-                        Ok(()) => out,
+                    let made = generate(
+                        &path,
+                        &uri,
+                        mtime,
+                        &out,
+                        &source.content_type,
+                        &source.thumbnailers,
+                    );
+                    match made {
+                        Ok(Some(texture)) => return Some(texture),
+                        Ok(None) => out,
                         Err(Failure::OfTheFile) => {
                             remember_failure(&uri, mtime);
                             return None;
@@ -291,13 +316,11 @@ async fn generate_task(key: Key, source: Source, at: u32) {
                     }
                 }
             };
-            match gdk::Texture::from_filename(&png) {
-                Ok(t) => Some(t),
-                Err(e) => {
-                    glib::g_debug!("spiral", "thumbnail: cannot load {}: {e}", png.display());
-                    None
-                }
+            let texture = picture_of(&png);
+            if texture.is_none() {
+                glib::g_debug!("spiral", "thumbnail: cannot load {}", png.display());
             }
+            texture
         })
         .await
         .ok()
@@ -443,6 +466,11 @@ fn remember_failure(uri: &str, mtime: u64) {
     );
 }
 
+/// The picture in the thumbnail `png`, decoded like any picture: see [`crate::picture`].
+pub(crate) fn picture_of(png: &Path) -> Option<gdk::Texture> {
+    crate::picture::load_file(png, THUMBNAIL_PIXELS)
+}
+
 /// The thumbnail the cache holds for `uri`, for callers that only want the picture.
 pub(crate) fn cached_png(uri: &str, mtime: u64) -> Option<PathBuf> {
     match cached_thumbnail(uri, mtime) {
@@ -463,7 +491,7 @@ fn thumb_mtime(png: &Path) -> Option<u64> {
     let mut file = std::fs::File::open(png).ok()?;
     let read = std::io::Read::read(&mut file, &mut head).ok()?;
     let head = &head[..read];
-    if !head.starts_with(b"\x89PNG\r\n\x1a\n") {
+    if !head.starts_with(PNG_SIGNATURE) {
         return None;
     }
     let mut at = 8;
@@ -501,24 +529,51 @@ enum Failure {
     OfTheMoment,
 }
 
-/// Runs on a worker thread. Writes a spec-compliant PNG (Thumb::URI / Thumb::MTime) atomically.
+/// Runs on a worker thread. Writes a spec-compliant PNG (Thumb::URI / Thumb::MTime)
+/// atomically; the picture as well where it was drawn here, so it is not decoded again.
 fn generate(
     path: &Path,
     uri: &str,
     mtime: u64,
     out: &Path,
+    content_type: &str,
     thumbnailers: &[Thumbnailer],
-) -> Result<(), Failure> {
+) -> Result<Option<gdk::Texture>, Failure> {
     let Some(dir) = out.parent() else {
         return Err(Failure::OfTheMoment);
     };
     let _ = std::fs::create_dir_all(dir);
     let seq = SEQ.fetch_add(1, Ordering::Relaxed);
     let tmp = out.with_extension(format!("{}-{seq}.tmp.png", std::process::id()));
+    let mut worst = Failure::OfTheFile;
+    // Glycin first, for the pictures it reads: its loaders wait in its sandbox from one
+    // file to the next, where a thumbnailer's sandbox is started for each. Where it cannot
+    // draw one, the system's thumbnailers are asked; the bundled helper, which would ask
+    // glycin again through gdk-pixbuf, is not.
+    let glycin = crate::glycin::get().filter(|glycin| glycin.handles(content_type));
+    if let Some(glycin) = glycin {
+        let started = std::time::Instant::now();
+        match glycin_thumbnail(glycin, path, uri, mtime, &tmp) {
+            Ok(texture) if std::fs::rename(&tmp, out).is_ok() => {
+                glib::g_debug!(
+                    "spiral",
+                    "thumbnail {uri}: made in {} ms by glycin",
+                    started.elapsed().as_millis()
+                );
+                return Ok(Some(texture));
+            }
+            Ok(_) => worst = Failure::OfTheMoment,
+            Err(crate::glycin::Refused::Time) => worst = Failure::OfTheMoment,
+            Err(crate::glycin::Refused::File(e)) => {
+                glib::g_debug!("spiral", "thumbnail {uri}: glycin: {e}");
+            }
+        }
+        let _ = std::fs::remove_file(&tmp);
+    }
     // The bundled helper stands in for images no system thumbnailer claims. There is no
     // third way: decoding in this process would put an untrusted file in front of a loader
     // with the whole session behind it.
-    let execs: Vec<String> = if thumbnailers.is_empty() {
+    let execs: Vec<String> = if thumbnailers.is_empty() && glycin.is_none() {
         match own_thumbnailer() {
             Some(bin) => vec![format!(
                 "{} %i %o %s",
@@ -534,7 +589,6 @@ fn generate(
     };
     // Where several entries claim a type they are tried in turn: one that lacks a codec
     // the next one has, or hangs on a file, does not decide for the others.
-    let mut worst = Failure::OfTheFile;
     for exec in execs {
         let started = std::time::Instant::now();
         let run = run_thumbnailer(&exec, path, &tmp);
@@ -551,7 +605,7 @@ fn generate(
                 "thumbnail {uri}: made in {} ms by {exec}",
                 started.elapsed().as_millis()
             );
-            return Ok(());
+            return Ok(None);
         }
         let _ = std::fs::remove_file(&tmp);
         if matches!(run, Ok(()) | Err(Failure::OfTheMoment)) {
@@ -560,6 +614,25 @@ fn generate(
     }
     glib::g_debug!("spiral", "thumbnail {uri}: generation failed");
     Err(worst)
+}
+
+/// A thumbnail of the picture at `path`, decoded by glycin, cut down to size here and
+/// written to `tmp` with the words the spec asks for.
+fn glycin_thumbnail(
+    glycin: &crate::glycin::Glycin,
+    path: &Path,
+    uri: &str,
+    mtime: u64,
+    tmp: &Path,
+) -> Result<gdk::Texture, crate::glycin::Refused> {
+    use crate::glycin::Refused;
+    let picture = glycin.load_file(&gio::File::for_path(path), SOURCE_PIXELS, Some(SIZE as u32))?;
+    let thumbnail =
+        crate::picture::shrunk(&picture, SIZE).ok_or(Refused::File("cannot shrink".into()))?;
+    let png = with_text(&thumbnail.save_to_png_bytes(), uri, mtime)
+        .ok_or(Refused::File("cannot stamp".into()))?;
+    std::fs::write(tmp, png).map_err(|e| Refused::File(e.to_string()))?;
+    Ok(thumbnail)
 }
 
 /// Write the Thumb::URI and Thumb::MTime a thumbnailer's PNG was made for; without them a
@@ -574,19 +647,11 @@ fn stamp(png: &Path, uri: &str, mtime: u64) -> bool {
     };
     match with_text(&bytes, uri, mtime) {
         Some(stamped) => std::fs::write(png, stamped).is_ok(),
-        // Not a PNG the chunks can be put into: fall back to saving it again as one.
-        None => gtk::gdk_pixbuf::Pixbuf::from_file(png)
-            .and_then(|pb| {
-                pb.savev(
-                    png,
-                    "png",
-                    &[
-                        ("tEXt::Thumb::URI", uri),
-                        ("tEXt::Thumb::MTime", &mtime.to_string()),
-                    ],
-                )
-            })
-            .is_ok(),
+        // Not a PNG the chunks can be put into: fall back to saving it again as one, from
+        // the picture decoded like any other.
+        None => picture_of(png)
+            .and_then(|texture| with_text(&texture.save_to_png_bytes(), uri, mtime))
+            .is_some_and(|stamped| std::fs::write(png, stamped).is_ok()),
     }
 }
 
@@ -659,14 +724,18 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> Result<(), Failur
     let in_path = PathBuf::from(format!("/tmp/in{ext}"));
     let out_path = PathBuf::from("/tmp/out/thumb.png");
     let in_uri = gio::File::for_path(&in_path).uri().to_string();
+    let (in_s, out_s, size_s) = (
+        in_path.to_string_lossy(),
+        out_path.to_string_lossy(),
+        SIZE.to_string(),
+    );
     let argv: Vec<String> = argv
         .into_iter()
         .map(|a| {
-            a.to_string_lossy()
-                .replace("%i", &in_path.to_string_lossy())
-                .replace("%u", &in_uri)
-                .replace("%o", &out_path.to_string_lossy())
-                .replace("%s", &SIZE.to_string())
+            expand(
+                &a.to_string_lossy(),
+                &[('i', &in_s), ('u', &in_uri), ('o', &out_s), ('s', &size_s)],
+            )
         })
         .collect();
     let Some(sandbox) = crate::sandbox::command(&argv[0]) else {
@@ -692,8 +761,13 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> Result<(), Failur
     // The seccomp memfd must stay open until the child has started.
     let run = crate::sandbox::run_bounded(&mut cmd, TIMEOUT);
     drop(sandbox.seccomp);
-    if run.as_ref().is_ok_and(|ran| ran.ok) {
-        let _ = std::fs::rename(work.join("thumb.png"), output);
+    // What the thumbnailer left is copied out, not moved: see `read_output`.
+    if run.as_ref().is_ok_and(|ran| ran.ok)
+        && let Some(png) = crate::sandbox::read_output(&work.join("thumb.png"), OUTPUT_LIMIT)
+            .filter(|png| png.starts_with(PNG_SIGNATURE))
+        && !write_new(output, &png)
+    {
+        let _ = std::fs::remove_file(output);
     }
     let _ = std::fs::remove_dir_all(&work);
     match run {
@@ -711,6 +785,39 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> Result<(), Failur
             Err(Failure::OfTheMoment)
         }
     }
+}
+
+/// `arg` with each `%` field code in `codes` replaced, in one pass: what a code is replaced
+/// with is not looked at again, so a file whose name holds `%o` stays the file it is.
+fn expand(arg: &str, codes: &[(char, &str)]) -> String {
+    let mut out = String::with_capacity(arg.len());
+    let mut chars = arg.chars();
+    while let Some(c) = chars.next() {
+        if c != '%' {
+            out.push(c);
+            continue;
+        }
+        let next = chars.clone().next();
+        match codes.iter().find(|(code, _)| Some(*code) == next) {
+            Some((_, value)) => {
+                out.push_str(value);
+                chars.next();
+            }
+            None => out.push(c),
+        }
+    }
+    out
+}
+
+/// Write `bytes` to `path`, which must not exist yet.
+fn write_new(path: &Path, bytes: &[u8]) -> bool {
+    use std::io::Write;
+    std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .and_then(|mut file| file.write_all(bytes))
+        .is_ok()
 }
 
 /// System thumbnailers win over gdk-pixbuf (gdk-pixbuf ships one itself).
@@ -800,5 +907,22 @@ mod tests {
         // Still a picture afterwards.
         assert!(gtk::gdk_pixbuf::Pixbuf::from_file(&png).is_ok());
         let _ = std::fs::remove_file(&png);
+    }
+
+    /// A name is what the thumbnailer is told, whatever field codes it spells.
+    #[test]
+    fn field_codes_are_expanded_once() {
+        let codes = [
+            ('i', "/tmp/in.%o"),
+            ('o', "/tmp/out/thumb.png"),
+            ('s', "256"),
+        ];
+        assert_eq!(expand("%i", &codes), "/tmp/in.%o");
+        assert_eq!(
+            expand("-s %s %i %o", &codes),
+            "-s 256 /tmp/in.%o /tmp/out/thumb.png"
+        );
+        assert_eq!(expand("100%", &codes), "100%");
+        assert_eq!(expand("%x%", &codes), "%x%");
     }
 }

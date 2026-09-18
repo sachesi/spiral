@@ -5,10 +5,8 @@
 //! installed. Anything else falls back to the file's thumbnail, or to its icon and type.
 
 use std::cell::{Cell, RefCell};
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use gettextrs::gettext;
@@ -32,8 +30,6 @@ const TEXT_LIMIT: usize = 256 * 1024;
 /// rather than decoded whole: a panorama decodes to four bytes a pixel.
 const IMAGE_LIMIT: i64 = 128 * 1024 * 1024;
 const IMAGE_PIXELS: i64 = 80_000_000;
-/// How much of an image is read looking for the EXIF tag that says which way up it is.
-const EXIF_SCAN: usize = 64 * 1024;
 /// Resolution PDF pages are rendered at.
 const PDF_DPI: u32 = 150;
 /// How far the proportions of what arrives may differ from the ones the dialog opened
@@ -75,6 +71,9 @@ const SPINNER_DELAY: Duration = Duration::from_millis(400);
 /// How far, in pixels, a new shape may differ from the one the dialog has and be ignored.
 const SHAPE_JITTER: i32 = 2;
 
+/// Largest file taken back from a tool in the sandbox: a picture at the limit above, eight
+/// bytes a pixel at most, and a little for its header.
+const OUTPUT_LIMIT: u64 = IMAGE_PIXELS as u64 * 8 + 4096;
 /// How long the PDF tool may take over one page before it is killed.
 const TOOL_TIMEOUT: Duration = Duration::from_secs(20);
 /// Zoom: one step of the buttons or the wheel, and how far it goes either way; in, that is
@@ -82,9 +81,6 @@ const TOOL_TIMEOUT: Duration = Duration::from_secs(20);
 const ZOOM_STEP: f64 = 1.25;
 const ZOOM_MIN: f64 = 0.05;
 const ZOOM_MAX: f64 = 8.0;
-
-/// Keeps the working directories of two tools running at once apart.
-static SEQ: AtomicU64 = AtomicU64::new(0);
 
 /// A slot for one of the dialog's callbacks: stepping through the folder, opening the
 /// file, turning a page.

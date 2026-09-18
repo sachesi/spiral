@@ -6,7 +6,7 @@ use gettextrs::{gettext, ngettext};
 
 use crate::enums::SortKey;
 use crate::gio::prelude::*;
-use crate::{gio, glib};
+use crate::{gdk, gio, glib, gtk};
 
 /// Attributes requested from `gtk::DirectoryList` for every view.
 /// The `thumbnail::` attributes are deliberately not among them: GIO answers those by
@@ -18,21 +18,109 @@ access::can-read,access::can-write,access::can-delete,access::can-rename,\
 access::can-execute,unix::mode,owner::user,owner::group,trash::orig-path,trash::deletion-date,\
 metadata::custom-icon,metadata::custom-icon-name,xattr::xdg.tags";
 
-/// Icon to draw for `info`, honouring the `metadata::custom-icon` other file managers set.
+/// Icon to draw for `info` now, honouring the `metadata::custom-icon` other file managers
+/// set. That is a picture, drawn once it has been decoded, never in this process (see
+/// [`crate::picture`]); until then the icon of the file's type stands in, and
+/// [`set_icon`] puts the picture in place when it is ready.
 pub fn icon_of(info: &gio::FileInfo) -> gio::Icon {
-    if let Some(custom) = info.attribute_string("metadata::custom-icon") {
-        let file = if custom.starts_with('/') {
-            gio::File::for_path(custom.as_str())
-        } else {
-            gio::File::for_uri(&custom)
-        };
-        return gio::FileIcon::new(&file).upcast();
+    if let Some(texture) = custom_icon_file(info).and_then(|file| decoded_icon(&file).flatten()) {
+        return texture.upcast();
     }
     if let Some(name) = info.attribute_string("metadata::custom-icon-name") {
         return gio::ThemedIcon::new(&name).upcast();
     }
     info.icon()
         .unwrap_or_else(|| gio::ThemedIcon::new("text-x-generic").upcast())
+}
+
+/// Largest picture decoded to be an icon, and the size it is kept at: enough for the
+/// largest icon drawn, twice over for a screen at double scale.
+const ICON_PIXELS: i64 = 100_000_000;
+const ICON_SIDE: i32 = 512;
+
+thread_local! {
+    /// Pictures set as icons, decoded, by URI; `None` for one that could not be.
+    static ICONS: std::cell::RefCell<std::collections::HashMap<String, Option<gdk::Texture>>> =
+        std::cell::RefCell::default();
+}
+
+/// Which file an image is waiting to show as its icon.
+static ICON_FOR: crate::object_data::Key<String> = crate::object_data::Key::new("icon-for");
+
+/// The picture `info` names as its icon, if it names one.
+pub fn custom_icon_file(info: &gio::FileInfo) -> Option<gio::File> {
+    let custom = info.attribute_string("metadata::custom-icon")?;
+    Some(if custom.starts_with('/') {
+        gio::File::for_path(custom.as_str())
+    } else {
+        gio::File::for_uri(&custom)
+    })
+}
+
+/// What decoding `file` as an icon gave, if it has been tried.
+fn decoded_icon(file: &gio::File) -> Option<Option<gdk::Texture>> {
+    ICONS.with(|icons| icons.borrow().get(file.uri().as_str()).cloned())
+}
+
+/// The picture in `file`, set as an icon, decoded off the main loop like any picture and
+/// kept for the session.
+pub async fn custom_icon(file: &gio::File) -> Option<gdk::Texture> {
+    if let Some(decoded) = decoded_icon(file) {
+        return decoded;
+    }
+    let texture = match file.path() {
+        Some(path) => gio::spawn_blocking(move || crate::picture::load_file(&path, ICON_PIXELS))
+            .await
+            .ok()
+            .flatten(),
+        None => match file.load_bytes_future().await {
+            Ok((bytes, _)) => {
+                gio::spawn_blocking(move || crate::picture::load_bytes(&bytes, ICON_PIXELS))
+                    .await
+                    .ok()
+                    .flatten()
+            }
+            Err(_) => None,
+        },
+    }
+    .and_then(|texture| crate::picture::shrunk(&texture, ICON_SIDE));
+    ICONS.with(|icons| {
+        icons
+            .borrow_mut()
+            .insert(file.uri().to_string(), texture.clone())
+    });
+    texture
+}
+
+/// Show the icon of `info` in `image`: [`icon_of`] now, and the picture set as its icon
+/// once that has been decoded.
+pub fn set_icon(image: &gtk::Image, info: &gio::FileInfo) {
+    image.set_from_gicon(&icon_of(info));
+    match custom_icon_file(info) {
+        Some(file) if decoded_icon(&file).is_none() => show_custom_icon(image, file),
+        _ => {
+            ICON_FOR.take(image);
+        }
+    }
+}
+
+/// Put the picture in `file` in `image` once it has been decoded, unless `image` has been
+/// given another file's icon meanwhile.
+pub fn show_custom_icon(image: &gtk::Image, file: gio::File) {
+    let uri = file.uri().to_string();
+    ICON_FOR.set(image, uri.clone());
+    glib::spawn_future_local(glib::clone!(
+        #[weak]
+        image,
+        async move {
+            let texture = custom_icon(&file).await;
+            if ICON_FOR.get(&image).as_deref() == Some(uri.as_str())
+                && let Some(texture) = texture
+            {
+                image.set_from_gicon(&texture);
+            }
+        }
+    ));
 }
 
 /// The `gio::File` a `DirectoryList` attaches to each info.

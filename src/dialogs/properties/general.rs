@@ -124,7 +124,7 @@ impl PropertiesDialog {
             .spacing(12)
             .build();
         if let [(file, info)] = infos {
-            icon.set_from_gicon(&file_utils::icon_of(info));
+            file_utils::set_icon(&icon, info);
             title.set_text(&info.display_name());
             if file_utils::is_dir(info) {
                 let button = gtk::Button::builder()
@@ -349,7 +349,7 @@ impl PropertiesDialog {
             .await
         {
             Ok(_) => {
-                icon.set_from_gicon(&gio::FileIcon::new(&image));
+                file_utils::show_custom_icon(icon, image);
                 reset.set_visible(true);
                 self.emit_changed();
             }

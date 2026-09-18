@@ -2,6 +2,7 @@
 //! will do, and the window that size makes within the room there is.
 
 use super::*;
+use crate::picture::{EXIF_SCAN, exif_orientation};
 
 /// The first `most` bytes of the file at `path`.
 pub(super) fn head_of(path: &Path, most: usize) -> Option<Vec<u8>> {
@@ -271,36 +272,6 @@ pub(super) fn exif_turned(path: &Path) -> bool {
     head_of(path, EXIF_SCAN).is_some_and(|head| matches!(exif_orientation(&head), 5..=8))
 }
 
-/// The EXIF orientation in `head`, 1 (upright) where there is none: the APP1 segment
-/// holds a TIFF header, and the first directory of that holds the tag.
-pub(super) fn exif_orientation(head: &[u8]) -> u16 {
-    fn read(head: &[u8], at: usize, big: bool, len: usize) -> Option<u32> {
-        let bytes = head.get(at..at + len)?;
-        let value = bytes.iter().fold(0u32, |n, &b| (n << 8) | u32::from(b));
-        Some(if big {
-            value
-        } else {
-            value.swap_bytes() >> (32 - 8 * len as u32)
-        })
-    }
-    let orientation = || {
-        let tiff = head.windows(6).position(|w| w == b"Exif\0\0")? + 6;
-        let big = match head.get(tiff..tiff + 2)? {
-            b"MM" => true,
-            b"II" => false,
-            _ => return None,
-        };
-        let directory = tiff + read(head, tiff + 4, big, 4)? as usize;
-        let entries = read(head, directory, big, 2)?;
-        (0..entries as usize)
-            .map(|n| directory + 2 + n * 12)
-            .find(|&entry| read(head, entry, big, 2) == Some(0x0112))
-            .and_then(|entry| read(head, entry + 8, big, 2))
-            .map(|value| value as u16)
-    };
-    orientation().unwrap_or(1)
-}
-
 /// The size of the first page in points, read out of the file: no tool to start and no
 /// page to render, so the dialog has the shape before it opens. `None` when the page
 /// dictionary is compressed out of reach, which is what `pdfinfo` answers later.
@@ -406,7 +377,7 @@ impl Probe {
             return None;
         }
         let png = crate::thumbnails::cached_png(&self.uri, self.mtime)?;
-        gdk::Texture::from_filename(png).ok()
+        crate::thumbnails::picture_of(&png)
     }
 
     pub(super) fn shape(&self) -> Shape {

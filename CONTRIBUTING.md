@@ -39,6 +39,12 @@ Before a change goes in:
     src/thumbnails.rs      thumbnail lookup and generation
     src/sandbox.rs         bubblewrap and the seccomp filter, for everything that reads
                            untrusted files; runs bounded in time
+    src/picture.rs         pictures, decoded by glycin or else by the helper in the
+                           sandbox, and checked on the way back
+    src/glycin.rs          glycin, found at run time and kept to its own sandbox
+    src/media.rs           video and sound for the preview: the decoder in the sandbox,
+                           and what it sends, checked on the way back
+    src/player.rs          the preview's player, fed by that decoder
     src/metadata.rs        what files say about themselves, read by the helper in the sandbox;
                            in metadata/ pictures, media, documents, and the wording
     src/details_panel.rs   the details panel beside the panes
@@ -79,6 +85,8 @@ says they have changed.
     cargo deny check     # advisories, licences and sources of the dependencies
 
 `G_MESSAGES_DEBUG=spiral` enables the debug log domain.
+`SPIRAL_GLYCIN=0` decodes pictures the way Spiral does where glycin is missing, by
+`spiral-thumbnailer` in its own sandbox; try both before changing how pictures are read.
 
 The tests of the file operations run real jobs on temporary folders. The settings they
 read come from the schema `build.rs` compiles into the build directory, kept in memory, so

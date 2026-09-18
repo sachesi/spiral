@@ -30,16 +30,20 @@ per archive.
 An encrypted archive brings up a password prompt: every tool is started with an empty
 password so it fails instead of waiting for a terminal, and a failure that mentions a
 password or encryption asks for one and runs the tool again. A wrong password asks again;
-Cancel stops the job. The password is only ever passed on the tool's command line.
+Cancel stops the job. 7-Zip is given the password on its standard input. The other tools
+only take one on their command line, where other processes of the machine can read it
+while the tool runs, so 7-Zip, which comes first for zip, 7z and rar anyway, is the one to
+have installed for encrypted archives. The password is never written down or logged.
 
 ## Creating
 
 The dialog lists the formats whose tools are present: zip (`zip` or 7-Zip), tar.xz,
 tar.zst and tar.gz (`tar` plus the compressor), 7z (7-Zip). It opens on the format used
 last time. zip and 7z archives can take a password; with one, 7-Zip is preferred because
-it encrypts zips with AES-256, while `zip` only offers the old PKWARE scheme. The tool
-runs in the folder of the selected items with their base names, so paths inside the
-archive are relative. The archive is written to a hidden directory first and moved into
+it encrypts zips with AES-256, while `zip` only offers the old PKWARE scheme, and it reads
+the password from its standard input rather than its command line. The tool runs in the
+folder of the selected items with their base names, after a `--`, so paths inside the
+archive are relative and a name that starts with a dash is still a name. The archive is written to a hidden directory first and moved into
 place, again without overwriting.
 
 Progress is by bytes: the sources are measured beforehand and each entry the tool prints

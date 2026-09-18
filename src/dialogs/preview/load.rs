@@ -3,23 +3,14 @@
 
 use super::*;
 
-/// Decoding happens off the main loop for local files, where a large photograph would
-/// otherwise freeze the window; anything else is small enough to read whole.
+/// Decoding happens off the main loop, and never in this process: see [`crate::picture`].
 pub(super) async fn load_texture(file: &gio::File) -> Option<gdk::Texture> {
     match file.path() {
         Some(path) => gio::spawn_blocking(move || {
             if image_size(&path).is_some_and(|(w, h)| w as i64 * h as i64 > IMAGE_PIXELS) {
                 return None;
             }
-            // GTK's own loaders leave a photograph the way the camera held it; the EXIF
-            // tag that says to turn it is honoured by the pixbuf loader alone.
-            if exif_turned(&path) {
-                let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file(&path)
-                    .ok()?
-                    .apply_embedded_orientation()?;
-                return Some(texture_of(&pixbuf));
-            }
-            gdk::Texture::from_filename(path).ok()
+            crate::picture::load_file(&path, IMAGE_PIXELS)
         })
         .await
         .ok()
@@ -28,7 +19,7 @@ pub(super) async fn load_texture(file: &gio::File) -> Option<gdk::Texture> {
             let (data, _) = file.load_bytes_future().await.ok()?;
             // Decoding is the slow part, and a picture from a share is as big as one from
             // the disk: it belongs on a worker, like the local path above.
-            gio::spawn_blocking(move || gdk::Texture::from_bytes(&data).ok())
+            gio::spawn_blocking(move || crate::picture::load_bytes(&data, IMAGE_PIXELS))
                 .await
                 .ok()
                 .flatten()
@@ -54,13 +45,23 @@ pub(super) fn texture_of(pixbuf: &gtk::gdk_pixbuf::Pixbuf) -> gdk::Texture {
 
 /// The picture a sound file carries, cut to a square `side` pixels across: the middle of
 /// it, since a cover is nearly square and the corners are what gets rounded off.
+/// The cover comes as the file holds it, and is decoded like any picture the preview
+/// shows.
 pub(super) async fn cover_texture(bytes: glib::Bytes, side: i32) -> Option<gdk::Texture> {
     gio::spawn_blocking(move || {
-        let loader = gtk::gdk_pixbuf::PixbufLoader::new();
-        loader.write(&bytes).ok()?;
-        loader.close().ok()?;
-        let pixbuf = loader.pixbuf()?;
-        let pixbuf = pixbuf.apply_embedded_orientation().unwrap_or(pixbuf);
+        let texture = crate::picture::load_bytes(&bytes, IMAGE_PIXELS)?;
+        let mut downloader = gdk::TextureDownloader::new(&texture);
+        downloader.set_format(gdk::MemoryFormat::R8g8b8a8);
+        let (pixels, stride) = downloader.download_bytes();
+        let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_bytes(
+            &pixels,
+            gtk::gdk_pixbuf::Colorspace::Rgb,
+            true,
+            8,
+            texture.width(),
+            texture.height(),
+            stride as i32,
+        );
         let (width, height) = (pixbuf.width(), pixbuf.height());
         let square = width.min(height);
         if square <= 0 {
@@ -104,9 +105,10 @@ pub(super) async fn pdf_info(path: PathBuf) -> Option<(u32, (f64, f64))> {
 }
 
 pub(super) fn pdf_facts(path: &Path) -> Option<(u32, (f64, f64))> {
-    run_tool(
+    crate::sandbox::run_tool(
         "pdfinfo",
         path,
+        TOOL_TIMEOUT,
         |input, _| vec![input.as_os_str().to_owned()],
         |out, _| {
             let text = String::from_utf8_lossy(out);
@@ -145,9 +147,10 @@ pub(super) fn pdf_facts(path: &Path) -> Option<(u32, (f64, f64))> {
 
 pub(super) async fn pdf_page(path: PathBuf, page: u32) -> Option<gdk::Texture> {
     gio::spawn_blocking(move || {
-        run_tool(
+        crate::sandbox::run_tool(
             "pdftoppm",
             &path,
+            TOOL_TIMEOUT,
             |input, work| {
                 let page = page.to_string();
                 vec![
@@ -163,73 +166,16 @@ pub(super) async fn pdf_page(path: PathBuf, page: u32) -> Option<gdk::Texture> {
                     work.join("page").into_os_string(),
                 ]
             },
-            |_, work| gdk::Texture::from_filename(work.join("page.png")).ok(),
+            |_, work| {
+                // Drawn by a tool the document could have taken over, so decoded like
+                // any other picture.
+                let png = crate::sandbox::read_output(&work.join("page.png"), OUTPUT_LIMIT)
+                    .filter(|png| png.starts_with(crate::thumbnails::PNG_SIGNATURE))?;
+                crate::picture::load_bytes(&glib::Bytes::from_owned(png), IMAGE_PIXELS)
+            },
         )
     })
     .await
     .ok()
     .flatten()
-}
-
-/// Run `program` over `input` the way a thumbnailer runs: inside bubblewrap, with the file
-/// bound read-only and one private directory to write into. `args` is handed the paths as
-/// the child sees them, `result` what it printed and the directory it wrote to, which is
-/// removed as soon as `result` returns. Without bubblewrap the tool is not run: it is fed
-/// a document from wherever the reader got it.
-pub(super) fn run_tool<T>(
-    program: &str,
-    input: &Path,
-    args: impl FnOnce(&Path, &Path) -> Vec<OsString>,
-    result: impl FnOnce(&[u8], &Path) -> Option<T>,
-) -> Option<T> {
-    let program = glib::find_program_in_path(program)?;
-    let work = std::env::temp_dir().join(format!(
-        "spiral-preview-{}-{}",
-        std::process::id(),
-        SEQ.fetch_add(1, Ordering::Relaxed)
-    ));
-    // Not create_dir_all: a name another process got to first is refused, not adopted.
-    std::fs::create_dir(&work).ok()?;
-    let sandbox = match crate::sandbox::command(&program.to_string_lossy()) {
-        Some(sandbox) => sandbox,
-        None => {
-            let _ = std::fs::remove_dir(&work);
-            return None;
-        }
-    };
-    let (input_seen, work_seen) = (Path::new("/tmp/in"), Path::new("/tmp/out"));
-    let argv = args(input_seen, work_seen);
-    let mut cmd = std::process::Command::new(&sandbox.argv[0]);
-    cmd.args(&sandbox.argv[1..]);
-    // Drawing a page needs the fonts the document does not carry itself.
-    let font_cache = glib::user_cache_dir().join("fontconfig");
-    cmd.args(["--ro-bind-try", "/etc/fonts", "/etc/fonts"]);
-    cmd.args([
-        "--ro-bind-try",
-        "/var/cache/fontconfig",
-        "/var/cache/fontconfig",
-    ]);
-    cmd.arg("--ro-bind-try").arg(&font_cache).arg(&font_cache);
-    cmd.arg("--ro-bind").arg(input).arg(input_seen);
-    cmd.arg("--bind").arg(&work).arg(work_seen);
-    cmd.arg("--").arg(&program);
-    cmd.args(&argv);
-    // Bounded like a thumbnailer: a document that stops the tool would otherwise leave
-    // the preview on its spinner and the worker thread on the tool, for good.
-    let run = crate::sandbox::run_bounded(&mut cmd, TOOL_TIMEOUT);
-    // The seccomp memfd must stay open until the child has started.
-    drop(sandbox.seccomp);
-    let out = match run {
-        Ok(ran) if ran.ok => result(&ran.stdout, &work),
-        Ok(ran) => {
-            glib::g_debug!("spiral", "preview {program:?} failed: {}", ran.trouble);
-            None
-        }
-        Err(e) => {
-            glib::g_debug!("spiral", "preview {program:?} could not start: {e}");
-            None
-        }
-    };
-    let _ = std::fs::remove_dir_all(&work);
-    out
 }

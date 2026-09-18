@@ -24,8 +24,8 @@ pub fn check() {
         if let Some(trouble) = gio::spawn_blocking(trouble).await.ok().flatten() {
             glib::g_warning!(
                 "spiral",
-                "the bubblewrap sandbox does not work here, so thumbnails, PDF previews \
-                 and archive operations are turned off: {trouble}"
+                "the bubblewrap sandbox does not work here, so thumbnails, previews of \
+                 PDFs, pictures and media, and archive operations are turned off: {trouble}"
             );
         }
     });
@@ -279,6 +279,104 @@ fn stand_aside(pid: u32) {
     }
 }
 
+/// What a helper left at `path`, in the directory it could write to, read without taking
+/// its word for anything: the name must be a regular file of at most `limit` bytes. A
+/// helper that has been taken over by the file it was reading could leave a link to one of
+/// the user's files there instead, for this process to read or write through, or a pipe
+/// that would hold the reader for good.
+pub(crate) fn read_output(path: &std::path::Path, limit: u64) -> Option<Vec<u8>> {
+    use std::io::Read;
+    use std::os::unix::fs::OpenOptionsExt;
+
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+        .open(path)
+        .ok()?;
+    let meta = file.metadata().ok()?;
+    if !meta.is_file() || meta.len() > limit {
+        return None;
+    }
+    let mut bytes = Vec::with_capacity(meta.len() as usize);
+    file.take(limit).read_to_end(&mut bytes).ok()?;
+    Some(bytes)
+}
+
+/// A new directory in the temporary one that only this user can enter: what is written
+/// there is drawn from the user's own files. Not `create_dir_all`: a name another process
+/// got to first is refused, not adopted.
+pub(crate) fn private_dir(prefix: &str) -> Option<std::path::PathBuf> {
+    static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let dir = std::env::temp_dir().join(format!(
+        "{prefix}-{}-{}",
+        std::process::id(),
+        SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
+    std::os::unix::fs::DirBuilderExt::mode(&mut std::fs::DirBuilder::new(), 0o700)
+        .create(&dir)
+        .ok()?;
+    Some(dir)
+}
+
+/// Run `program` over `input` the way a thumbnailer runs: inside bubblewrap, with the file
+/// bound read-only and one private directory to write into, for at most `limit`. `args` is
+/// handed the paths as the child sees them, `result` what it printed and the directory it
+/// wrote to, which is removed as soon as `result` returns. Without bubblewrap the tool is
+/// not run: it is fed a file from wherever the reader got it.
+pub(crate) fn run_tool<T>(
+    program: &str,
+    input: &std::path::Path,
+    limit: std::time::Duration,
+    args: impl FnOnce(&std::path::Path, &std::path::Path) -> Vec<std::ffi::OsString>,
+    result: impl FnOnce(&[u8], &std::path::Path) -> Option<T>,
+) -> Option<T> {
+    use std::path::Path;
+    let program = glib::find_program_in_path(program)?;
+    let work = private_dir("spiral-tool")?;
+    let sandbox = match command(&program.to_string_lossy()) {
+        Some(sandbox) => sandbox,
+        None => {
+            let _ = std::fs::remove_dir(&work);
+            return None;
+        }
+    };
+    let (input_seen, work_seen) = (Path::new("/tmp/in"), Path::new("/tmp/out"));
+    let argv = args(input_seen, work_seen);
+    let mut cmd = std::process::Command::new(&sandbox.argv[0]);
+    cmd.args(&sandbox.argv[1..]);
+    // Drawing a page needs the fonts the document does not carry itself.
+    let font_cache = glib::user_cache_dir().join("fontconfig");
+    cmd.args(["--ro-bind-try", "/etc/fonts", "/etc/fonts"]);
+    cmd.args([
+        "--ro-bind-try",
+        "/var/cache/fontconfig",
+        "/var/cache/fontconfig",
+    ]);
+    cmd.arg("--ro-bind-try").arg(&font_cache).arg(&font_cache);
+    cmd.arg("--ro-bind").arg(input).arg(input_seen);
+    cmd.arg("--bind").arg(&work).arg(work_seen);
+    cmd.arg("--").arg(&program);
+    cmd.args(&argv);
+    // Bounded like a thumbnailer: a file that stops the tool would otherwise leave the
+    // worker thread on the tool, for good.
+    let run = run_bounded(&mut cmd, limit);
+    // The seccomp memfd must stay open until the child has started.
+    drop(sandbox.seccomp);
+    let out = match run {
+        Ok(ran) if ran.ok => result(&ran.stdout, &work),
+        Ok(ran) => {
+            glib::g_debug!("spiral", "tool {program:?} failed: {}", ran.trouble);
+            None
+        }
+        Err(e) => {
+            glib::g_debug!("spiral", "tool {program:?} could not start: {e}");
+            None
+        }
+    };
+    let _ = std::fs::remove_dir_all(&work);
+    out
+}
+
 /// What a bounded run left behind.
 pub(crate) struct Ran {
     pub ok: bool,
@@ -297,4 +395,28 @@ fn drain(pipe: Option<impl std::io::Read + Send + 'static>) -> std::thread::Join
         }
         buf
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Only a regular file is read back: a link or a pipe left in its place is refused.
+    #[test]
+    fn output_is_read_only_from_a_regular_file() {
+        let dir = std::env::temp_dir().join(format!("spiral-output-{}", std::process::id()));
+        std::fs::create_dir(&dir).unwrap();
+        let (plain, link, pipe) = (dir.join("plain"), dir.join("link"), dir.join("pipe"));
+        std::fs::write(&plain, b"pixels").unwrap();
+        std::os::unix::fs::symlink(&plain, &link).unwrap();
+        let name = std::ffi::CString::new(pipe.as_os_str().as_encoded_bytes()).unwrap();
+        assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+
+        assert_eq!(read_output(&plain, 64).as_deref(), Some(&b"pixels"[..]));
+        assert_eq!(read_output(&plain, 3), None, "larger than the limit");
+        assert_eq!(read_output(&link, 64), None);
+        assert_eq!(read_output(&pipe, 64), None);
+        assert_eq!(read_output(&dir, 64), None);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

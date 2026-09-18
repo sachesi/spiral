@@ -58,6 +58,35 @@ pub fn register(connection: &gio::DBusConnection) -> Registration {
     Registration { main_loop }
 }
 
+/// Locations kept on this machine that are no mount of their own.
+const LOCAL_SCHEMES: [&str; 3] = ["trash", "recent", "computer"];
+
+/// Whether `file` can be shown without mounting anything first. Another application asking
+/// is no reason to reach out to a server: it would pick the server, and have a password
+/// prompt of its choosing come up in Spiral's name. A share the user has connected to
+/// already is shown like a local folder.
+fn reachable_as_is(file: &gio::File) -> bool {
+    if file.is_native()
+        || file
+            .uri_scheme()
+            .is_some_and(|scheme| LOCAL_SCHEMES.contains(&scheme.as_str()))
+    {
+        return true;
+    }
+    let reachable = gio::VolumeMonitor::get().mounts().iter().any(|mount| {
+        let root = mount.root();
+        file.equal(&root) || file.has_prefix(&root)
+    });
+    if !reachable {
+        glib::g_debug!(
+            "spiral",
+            "FileManager1: not mounting {} for a caller",
+            file.uri()
+        );
+    }
+    reachable
+}
+
 fn serve(connection: &gio::DBusConnection) -> Option<(gio::RegistrationId, gio::OwnerId)> {
     let node = match gio::DBusNodeInfo::for_xml(XML) {
         Ok(node) => node,
@@ -82,8 +111,14 @@ fn serve(connection: &gio::DBusConnection) -> Option<(gio::RegistrationId, gio::
                     else {
                         return;
                     };
-                    let files: Vec<gio::File> =
-                        uris.iter().map(|u| gio::File::for_uri(u)).collect();
+                    let files: Vec<gio::File> = uris
+                        .iter()
+                        .map(|u| gio::File::for_uri(u))
+                        .filter(reachable_as_is)
+                        .collect();
+                    if files.is_empty() {
+                        return;
+                    }
                     match method.as_str() {
                         "ShowFolders" => app.show_folders(&files),
                         "ShowItems" => app.show_items(&files),

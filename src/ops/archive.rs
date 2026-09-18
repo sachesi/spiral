@@ -1,8 +1,9 @@
 //! Extract and create archives with whatever command line tools are installed: 7-Zip,
 //! bsdtar, GNU tar, unzip/zip, unrar/unar. Nothing is linked; a missing tool only removes
 //! the formats it would have handled. Tools run inside the same bwrap sandbox as
-//! thumbnailers when it is available. Passwords travel on the command line only and are
-//! never written down or logged.
+//! thumbnailers when it is available. Passwords are never written down or logged. 7-Zip is
+//! told them on its standard input; the other tools only take one on the command line,
+//! where other processes can read it while they run, so 7-Zip is used wherever it can be.
 
 use std::collections::HashMap;
 use std::os::fd::OwnedFd;
@@ -216,6 +217,8 @@ struct Command {
     /// (host path, sandbox path, writable)
     binds: Vec<(PathBuf, PathBuf, bool)>,
     cwd: PathBuf,
+    /// What the tool reads on its standard input: a password, for 7-Zip.
+    stdin: Option<String>,
 }
 
 /// A 7-Zip style "NN%" progress line.
@@ -231,9 +234,11 @@ async fn run(
     progress: &mut dyn FnMut(&str) -> bool,
 ) -> Result<(), Fail> {
     let mut argv: Vec<String> = Vec::new();
-    let launcher = gio::SubprocessLauncher::new(
-        gio::SubprocessFlags::STDOUT_PIPE | gio::SubprocessFlags::STDERR_MERGE,
-    );
+    let mut flags = gio::SubprocessFlags::STDOUT_PIPE | gio::SubprocessFlags::STDERR_MERGE;
+    if cmd.stdin.is_some() {
+        flags |= gio::SubprocessFlags::STDIN_PIPE;
+    }
+    let launcher = gio::SubprocessLauncher::new(flags);
     // An archive is a file from anywhere and its tool is a parser: no sandbox, no run.
     let Some(sandbox) = crate::sandbox::command(&cmd.argv[0]) else {
         return Err(Fail::Failed(gettext(
@@ -263,6 +268,12 @@ async fn run(
         .map_err(|e| Fail::Failed(e.message().to_string()))?;
     drop(seccomp);
     guard.child = Some(child.clone());
+    if let (Some(input), Some(stdin)) = (&cmd.stdin, child.stdin_pipe()) {
+        let _ = stdin
+            .write_all_future(input.clone().into_bytes(), glib::Priority::DEFAULT)
+            .await;
+        let _ = stdin.close_future(glib::Priority::DEFAULT).await;
+    }
 
     // Merged output: progress lines, everything else kept as the error text.
     let mut tail: Vec<String> = Vec::new();
@@ -437,13 +448,13 @@ pub async fn extract(
         let argv = |password: Option<&str>| -> Vec<String> {
             let pass = password.unwrap_or("");
             match tool {
+                // No -p: the password comes on standard input, see `stdin` below.
                 Tool::SevenZip => vec![
                     exe.clone(),
                     "x".into(),
                     "-y".into(),
                     "-bso0".into(),
                     "-bsp1".into(),
-                    format!("-p{pass}"),
                     format!("-o{out_s}"),
                     input_s.clone(),
                 ],
@@ -501,6 +512,10 @@ pub async fn extract(
                     (work.clone(), out.clone(), true),
                 ],
                 cwd: out.clone(),
+                // 7-Zip asks for the password when it finds the archive wants one, and
+                // reads it here; an empty one fails at once, as on the command line.
+                stdin: (tool == Tool::SevenZip)
+                    .then(|| format!("{}\n", password.as_deref().unwrap_or(""))),
             };
             let mut encrypted = false;
             let mut progress = |line: &str| {
@@ -709,13 +724,14 @@ pub async fn compress(
     };
     match (&password, tool, ext) {
         (Some(pass), Tool::Zip, _) => argv.extend(["-P".into(), pass.clone()]),
-        (Some(pass), Tool::SevenZip, ".zip") => {
-            argv.extend([format!("-p{pass}"), "-mem=AES256".into()]);
-        }
-        (Some(pass), Tool::SevenZip, _) => argv.push(format!("-p{pass}")),
+        // A bare -p makes 7-Zip read the password from standard input.
+        (Some(_), Tool::SevenZip, ".zip") => argv.extend(["-p".into(), "-mem=AES256".into()]),
+        (Some(_), Tool::SevenZip, _) => argv.push("-p".into()),
         _ => {}
     }
     argv.push(out);
+    // Names are the files' own: one that starts with a dash is a name, not an option.
+    argv.push("--".into());
     argv.extend(names.iter().cloned());
     let mut binds: Vec<(PathBuf, PathBuf, bool)> = files
         .iter()
@@ -730,6 +746,9 @@ pub async fn compress(
         argv,
         binds,
         cwd: src_root,
+        stdin: password
+            .filter(|_| tool == Tool::SevenZip)
+            .map(|pass| format!("{pass}\n")),
     };
     // 7-Zip reports a percentage. zip ("adding: a/b (deflated 3%)"), GNU tar ("a/b") and
     // bsdtar (same, prefixed with "a ") name each entry, which the size table turns into bytes.

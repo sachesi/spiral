@@ -213,7 +213,7 @@ fn run_probe(kind: &str, path: &Path) -> Option<Vec<u8>> {
     let mut cmd = std::process::Command::new(&sandbox.argv[0]);
     cmd.args(&sandbox.argv[1..]);
     if kind == "media" {
-        media_setup(&mut cmd);
+        cmd.args(media_args());
     }
     cmd.arg("--ro-bind").arg(path).arg(&inside);
     cmd.arg("--")
@@ -247,8 +247,8 @@ fn run_probe(kind: &str, path: &Path) -> Option<Vec<u8>> {
 /// GStreamer in the sandbox reads the list of its plugins this process keeps, rather than
 /// load every plugin on the system to write one of its own for each file. Starting GStreamer
 /// here brings that list up to date first; the plugins are listed by a scanner process of
-/// GStreamer's own, not loaded here.
-fn media_setup(cmd: &mut std::process::Command) {
+/// GStreamer's own, not loaded here. The arguments go to `bwrap`, before its `--`.
+pub(crate) fn media_args() -> Vec<std::ffi::OsString> {
     static READY: std::sync::Once = std::sync::Once::new();
     READY.call_once(|| {
         let _ = crate::gst::init();
@@ -260,11 +260,21 @@ fn media_setup(cmd: &mut std::process::Command) {
                 .join("gstreamer-1.0")
                 .join(format!("registry.{}.bin", std::env::consts::ARCH))
         });
-    if registry.exists() {
-        cmd.arg("--ro-bind").arg(&registry).arg(&registry);
-        cmd.arg("--setenv").arg("GST_REGISTRY").arg(&registry);
-        cmd.args(["--setenv", "GST_REGISTRY_UPDATE", "no"]);
+    if !registry.exists() {
+        return Vec::new();
     }
+    let registry = registry.into_os_string();
+    vec![
+        "--ro-bind".into(),
+        registry.clone(),
+        registry.clone(),
+        "--setenv".into(),
+        "GST_REGISTRY".into(),
+        registry,
+        "--setenv".into(),
+        "GST_REGISTRY_UPDATE".into(),
+        "no".into(),
+    ]
 }
 
 /// The helper's answer, keeping what is known and well formed.

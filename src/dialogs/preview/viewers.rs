@@ -197,7 +197,8 @@ impl PreviewDialog {
             .margin_start(12)
             .margin_end(12)
             .build();
-        let art = gtk::Image::from_gicon(&file_utils::icon_of(info));
+        let art = gtk::Image::new();
+        file_utils::set_icon(&art, info);
         art.set_pixel_size(SOUND_ICON_SIZE);
         // The rounded corners of the cover come from clipping the widget, so the cover is
         // made to fill it exactly: square, at the size of the icon it replaces, in a widget
@@ -501,7 +502,8 @@ impl PreviewDialog {
     /// Files nothing can draw: their icon alone, since the header already carries the name
     /// and the type.
     pub(super) fn info_page(&self, info: &gio::FileInfo) -> gtk::Widget {
-        let icon = gtk::Image::from_gicon(&file_utils::icon_of(info));
+        let icon = gtk::Image::new();
+        file_utils::set_icon(&icon, info);
         icon.set_pixel_size(ICON_SIZE);
         icon.set_halign(gtk::Align::Center);
         icon.set_valign(gtk::Align::Center);
