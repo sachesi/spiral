@@ -3,24 +3,33 @@ name: Release
 # A release tag gets a GitHub release, once CI has passed (ci.yml calls this). The tag
 # must agree with the version in Cargo.toml and Cargo.lock and with the newest release in
 # the metainfo, whose notes become the release's. The release carries the crates the build
-# needs, for building without a network.
+# needs, for building without a network, and packages for Fedora, Debian and Arch Linux.
+# Run by hand, it publishes a tag that was pushed before this workflow existed.
 on:
   workflow_call:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish, such as v0.17.0
+        required: true
 
 permissions:
-  contents: write
+  contents: read
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
-  release:
-    name: Publish the release
+  source:
+    name: Check the version and vendor the crates
     runs-on: ubuntu-latest
-    env:
-      TAG: ${{ github.ref_name }}
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG }}
       - name: Check the version and write the notes
         run: |
+          mkdir -p notes
           python3 - <<'EOF'
           import os, re, sys, tomllib
           import xml.etree.ElementTree as ET
@@ -45,26 +54,221 @@ jobs:
                   notes.append(text(e))
               elif e.tag in ("ul", "ol"):
                   notes.append("\n".join(f"- {text(li)}" for li in e))
-          with open(os.environ["RUNNER_TEMP"] + "/notes.md", "w") as f:
+          with open("notes/notes.md", "w") as f:
               f.write("\n\n".join(notes) + "\n")
           EOF
       - name: Vendor the crates
         run: |
           dir="spiral-${TAG#v}"
-          mkdir -p "$dir/.cargo"
+          mkdir -p "$dir/.cargo" dist
           cargo vendor --locked --versioned-dirs "$dir/vendor" > "$dir/.cargo/config.toml"
           # Paths relative to the source tree, so the tarball unpacks over it.
           sed -i 's|^directory = .*|directory = "vendor"|' "$dir/.cargo/config.toml"
           tar --sort=name --mtime="@$(git log -1 --format=%ct)" --owner=0 --group=0 --numeric-owner \
-            -cJf "$dir-vendor.tar.xz" "$dir"
-          sha256sum "$dir-vendor.tar.xz" > SHA256SUMS
+            -cJf "dist/$dir-vendor.tar.xz" "$dir"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: notes
+          path: notes/notes.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vendor
+          path: dist/*
+
+  fedora:
+    name: Package for Fedora
+    needs: source
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:44
+    steps:
+      - name: Install the build dependencies
+        run: >
+          dnf install -y --setopt=install_weak_deps=False
+          git-core rust cargo just rpm-build blueprint-compiler gettext
+          gtk4-devel libadwaita-devel gtksourceview5-devel libseccomp-devel
+          gstreamer1-devel gstreamer1-plugins-base-devel glib2-devel
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG }}
+      - name: Build
+        run: |
+          export SPIRAL_LIBEXECDIR=/usr/libexec SPIRAL_LOCALEDIR=/usr/share/locale
+          cargo build --locked --release
+          DESTDIR="$PWD/stage" just prefix=/usr install
+          # Releases up to 0.17.0 build the caches even in a staged install; rpm's triggers own them.
+          rm -f stage/usr/share/glib-2.0/schemas/gschemas.compiled \
+            stage/usr/share/applications/mimeinfo.cache stage/usr/share/icons/hicolor/icon-theme.cache
+          install -Dm644 LICENSE stage/usr/share/licenses/spiral/LICENSE
+      - name: Package
+        run: |
+          find stage -not -type d -printf '/%P\n' > files
+          # rpm finds the libraries the binaries link to; the rest is what the Copr spec asks for.
+          cat > spiral.spec <<'EOF'
+          %global debug_package %{nil}
+
+          Name:           spiral
+          Version:        %{pkgver}
+          Release:        1%{?dist}
+          Summary:        File manager for Wayland with a file chooser portal backend
+          License:        GPL-3.0-or-later
+          URL:            https://github.com/sachesi/spiral
+
+          Requires:       gtk4%{?_isa} >= 4.22
+          Requires:       libadwaita%{?_isa} >= 1.9
+          Requires:       gtksourceview5%{?_isa}
+          Requires:       hicolor-icon-theme
+          Requires:       xdg-desktop-portal
+          Requires:       bubblewrap
+          Requires:       gstreamer1-plugins-base%{?_isa}
+          Requires:       gstreamer1-plugin-gtk4%{?_isa}
+          Recommends:     gstreamer1-plugins-good%{?_isa}
+          Recommends:     gstreamer1-plugin-libav%{?_isa}
+          Recommends:     gstreamer1-plugins-bad-free%{?_isa}
+          Recommends:     gstreamer1-plugin-openh264%{?_isa}
+          Recommends:     gvfs
+          Recommends:     glycin-libs%{?_isa}
+          Recommends:     glycin-loaders%{?_isa}
+          Suggests:       7zip
+          Suggests:       xdg-terminal-exec
+
+          %description
+          Spiral is a file manager for Wayland, built with GTK 4 and libadwaita. It
+          provides the org.freedesktop.FileManager1 service and a FileChooser portal
+          backend, so applications that open and save files through xdg-desktop-portal
+          get the same dialog.
+
+          %install
+          cp -a %{stage}/. %{buildroot}/
+
+          %files -f %{filelist}
+          EOF
+          rpmbuild -bb --define "_topdir $PWD/rpmbuild" --define "pkgver ${TAG#v}" \
+            --define "stage $PWD/stage" --define "filelist $PWD/files" spiral.spec
+          mkdir dist && mv rpmbuild/RPMS/*/*.rpm dist/
+          # The dependencies resolve on the release it was built for.
+          dnf install -y dist/*.rpm
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fedora
+          path: dist/*
+
+  debian:
+    name: Package for Debian
+    needs: source
+    runs-on: ubuntu-latest
+    # Testing: stable's GTK and libadwaita are older than Spiral needs.
+    container: debian:forky
+    steps:
+      - name: Install the build dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates git cargo rustc just \
+            dpkg-dev pkg-config blueprint-compiler gettext \
+            libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libseccomp-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libglib2.0-dev
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG }}
+      - name: Build
+        run: |
+          export SPIRAL_LIBEXECDIR=/usr/libexec SPIRAL_LOCALEDIR=/usr/share/locale
+          cargo build --locked --release
+          DESTDIR="$PWD/stage" just prefix=/usr install
+          # Releases up to 0.17.0 build the caches even in a staged install; dpkg's triggers own them.
+          rm -f stage/usr/share/glib-2.0/schemas/gschemas.compiled \
+            stage/usr/share/applications/mimeinfo.cache stage/usr/share/icons/hicolor/icon-theme.cache
+          install -Dm644 LICENSE stage/usr/share/doc/spiral/copyright
+      - name: Package
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          bins="stage/usr/bin/spiral stage/usr/libexec/xdg-desktop-portal-spiral stage/usr/libexec/spiral-thumbnailer"
+          strip --strip-unneeded $bins
+          # dpkg-shlibdeps wants a source package to belong to.
+          mkdir debian
+          printf 'Source: spiral\n\nPackage: spiral\nArchitecture: any\n' > debian/control
+          shlibs=$(dpkg-shlibdeps -O $(printf -- '-e %s ' $bins) | sed -n 's/^shlibs:Depends=//p')
+          mkdir stage/DEBIAN
+          cat > stage/DEBIAN/control <<EOF
+          Package: spiral
+          Version: ${TAG#v}-1
+          Architecture: $(dpkg --print-architecture)
+          Maintainer: sachesi <xsachesi@pm.me>
+          Installed-Size: $(du -sk stage | cut -f1)
+          Depends: $shlibs, libgtk-4-1 (>= 4.22), libadwaita-1-0 (>= 1.9), hicolor-icon-theme, xdg-desktop-portal, bubblewrap, gstreamer1.0-plugins-base, gstreamer1.0-gtk4
+          Recommends: gstreamer1.0-plugins-good, gstreamer1.0-libav, gstreamer1.0-plugins-bad, gvfs, libglycin-2-0, glycin-loaders
+          Suggests: 7zip, xdg-terminal-exec
+          Section: utils
+          Priority: optional
+          Homepage: https://github.com/sachesi/spiral
+          Description: File manager for Wayland with a file chooser portal backend
+           Spiral is a file manager for Wayland, built with GTK 4 and libadwaita. It
+           provides the org.freedesktop.FileManager1 service and a FileChooser portal
+           backend, so applications that open and save files through xdg-desktop-portal
+           get the same dialog.
+          EOF
+          mkdir dist
+          dpkg-deb --root-owner-group -Zxz --build stage "dist/spiral_${TAG#v}-1_$(dpkg --print-architecture).deb"
+          # The dependencies resolve on the release it was built for.
+          apt-get install -y "./dist/spiral_${TAG#v}-1_$(dpkg --print-architecture).deb"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: debian
+          path: dist/*
+
+  arch:
+    name: Package for Arch Linux
+    needs: source
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      # The PKGBUILD of this workflow's revision, which packages every release's layout.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build
+        run: |
+          pacman -Syu --noconfirm --needed git
+          useradd -m builder
+          install -d -o builder pkg
+          cp packaging/aur/PKGBUILD pkg/
+          sed -i "s/^pkgver=.*/pkgver=${TAG#v}/; s/^pkgrel=.*/pkgrel=1/" pkg/PKGBUILD
+          (source pkg/PKGBUILD && pacman -S --noconfirm --needed --asdeps "${depends[@]}" "${makedepends[@]}")
+          su builder -c 'cd pkg && makepkg --noconfirm'
+          mkdir dist && mv pkg/spiral-file-manager-"${TAG#v}"-1-*.pkg.tar.zst dist/
+          # The dependencies resolve on Arch as it is today.
+          pacman -U --noconfirm dist/*.pkg.tar.zst
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arch
+          path: dist/*
+
+  publish:
+    name: Publish the release
+    needs: [source, fedora, debian, arch]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: notes
+          name: notes
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          pattern: "{vendor,fedora,debian,arch}"
+          merge-multiple: true
       - name: Publish
         run: |
-          files=("spiral-${TAG#v}-vendor.tar.xz" SHA256SUMS)
+          cd dist
+          sha256sum * > SHA256SUMS
           # A release that already exists keeps its notes, which may have been edited by hand.
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" --clobber "${files[@]}"
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber *
           else
-            gh release create "$TAG" --verify-tag --title "Spiral ${TAG#v}" \
-              --notes-file "$RUNNER_TEMP/notes.md" "${files[@]}"
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --verify-tag --title "Spiral ${TAG#v}" \
+              --notes-file ../notes/notes.md *
           fi
