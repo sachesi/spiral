@@ -61,8 +61,8 @@ jobs:
       - name: Publish
         run: |
           files=("spiral-${TAG#v}-vendor.tar.xz" SHA256SUMS)
+          # A release that already exists keeps its notes, which may have been edited by hand.
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
             gh release upload "$TAG" --clobber "${files[@]}"
           else
             gh release create "$TAG" --verify-tag --title "Spiral ${TAG#v}" \
