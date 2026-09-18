@@ -40,6 +40,7 @@ jobs:
           pacman -Syu --noconfirm --needed git openssh pacman-contrib
           useradd -m builder
           echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+          [ -n "$AUR_SSH_KEY" ] || { echo "AUR_SSH_KEY is not set in the aur environment" >&2; exit 1; }
           install -d -m 700 /aur-ssh
           printf '%s\n' "$AUR_SSH_KEY" > /aur-ssh/key
           chmod 600 /aur-ssh/key
