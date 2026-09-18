@@ -1,11 +1,10 @@
 name: AUR
 
 # A release tag updates the spiral-file-manager package on the AUR from
-# packaging/aur/PKGBUILD. Run by hand, it builds the given version and pushes it only
-# when asked to.
+# packaging/aur/PKGBUILD, once CI has passed (ci.yml calls this). Run by hand, it builds
+# the given version and pushes it only when asked to.
 on:
-  push:
-    tags: ["v*"]
+  workflow_call:
   workflow_dispatch:
     inputs:
       version:
@@ -24,11 +23,14 @@ jobs:
     name: Update the AUR package
     runs-on: ubuntu-latest
     container: archlinux:base-devel
-    # AUR_SSH_KEY lives in this environment, not in the repository.
+    # AUR_SSH_KEY lives in this environment, not in the repository; a caller cannot pass
+    # it, and does not need to.
     environment: aur
     env:
       PKGNAME: spiral-file-manager
       VERSION: ${{ inputs.version || github.ref_name }}
+      # ssh takes its directory from root's passwd entry, not from the job's HOME.
+      GIT_SSH_COMMAND: ssh -i /aur-ssh/key -o IdentitiesOnly=yes -o UserKnownHostsFile=/aur-ssh/known_hosts -o StrictHostKeyChecking=yes
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Set up
@@ -38,12 +40,11 @@ jobs:
           pacman -Syu --noconfirm --needed git openssh pacman-contrib
           useradd -m builder
           echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
-          install -d -m 700 ~/.ssh
-          printf '%s\n' "$AUR_SSH_KEY" > ~/.ssh/aur
-          chmod 600 ~/.ssh/aur
+          install -d -m 700 /aur-ssh
+          printf '%s\n' "$AUR_SSH_KEY" > /aur-ssh/key
+          chmod 600 /aur-ssh/key
           # The fingerprint published on aur.archlinux.org.
-          echo 'aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN' > ~/.ssh/known_hosts
-          printf 'Host aur.archlinux.org\n  User aur\n  IdentityFile ~/.ssh/aur\n' > ~/.ssh/config
+          echo 'aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN' > /aur-ssh/known_hosts
       - name: Update the PKGBUILD and build it
         run: |
           git clone "ssh://aur@aur.archlinux.org/$PKGNAME.git" aur
