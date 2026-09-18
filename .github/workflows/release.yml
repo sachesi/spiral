@@ -1,0 +1,70 @@
+name: Release
+
+# A release tag gets a GitHub release, once CI has passed (ci.yml calls this). The tag
+# must agree with the version in Cargo.toml and Cargo.lock and with the newest release in
+# the metainfo, whose notes become the release's. The release carries the crates the build
+# needs, for building without a network.
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish the release
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Check the version and write the notes
+        run: |
+          python3 - <<'EOF'
+          import os, re, sys, tomllib
+          import xml.etree.ElementTree as ET
+
+          tag = os.environ["TAG"].removeprefix("v")
+          with open("Cargo.toml", "rb") as f:
+              cargo = tomllib.load(f)["package"]["version"]
+          with open("Cargo.lock", "rb") as f:
+              lock = next(p["version"] for p in tomllib.load(f)["package"] if p["name"] == "spiral")
+          release = ET.parse("data/io.github.sachesi.spiral.metainfo.xml").find("releases/release")
+          found = {"Cargo.toml": cargo, "Cargo.lock": lock, "the metainfo": release.get("version")}
+          wrong = [f"{where} says {v}" for where, v in found.items() if v != tag]
+          if wrong:
+              sys.exit(f"The tag is {tag}, but " + ", ".join(wrong))
+
+          def text(e):
+              return re.sub(r"\s+", " ", "".join(e.itertext())).strip()
+
+          notes = []
+          for e in release.find("description"):
+              if e.tag == "p":
+                  notes.append(text(e))
+              elif e.tag in ("ul", "ol"):
+                  notes.append("\n".join(f"- {text(li)}" for li in e))
+          with open(os.environ["RUNNER_TEMP"] + "/notes.md", "w") as f:
+              f.write("\n\n".join(notes) + "\n")
+          EOF
+      - name: Vendor the crates
+        run: |
+          dir="spiral-${TAG#v}"
+          mkdir -p "$dir/.cargo"
+          cargo vendor --locked --versioned-dirs "$dir/vendor" > "$dir/.cargo/config.toml"
+          # Paths relative to the source tree, so the tarball unpacks over it.
+          sed -i 's|^directory = .*|directory = "vendor"|' "$dir/.cargo/config.toml"
+          tar --sort=name --mtime="@$(git log -1 --format=%ct)" --owner=0 --group=0 --numeric-owner \
+            -cJf "$dir-vendor.tar.xz" "$dir"
+          sha256sum "$dir-vendor.tar.xz" > SHA256SUMS
+      - name: Publish
+        run: |
+          files=("spiral-${TAG#v}-vendor.tar.xz" SHA256SUMS)
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
+            gh release upload "$TAG" --clobber "${files[@]}"
+          else
+            gh release create "$TAG" --verify-tag --title "Spiral ${TAG#v}" \
+              --notes-file "$RUNNER_TEMP/notes.md" "${files[@]}"
+          fi
