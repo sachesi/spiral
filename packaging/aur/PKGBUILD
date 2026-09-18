@@ -53,5 +53,16 @@ check() {
 
 package() {
   cd "$_name-$pkgver"
-  DESTDIR="$pkgdir" just prefix=/usr libexec=/usr/lib/$_name install
+  DESTDIR="$pkgdir" just prefix=/usr install
+  # Arch keeps helpers in /usr/lib/<name>; this works with every release's justfile.
+  install -d "$pkgdir/usr/lib/$_name"
+  mv "$pkgdir"/usr/libexec/* "$pkgdir/usr/lib/$_name/"
+  rmdir "$pkgdir/usr/libexec"
+  sed -i "s|/usr/libexec/|/usr/lib/$_name/|" \
+    "$pkgdir/usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.spiral.service" \
+    "$pkgdir/usr/share/applications/xdg-desktop-portal-spiral.desktop"
+  # Releases up to 0.17.0 build the caches even in a staged install; pacman's hooks own them.
+  rm -f "$pkgdir/usr/share/glib-2.0/schemas/gschemas.compiled" \
+    "$pkgdir/usr/share/applications/mimeinfo.cache" \
+    "$pkgdir/usr/share/icons/hicolor/icon-theme.cache"
 }
