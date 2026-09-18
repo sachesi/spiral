@@ -1,0 +1,58 @@
+name: AUR
+
+# A release tag updates the spiral-file-manager package on the AUR from
+# packaging/aur/PKGBUILD. Run by hand, it builds the given version without pushing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Released version to build, without the v
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  aur:
+    name: Update the AUR package
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    # AUR_SSH_KEY lives in this environment, not in the repository.
+    environment: aur
+    env:
+      PKGNAME: spiral-file-manager
+      VERSION: ${{ inputs.version || github.ref_name }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Set up
+        env:
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          pacman -Syu --noconfirm --needed git openssh pacman-contrib
+          useradd -m builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$AUR_SSH_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          # The fingerprint published on aur.archlinux.org.
+          echo 'aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN' > ~/.ssh/known_hosts
+          printf 'Host aur.archlinux.org\n  User aur\n  IdentityFile ~/.ssh/aur\n' > ~/.ssh/config
+      - name: Update the PKGBUILD and build it
+        run: |
+          git clone "ssh://aur@aur.archlinux.org/$PKGNAME.git" aur
+          cp packaging/aur/PKGBUILD aur/
+          sed -i "s/^pkgver=.*/pkgver=${VERSION#v}/; s/^pkgrel=.*/pkgrel=1/" aur/PKGBUILD
+          chown -R builder aur
+          su builder -c 'cd aur && updpkgsums && makepkg --printsrcinfo > .SRCINFO && makepkg --syncdeps --noconfirm'
+      - name: Push
+        if: github.event_name == 'push'
+        run: |
+          cd aur
+          # The clone belongs to the build user.
+          git config --global --add safe.directory "$PWD"
+          git add PKGBUILD .SRCINFO
+          git -c user.name=sachesi -c user.email=107267487+sachesi@users.noreply.github.com \
+            commit -m "Update to ${VERSION#v}"
+          git push origin HEAD:master

@@ -13,8 +13,10 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 app_id := "io.github.sachesi.spiral"
 prefix := env("PREFIX", "/usr/local")
 destdir := env("DESTDIR", "")
+# Distributions without /usr/libexec pass their own, e.g. libexec=/usr/lib/spiral.
+libexec := prefix + "/libexec"
 bindir := destdir + prefix + "/bin"
-libexecdir := destdir + prefix + "/libexec"
+libexecdir := destdir + libexec
 datadir := destdir + prefix + "/share"
 release := "target/release"
 schema_dir := "target/schemas"
@@ -101,14 +103,15 @@ install:
     install -Dm644 data/spiral-odf.thumbnailer {{datadir}}/thumbnailers/spiral-odf.thumbnailer
     mkdir -p {{datadir}}/dbus-1/services
     sed 's|@bindir@|{{prefix}}/bin|' data/io.github.sachesi.spiral.FileManager1.service.in > {{datadir}}/dbus-1/services/io.github.sachesi.spiral.FileManager1.service
-    sed 's|@libexecdir@|{{prefix}}/libexec|' data/org.freedesktop.impl.portal.desktop.spiral.service.in > {{datadir}}/dbus-1/services/org.freedesktop.impl.portal.desktop.spiral.service
-    sed 's|@libexecdir@|{{prefix}}/libexec|' data/xdg-desktop-portal-spiral.desktop.in > {{datadir}}/applications/xdg-desktop-portal-spiral.desktop.in
+    sed 's|@libexecdir@|{{libexec}}|' data/org.freedesktop.impl.portal.desktop.spiral.service.in > {{datadir}}/dbus-1/services/org.freedesktop.impl.portal.desktop.spiral.service
+    sed 's|@libexecdir@|{{libexec}}|' data/xdg-desktop-portal-spiral.desktop.in > {{datadir}}/applications/xdg-desktop-portal-spiral.desktop.in
     msgfmt --desktop --template={{datadir}}/applications/xdg-desktop-portal-spiral.desktop.in -d po -o {{datadir}}/applications/xdg-desktop-portal-spiral.desktop
     rm {{datadir}}/applications/xdg-desktop-portal-spiral.desktop.in
     for lang in $(cat po/LINGUAS); do install -d {{datadir}}/locale/$lang/LC_MESSAGES; msgfmt -o {{datadir}}/locale/$lang/LC_MESSAGES/spiral.mo po/$lang.po; done
-    glib-compile-schemas {{datadir}}/glib-2.0/schemas
-    update-desktop-database -q {{datadir}}/applications || true
-    gtk4-update-icon-cache -qtf {{datadir}}/icons/hicolor || gtk-update-icon-cache -qtf {{datadir}}/icons/hicolor || true
+    # A staged install (DESTDIR) leaves the caches to the package manager's triggers.
+    [ -n "{{destdir}}" ] || glib-compile-schemas {{datadir}}/glib-2.0/schemas
+    [ -n "{{destdir}}" ] || update-desktop-database -q {{datadir}}/applications || true
+    [ -n "{{destdir}}" ] || gtk4-update-icon-cache -qtf {{datadir}}/icons/hicolor || gtk-update-icon-cache -qtf {{datadir}}/icons/hicolor || true
     @echo "installed to {{prefix}}"
 
 uninstall:

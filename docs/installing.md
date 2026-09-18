@@ -62,7 +62,12 @@ icon, GSettings schema, portal file, thumbnailer entry and the two D-Bus service
 under `share`, then compiles the schema and refreshes the desktop and icon caches. The
 D-Bus service files get the real paths substituted, so a custom prefix works as long as
 its `share` directory is in `XDG_DATA_DIRS` (`/usr/local/share` and `~/.local/share` are
-on most systems).
+on most systems). `libexec=/usr/lib/spiral` puts the two helpers elsewhere, for distributions
+without `libexec`; build with the same `SPIRAL_LIBEXECDIR`. With `DESTDIR` set, the schema,
+desktop and icon caches are left to the package manager.
+
+Arch Linux: the AUR package `spiral-file-manager` is built from
+[packaging/aur/PKGBUILD](../packaging/aur/PKGBUILD), which each release tag updates.
 
 xdg-desktop-portal older than 1.17 only reads portal files from
 `/usr/share/xdg-desktop-portal/portals`; with another prefix, symlink `spiral.portal` there.
