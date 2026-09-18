@@ -84,7 +84,10 @@ impl BrowserView {
             move || {
                 let imp = view.imp();
                 imp.top_pending.set(false);
-                if view.model().n_items() > 0 && imp.list_scroll.vadjustment().value() == 0.0 {
+                // The column view's own model, which can still be empty while the folder's
+                // is not: GTK asserts on a row it does not have.
+                let rows = imp.column_view.model().map_or(0, |m| m.n_items());
+                if rows > 0 && imp.list_scroll.vadjustment().value() == 0.0 {
                     imp.column_view
                         .scroll_to(0, None, gtk::ListScrollFlags::NONE, None);
                 }
@@ -279,15 +282,17 @@ impl BrowserView {
     }
 
     /// Scroll to `pos` in whichever view is on screen; the others have no model to scroll.
+    /// A view whose model does not hold `pos` yet is left alone: GTK asserts on it.
     pub(crate) fn reveal_position(&self, pos: u32, flags: gtk::ListScrollFlags) {
         let imp = self.imp();
-        if imp.grid_view.model().is_some() {
+        let holds = |model: Option<gtk::SelectionModel>| model.is_some_and(|m| pos < m.n_items());
+        if holds(imp.grid_view.model()) {
             imp.grid_view.scroll_to(pos, flags, None);
         }
-        if imp.miller_list.model().is_some() {
+        if holds(imp.miller_list.model()) {
             imp.miller_list.scroll_to(pos, flags, None);
         }
-        if imp.column_view.model().is_some() {
+        if holds(imp.column_view.model()) {
             imp.column_view.scroll_to(pos, None, flags, None);
         }
     }
