@@ -3,7 +3,8 @@ name: Release
 # A release tag gets a GitHub release, once CI has passed (ci.yml calls this). The tag
 # must agree with the version in Cargo.toml and Cargo.lock and with the newest release in
 # the metainfo, whose notes become the release's. The release carries the crates the build
-# needs, for building without a network, and packages for Fedora, Debian and Arch Linux.
+# needs, for building without a network, and packages for Fedora, Debian, Ubuntu and
+# Arch Linux.
 # Run by hand, it publishes a tag that was pushed before this workflow existed.
 on:
   workflow_call:
@@ -153,11 +154,26 @@ jobs:
           path: dist/*
 
   debian:
-    name: Package for Debian
+    name: Package for ${{ matrix.name }}
     needs: source
     runs-on: ubuntu-latest
-    # Testing: stable's GTK and libadwaita are older than Spiral needs.
-    container: debian:forky
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Testing: stable's GTK and libadwaita are older than Spiral needs.
+          - name: Debian
+            image: debian:forky
+            artifact: debian
+            revision: "1"
+          # Its Rust is 1.93; a newer rust-version needs one of its rustc-1.xx packages.
+          - name: Ubuntu 26.04
+            image: ubuntu:26.04
+            artifact: ubuntu
+            revision: 1~ubuntu26.04
+    container: ${{ matrix.image }}
+    env:
+      REVISION: ${{ matrix.revision }}
     steps:
       - name: Install the build dependencies
         env:
@@ -193,7 +209,7 @@ jobs:
           mkdir stage/DEBIAN
           cat > stage/DEBIAN/control <<EOF
           Package: spiral
-          Version: ${TAG#v}-1
+          Version: ${TAG#v}-$REVISION
           Architecture: $(dpkg --print-architecture)
           Maintainer: sachesi <xsachesi@pm.me>
           Installed-Size: $(du -sk stage | cut -f1)
@@ -210,12 +226,13 @@ jobs:
            get the same dialog.
           EOF
           mkdir dist
-          dpkg-deb --root-owner-group -Zxz --build stage "dist/spiral_${TAG#v}-1_$(dpkg --print-architecture).deb"
+          deb="dist/spiral_${TAG#v}-${REVISION}_$(dpkg --print-architecture).deb"
+          dpkg-deb --root-owner-group -Zxz --build stage "$deb"
           # The dependencies resolve on the release it was built for.
-          apt-get install -y "./dist/spiral_${TAG#v}-1_$(dpkg --print-architecture).deb"
+          apt-get install -y "./$deb"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: debian
+          name: ${{ matrix.artifact }}
           path: dist/*
 
   arch:
@@ -259,7 +276,7 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: dist
-          pattern: "{vendor,fedora,debian,arch}"
+          pattern: "{vendor,fedora,debian,ubuntu,arch}"
           merge-multiple: true
       - name: Publish
         run: |
