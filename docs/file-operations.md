@@ -9,13 +9,22 @@ A copy, move, extraction or archive that lands in a folder other than the one on
 ends with a toast whose "Open Folder" goes there and selects what arrived; one that lands
 in the folder on screen only gets a toast when it took three seconds or more.
 
-What a paste, a new folder or "Extract Here" leaves in the folder on screen is selected
-when the job ends, as long as the window is still in that folder. When the selected items
-go away instead, trashed, deleted or moved elsewhere by Spiral or by another program,
-the item that took their place is selected, or the last one if they were at the end, and
-it has the keyboard, so the arrow keys carry on from there. A selected file that is
-renamed, or changed by another program (its permissions, a tag, a save over it), stays
-selected. A selection of more than 256 items is not followed through such changes.
+What an operation leaves in the folder on screen — a paste, a drop, a new folder or
+document, a rename, a link, "Extract Here", a new archive, and what an undo or a redo
+brings back — is selected when the job ends, as long as the window is still in that
+folder and nothing else has been selected there in the meantime; the keyboard goes along,
+unless you are typing in the path bar or the search box. When the selected items go away
+instead, trashed, deleted or moved elsewhere by Spiral or by another program, the item
+that took their place is selected, or the last one if they were at the end, and it has
+the keyboard, so the arrow keys carry on from there. A selected file that is renamed, or
+changed by another program (its permissions, a tag, a save over it), stays selected, and
+so does everything else selected around it; a folder unfolded in the list stays unfolded.
+
+Folders on screen follow what happens in them through a monitor of the folder, and what
+Spiral's own operations do reaches them even where the location cannot be watched, as on
+some network shares. Search results follow what an operation renames, moves or takes
+away. When the folder on screen is renamed or moved the view goes along with it; when it
+is deleted or trashed, the view goes up to the nearest folder that is still there.
 
 Copies, moves and deletes count their sources first so the total is known before the
 rate clock starts. Progress inside a single file comes from GIO's copy callback.

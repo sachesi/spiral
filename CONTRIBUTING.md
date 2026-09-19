@@ -28,8 +28,9 @@ Before a change goes in:
     src/browser_actions.rs view.* actions; in browser_actions/ transfers, making and
                            renaming, tags, opening, context menus
     src/miller.rs          column view: the folder chain as a strip of lists
-    src/folder_model.rs    list model of a folder: monitoring, sorting, filtering; in
-                           folder_model/ searching, and Favorites and tags as lists
+    src/folder_model.rs    list model of a folder: sorting, filtering, the selection kept
+                           through changes; in folder_model/ the listing and its monitor,
+                           searching, and Favorites and tags as lists
     src/places_sidebar.rs  the sidebar; in places_sidebar/ its rows, drag and drop, devices
                            and mounts, and the menu of a row
     src/path_bar.rs        breadcrumbs

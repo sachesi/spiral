@@ -371,18 +371,25 @@ impl BrowserView {
     /// soon as the selection is anything else.
     fn update_preview_column(&self) {
         let imp = self.imp();
+        let infos = imp.model.selected_infos();
+        let dir = match infos.as_slice() {
+            [info] if file_utils::is_dir(info) && imp.view_mode.get() == ViewMode::Columns => {
+                Some(file_utils::file_of(info))
+            }
+            _ => None,
+        };
+        // The same folder still selected -- the selection is put back after a change to
+        // the rows around it -- keeps its column, and where it was scrolled to.
+        if let (Some(dir), Some(column)) = (&dir, imp.preview_column.borrow().as_ref())
+            && column.dir.equal(dir)
+        {
+            return;
+        }
         if let Some(column) = imp.preview_column.take() {
             imp.columns_box.remove(&column.root);
         }
-        if imp.view_mode.get() != ViewMode::Columns {
-            return;
-        }
-        let infos = imp.model.selected_infos();
-        let [info] = infos.as_slice() else { return };
-        if !file_utils::is_dir(info) {
-            return;
-        }
-        let column = self.side_column(&file_utils::file_of(info), None);
+        let Some(dir) = dir else { return };
+        let column = self.side_column(&dir, None);
         imp.columns_box
             .insert_child_after(&column.root, Some(&*imp.miller_scroll));
         imp.preview_column.replace(Some(column));

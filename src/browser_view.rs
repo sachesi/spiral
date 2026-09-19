@@ -572,6 +572,23 @@ mod imp {
                 obj,
                 move |_| obj.mount_location()
             ));
+            // The folder moved or went away: go where it is, or to what is left of it,
+            // with what was selected in it still selected where it went.
+            self.model.connect_local(
+                "relocate",
+                false,
+                glib::clone!(
+                    #[weak]
+                    obj,
+                    #[upgrade_or]
+                    None,
+                    move |values| {
+                        let to = values[1].get::<gio::File>().unwrap();
+                        obj.relocate(&to);
+                        None
+                    }
+                ),
+            );
             self.model.selection().connect_items_changed(glib::clone!(
                 #[weak]
                 obj,
@@ -589,7 +606,6 @@ mod imp {
                         obj.queue_select_neighbor(position);
                     }
                     if added > 0 {
-                        obj.queue_select_replaced();
                         obj.queue_keep_top();
                     }
                 }

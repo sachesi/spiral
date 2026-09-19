@@ -307,6 +307,30 @@ pub enum Resolution {
     Cancel,
 }
 
+/// What a job did, for the folders on screen to follow.
+#[derive(Default)]
+pub struct Changes {
+    /// (where it was, where it is now), for what was moved or renamed.
+    pub moved: Vec<(gio::File, gio::File)>,
+    /// What was trashed or deleted; asked of the disk again, as something may have been
+    /// kept back.
+    pub gone: Vec<gio::File>,
+    /// What was made, or changed in place.
+    pub touched: Vec<gio::File>,
+}
+
+impl Changes {
+    /// Every file the changes name, where it was and where it is.
+    pub fn files(&self) -> Vec<gio::File> {
+        self.moved
+            .iter()
+            .flat_map(|(from, to)| [from.clone(), to.clone()])
+            .chain(self.gone.iter().cloned())
+            .chain(self.touched.iter().cloned())
+            .collect()
+    }
+}
+
 /// What a job achieved, for undo.
 #[derive(Debug, Default)]
 pub struct Outcome {
@@ -415,6 +439,29 @@ impl Job {
             .chain(out.moved.iter().map(|(_, dest)| dest.clone()))
             .chain(out.renamed.iter().map(|(file, _)| file.clone()))
             .collect()
+    }
+
+    /// What the job did to the files, however it ended: what it got through before a
+    /// failure or a stop is done as well.
+    pub fn changes(&self) -> Changes {
+        let out = self.imp().outcome.borrow();
+        let renamed = out.renamed.iter().filter_map(|(file, old)| {
+            let from = file.parent()?.child(old);
+            Some((from, file.clone()))
+        });
+        let mut gone: Vec<gio::File> = out.trashed.iter().chain(&out.deleted).cloned().collect();
+        let mut touched = out.created.clone();
+        match self.kind() {
+            JobKind::Delete { files } => gone.extend(files),
+            JobKind::Unfold { folder, .. } => gone.push(folder),
+            JobKind::SetPermissions { folder, .. } => touched.push(folder),
+            _ => {}
+        }
+        Changes {
+            moved: out.moved.iter().cloned().chain(renamed).collect(),
+            gone,
+            touched,
+        }
     }
 
     pub fn cancel(&self) {

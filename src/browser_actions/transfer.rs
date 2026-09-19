@@ -4,10 +4,10 @@
 use super::*;
 
 impl BrowserView {
+    /// Start `kind`. What it makes, moves or renames into the folder on screen is
+    /// selected once it is done, whichever way it was asked for: a menu, a key, a drop.
     pub(super) fn submit(&self, kind: JobKind) {
-        if let Some(m) = self.manager() {
-            m.submit(kind);
-        }
+        self.submit_and_select(kind);
     }
 
     /// Submit and select what the job leaves in the folder, the way pasting should end:
@@ -17,6 +17,7 @@ impl BrowserView {
     pub(super) fn submit_and_select(&self, kind: JobKind) -> Option<crate::ops::Job> {
         let job = self.manager().map(|m| m.submit(kind))?;
         let location = self.location();
+        let before = self.selection_snapshot();
         job.connect_status_notify(glib::clone!(
             #[weak(rename_to = view)]
             self,
@@ -26,7 +27,7 @@ impl BrowserView {
                     _ => false,
                 };
                 if job.status() == JobStatus::Done && here {
-                    view.select_files_when_loaded(job.landed());
+                    view.select_files_since(job.landed(), before.clone());
                 }
             }
         ));

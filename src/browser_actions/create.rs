@@ -82,6 +82,7 @@ impl BrowserView {
                 };
                 let Some(mgr) = view.manager() else { return };
                 let folder = parent.child(&name);
+                let before = view.selection_snapshot();
                 let job = mgr.submit(JobKind::NewFolderWith {
                     parent,
                     name,
@@ -93,7 +94,7 @@ impl BrowserView {
                     view,
                     move |job| {
                         if job.status() == JobStatus::Done {
-                            view.select_files_when_loaded(vec![folder.clone()]);
+                            view.select_files_since(vec![folder.clone()], before.clone());
                         }
                     }
                 ));

@@ -117,6 +117,20 @@ fn extractors(mime: &str) -> &'static [Tool] {
 }
 
 /// Whether `mime` is an archive format Spiral knows how to extract, tools permitting.
+/// How the folders an archive is unpacked into, and packed in, start their names: beside
+/// where the result goes, so it gets there by a rename.
+const EXTRACT_WORK: &str = ".spiral-extract-";
+const COMPRESS_WORK: &str = ".spiral-compress-";
+
+/// Whether `info` is one of those folders, which are not worth showing, hidden files or
+/// not: they come and go with the operation.
+pub fn is_work_folder(info: &gio::FileInfo) -> bool {
+    let name = info.name();
+    let name = name.to_string_lossy();
+    info.file_type() == gio::FileType::Directory
+        && (name.starts_with(EXTRACT_WORK) || name.starts_with(COMPRESS_WORK))
+}
+
 pub fn is_archive(mime: &str) -> bool {
     !extractors(mime).is_empty()
 }
@@ -417,7 +431,7 @@ pub async fn extract(
         job.set_detail(gettext("Extracting “%s”").replace("%s", &name(archive)));
         job.set_fraction(i as f64 / total);
 
-        let work = dest_path.join(format!(".spiral-extract-{}-{i}", std::process::id()));
+        let work = dest_path.join(format!("{EXTRACT_WORK}{}-{i}", std::process::id()));
         on_disk({
             let work = work.clone();
             move || std::fs::create_dir(work)
@@ -687,7 +701,7 @@ pub async fn compress(
     job.set_bytes_total(total);
     job.start_clock();
 
-    let work = dest_path.join(format!(".spiral-compress-{}", std::process::id()));
+    let work = dest_path.join(format!("{COMPRESS_WORK}{}", std::process::id()));
     let final_name = on_disk({
         let (work, dest_path, file_name) = (work.clone(), dest_path.clone(), file_name.clone());
         move || {

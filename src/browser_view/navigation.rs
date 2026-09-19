@@ -197,6 +197,28 @@ impl BrowserView {
         self.select_files_when_loaded(selected);
     }
 
+    /// Show `to` in place of the folder shown, which has moved there, with what was
+    /// selected selected again where it now is; or which has gone, and `to` is what is
+    /// left above it.
+    pub(super) fn relocate(&self, to: &gio::File) {
+        let Some(from) = self.location() else { return };
+        if from.equal(to) {
+            return;
+        }
+        // Nothing of a folder that is gone is left to select above it.
+        let keep: Vec<gio::File> = if from.has_prefix(to) {
+            Vec::new()
+        } else {
+            self.model()
+                .selected_files()
+                .iter()
+                .filter_map(|f| Some(to.resolve_relative_path(from.relative_path(f)?)))
+                .collect()
+        };
+        self.go_to(to);
+        self.select_files_when_loaded(keep);
+    }
+
     /// Backspace: back to the search this folder was opened from, up otherwise.
     pub fn go_back_or_up(&self) {
         let imp = self.imp();
@@ -266,6 +288,11 @@ impl BrowserView {
                     glib::timeout_future(std::time::Duration::from_millis(50)).await;
                 }
                 let sel = model.selection();
+                // Something selected meanwhile was picked by the user, and stays.
+                if !sel.selection().is_empty() {
+                    view.restore_offset(offset).await;
+                    return;
+                }
                 let found = model.positions_of(&selected);
                 for &pos in &found {
                     sel.select_item(pos, false);

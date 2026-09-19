@@ -48,9 +48,7 @@ impl BrowserView {
                 let model = view.model();
                 let sel = model.selection();
                 let n = sel.n_items();
-                // A rename, or a file saved over, comes back under a fresh row, which
-                // takes the selection instead.
-                if n == 0 || !sel.selection().is_empty() || model.expects_back() {
+                if n == 0 || !sel.selection().is_empty() {
                     return;
                 }
                 let pos = position.min(n - 1);
@@ -65,10 +63,6 @@ impl BrowserView {
         ));
     }
 
-    /// Select again what was selected when the directory list read it again, or it was
-    /// renamed, and a fresh row came in its place, and give the first of them back the
-    /// keyboard if the view had it, which went with the old row. After the change, as for
-    /// the neighbour, and not in a file chooser either.
     /// Files landing above the top of the list, as a copy into the folder brings them,
     /// leave the list where it was: at the top. GTK's column view instead follows the row
     /// that was at the top down the list, and in a window opened after the first one it
@@ -90,30 +84,6 @@ impl BrowserView {
                 if rows > 0 && imp.list_scroll.vadjustment().value() == 0.0 {
                     imp.column_view
                         .scroll_to(0, None, gtk::ListScrollFlags::NONE, None);
-                }
-            }
-        ));
-    }
-
-    pub(super) fn queue_select_replaced(&self) {
-        if self.chooser_mode() || !self.model().expects_back() {
-            return;
-        }
-        glib::idle_add_local_once(glib::clone!(
-            #[weak(rename_to = view)]
-            self,
-            move || {
-                let model = view.model();
-                let positions = model.take_back();
-                let Some(&first) = positions.first() else {
-                    return;
-                };
-                let sel = model.selection();
-                for &pos in &positions {
-                    sel.select_item(pos, false);
-                }
-                if view.focus_child().is_some() {
-                    view.reveal_position(first, gtk::ListScrollFlags::FOCUS);
                 }
             }
         ));
@@ -212,8 +182,28 @@ impl BrowserView {
     /// its results only ever go on the end. A file written a moment ago reaches the model
     /// through the folder monitor, which lags behind the operation that made it, so what
     /// is missing once nothing loads is given a moment more; a change of folder drops the
-    /// lot.
+    /// lot, and so does a selection made meanwhile, which is what the user wants now.
     pub fn select_files_when_loaded(&self, files: Vec<gio::File>) {
+        self.select_files_since(files, self.selection_snapshot());
+    }
+
+    /// What is selected now, by location. Whatever starts an operation keeps it for
+    /// `select_files_since`, so what the user selects while the operation runs is told
+    /// from what was selected when it started.
+    pub fn selection_snapshot(&self) -> std::collections::HashSet<String> {
+        self.model()
+            .selected_files()
+            .iter()
+            .map(|f| f.uri().to_string())
+            .collect()
+    }
+
+    /// `select_files_when_loaded`, unless the selection is no longer `before` by then.
+    pub fn select_files_since(
+        &self,
+        files: Vec<gio::File>,
+        before: std::collections::HashSet<String>,
+    ) {
         use futures_util::StreamExt;
         if files.is_empty() {
             return;
@@ -257,12 +247,16 @@ impl BrowserView {
                     if found.is_empty() {
                         break;
                     }
+                    let now = view.selection_snapshot();
+                    if !now.is_empty() && now != before {
+                        break;
+                    }
                     sel.unselect_all();
                     for &pos in &found {
                         sel.select_item(pos, false);
                     }
                     if let Some(&pos) = found.first() {
-                        view.reveal_position(pos, gtk::ListScrollFlags::FOCUS);
+                        view.reveal_position(pos, view.focus_flags());
                     }
                     break;
                 }
@@ -279,6 +273,22 @@ impl BrowserView {
             model.disconnect(loading_id);
             sel.disconnect(items_id);
         });
+    }
+
+    /// How to scroll to what is selected for the user: taking the keyboard along, unless
+    /// they are typing somewhere else, in the path bar or the search box. The rename
+    /// popover is the view's own, and still has the keyboard as the rename it asked for
+    /// ends.
+    pub(super) fn focus_flags(&self) -> gtk::ListScrollFlags {
+        let typing = self
+            .root()
+            .and_then(|root| root.focus())
+            .is_some_and(|widget| widget.is::<gtk::Text>() && !widget.is_ancestor(self));
+        if typing {
+            gtk::ListScrollFlags::NONE
+        } else {
+            gtk::ListScrollFlags::FOCUS
+        }
     }
 
     /// Scroll to `pos` in whichever view is on screen; the others have no model to scroll.
