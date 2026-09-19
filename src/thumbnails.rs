@@ -248,7 +248,7 @@ struct Source {
 }
 
 async fn generate_task(key: Key, source: Source, at: u32) {
-    let (uri, mtime) = (key.0.clone(), key.1);
+    let (uri, mtime, size) = (key.0.clone(), key.1, key.2);
     // Asking the cache is a handful of stats, so it is asked before queueing for a
     // generation slot: a thumbnail that is already on disk must not wait behind a video
     // being decoded. Only what has to be made, and the decoding of what is found, waits.
@@ -305,6 +305,22 @@ async fn generate_task(key: Key, source: Source, at: u32) {
                         &source.content_type,
                         &source.thumbnailers,
                     );
+                    // A file written this second or the one before may still be being
+                    // written, pausing between writes: what was drawn of it, or the note
+                    // that it could not be, would name the second the finished file most
+                    // likely keeps, and stand for it from then on. Nothing of it is kept
+                    // on disk. What was drawn is shown if the file is as its row was read;
+                    // the row asks again once the file is read again.
+                    let settled = still(&path, mtime, size);
+                    if !settled || recent(mtime) {
+                        let drawn = match made {
+                            Ok(Some(texture)) => Some(texture),
+                            Ok(None) => picture_of(&out),
+                            Err(_) => return None,
+                        };
+                        let _ = std::fs::remove_file(&out);
+                        return drawn.filter(|_| settled);
+                    }
                     match made {
                         Ok(Some(texture)) => return Some(texture),
                         Ok(None) => out,
@@ -435,6 +451,22 @@ fn cached_thumbnail(uri: &str, mtime: u64) -> Cached {
         }
     }
     Cached::Missing
+}
+
+/// Whether `mtime` is this second or the one before, as the clock has it now.
+fn recent(mtime: u64) -> bool {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    now <= mtime.saturating_add(1)
+}
+
+/// Whether the file at `path` is still as it was when its row was read: written in the
+/// same second, and as long.
+fn still(path: &Path, mtime: u64, size: u64) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    // Counted the way the row's time is, a time before 1970 included.
+    std::fs::metadata(path).is_ok_and(|meta| meta.mtime() as u64 == mtime && meta.len() == size)
 }
 
 fn fail_path(by: &str, name: &str) -> PathBuf {
