@@ -1,6 +1,7 @@
-//! `DirectoryList` -> filter -> sort -> selection pipeline shared by every view of a folder.
+//! `Listing` -> filter -> sort -> selection pipeline shared by every view of a folder.
 
 use std::cell::{Cell, RefCell};
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use gtk::prelude::*;
@@ -14,17 +15,15 @@ const SHOW_WHILE_LISTING_UP_TO: u32 = 2000;
 /// How long a listing may keep the window blank before what has arrived is shown.
 const SHOW_LISTING_AFTER: std::time::Duration = std::time::Duration::from_secs(1);
 
-/// How long a selected file the directory list is reading again waits to be selected
-/// again once its fresh row is in.
-const REPLACED_FOR: std::time::Duration = std::time::Duration::from_secs(2);
-
-/// The most selected files the monitor looks through for each change it reports.
-const EXPECT_UP_TO: u64 = 256;
 use crate::file_utils;
 use crate::{gio, glib, gtk};
 
+mod listing;
 mod lists;
 mod search;
+
+use listing::Listing;
+pub(crate) use listing::touch;
 
 pub(crate) use lists::is_list_location;
 
@@ -65,31 +64,23 @@ mod imp {
         #[property(get)]
         selection: gtk::MultiSelection,
 
-        pub dir_list: gtk::DirectoryList,
+        pub listing: Listing,
         /// Sorted flat list, root of the tree the selection sits on.
         sorted: gtk::SortListModel,
         /// Whether folders unfold in place; read by the tree's child-model function.
         tree: Rc<Cell<bool>>,
-        /// `DirectoryList` only tracks additions, removals and attribute changes; this one
-        /// catches files rewritten in place so sizes, dates and thumbnails follow.
-        monitor: RefCell<Option<gio::FileMonitor>>,
-        /// Files the monitor reported, waiting for the next pass over the list.
-        pub pending: RefCell<Vec<gio::File>>,
-        pub refresh_queued: Cell<bool>,
-        /// Selected files the directory list is about to put a fresh row in for, under
-        /// the name they will have, and when that was heard of; see `take_back`.
-        pub replaced: RefCell<Vec<(gio::File, i64)>>,
+        /// What is selected, by info and by location. A row put in anew -- a file read
+        /// again, a folder's children listed again as it unfolds, rows the sort moves --
+        /// comes unselected, and is selected again from these; see `keep_selection`.
+        kept: Rc<RefCell<Kept>>,
         /// Whether the listing is on the pipeline; a big one waits there for its end,
         /// see `show_listing`.
         listing_shown: Cell<bool>,
         /// Set while a listing shown before its end is waiting for its order.
         sort_deferred: Cell<bool>,
-        /// Root of the pipeline: `dir_list`, or `list_store` for the locations that are a
+        /// Root of the pipeline: `listing`, or `list_store` for the locations that are a
         /// list of files rather than a folder, `starred:///` and `tag:///`.
         filtered: gtk::FilterListModel,
-        /// Holds what a stopped listing had read, since a directory list drops its items
-        /// the moment it is told to stop.
-        pub stopped_store: gio::ListStore,
         pub list_store: gio::ListStore,
         /// The location `list_store` holds the files of.
         pub(super) list_of: RefCell<Option<gio::File>>,
@@ -119,9 +110,6 @@ mod imp {
             let hidden_state = Rc::new(Cell::new(false));
             let sort_state = Rc::new(Cell::new((SortKey::Name, false)));
 
-            let dir_list = gtk::DirectoryList::new(Some(file_utils::ATTRIBUTES), gio::File::NONE);
-            dir_list.set_monitored(true);
-
             let hidden_filter = gtk::CustomFilter::new(glib::clone!(
                 #[strong]
                 hidden_state,
@@ -132,10 +120,11 @@ mod imp {
             ));
             // An entry that stands for a location no installed backend can open is a dead
             // end: a server on the network needs the backend for its protocol, and without
-            // it the entry answers nothing but an error.
+            // it the entry answers nothing but an error. Neither is the folder an archive
+            // is unpacked into, or packed in, before it goes where it belongs.
             let reachable_filter = gtk::CustomFilter::new(|obj| {
                 let info = obj.downcast_ref::<gio::FileInfo>().unwrap();
-                !file_utils::is_unreachable(info)
+                !file_utils::is_unreachable(info) && !crate::ops::archive::is_work_folder(info)
             });
             let every_filter = gtk::EveryFilter::new();
             every_filter.append(hidden_filter.clone());
@@ -160,8 +149,14 @@ mod imp {
                 gtk::FilterListModel::new(None::<gio::ListModel>, Some(every_filter.clone()));
             let sorted = gtk::SortListModel::new(Some(filtered.clone()), Some(sorter.clone()));
             let tree = Rc::new(Cell::new(crate::prefs::tree_view()));
-            let selection =
-                gtk::MultiSelection::new(Some(tree_model(&sorted, &every_filter, &sorter, &tree)));
+            let kept = Rc::new(RefCell::new(Kept::default()));
+            let selection = gtk::MultiSelection::new(Some(tree_model(
+                &sorted,
+                &every_filter,
+                &sorter,
+                &tree,
+                &kept,
+            )));
 
             Self {
                 location: Default::default(),
@@ -177,17 +172,13 @@ mod imp {
                 loading: Default::default(),
                 error_message: Default::default(),
                 selection,
-                dir_list,
+                listing: Listing::default(),
                 sorted,
                 tree,
-                monitor: Default::default(),
-                pending: Default::default(),
-                refresh_queued: Default::default(),
-                replaced: Default::default(),
+                kept,
                 listing_shown: Default::default(),
                 sort_deferred: Default::default(),
                 filtered,
-                stopped_store: gio::ListStore::new::<gio::FileInfo>(),
                 list_store: gio::ListStore::new::<gio::FileInfo>(),
                 list_of: Default::default(),
                 list_gen: Default::default(),
@@ -214,6 +205,20 @@ mod imp {
 
     #[glib::derived_properties]
     impl ObjectImpl for FolderModel {
+        fn signals() -> &'static [glib::subclass::Signal] {
+            static SIGNALS: std::sync::OnceLock<Vec<glib::subclass::Signal>> =
+                std::sync::OnceLock::new();
+            SIGNALS.get_or_init(|| {
+                vec![
+                    // The folder shown is not where it was: moved, and this is where it
+                    // went, or gone, and this is the nearest folder above it still there.
+                    glib::subclass::Signal::builder("relocate")
+                        .param_types([gio::File::static_type()])
+                        .build(),
+                ]
+            })
+        }
+
         fn dispose(&self) {
             if let Some(id) = self.starred_handler.take() {
                 crate::starred::unwatch(id);
@@ -229,13 +234,12 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
             let obj = self.obj();
-            self.dir_list.connect_loading_notify(glib::clone!(
+            self.listing.connect_loading_notify(glib::clone!(
                 #[weak]
                 obj,
                 move |dl| {
                     let imp = obj.imp();
-                    if !dl.is_loading() {
-                        imp.watch_listed();
+                    if !dl.loading() {
                         imp.show_listing();
                         if imp.sort_deferred.replace(false) {
                             imp.sorted.set_sorter(Some(&imp.sorter));
@@ -243,18 +247,18 @@ mod imp {
                     }
                     // While searching, the search decides when loading ends.
                     if !imp.searching.get() {
-                        imp.set_loading(dl.is_loading());
+                        imp.set_loading(dl.loading());
                     }
                 }
             ));
             // A folder arrives in batches of up to five thousand files. A first batch that
             // is small enough to be the whole folder goes on the pipeline at once; anything
             // more waits for the end of the listing, see `show_listing`.
-            self.dir_list.connect_items_changed(glib::clone!(
+            self.listing.connect_items_changed(glib::clone!(
                 #[weak]
                 obj,
                 move |dl, _, _, added| {
-                    if added > 0 && dl.is_loading() && dl.n_items() <= SHOW_WHILE_LISTING_UP_TO {
+                    if added > 0 && dl.loading() && dl.n_items() <= SHOW_WHILE_LISTING_UP_TO {
                         obj.imp().show_listing();
                     }
                 }
@@ -293,21 +297,52 @@ mod imp {
                             &imp.every_filter,
                             &imp.sorter,
                             &imp.tree,
+                            &imp.kept,
                         )));
                     }
                 ),
             );
             self.tree_handler.replace(Some(id));
-            self.dir_list.connect_error_notify(glib::clone!(
+            self.listing.connect_error_message_notify(glib::clone!(
                 #[weak]
                 obj,
                 move |dl| {
-                    obj.imp()
-                        .error_message
-                        .replace(dl.error().map(|e| e.message().to_string()));
+                    obj.imp().error_message.replace(dl.error_message());
                     obj.notify_error_message();
                 }
             ));
+            self.listing.connect_gone(glib::clone!(
+                #[weak]
+                obj,
+                move |_| obj.location_gone()
+            ));
+            LIVE.with(|live| {
+                let mut live = live.borrow_mut();
+                live.retain(|w| w.upgrade().is_some());
+                live.push(obj.downgrade());
+            });
+            let kept = self.kept.clone();
+            self.listing
+                .connect_updating(move |_, info| note_unfolded(&kept, info));
+            self.kept.borrow_mut().selection = self.selection.downgrade();
+            let kept = self.kept.clone();
+            self.selection
+                .connect_selection_changed(move |sel, position, n| {
+                    note_selection(&kept, sel, position, n)
+                });
+            // After the views have seen the change: a row selected before they have it
+            // points them at one they do not know.
+            let kept = self.kept.clone();
+            self.selection.connect_closure(
+                "items-changed",
+                true,
+                glib::closure_local!(move |sel: gtk::MultiSelection,
+                                           position: u32,
+                                           removed: u32,
+                                           added: u32| {
+                    keep_selection(&kept, &sel, position, removed, added)
+                }),
+            );
         }
     }
 
@@ -323,27 +358,15 @@ mod imp {
             if self.listing_shown.replace(true) || self.is_list() {
                 return;
             }
-            if self.dir_list.is_loading() && self.dir_list.n_items() > SHOW_WHILE_LISTING_UP_TO {
+            if self.listing.loading() && self.listing.n_items() > SHOW_WHILE_LISTING_UP_TO {
                 self.sort_deferred.set(true);
                 self.sorted.set_sorter(gtk::Sorter::NONE);
             }
             // The search results are what is shown while searching; the listing goes on
             // when the search ends.
             if !self.searching.get() {
-                self.filtered.set_model(Some(&self.dir_list));
+                self.filtered.set_model(Some(&self.listing));
             }
-        }
-
-        /// Show `model` instead of the listing and let the directory list go. What was
-        /// read stays on screen, in order: a listing shown before its end may still be
-        /// waiting for its sorter.
-        pub(super) fn freeze(&self, model: &impl IsA<gio::ListModel>) {
-            if self.sort_deferred.replace(false) {
-                self.sorted.set_sorter(Some(&self.sorter));
-            }
-            self.listing_shown.set(true);
-            self.filtered.set_model(Some(model));
-            self.dir_list.set_file(gio::File::NONE);
         }
 
         /// List `file`, or nothing, from the start. The old listing comes off the
@@ -354,23 +377,10 @@ mod imp {
             if !self.searching.get() {
                 self.filtered.set_model(gio::ListModel::NONE);
             }
-            // What a stopped listing had read is off the pipeline now, and a folder of a
-            // hundred thousand files is a lot to go on holding.
-            if self.stopped_store.n_items() > 0 {
-                self.stopped_store.remove_all();
-            }
             if self.sort_deferred.replace(false) {
                 self.sorted.set_sorter(Some(&self.sorter));
             }
-            // The directory list ignores the file it already has, so listing it again
-            // takes a detour through nothing. "Has" as GIO sees it: the same path in
-            // another GFile counts.
-            if let (Some(old), Some(new)) = (self.dir_list.file(), file)
-                && old.equal(new)
-            {
-                self.dir_list.set_file(gio::File::NONE);
-            }
-            self.dir_list.set_file(file);
+            self.listing.set_file(file);
             if file.is_some() {
                 glib::timeout_add_local_once(
                     SHOW_LISTING_AFTER,
@@ -379,7 +389,7 @@ mod imp {
                         self.obj(),
                         move || {
                             let imp = obj.imp();
-                            if imp.dir_list.is_loading() && imp.dir_list.n_items() > 0 {
+                            if imp.listing.loading() && imp.listing.n_items() > 0 {
                                 imp.show_listing();
                             }
                         }
@@ -390,68 +400,13 @@ mod imp {
 
         pub(super) fn set_location(&self, file: Option<gio::File>) {
             let list = file.as_ref().is_some_and(is_list_location);
-            // Watching a folder is a blocking call, and gvfs answers it for a location
-            // on another machine only once that is mounted: the first visit to the
-            // network waits for the whole network to be browsed. Such a location is
-            // watched once it has been listed, which mounts it without blocking.
-            let remote = file.as_ref().is_some_and(|f| !f.is_native());
-            self.dir_list.set_monitored(false);
             self.start_listing(file.as_ref().filter(|_| !list));
-            self.dir_list.set_monitored(!remote);
-            if let Some(old) = self.monitor.take() {
-                old.cancel();
-            }
-            if let Some(dir) = file.as_ref().filter(|_| !list && !remote) {
-                self.watch(dir);
-            }
             self.location.replace(file);
-            self.replaced.take();
             if list {
                 self.filtered.set_model(Some(&self.list_store));
                 self.obj().load_list();
             }
             self.sync_hidden();
-        }
-
-        /// Watch a location that was listed unwatched, now that it has been reached.
-        fn watch_listed(&self) {
-            if self.dir_list.is_monitored() || self.dir_list.error().is_some() {
-                return;
-            }
-            let Some(dir) = self.dir_list.file() else {
-                return;
-            };
-            self.dir_list.set_monitored(true);
-            self.watch(&dir);
-        }
-
-        fn watch(&self, dir: &gio::File) {
-            if let Ok(monitor) =
-                dir.monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
-            {
-                monitor.connect_changed(glib::clone!(
-                    #[weak(rename_to = obj)]
-                    self.obj(),
-                    move |_, changed, other, event| match event {
-                        gio::FileMonitorEvent::ChangesDoneHint => obj.refresh(changed.clone()),
-                        // The directory list reads these again itself -- a tag or a mode
-                        // set, a file saved over -- and puts the fresh row in place of
-                        // the old one, which the selection does not follow.
-                        gio::FileMonitorEvent::AttributeChanged
-                        | gio::FileMonitorEvent::Created => obj.expect_back(changed, changed),
-                        // A rename takes the old row out and puts a new one in, a
-                        // moment later; a file saved over arrives as one too.
-                        gio::FileMonitorEvent::Renamed => {
-                            if let Some(other) = other {
-                                obj.expect_back(changed, other);
-                                obj.expect_back(other, other);
-                            }
-                        }
-                        _ => {}
-                    }
-                ));
-                self.monitor.replace(Some(monitor));
-            }
         }
 
         pub(super) fn is_starred(&self) -> bool {
@@ -537,12 +492,12 @@ mod imp {
                     let root: Option<&gio::ListModel> = if self.is_list() {
                         Some(self.list_store.upcast_ref())
                     } else if self.listing_shown.get() {
-                        Some(self.dir_list.upcast_ref())
+                        Some(self.listing.upcast_ref())
                     } else {
                         None
                     };
                     self.filtered.set_model(root);
-                    self.set_loading(!self.is_list() && self.dir_list.is_loading());
+                    self.set_loading(!self.is_list() && self.listing.loading());
                 }
                 self.obj().notify_searching();
             }
@@ -588,23 +543,233 @@ fn tree_model(
     filter: &gtk::EveryFilter,
     sorter: &gtk::CustomSorter,
     tree: &Rc<Cell<bool>>,
+    kept: &Rc<RefCell<Kept>>,
 ) -> gtk::TreeListModel {
-    let (filter, sorter, tree) = (filter.clone(), sorter.clone(), tree.clone());
+    let (filter, sorter, tree, kept) = (filter.clone(), sorter.clone(), tree.clone(), kept.clone());
     gtk::TreeListModel::new(sorted.clone(), false, false, move |obj| {
         let info = obj.downcast_ref::<gio::FileInfo>()?;
         if !tree.get() || !file_utils::is_dir(info) {
             return None;
         }
-        // GTK asks once to learn whether the row can expand and drops the answer, which
-        // cancels the listing; the second, kept model is the one that loads.
-        let dir = gtk::DirectoryList::new(
-            Some(file_utils::ATTRIBUTES),
-            Some(&file_utils::file_of(info)),
-        );
-        dir.set_monitored(true);
+        // GTK asks once to learn whether the row can expand and drops the answer; only
+        // the second, kept model gets as far as reading the folder.
+        let dir = Listing::deferred(&file_utils::file_of(info));
+        let kept = kept.clone();
+        dir.connect_updating(move |_, info| note_unfolded(&kept, info));
         let filtered = gtk::FilterListModel::new(Some(dir), Some(filter.clone()));
         Some(gtk::SortListModel::new(Some(filtered), Some(sorter.clone())).upcast())
     })
+}
+
+/// What is selected and unfolded, kept for the rows that come back from a change without
+/// it. A row goes out and comes back when its file is read again, when the sort moves it,
+/// and with every row between where it was and where it goes: the tree puts each of them
+/// in anew, and the selection lets them go. The info behind a row stays the same through
+/// that; the children of a folder unfolded again are listed afresh, and are known by
+/// their location instead.
+#[derive(Default)]
+struct Kept {
+    infos: HashSet<gio::FileInfo>,
+    /// Locations of the selected rows inside unfolded folders.
+    uris: HashSet<String>,
+    /// Folders that were unfolded when their row was about to be put in anew.
+    unfolded: HashSet<gio::FileInfo>,
+    selection: glib::WeakRef<gtk::MultiSelection>,
+    /// Set while a pass that forgets what changes took away for good waits its turn.
+    prune_queued: bool,
+}
+
+/// The row at `pos` and the info in it.
+fn row_info(sel: &gtk::MultiSelection, pos: u32) -> Option<(gtk::TreeListRow, gio::FileInfo)> {
+    let row = sel.item(pos).and_downcast::<gtk::TreeListRow>()?;
+    let info = row.item().and_downcast::<gio::FileInfo>()?;
+    Some((row, info))
+}
+
+/// Keep up with the selection over the rows it changed on.
+fn note_selection(kept: &RefCell<Kept>, sel: &gtk::MultiSelection, position: u32, n: u32) {
+    if sel.selection().is_empty() {
+        let mut kept = kept.borrow_mut();
+        kept.infos.clear();
+        kept.uris.clear();
+        return;
+    }
+    let rows: Vec<(bool, u32, gio::FileInfo)> = (position..position + n)
+        .filter_map(|pos| {
+            let (row, info) = row_info(sel, pos)?;
+            Some((sel.is_selected(pos), row.depth(), info))
+        })
+        .collect();
+    let mut kept = kept.borrow_mut();
+    for (selected, depth, info) in rows {
+        let uri = (depth > 0).then(|| file_utils::file_of(&info).uri().to_string());
+        if selected {
+            if let Some(uri) = uri {
+                kept.uris.insert(uri);
+            }
+            kept.infos.insert(info);
+        } else {
+            if let Some(uri) = uri {
+                kept.uris.remove(&uri);
+            }
+            kept.infos.remove(&info);
+        }
+    }
+}
+
+/// A folder about to be read again in place is folded by the tree as its row goes in
+/// anew; note whether it was unfolded, to unfold it again.
+fn note_unfolded(kept: &RefCell<Kept>, info: &gio::FileInfo) {
+    if !file_utils::is_dir(info) {
+        return;
+    }
+    let Some(sel) = kept.borrow().selection.upgrade() else {
+        return;
+    };
+    let Some(tree) = sel.model().and_downcast::<gtk::TreeListModel>() else {
+        return;
+    };
+    // Nothing unfolded anywhere: every row is one of the folder's own.
+    if tree.n_items() == tree.model().n_items() {
+        return;
+    }
+    let unfolded = (0..tree.n_items())
+        .filter_map(|pos| tree.row(pos))
+        .find(|row| {
+            row.item()
+                .is_some_and(|item| &item == info.upcast_ref::<glib::Object>())
+        })
+        .is_some_and(|row| row.is_expanded());
+    if unfolded {
+        kept.borrow_mut().unfolded.insert(info.clone());
+    }
+}
+
+/// Select again, and unfold again, the rows a change put back without it. What changes
+/// took away for good is forgotten once they are over: a thousand selected files deleted
+/// one by one are a thousand changes.
+fn keep_selection(
+    kept: &Rc<RefCell<Kept>>,
+    sel: &gtk::MultiSelection,
+    position: u32,
+    removed: u32,
+    added: u32,
+) {
+    let empty = {
+        let kept = kept.borrow();
+        kept.infos.is_empty() && kept.uris.is_empty() && kept.unfolded.is_empty()
+    };
+    if added > 0 && !empty {
+        let mut select = Vec::new();
+        let mut unfold = Vec::new();
+        for pos in position..position + added {
+            let Some((row, info)) = row_info(sel, pos) else {
+                continue;
+            };
+            let kept = kept.borrow();
+            if kept.infos.contains(&info)
+                || (row.depth() > 0
+                    && kept
+                        .uris
+                        .contains(file_utils::file_of(&info).uri().as_str()))
+            {
+                select.push(pos);
+            }
+            if kept.unfolded.contains(&info) {
+                unfold.push((row, info));
+            }
+        }
+        for pos in select {
+            if !sel.is_selected(pos) {
+                sel.select_item(pos, false);
+            }
+        }
+        // From the bottom up, so each unfolding leaves the rows above it where they are.
+        for (row, info) in unfold.into_iter().rev() {
+            kept.borrow_mut().unfolded.remove(&info);
+            row.set_expanded(true);
+        }
+    }
+    if removed > 0 && !std::mem::replace(&mut kept.borrow_mut().prune_queued, true) {
+        let kept = kept.clone();
+        glib::idle_add_local_once(move || prune(&kept));
+    }
+}
+
+/// Keep what is selected now, and nothing else; but the locations inside unfolded folders
+/// are kept for as long as anything is selected. A folder unfolded again lists its
+/// children afresh, a while after the change that unfolded it.
+fn prune(kept: &RefCell<Kept>) {
+    kept.borrow_mut().prune_queued = false;
+    let Some(sel) = kept.borrow().selection.upgrade() else {
+        return;
+    };
+    let infos: Vec<gio::FileInfo> = {
+        let set = sel.selection();
+        (0..set.size())
+            .filter_map(|i| Some(row_info(&sel, set.nth(i as u32))?.1))
+            .collect()
+    };
+    let mut kept = kept.borrow_mut();
+    kept.infos = infos.into_iter().collect();
+    kept.unfolded.clear();
+}
+
+thread_local! {
+    /// Every folder model alive, for what an operation did to reach each that shows it.
+    static LIVE: RefCell<Vec<glib::WeakRef<FolderModel>>> = const { RefCell::new(Vec::new()) };
+    /// What operations moved or renamed a moment ago, and when: a folder shown that goes
+    /// away is looked for here before it is taken for gone.
+    static MOVED: RefCell<Vec<(gio::File, gio::File, std::time::Instant)>> =
+        const { RefCell::new(Vec::new()) };
+}
+
+/// How long a move is remembered for a folder that went away to be followed there.
+const MOVED_FOR: std::time::Duration = std::time::Duration::from_secs(10);
+
+/// How long a folder that went away waits before looking for where: the operation that
+/// moved it says so a moment after the folder hears of it.
+const GONE_WAIT: std::time::Duration = std::time::Duration::from_millis(300);
+
+/// An operation moved or renamed `from` to `to`.
+pub fn moved(from: &gio::File, to: &gio::File) {
+    MOVED.with(|m| {
+        let mut m = m.borrow_mut();
+        m.retain(|(_, _, at)| at.elapsed() < MOVED_FOR);
+        m.push((from.clone(), to.clone(), std::time::Instant::now()));
+    });
+}
+
+/// Where `file` is now, if it or a folder above it was moved: `to` with the rest of the
+/// way from `from` to `file` after it.
+fn moved_to(file: &gio::File, moves: &[(gio::File, gio::File)]) -> Option<gio::File> {
+    moves.iter().rev().find_map(|(from, to)| {
+        if file.equal(from) {
+            Some(to.clone())
+        } else {
+            Some(to.resolve_relative_path(from.relative_path(file)?))
+        }
+    })
+}
+
+/// Whether `file` is `other` or somewhere below it.
+fn at_or_below(file: &gio::File, other: &gio::File) -> bool {
+    file.equal(other) || file.has_prefix(other)
+}
+
+/// Tell every folder shown what an operation did: the folders that hold what it touched
+/// read those files again, a search holding them follows them, and a view whose folder it
+/// moved or took away goes along.
+pub fn files_changed(changes: &crate::ops::Changes) {
+    touch(&changes.files());
+    let live: Vec<FolderModel> = LIVE.with(|live| {
+        let mut live = live.borrow_mut();
+        live.retain(|w| w.upgrade().is_some());
+        live.iter().filter_map(|w| w.upgrade()).collect()
+    });
+    for model in live {
+        model.follow(changes);
+    }
 }
 
 /// The file info behind a view item, which is a `TreeListRow` around it.
@@ -633,56 +798,6 @@ impl FolderModel {
     }
 
     /// Files currently selected, in view order.
-    /// If `file` is selected, expect it back as `back`: the directory list is reading it
-    /// again, or it was renamed, and the row that comes in its place comes unselected.
-    /// Asked of the monitor as the change arrives, before the list has its answer. A big
-    /// selection is not looked through for every file the folder hears of.
-    fn expect_back(&self, file: &gio::File, back: &gio::File) {
-        let set = self.selection().selection();
-        if set.is_empty() || set.size() > EXPECT_UP_TO {
-            return;
-        }
-        if self.selected_files().iter().any(|f| f.equal(file)) {
-            let now = glib::monotonic_time();
-            self.imp().replaced.borrow_mut().push((back.clone(), now));
-        }
-    }
-
-    /// Whether a selected file is on its way back under a fresh row.
-    pub fn expects_back(&self) -> bool {
-        let since = glib::monotonic_time() - REPLACED_FOR.as_micros() as i64;
-        let mut replaced = self.imp().replaced.borrow_mut();
-        replaced.retain(|(_, at)| *at >= since);
-        !replaced.is_empty()
-    }
-
-    /// Where the files expected back are, among those whose fresh rows are in, for the
-    /// view to select again; they are expected no more. The others are waited for a
-    /// moment longer: the list answers at once, or the change never made it a new row.
-    pub fn take_back(&self) -> Vec<u32> {
-        if !self.expects_back() {
-            return Vec::new();
-        }
-        let files: Vec<gio::File> = self
-            .imp()
-            .replaced
-            .borrow()
-            .iter()
-            .map(|(f, _)| f.clone())
-            .collect();
-        let found = self.positions_of(&files);
-        let arrived: Vec<gio::File> = found
-            .iter()
-            .filter_map(|&pos| self.info_at(pos))
-            .map(|info| file_utils::file_of(&info))
-            .collect();
-        self.imp()
-            .replaced
-            .borrow_mut()
-            .retain(|(f, _)| !arrived.iter().any(|a| a.equal(f)));
-        found
-    }
-
     pub fn selected_files(&self) -> Vec<gio::File> {
         self.selected_infos()
             .iter()
@@ -753,9 +868,8 @@ impl FolderModel {
             .collect()
     }
 
-    /// Stop reading, keeping what has arrived. A search only has to be abandoned; a
-    /// listing has to be copied out of the directory list first, which empties itself as
-    /// soon as it is told to stop.
+    /// Stop reading, keeping what has arrived. A search is abandoned; a listing stops where
+    /// it is and goes on following the folder.
     pub fn stop_loading(&self) {
         let imp = self.imp();
         if !self.loading() {
@@ -767,28 +881,19 @@ impl FolderModel {
             imp.set_loading(false);
             return;
         }
-        let read: Vec<gio::FileInfo> = imp
-            .dir_list
-            .iter::<glib::Object>()
-            .flatten()
-            .filter_map(|o| o.downcast::<gio::FileInfo>().ok())
-            .collect();
-        imp.stopped_store
-            .splice(0, imp.stopped_store.n_items(), &read);
-        imp.freeze(&imp.stopped_store);
-        imp.set_loading(false);
+        imp.listing.stop();
     }
 
     /// Why the listing stopped, where it did. The message alone is on the property; this
     /// is for the one caller that has to tell one failure from another.
     pub fn error(&self) -> Option<glib::Error> {
-        self.imp().dir_list.error()
+        self.imp().listing.error()
     }
 
     /// The scheme of every entry left out of the listing for want of a backend, one per
     /// entry, sorted, so a page can say how many were found and what would open them.
     pub fn unreachable_schemes(&self) -> Vec<String> {
-        let dl = &self.imp().dir_list;
+        let dl = &self.imp().listing;
         let mut schemes: Vec<String> = (0..dl.n_items())
             .filter_map(|i| dl.item(i).and_downcast::<gio::FileInfo>())
             .filter(file_utils::is_unreachable)
@@ -797,6 +902,141 @@ impl FolderModel {
             .collect();
         schemes.sort();
         schemes
+    }
+
+    /// The folder shown went away. Once whatever moved it has had the moment it takes to
+    /// say so, follow it there, or else go up to the nearest folder still there.
+    fn location_gone(&self) {
+        let Some(location) = self.location() else {
+            return;
+        };
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = model)]
+            self,
+            async move {
+                glib::timeout_future(GONE_WAIT).await;
+                if !model.location().is_some_and(|l| l.equal(&location)) {
+                    return;
+                }
+                let moves: Vec<(gio::File, gio::File)> = MOVED.with(|m| {
+                    m.borrow()
+                        .iter()
+                        .filter(|(_, _, at)| at.elapsed() < MOVED_FOR)
+                        .map(|(from, to, _)| (from.clone(), to.clone()))
+                        .collect()
+                });
+                if let Some(to) = moved_to(&location, &moves) {
+                    model.emit_by_name::<()>("relocate", &[&to]);
+                    return;
+                }
+                model.go_up_from(location).await;
+            }
+        ));
+    }
+
+    /// Go to the nearest folder above `location` that is still there, unless `location`
+    /// is back, or the model has moved on meanwhile.
+    async fn go_up_from(&self, location: gio::File) {
+        let mut at = Some(location.clone());
+        while let Some(dir) = at {
+            let there = dir
+                .query_info_future(
+                    "standard::type",
+                    gio::FileQueryInfoFlags::NONE,
+                    glib::Priority::DEFAULT,
+                )
+                .await
+                .is_ok_and(|info| info.file_type() == gio::FileType::Directory);
+            if !self.location().is_some_and(|l| l.equal(&location)) {
+                return;
+            }
+            if there {
+                if !dir.equal(&location) {
+                    self.emit_by_name::<()>("relocate", &[&dir]);
+                }
+                return;
+            }
+            at = dir.parent();
+        }
+        self.emit_by_name::<()>("relocate", &[&gio::File::for_path(glib::home_dir())]);
+    }
+
+    /// Follow what an operation did: to where it moved the folder shown, or up from where
+    /// it took it away; and in the results of a search, to where it moved them, or out of
+    /// the list where it took them away.
+    fn follow(&self, changes: &crate::ops::Changes) {
+        let imp = self.imp();
+        if let Some(location) = self.location().filter(|_| !imp.is_list()) {
+            if let Some(to) = moved_to(&location, &changes.moved) {
+                self.emit_by_name::<()>("relocate", &[&to]);
+                return;
+            }
+            if changes.gone.iter().any(|g| at_or_below(&location, g)) {
+                glib::spawn_future_local(glib::clone!(
+                    #[weak(rename_to = model)]
+                    self,
+                    async move { model.go_up_from(location).await }
+                ));
+                return;
+            }
+        }
+        if !imp.searching.get() {
+            return;
+        }
+        let affected: Vec<(gio::FileInfo, gio::File)> = imp
+            .search_store
+            .iter::<gio::FileInfo>()
+            .flatten()
+            .filter_map(|info| {
+                let file = file_utils::file_of(&info);
+                if let Some(to) = moved_to(&file, &changes.moved) {
+                    return Some((info, to));
+                }
+                changes
+                    .gone
+                    .iter()
+                    .any(|g| at_or_below(&file, g))
+                    .then_some((info, file))
+            })
+            .collect();
+        if affected.is_empty() {
+            return;
+        }
+        let generation = imp.search_gen.get();
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = model)]
+            self,
+            async move {
+                for (info, file) in affected {
+                    let read = file
+                        .query_info_future(
+                            file_utils::ATTRIBUTES,
+                            gio::FileQueryInfoFlags::NONE,
+                            glib::Priority::DEFAULT,
+                        )
+                        .await;
+                    let store = &model.imp().search_store;
+                    if model.imp().search_gen.get() != generation {
+                        return;
+                    }
+                    let Some(pos) = store.find(&info) else {
+                        continue;
+                    };
+                    match read {
+                        // Read into the info the row already has, which keeps the row
+                        // selected if it was.
+                        Ok(fresh) => {
+                            fresh.copy_into(&info);
+                            info.set_attribute_object("standard::file", &file);
+                            file_utils::forget_sort_keys(&info);
+                            store.items_changed(pos, 1, 1);
+                        }
+                        Err(e) if e.matches(gio::IOErrorEnum::NotFound) => store.remove(pos),
+                        Err(_) => {}
+                    }
+                }
+            }
+        ));
     }
 
     pub fn reload(&self) {

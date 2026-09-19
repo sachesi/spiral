@@ -30,6 +30,17 @@ impl BrowserView {
                 }
             }
         ));
+        // What the preview shows, as of when it was read: the selection is also put back
+        // after a change to other files around it, and the same file, unchanged, is not
+        // loaded again for that -- a film would start over.
+        let stamp = |info: &gio::FileInfo| {
+            (
+                file_utils::file_of(info).uri(),
+                info.modification_date_time().map(|d| d.to_unix_usec()),
+                file_utils::size_of(info),
+            )
+        };
+        let shown = std::rc::Rc::new(std::cell::RefCell::new(stamp(info)));
         let selection = self.model().selection();
         let id = selection.connect_selection_changed(glib::clone!(
             #[weak]
@@ -38,6 +49,9 @@ impl BrowserView {
             self,
             move |_, _, _| {
                 if let Some(info) = view.model().selected_infos().first() {
+                    if shown.replace(stamp(info)) == stamp(info) {
+                        return;
+                    }
                     let (dialog, info) = (dialog.clone(), info.clone());
                     glib::spawn_future_local(async move { dialog.show_info(&info).await });
                 }

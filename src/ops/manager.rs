@@ -217,6 +217,7 @@ impl JobManager {
             _ => {}
         }
         job.set_status(status);
+        crate::folder_model::files_changed(&job.changes());
         job.imp().hold.take();
         imp.running.set(imp.running.get().saturating_sub(1));
         self.notify_running();
@@ -285,6 +286,7 @@ impl JobManager {
             };
             mgr.set_undo(None, None);
             let job = mgr.submit_inner(kind, false);
+            mgr.select_when_done(&job);
             // Redo reverses the undo, read from what the undo did: where a move put things
             // back, and what a restore landed as. Not when something else has been done
             // since, and not for an undone restore, which would need the trash looked up
@@ -309,7 +311,39 @@ impl JobManager {
             return;
         };
         self.set_undo(None, None);
-        self.submit_inner(kind, true);
+        let job = self.submit_inner(kind, true);
+        self.select_when_done(&job);
+    }
+
+    /// Once `job` is done, select what it put in the folder on screen in the window it
+    /// was started from: what an undo brought back, with nothing else, rather than what
+    /// happened to be selected when it went away.
+    fn select_when_done(&self, job: &Job) {
+        let Some(view) = self.toast_window(job).and_then(|win| win.current_view()) else {
+            return;
+        };
+        let location = view.location();
+        let before = view.selection_snapshot();
+        job.connect_status_notify(glib::clone!(
+            #[weak]
+            view,
+            move |job| {
+                let Some(here) = location.as_ref() else {
+                    return;
+                };
+                if job.status() != JobStatus::Done
+                    || !view.location().is_some_and(|l| l.equal(here))
+                {
+                    return;
+                }
+                let files: Vec<gio::File> = job
+                    .landed()
+                    .into_iter()
+                    .filter(|f| f.parent().is_some_and(|p| p.equal(here)))
+                    .collect();
+                view.select_files_since(files, before.clone());
+            }
+        ));
     }
 
     /// Window to tell of `job`'s end in: the one it was started from while it is open, as

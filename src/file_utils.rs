@@ -1,4 +1,4 @@
-//! Helpers over `gio::FileInfo` as produced by `gtk::DirectoryList`.
+//! Helpers over `gio::FileInfo` as a folder listing produces it.
 
 use std::cmp::Ordering;
 
@@ -8,7 +8,7 @@ use crate::enums::SortKey;
 use crate::gio::prelude::*;
 use crate::{gdk, gio, glib, gtk};
 
-/// Attributes requested from `gtk::DirectoryList` for every view.
+/// Attributes read for every file a view lists.
 /// The `thumbnail::` attributes are deliberately not among them: GIO answers those by
 /// hashing the name of every file in the folder and looking for the hash in three
 /// directories, listed or not, and Spiral asks the same question itself for the rows it
@@ -163,7 +163,7 @@ pub fn show_custom_icon(image: &gtk::Image, file: gio::File) {
     ));
 }
 
-/// The `gio::File` a `DirectoryList` attaches to each info.
+/// The `gio::File` a listing attaches to each info.
 pub fn file_of(info: &gio::FileInfo) -> gio::File {
     info.attribute_object("standard::file")
         .and_downcast::<gio::File>()

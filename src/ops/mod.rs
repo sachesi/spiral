@@ -6,7 +6,7 @@ mod job;
 mod manager;
 mod walk;
 
-pub use job::{Job, JobKind, JobStatus, name};
+pub use job::{Changes, Job, JobKind, JobStatus, name};
 pub use manager::JobManager;
 pub(crate) use walk::children;
 
