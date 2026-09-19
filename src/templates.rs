@@ -43,6 +43,8 @@ pub fn entries() -> Rc<Vec<Entry>> {
 
 fn refresh() {
     let Some(folder) = folder() else {
+        ENTRIES.with(|e| e.replace(Rc::new(Vec::new())));
+        MONITORS.with(|m| m.replace(watch_for_folder().into_iter().collect()));
         return;
     };
     let generation = GENERATION.with(|g| {
@@ -59,6 +61,30 @@ fn refresh() {
         // them: a folder that has gone stops being watched.
         MONITORS.with(|m| m.replace(monitors));
     });
+}
+
+/// A templates folder that is not there yet is waited for, in the folder it would be in:
+/// made after Spiral started, it is offered without a restart.
+fn watch_for_folder() -> Option<gio::FileMonitor> {
+    let path = glib::user_special_dir(glib::UserDirectory::Templates)?;
+    if path == glib::home_dir() {
+        return None;
+    }
+    let parent = gio::File::for_path(path.parent()?);
+    let monitor = parent
+        .monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
+        .ok()?;
+    monitor.connect_changed(move |_, file, other, event| {
+        let arrived = match event {
+            gio::FileMonitorEvent::Created | gio::FileMonitorEvent::MovedIn => Some(file),
+            gio::FileMonitorEvent::Renamed => other,
+            _ => None,
+        };
+        if arrived.and_then(|f| f.path()).is_some_and(|p| p == path) {
+            refresh();
+        }
+    });
+    Some(monitor)
 }
 
 type Scan =
