@@ -236,7 +236,9 @@ impl BrowserView {
                                 glib::Priority::DEFAULT,
                             )
                             .await
-                            .map(|i| i.boolean("access::can-write"))
+                            // A backend that does not say, as gvfs does not for the top
+                            // of an SMB share, is taken at its word: writing is tried.
+                            .map(|i| file_utils::allows(&i, "access::can-write"))
                             .unwrap_or(true);
                         if view.location().is_some_and(|l| l.equal(&dir)) {
                             view.imp().can_write.set(writable);
