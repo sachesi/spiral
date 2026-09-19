@@ -125,6 +125,8 @@ uninstall:
     for lang in $(cat po/LINGUAS); do rm -f {{datadir}}/locale/$lang/LC_MESSAGES/spiral.mo; done
     glib-compile-schemas {{datadir}}/glib-2.0/schemas || true
     update-desktop-database -q {{datadir}}/applications || true
+    # A cache that still lists the removed icons hides the same icons installed elsewhere.
+    gtk4-update-icon-cache -qtf {{datadir}}/icons/hicolor || gtk-update-icon-cache -qtf {{datadir}}/icons/hicolor || true
 
 # Make Spiral the default folder handler for the current user.
 set-default:
