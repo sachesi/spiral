@@ -3,9 +3,9 @@ name: Release
 # A release tag gets a GitHub release, once CI has passed (ci.yml calls this). The tag
 # must agree with the version in Cargo.toml and Cargo.lock and with the newest release in
 # the metainfo, whose notes become the release's. The release carries the crates the build
-# needs, for building without a network, and packages for Fedora, Debian, Ubuntu and
-# Arch Linux.
-# Run by hand, it publishes a tag that was pushed before this workflow existed.
+# needs, for building without a network, and packages for Fedora, Debian, Ubuntu and Arch
+# Linux. Once published, it is built in Copr, in sachesi/software. Run by hand, it
+# publishes a tag that was pushed before this workflow existed.
 on:
   workflow_call:
   workflow_dispatch:
@@ -82,69 +82,23 @@ jobs:
     runs-on: ubuntu-latest
     container: registry.fedoraproject.org/fedora:44
     steps:
-      - name: Install the build dependencies
-        run: >
-          dnf install -y --setopt=install_weak_deps=False
-          git-core rust cargo just rpm-build blueprint-compiler gettext
-          gtk4-devel libadwaita-devel gtksourceview5-devel libseccomp-devel
-          gstreamer1-devel gstreamer1-plugins-base-devel glib2-devel
+      - name: Install the tools
+        run: dnf install -y --setopt=install_weak_deps=False git-core rpm-build dnf-plugins-core
+      # The spec of this workflow's revision, which builds the tag's sources.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The spec's Source1, which the release is not yet there to serve.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          ref: ${{ env.TAG }}
+          name: vendor
+          path: rpmbuild/SOURCES
       - name: Build
         run: |
-          export SPIRAL_LIBEXECDIR=/usr/libexec SPIRAL_LOCALEDIR=/usr/share/locale
-          cargo build --locked --release
-          DESTDIR="$PWD/stage" just prefix=/usr install
-          # Releases up to 0.17.0 build the caches even in a staged install; rpm's triggers own them.
-          rm -f stage/usr/share/glib-2.0/schemas/gschemas.compiled \
-            stage/usr/share/applications/mimeinfo.cache stage/usr/share/icons/hicolor/icon-theme.cache
-          install -Dm644 LICENSE stage/usr/share/licenses/spiral/LICENSE
-      - name: Package
-        run: |
-          find stage -not -type d -printf '/%P\n' > files
-          # rpm finds the libraries the binaries link to; the rest is what the Copr spec asks for.
-          cat > spiral.spec <<'EOF'
-          %global debug_package %{nil}
-
-          Name:           spiral
-          Version:        %{pkgver}
-          Release:        1%{?dist}
-          Summary:        File manager for Wayland with a file chooser portal backend
-          License:        GPL-3.0-or-later
-          URL:            https://github.com/sachesi/spiral
-
-          Requires:       gtk4%{?_isa} >= 4.22
-          Requires:       libadwaita%{?_isa} >= 1.9
-          Requires:       gtksourceview5%{?_isa}
-          Requires:       hicolor-icon-theme
-          Requires:       xdg-desktop-portal
-          Requires:       bubblewrap
-          Requires:       gstreamer1-plugins-base%{?_isa}
-          Requires:       gstreamer1-plugin-gtk4%{?_isa}
-          Recommends:     gstreamer1-plugins-good%{?_isa}
-          Recommends:     gstreamer1-plugin-libav%{?_isa}
-          Recommends:     gstreamer1-plugins-bad-free%{?_isa}
-          Recommends:     gstreamer1-plugin-openh264%{?_isa}
-          Recommends:     gvfs
-          Recommends:     glycin-libs%{?_isa}
-          Recommends:     glycin-loaders%{?_isa}
-          Suggests:       7zip
-          Suggests:       xdg-terminal-exec
-
-          %description
-          Spiral is a file manager for Wayland, built with GTK 4 and libadwaita. It
-          provides the org.freedesktop.FileManager1 service and a FileChooser portal
-          backend, so applications that open and save files through xdg-desktop-portal
-          get the same dialog.
-
-          %install
-          cp -a %{stage}/. %{buildroot}/
-
-          %files -f %{filelist}
-          EOF
-          rpmbuild -bb --define "_topdir $PWD/rpmbuild" --define "pkgver ${TAG#v}" \
-            --define "stage $PWD/stage" --define "filelist $PWD/files" spiral.spec
+          spec=packaging/fedora/spiral.spec
+          sed -i "s/^Version:.*/Version:        ${TAG#v}/; s/^Release:.*/Release:        1%{?dist}/" "$spec"
+          dnf builddep -y --setopt=install_weak_deps=False "$spec"
+          # rpmbuild fetches Source0 from the tag into a directory it does not create itself.
+          mkdir -p rpmbuild/SOURCES
+          rpmbuild -bb --define "_topdir $PWD/rpmbuild" --define "_disable_source_fetch 0" "$spec"
           mkdir dist && mv rpmbuild/RPMS/*/*.rpm dist/
           # The dependencies resolve on the release it was built for.
           dnf install -y dist/*.rpm
@@ -289,3 +243,17 @@ jobs:
             gh release create "$TAG" -R "$GITHUB_REPOSITORY" --verify-tag --title "Spiral ${TAG#v}" \
               --notes-file ../notes/notes.md *
           fi
+
+  copr:
+    name: Build in Copr
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start the build
+        env:
+          # The custom webhook of sachesi/software, without the package name.
+          COPR_WEBHOOK: ${{ secrets.COPR_WEBHOOK }}
+        run: |
+          [ -n "$COPR_WEBHOOK" ] || { echo "COPR_WEBHOOK is not set" >&2; exit 1; }
+          # Copr's script for the package builds the tag it is sent, with the spec on main.
+          curl -fsS -X POST --data "$TAG" "${COPR_WEBHOOK%/}/spiral/"
