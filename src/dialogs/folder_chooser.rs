@@ -25,6 +25,7 @@ pub async fn folder_chooser_dialog(
                 .is_some_and(file_utils::is_dir)
         })));
     let sidebar: PlacesSidebar = glib::Object::new();
+    sidebar.set_in_dialog(true);
     let location_bar = crate::location_entry::LocationBar::new(&view);
 
     let back = gtk::Button::builder()

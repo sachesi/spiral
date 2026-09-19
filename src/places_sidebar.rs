@@ -58,6 +58,8 @@ mod imp {
         /// Whether the tags are left out, as they are where a file is being saved: a tag
         /// lists files, and a file cannot be saved into one.
         pub hide_tags: Cell<bool>,
+        /// In a dialog: no tabs to open a place in, and no operations to empty the trash.
+        pub in_dialog: Cell<bool>,
     }
 
     impl Default for PlacesSidebar {
@@ -78,6 +80,7 @@ mod imp {
                 popover: Default::default(),
                 color_picker: Default::default(),
                 hide_tags: Default::default(),
+                in_dialog: Default::default(),
             }
         }
     }
@@ -385,6 +388,10 @@ impl PlacesSidebar {
     pub fn set_hide_tags(&self, hide: bool) {
         self.imp().hide_tags.set(hide);
         self.rebuild();
+    }
+
+    pub fn set_in_dialog(&self, in_dialog: bool) {
+        self.imp().in_dialog.set(in_dialog);
     }
 
     pub fn rebuild(&self) {
