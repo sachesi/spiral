@@ -44,6 +44,13 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.17.1" date="2026-09-20">
+      <description>
+        <p>Folders follow their changes again after a file is saved by being written under another name and renamed over, as editors and a replace on paste do; before, the tab stopped noticing changes until it was closed. What an operation, an undo or a redo leaves is selected, rows keep their selection and unfolded folders stay unfolded as the folder changes, search results follow renames and moves, and a view whose folder is moved or deleted goes along with it.</p>
+        <p>The file chooser hands applications files they can use: a file on a server goes as its path under GVfs, and the trash or a place with no path is refused with a message. Saving under a folder's name goes into the folder, a path typed as the name or in the location bar is saved to, saving several files goes into the selected folder and asks before replacing any, and one file asked for allows one selected. Ctrl+O accepts, and Open or Save stay off until there is something to accept.</p>
+        <p>Paste and New Folder work at the top of an SMB share, the keyboard goes back to the files after a rename, a templates folder made while Spiral runs is offered at once, and a file still being written no longer leaves a thumbnail of part of it behind.</p>
+      </description>
+    </release>
     <release version="0.17.0" date="2026-09-18">
       <description>
         <p>Video and sound in the preview are decoded inside the sandbox, as thumbnails are, and only the pictures and the sound reach Spiral. Video is still decoded on the GPU where there is one, and its pictures stay in GPU memory on their way to the screen, in the colours the file gives them: full range, BT.2020 and HDR included. A seek lands on the moment asked for, and a file with only sound or only pictures goes on playing after one.</p>
