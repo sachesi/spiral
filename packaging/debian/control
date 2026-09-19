@@ -1,0 +1,51 @@
+Source: spiral
+Section: utils
+Priority: optional
+Maintainer: sachesi <xsachesi@pm.me>
+Build-Depends: debhelper-compat (= 13),
+               cargo,
+               rustc (>= 1.92),
+               pkg-config,
+               just,
+               blueprint-compiler,
+               gettext,
+               libgtk-4-dev (>= 4.22),
+               libadwaita-1-dev (>= 1.9),
+               libgtksourceview-5-dev,
+               libglib2.0-dev (>= 2.80),
+               libseccomp-dev,
+               libgstreamer1.0-dev,
+               libgstreamer-plugins-base1.0-dev
+Standards-Version: 4.7.2
+Homepage: https://github.com/sachesi/spiral
+Rules-Requires-Root: no
+
+Package: spiral
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         libgtk-4-1 (>= 4.22),
+         libadwaita-1-0 (>= 1.9),
+         hicolor-icon-theme,
+         xdg-desktop-portal,
+         bubblewrap,
+         gstreamer1.0-plugins-base,
+         gstreamer1.0-gtk4
+Recommends: gstreamer1.0-plugins-good,
+            gstreamer1.0-libav,
+            gstreamer1.0-plugins-bad,
+            gvfs,
+            libglycin-2-0,
+            glycin-loaders
+Suggests: 7zip,
+          xdg-terminal-exec
+Description: File manager for Wayland with a file chooser portal backend
+ Spiral is a file manager for Wayland, built with GTK 4 and libadwaita: grid,
+ list and column views, tabs, a places sidebar with devices and bookmarks, file
+ operations with progress, conflict handling and undo, archives through the tools
+ installed on the system, sandboxed thumbnails, a quick preview, a details panel,
+ and "Open in Terminal".
+ .
+ It provides the org.freedesktop.FileManager1 service and a FileChooser portal
+ backend, so applications that open and save files through xdg-desktop-portal
+ get the same dialog.
