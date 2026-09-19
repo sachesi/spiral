@@ -7,7 +7,7 @@ use ashpd::PortalError;
 use ashpd::desktop::file_chooser::{Choice, FileFilter, SelectedFiles};
 use ashpd::{Uri, WindowIdentifierType};
 use futures_util::FutureExt;
-use gettextrs::gettext;
+use gettextrs::{gettext, ngettext};
 
 use crate::adw::prelude::*;
 use crate::browser_view::BrowserView;
@@ -96,6 +96,14 @@ async fn run(
                 None,
             ),
         };
+    // The filter asked for first need not be one of the list; it is then offered after
+    // them, as GTK's own chooser does, and on its own where there is no list.
+    let mut filters = filters;
+    if let Some(cur) = &current_filter
+        && !filters.contains(cur)
+    {
+        filters.push(cur.clone());
+    }
     let mut start = start.unwrap_or_else(|| gio::File::for_path(glib::home_dir()));
     let is_dir = start
         .query_info_future(
@@ -124,7 +132,41 @@ async fn run(
         pattern.set_enabled(false);
     }
     let model = view.model();
+    // One file asked for is one selected: a wider selection would be cut down to its first
+    // file on the way out, which need not be the one meant.
+    if let Mode::Open {
+        multiple: false, ..
+    } = mode
+    {
+        for name in ["select-all", "invert-selection", "select-pattern"] {
+            view.withhold_action(name);
+        }
+        model
+            .selection()
+            .connect_selection_changed(|sel, position, n| {
+                let selected = sel.selection();
+                if selected.size() > 1 {
+                    // The newest of it: the end of the range just changed that is selected.
+                    let keep = (position..position + n)
+                        .rev()
+                        .find(|&p| selected.contains(p))
+                        .unwrap_or_else(|| selected.minimum());
+                    sel.select_item(keep, true);
+                }
+            });
+    }
+    // Making a folder is for choosing where things go, not for picking a file to open.
+    if matches!(
+        mode,
+        Mode::Open {
+            directory: false,
+            ..
+        }
+    ) {
+        view.withhold_action("new-folder");
+    }
     let sidebar: PlacesSidebar = glib::Object::new();
+    sidebar.set_in_dialog(true);
     if !matches!(mode, Mode::Open { .. }) {
         sidebar.set_hide_tags(true);
     }
@@ -329,7 +371,7 @@ async fn run(
         .css_classes(["flat-dropdown"])
         .build();
     if let Some(cur) = &current_filter
-        && let Some(i) = filters.iter().position(|f| f.label() == cur.label())
+        && let Some(i) = filters.iter().position(|f| f == cur)
     {
         filter_dropdown.set_selected(i as u32);
     }
@@ -559,7 +601,9 @@ async fn run(
     };
 
     let mode = Rc::new(mode);
-    let on_accept: Rc<dyn Fn()> = Rc::new(glib::clone!(
+    // `activated` is the file opened in the view, which is not always one selected there:
+    // an entry of the network folder opens the file it stands for.
+    let on_accept: Rc<dyn Fn(Option<gio::File>)> = Rc::new(glib::clone!(
         #[strong]
         finish,
         #[weak]
@@ -570,28 +614,37 @@ async fn run(
         window,
         #[strong]
         mode,
-        move || {
+        move |activated| {
             let Some(location) = view.location() else {
                 return;
             };
+            let infos = view.model().selected_infos();
+            let (finish, collect, window) =
+                (finish.clone(), collect_choices.clone(), window.clone());
             match &*mode {
                 Mode::Open {
                     multiple,
                     directory,
                 } => {
-                    let mut files: Vec<gio::File> = view
-                        .model()
-                        .selected_infos()
-                        .iter()
-                        .filter(|i| *directory == file_utils::is_dir(i))
-                        .map(file_utils::file_of)
-                        .collect();
+                    let mut files: Vec<gio::File> = match activated {
+                        Some(f)
+                            if !*directory
+                                && !infos.iter().any(|i| file_utils::file_of(i).equal(&f)) =>
+                        {
+                            vec![f]
+                        }
+                        _ => infos
+                            .iter()
+                            .filter(|i| *directory == file_utils::is_dir(i))
+                            .map(file_utils::file_of)
+                            .collect(),
+                    };
                     if files.is_empty() && *directory {
                         files.push(location);
                     }
                     if files.is_empty() {
                         // Accepting with only a folder selected enters it, as GTK's chooser does.
-                        if let [info] = view.model().selected_infos().as_slice()
+                        if let [info] = infos.as_slice()
                             && file_utils::is_dir(info)
                         {
                             view.go_to(&file_utils::file_of(info));
@@ -601,52 +654,93 @@ async fn run(
                     if !*multiple {
                         files.truncate(1);
                     }
-                    let mut sel = SelectedFiles::default();
-                    for f in files {
-                        if let Ok(u) = Uri::parse(&f.uri()) {
-                            sel = sel.uri(u);
-                        }
-                    }
-                    finish(Ok(collect_choices(sel)));
+                    let Some(uris) = files.iter().map(local_uri).collect::<Option<Vec<_>>>() else {
+                        glib::spawn_future_local(not_passable(window));
+                        return;
+                    };
+                    let sel = uris
+                        .into_iter()
+                        .fold(SelectedFiles::default(), |s, u| s.uri(u));
+                    finish(Ok(collect(sel)));
                 }
                 Mode::Save => {
-                    let name = name_entry.text().trim().to_string();
-                    if name.is_empty() || name.contains('/') || name == "." || name == ".." {
+                    let text = name_entry.text().trim().to_string();
+                    if text.is_empty() || text == "." || text == ".." {
                         name_entry.add_css_class("error");
                         return;
                     }
-                    let dest = location.child(&name);
-                    let finish = finish.clone();
-                    let collect = collect_choices.clone();
-                    let window = window.clone();
+                    // A path typed in place of a name: from the folder shown, or from the
+                    // home folder or the root as the location bar takes it.
+                    let dest = if !text.contains('/') {
+                        location.child(&text)
+                    } else if text.starts_with('/') || text.starts_with('~') {
+                        crate::location_entry::resolve(&text)
+                    } else {
+                        location.resolve_relative_path(&text)
+                    };
                     glib::spawn_future_local(async move {
-                        let exists = dest
-                            .query_info_future(
-                                "standard::type",
-                                gio::FileQueryInfoFlags::NONE,
-                                glib::Priority::DEFAULT,
-                            )
-                            .await
-                            .is_ok();
-                        if exists && !confirm_replace(&window, &name).await {
+                        let kind = file_type(&dest).await;
+                        // The name of a folder is a place to save in, not a file to
+                        // replace: go there, as GTK's chooser does.
+                        if kind == Some(gio::FileType::Directory) {
+                            view.go_to(&dest);
+                            name_entry.set_text("");
+                            name_entry.grab_focus();
                             return;
                         }
-                        let mut sel = SelectedFiles::default();
-                        if let Ok(u) = Uri::parse(&dest.uri()) {
-                            sel = sel.uri(u);
+                        let Some(parent) = dest.parent() else { return };
+                        if file_type(&parent).await != Some(gio::FileType::Directory) {
+                            name_entry.add_css_class("error");
+                            return;
                         }
-                        finish(Ok(collect(sel)));
+                        let Some(uri) =
+                            passable_folder(&parent).then(|| local_uri(&dest)).flatten()
+                        else {
+                            not_passable(window).await;
+                            return;
+                        };
+                        if kind.is_some()
+                            && !confirm_replace(&window, &[crate::ops::name(&dest)]).await
+                        {
+                            return;
+                        }
+                        finish(Ok(collect(SelectedFiles::default().uri(uri))));
                     });
                 }
                 Mode::SaveFiles(names) => {
-                    let mut sel = SelectedFiles::default();
-                    for n in names {
-                        let Some(base) = n.file_name() else { continue };
-                        if let Ok(u) = Uri::parse(&location.child(base).uri()) {
-                            sel = sel.uri(u);
+                    // A folder selected is the one being chosen, as it is when a folder is
+                    // asked for; otherwise the one shown.
+                    let folder = match infos.as_slice() {
+                        [info] if file_utils::is_dir(info) => file_utils::file_of(info),
+                        _ => location,
+                    };
+                    let dests: Vec<gio::File> = names
+                        .iter()
+                        .filter_map(|n| n.file_name())
+                        .map(|base| folder.child(base))
+                        .collect();
+                    glib::spawn_future_local(async move {
+                        let uris = passable_folder(&folder)
+                            .then(|| dests.iter().map(local_uri).collect::<Option<Vec<_>>>())
+                            .flatten();
+                        let Some(uris) = uris else {
+                            not_passable(window).await;
+                            return;
+                        };
+                        let mut existing = Vec::new();
+                        for dest in &dests {
+                            if file_type(dest).await.is_some() {
+                                existing.push(crate::ops::name(dest));
+                            }
                         }
-                    }
-                    finish(Ok(collect_choices(sel)));
+                        if !existing.is_empty() && !confirm_replace(&window, &existing).await {
+                            return;
+                        }
+                        let sel = uris
+                            .into_iter()
+                            .fold(SelectedFiles::default(), |s, u| s.uri(u));
+                        finish(Ok(collect(sel)));
+                    });
                 }
             }
         }
@@ -654,13 +748,82 @@ async fn run(
     accept.connect_clicked(glib::clone!(
         #[strong]
         on_accept,
-        move |_| on_accept()
+        move |_| on_accept(None)
     ));
     view.connect_file_activated(glib::clone!(
         #[strong]
         on_accept,
-        move |_, _| on_accept()
+        move |_, file| on_accept(Some(file.clone()))
     ));
+    // A file typed into the location bar is the file being asked for: opened, or saved
+    // under once the name is confirmed, whether or not it exists yet. Where a folder is
+    // asked for, the default picks it out in its folder.
+    match &*mode {
+        Mode::Open {
+            directory: false, ..
+        } => location_bar.connect_file(glib::clone!(
+            #[strong]
+            on_accept,
+            #[weak]
+            view,
+            move |file, exists| {
+                if exists {
+                    on_accept(Some(file.clone()));
+                } else {
+                    view.go_to(file);
+                }
+            }
+        )),
+        Mode::Save => location_bar.connect_file(glib::clone!(
+            #[weak]
+            view,
+            #[weak]
+            name_entry,
+            move |file, _| {
+                if let Some(parent) = file.parent() {
+                    view.go_to(&parent);
+                }
+                name_entry.set_text(&crate::ops::name(file));
+                name_entry.grab_focus();
+            }
+        )),
+        _ => {}
+    }
+    // Nothing to accept yet: no name to save under, or nothing picked to open.
+    match &*mode {
+        Mode::Save => {
+            let sync = |e: &gtk::Entry, accept: &gtk::Button| {
+                accept.set_sensitive(!e.text().trim().is_empty());
+            };
+            sync(&name_entry, &accept);
+            name_entry.connect_changed(glib::clone!(
+                #[weak]
+                accept,
+                move |e| sync(e, &accept)
+            ));
+        }
+        Mode::Open {
+            directory: false, ..
+        } => {
+            let sync = |sel: &gtk::MultiSelection, accept: &gtk::Button| {
+                accept.set_sensitive(!sel.selection().is_empty());
+            };
+            sync(&model.selection(), &accept);
+            model.selection().connect_selection_changed(glib::clone!(
+                #[weak]
+                accept,
+                move |sel, _, _| sync(sel, &accept)
+            ));
+            // Leaving a folder takes what was selected in it with the items, and says so
+            // only as a change of items.
+            model.selection().connect_items_changed(glib::clone!(
+                #[weak]
+                accept,
+                move |sel, _, _, _| sync(sel, &accept)
+            ));
+        }
+        _ => {}
+    }
     name_entry.connect_changed(|e| e.remove_css_class("error"));
     window.connect_close_request(glib::clone!(
         #[strong]
@@ -873,12 +1036,34 @@ fn choice_widget(c: &Choice) -> gtk::Widget {
     bx.upcast()
 }
 
-async fn confirm_replace(parent: &impl IsA<gtk::Widget>, name: &str) -> bool {
-    let dialog = adw::AlertDialog::builder()
-        .heading(gettext("Replace “%s”?").replace("%s", name))
-        .body(gettext(
+async fn confirm_replace(parent: &impl IsA<gtk::Widget>, names: &[String]) -> bool {
+    const SHOWN: usize = 5;
+    let heading = match names {
+        [name] => gettext("Replace “%s”?").replace("%s", name),
+        _ => ngettext("Replace %d File?", "Replace %d Files?", names.len() as u32)
+            .replace("%d", &names.len().to_string()),
+    };
+    let body = match names {
+        [_] => gettext(
             "A file with that name already exists. Replacing it will overwrite its content.",
-        ))
+        ),
+        // A few names say which; a long list of them would only make the dialog tall.
+        _ if names.len() <= SHOWN => gettext("Files with these names already exist: %s. Replacing them will overwrite their content.")
+            .replace("%s", &names.join(", ")),
+        _ => {
+            let more = names.len() - SHOWN;
+            ngettext(
+                "Files with these names already exist: %s, and %d more. Replacing them will overwrite their content.",
+                "Files with these names already exist: %s, and %d more. Replacing them will overwrite their content.",
+                more as u32,
+            )
+            .replace("%s", &names[..SHOWN].join(", "))
+            .replace("%d", &more.to_string())
+        }
+    };
+    let dialog = adw::AlertDialog::builder()
+        .heading(heading)
+        .body(body)
         .close_response("cancel")
         .default_response("cancel")
         .build();
@@ -888,6 +1073,46 @@ async fn confirm_replace(parent: &impl IsA<gtk::Widget>, name: &str) -> bool {
     ]);
     dialog.set_response_appearance("replace", adw::ResponseAppearance::Destructive);
     dialog.choose_future(Some(parent)).await == "replace"
+}
+
+/// What `file` is, following links; `None` where there is nothing.
+async fn file_type(file: &gio::File) -> Option<gio::FileType> {
+    file.query_info_future(
+        "standard::type",
+        gio::FileQueryInfoFlags::NONE,
+        glib::Priority::DEFAULT,
+    )
+    .await
+    .ok()
+    .map(|i| i.file_type())
+}
+
+/// `file` as the application can be given it. xdg-desktop-portal passes on `file://` URIs
+/// only and drops the rest, so a file on a share goes as the path GVfs makes for it; one
+/// with no path at all, in the trash's listing or the network's, cannot go. The URI is made
+/// from the path itself: GIO turns a file made from that path back into the share's.
+fn local_uri(file: &gio::File) -> Option<Uri> {
+    let uri = glib::filename_to_uri(file.path()?, None).ok()?;
+    Uri::parse(&uri).ok()
+}
+
+/// Whether what is saved in `folder` reaches the application as a file there. The trash
+/// has a path under GVfs, but a file written through it is not put in the trash.
+fn passable_folder(folder: &gio::File) -> bool {
+    !folder.has_uri_scheme("trash") && local_uri(folder).is_some()
+}
+
+/// Say that what was picked cannot be handed over, rather than hand over nothing.
+async fn not_passable(window: adw::Window) {
+    let dialog = adw::AlertDialog::builder()
+        .heading(gettext("Not Available to the Application"))
+        .body(gettext(
+            "Only files in a folder on this computer or on a connected server can be passed on. Choose another folder.",
+        ))
+        .close_response("ok")
+        .build();
+    dialog.add_response("ok", &gettext("_OK"));
+    dialog.choose_future(Some(&window)).await;
 }
 
 #[cfg(test)]

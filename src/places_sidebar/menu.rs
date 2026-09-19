@@ -17,7 +17,8 @@ impl PlacesSidebar {
         };
         let bookmark = row_bookmark(row).is_some();
         let tag = row_tag(row);
-        enable("open-new-tab", row_file(row).is_some());
+        let window = !imp.in_dialog.get();
+        enable("open-new-tab", window && row_file(row).is_some());
         enable("rename", bookmark || tag.is_some());
         enable("remove", bookmark || tag.is_some());
         enable("new-tag", crate::tags::all().len() < crate::tags::MAX);
@@ -29,7 +30,9 @@ impl PlacesSidebar {
         );
         enable(
             "empty-trash",
-            !imp.trash_empty.get() && row_file(row).is_some_and(|f| f.uri().starts_with("trash:")),
+            window
+                && !imp.trash_empty.get()
+                && row_file(row).is_some_and(|f| f.uri().starts_with("trash:")),
         );
         let existing = imp.popover.borrow().clone();
         let popover = existing.unwrap_or_else(|| {

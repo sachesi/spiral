@@ -69,7 +69,11 @@ impl BrowserView {
                 } else if let Some(target) = file_utils::target_of(&info) {
                     v.open_target(target, file_utils::listed_as(&info));
                     break;
-                } else if !v.chooser_mode() {
+                } else if v.chooser_mode() {
+                    // What a dialog opens is what it hands back.
+                    v.emit_by_name::<()>("file-activated", &[&file]);
+                    break;
+                } else {
                     v.launch(&file);
                 }
             }
@@ -192,12 +196,16 @@ impl BrowserView {
         ));
         group.add_action(&from_template);
         if chooser {
-            for a in &destructive {
-                a.set_enabled(false);
+            // A dialog hands files to the application that asked; it changes nothing, and
+            // launches nothing and opens no windows of its own.
+            for a in destructive
+                .iter()
+                .chain([&from_template, &open_new_tab, &open_new_window])
+            {
+                self.withhold_action(&a.name());
             }
-            from_template.set_enabled(false);
-            open_new_tab.set_enabled(false);
-            open_new_window.set_enabled(false);
+            self.withhold_action("open-with");
+            self.withhold_action("open-item-location-new-tab");
         }
         self.insert_action_group("view", Some(group));
 
@@ -375,20 +383,24 @@ impl BrowserView {
     }
 
     fn set_enabled(&self, name: &str, enabled: bool) {
-        if let Some(a) = self
-            .imp()
+        let imp = self.imp();
+        if let Some(a) = imp
             .actions
             .lookup_action(name)
             .and_downcast::<gio::SimpleAction>()
         {
-            a.set_enabled(enabled);
+            a.set_enabled(enabled && !imp.withheld.borrow().iter().any(|w| w == name));
         }
     }
 
+    /// Turn an action off for good, whatever the selection says afterwards: what a file
+    /// chooser has no use for.
+    pub fn withhold_action(&self, name: &str) {
+        self.imp().withheld.borrow_mut().push(name.to_string());
+        self.set_enabled(name, false);
+    }
+
     pub(crate) fn update_action_state(&self) {
-        if self.chooser_mode() {
-            return;
-        }
         let infos = self.model().selected_infos();
         let n = infos.len();
         let single_dir = n == 1 && file_utils::is_dir(&infos[0]);

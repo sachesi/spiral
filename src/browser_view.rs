@@ -145,6 +145,8 @@ mod imp {
         /// Portal chooser mode: no destructive actions, activation selects instead of launching.
         #[property(get, set, construct_only)]
         pub chooser_mode: Cell<bool>,
+        /// Actions kept off whatever the selection, by `withhold_action`.
+        pub withheld: RefCell<Vec<String>>,
 
         pub actions: gio::SimpleActionGroup,
         pub popover: RefCell<Option<gtk::PopoverMenu>>,
@@ -274,6 +276,7 @@ mod imp {
                 hover_timer: Default::default(),
                 drop_row: Default::default(),
                 chooser_mode: Default::default(),
+                withheld: Default::default(),
                 actions: gio::SimpleActionGroup::new(),
                 popover: Default::default(),
                 syncing_header: Default::default(),

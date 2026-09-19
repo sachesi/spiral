@@ -125,6 +125,20 @@ pub struct LocationBar {
     stack: gtk::Stack,
     entry: gtk::Entry,
     view: crate::browser_view::BrowserView,
+    on_file: FileHandler,
+}
+
+type FileHandler = Rc<std::cell::RefCell<Option<Rc<dyn Fn(&gio::File, bool)>>>>;
+
+async fn file_type(file: &gio::File) -> Option<gio::FileType> {
+    file.query_info_future(
+        "standard::type",
+        gio::FileQueryInfoFlags::NONE,
+        glib::Priority::DEFAULT,
+    )
+    .await
+    .ok()
+    .map(|i| i.file_type())
 }
 
 /// Show the entry, filled with where the view is, and give it the keyboard.
@@ -198,9 +212,14 @@ impl LocationBar {
             view,
             move |_| show_entry(&stack, &entry, &view)
         ));
+        let on_file: FileHandler = Default::default();
+        // A file typed is not a folder to show: it is the file being asked for, which the
+        // chooser takes if it said how, and is otherwise picked out in its folder.
         entry.connect_activate(glib::clone!(
             #[strong]
             done,
+            #[strong]
+            on_file,
             #[weak]
             view,
             move |entry| {
@@ -209,8 +228,32 @@ impl LocationBar {
                 if text.is_empty() {
                     return;
                 }
-                view.go_to(&resolve(text));
+                let target = resolve(text);
                 done();
+                let on_file = on_file.clone();
+                glib::spawn_future_local(async move {
+                    let handler = on_file.borrow().clone();
+                    match (file_type(&target).await, target.parent()) {
+                        (Some(gio::FileType::Directory), _) | (_, None) => view.go_to(&target),
+                        (Some(_), Some(parent)) => match handler {
+                            Some(f) => f(&target, true),
+                            None => {
+                                view.go_to(&parent);
+                                view.select_files_when_loaded(vec![target]);
+                            }
+                        },
+                        // Not there: a file to be made, where the chooser is saving one
+                        // into a folder that is; otherwise the folder says it is missing.
+                        (None, Some(parent)) => match handler {
+                            Some(f)
+                                if file_type(&parent).await == Some(gio::FileType::Directory) =>
+                            {
+                                f(&target, false)
+                            }
+                            _ => view.go_to(&target),
+                        },
+                    }
+                });
             }
         ));
         cancel.connect_clicked(glib::clone!(
@@ -252,12 +295,20 @@ impl LocationBar {
             stack,
             entry,
             view: view.clone(),
+            on_file,
         }
     }
 
     /// The widget for the header bar's title.
     pub fn widget(&self) -> &gtk::Stack {
         &self.stack
+    }
+
+    /// What to do with a file typed in place of a folder, instead of picking it out in
+    /// its folder; also given one that does not exist yet in a folder that does, with
+    /// `false` for whether it exists.
+    pub fn connect_file(&self, f: impl Fn(&gio::File, bool) + 'static) {
+        self.on_file.replace(Some(Rc::new(f)));
     }
 
     /// Swap the breadcrumbs for the entry, as Ctrl+L does in the window.

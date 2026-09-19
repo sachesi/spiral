@@ -11,10 +11,14 @@ portal, Flatpaks, browsers, Qt with the xdg platform theme
 The dialog is a trimmed file manager window: sidebar, path bar, the same views, and a
 bottom bar with the filter dropdown, the name entry in save mode, a button for the
 application's extra options, and the accept button. Trash, delete, cut and paste, rename
-and drag and drop are off. New Folder is there in save mode and when a folder is being
-asked for. The sidebar has the tags only when opening: a tag lists files from anywhere,
-and is nowhere to save one. Opening a file accepts; pressing Open with a folder selected enters it; Esc
-cancels. The keys of the file manager that a dialog has a use for are there: Ctrl+L, or a
+and drag and drop are off, and so are Open With, new tabs and emptying the trash. New
+Folder is there in save mode and when a folder is being asked for. The sidebar has the
+tags only when opening: a tag lists files from anywhere, and is nowhere to save one.
+Opening a file accepts; pressing Open with a folder selected enters it; Esc cancels. Where
+one file is asked for, only one can be selected. A file typed into the location bar is
+opened, or in save mode proposed as the name in its folder. A name in save mode that is a
+folder's goes into that folder, and a path typed there is saved to. Saving several files
+goes into the folder selected, or the one shown, and asks before replacing any. The keys of the file manager that a dialog has a use for are there: Ctrl+L, or a
 click on the current folder in the path bar, types a location; Ctrl+R and F5 read the
 folder again; Ctrl+S selects the items matching a pattern.
 
@@ -31,11 +35,19 @@ Leaving the folder ends the search.
 Honoured request options: title, accept label, modal, multiple, directory, filters and
 current filter (glob and MIME), choices (combos become dropdowns, booleans check boxes),
 current name, current file and current folder for saving, and the file list for
-SaveFiles. Saving over an existing file asks first. The reply carries the URIs, the
-selected filter and the choice values.
+SaveFiles. A current filter that is not in the list is offered after it. Saving over an
+existing file asks first. The reply carries the URIs, the selected filter and the choice
+values.
+
+xdg-desktop-portal passes on `file://` URIs only and drops any other, so a file on a
+server goes back as the path GVfs gives it under `/run/user/UID/gvfs`. What has no such
+path, the listings of the trash and the network or a server GVfs cannot mount as files,
+is refused with a message rather than answered with nothing; saving into the trash is
+refused too.
 
 The dialog is made transient for the caller when the request has a Wayland handle, via
-xdg-foreign. Without that the compositor sees an independent window.
+xdg-foreign. Without that the compositor sees an independent window, and so it does for a
+caller on X11: GTK 4 has no way to parent a window to another program's X11 window.
 
 ### Why the backend starts the way it does
 
