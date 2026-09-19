@@ -166,8 +166,12 @@ impl BrowserView {
             #[weak(rename_to = view)]
             self,
             async move {
-                if let Some(new_name) =
-                    crate::naming::rename_popover(&view, &anchor, &dir, &old, is_folder).await
+                let answer =
+                    crate::naming::rename_popover(&view, &anchor, &dir, &old, is_folder).await;
+                // The keyboard went with the popover; it comes back to the files, where the
+                // renamed one takes it once it is in.
+                view.grab_view_focus();
+                if let Some(new_name) = answer
                     && new_name != old
                 {
                     view.submit(JobKind::Rename {
