@@ -42,7 +42,11 @@ before a codec was installed is not one this one cannot draw; writing the file a
 the note stale, as it carries the time the file was last changed. No note is left for a
 thumbnailer that ran out of time or could not be started: a machine busy with other
 decoders or a helper not installed yet say nothing about the file, and it is asked about
-again on the next visit. For generation, a picture glycin reads is drawn by glycin first,
+again on the next visit. Nor is anything kept on disk, thumbnail or note, for a file written
+this second or the one before, or changed while it was drawn: one still being written is
+drawn from part of it, and the time it carries is usually the second the finished file
+keeps, so either would stand for the finished file. What was drawn is shown as long as the
+file is as its row says, and it is drawn again once it has been read again. For generation, a picture glycin reads is drawn by glycin first,
 in its own sandbox, cut down to size in Spiral and written with the text chunks below; its
 loaders stay running between files, where a thumbnailer needs a sandbox started for each.
 Large pictures are cut down a few at a time, so that a folder of them is not all held
