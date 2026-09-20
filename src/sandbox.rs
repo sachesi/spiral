@@ -279,6 +279,63 @@ fn stand_aside(pid: u32) {
     }
 }
 
+/// How far a sandboxed tool is by what it has read: the `rchar` the kernel keeps for it,
+/// which counts every byte it has taken from its input, be that the archive it unpacks or
+/// the files it packs. It is what a tool that says nothing about itself can still be
+/// measured by. None where the kernel does not tell: `/proc/<pid>/io` is not readable when
+/// bwrap is installed setuid, and there the tool simply has no progress of its own.
+pub(crate) struct ReadMeter {
+    /// The bwrap process that was started here; the tool runs a level or two below it.
+    root: u32,
+    tool: Option<u32>,
+}
+
+impl ReadMeter {
+    pub(crate) fn new(root: u32) -> Self {
+        ReadMeter { root, tool: None }
+    }
+
+    /// Bytes the tool has read so far, looking it up among bwrap's descendants the first
+    /// time and then reading one small file per call.
+    pub(crate) fn bytes(&mut self) -> Option<u64> {
+        if self.tool.is_none() {
+            self.tool = descendant(self.root, 0);
+        }
+        rchar(&std::fs::read_to_string(format!("/proc/{}/io", self.tool?)).ok()?)
+    }
+}
+
+/// The first process under `pid` that is not bwrap itself: bwrap forks once for the
+/// namespace and once more for the tool.
+fn descendant(pid: u32, depth: u32) -> Option<u32> {
+    if depth > 4 {
+        return None;
+    }
+    let children = std::fs::read_to_string(format!("/proc/{pid}/task/{pid}/children")).ok()?;
+    for child in children
+        .split_ascii_whitespace()
+        .filter_map(|p| p.parse().ok())
+    {
+        let comm = std::fs::read_to_string(format!("/proc/{child}/comm")).unwrap_or_default();
+        if comm.trim() != "bwrap" {
+            return Some(child);
+        }
+        if let Some(found) = descendant(child, depth + 1) {
+            return Some(found);
+        }
+    }
+    None
+}
+
+/// The `rchar` line of what `/proc/<pid>/io` holds: bytes the process has read.
+fn rchar(io: &str) -> Option<u64> {
+    io.lines()
+        .find_map(|line| line.strip_prefix("rchar:"))?
+        .trim()
+        .parse()
+        .ok()
+}
+
 /// What a helper left at `path`, in the directory it could write to, read without taking
 /// its word for anything: the name must be a regular file of at most `limit` bytes. A
 /// helper that has been taken over by the file it was reading could leave a link to one of
@@ -400,6 +457,15 @@ fn drain(pipe: Option<impl std::io::Read + Send + 'static>) -> std::thread::Join
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// What the kernel says a process has read, and nothing taken for it.
+    #[test]
+    fn what_a_process_has_read() {
+        assert_eq!(rchar("rchar: 4096\nwchar: 7\n"), Some(4096));
+        assert_eq!(rchar("syscr: 12\nrchar: 0\n"), Some(0));
+        assert_eq!(rchar("wchar: 9\n"), None);
+        assert_eq!(rchar(""), None);
+    }
 
     /// Only a regular file is read back: a link or a pipe left in its place is refused.
     #[test]

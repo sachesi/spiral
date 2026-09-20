@@ -26,12 +26,19 @@ some network shares. Search results follow what an operation renames, moves or t
 away. When the folder on screen is renamed or moved the view goes along with it; when it
 is deleted or trashed, the view goes up to the nearest folder that is still there.
 
-Copies, moves and deletes count their sources first so the total is known before the
-rate clock starts, and progress is by bytes. Inside a single file it comes from GIO's
-callback, for a copy and for a move between filesystems alike. A folder that moves by a
-rename counts at once for all the counting pass found in it, a deleted file for its size,
-and what is skipped for what it weighed, so a job that finishes has reached its total.
-Permissions, trashing, restoring, renaming and linking go by items.
+A copy counts its sources first, so the total is known before the rate clock starts, and
+then goes by bytes; inside a single file they come from GIO's callback, for a copy and for
+a move between filesystems alike. What is skipped counts for what it weighed, so a job
+that finishes has reached its total, and an item that turns out to be larger than the
+counting pass found is part of the total by the time it is gone past.
+
+A move within one filesystem is a rename of each item, however much it holds, so nothing
+is counted first and the bar goes by the items the job was given: walking a large tree
+would take longer than moving it. A folder that has to be merged item by item after all is
+counted where it is met. Deletes, permissions, trashing, restoring, renaming and linking
+go by items as well, all being as quick over a large file as over an empty one. The clock
+stops while a question of the job is on screen, so an answer slept on does not leave the
+rest of the run with a rate of nothing.
 
 ## Copy and move
 

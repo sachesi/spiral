@@ -26,8 +26,11 @@ only targets local folders.
 
 Progress is by the bytes of the archive, with a rate and time left. GNU tar is handed the
 archive on its standard input, and how far it has read is where that file stands. 7-Zip
-reports a percentage, which is turned into bytes. The other tools (bsdtar, unzip, unrar,
-unar) say nothing on the way, so an archive they extract counts once it is done.
+reports a percentage, which is turned into bytes. The tools that say nothing on the way
+(bsdtar, unzip, unrar, unar) are measured by what the kernel has them down as having read,
+which is not asked of 7-Zip: it reads a block ahead of what it has written, and the bar
+would be at the end before the files are there. Where the kernel does not say, as with a
+setuid bwrap, such an archive counts once it is done.
 
 An encrypted archive brings up a password prompt: every tool is started with an empty
 password so it fails instead of waiting for a terminal, and a failure that mentions a
@@ -51,8 +54,10 @@ place, again without overwriting.
 Progress is by bytes, with a rate and time left: the sources are measured beforehand.
 7-Zip reports a percentage of them. tar reports every hundred records it writes
 (`--checkpoint`), measured against the headers and padded blocks the sources make. zip
-names each entry once it is packed, and the entry's size is looked up, so one large file
-counts when it is finished.
+says nothing until an entry is packed, and then only its name, so it is measured by what
+the kernel has it down as having read, with the size of each finished entry as a floor
+under that. The dots zip can be asked for count what it writes, which says nothing of how
+much is left to read.
 
 ## Sandbox
 
