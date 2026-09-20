@@ -211,7 +211,11 @@ impl JobManager {
             }
         };
         match status {
-            JobStatus::Done => job.set_description(job.done_message()),
+            JobStatus::Done => {
+                job.set_description(job.done_message());
+                // Whatever the counting pass missed, done is done, on the bar and the pie.
+                job.set_fraction(1.0);
+            }
             JobStatus::Cancelled => job.set_detail(gettext("Cancelled")),
             JobStatus::Failed => job.set_detail(gettext("Failed")),
             _ => {}

@@ -24,8 +24,10 @@ directory is renamed after the archive minus its extension (`photos.tar.gz` beco
 `photos`). Nothing existing is overwritten, a ` (2)` suffix is used instead. Extraction
 only targets local folders.
 
-7-Zip reports a percentage, which shows as a finer progress bar; the other tools advance
-per archive.
+Progress is by the bytes of the archive, with a rate and time left. GNU tar is handed the
+archive on its standard input, and how far it has read is where that file stands. 7-Zip
+reports a percentage, which is turned into bytes. The other tools (bsdtar, unzip, unrar,
+unar) say nothing on the way, so an archive they extract counts once it is done.
 
 An encrypted archive brings up a password prompt: every tool is started with an empty
 password so it fails instead of waiting for a terminal, and a failure that mentions a
@@ -46,8 +48,11 @@ folder of the selected items with their base names, after a `--`, so paths insid
 archive are relative and a name that starts with a dash is still a name. The archive is written to a hidden directory first and moved into
 place, again without overwriting.
 
-Progress is by bytes: the sources are measured beforehand and each entry the tool prints
-is looked up, so you get a rate and time left.
+Progress is by bytes, with a rate and time left: the sources are measured beforehand.
+7-Zip reports a percentage of them. tar reports every hundred records it writes
+(`--checkpoint`), measured against the headers and padded blocks the sources make. zip
+names each entry once it is packed, and the entry's size is looked up, so one large file
+counts when it is finished.
 
 ## Sandbox
 

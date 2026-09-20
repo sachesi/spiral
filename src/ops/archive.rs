@@ -6,9 +6,13 @@
 //! where other processes can read it while they run, so 7-Zip is used wherever it can be.
 
 use std::collections::HashMap;
+use std::io::Seek;
 use std::os::fd::OwnedFd;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
+use futures_util::StreamExt;
+use futures_util::future::{Either, select};
 use gettextrs::gettext;
 
 use crate::adw::prelude::*;
@@ -233,11 +237,21 @@ struct Command {
     cwd: PathBuf,
     /// What the tool reads on its standard input: a password, for 7-Zip.
     stdin: Option<String>,
+    /// A file for its standard input instead: the archive, for tar.
+    input: Option<OwnedFd>,
 }
+
+/// What one of tar's checkpoints stands for, a record.
+const RECORD: u64 = 10240;
 
 /// A 7-Zip style "NN%" progress line.
 fn percent(line: &str) -> Option<f64> {
     line.split_once('%')?.0.trim().parse().ok()
+}
+
+/// The number of records in one of tar's checkpoint lines, "tar: #100".
+fn checkpoint(line: &str) -> Option<u64> {
+    line.rsplit_once(": #")?.1.parse().ok()
 }
 
 /// Run `cmd`; every output line goes to `progress`, and those it does not claim are kept as
@@ -253,6 +267,9 @@ async fn run(
         flags |= gio::SubprocessFlags::STDIN_PIPE;
     }
     let launcher = gio::SubprocessLauncher::new(flags);
+    if let Some(input) = cmd.input {
+        launcher.take_stdin_fd(Some(input));
+    }
     // An archive is a file from anywhere and its tool is a parser: no sandbox, no run.
     let Some(sandbox) = crate::sandbox::command(&cmd.argv[0]) else {
         return Err(Fail::Failed(gettext(
@@ -389,6 +406,25 @@ async fn ask_password(parent: &gtk::Window, archive: &gio::File) -> Option<Strin
     Some(entry.text().to_string())
 }
 
+/// What tells GNU tar how an archive of `mime` is compressed, which it does not find out
+/// for itself when the archive is its standard input. None where that is not known.
+fn tar_filter(mime: &str) -> Option<&'static [&'static str]> {
+    const FILTERS: &[(&str, &[&str])] = &[
+        ("application/x-compressed-tar", &["-z"]),
+        ("application/x-bzip-compressed-tar", &["-j"]),
+        ("application/x-xz-compressed-tar", &["-J"]),
+        ("application/x-zstd-compressed-tar", &["--zstd"]),
+        ("application/x-lzma-compressed-tar", &["--lzma"]),
+        ("application/x-lzip-compressed-tar", &["--lzip"]),
+        ("application/x-lz4-compressed-tar", &["-I", "lz4"]),
+        ("application/x-tar", &[]),
+    ];
+    FILTERS
+        .iter()
+        .find(|(t, _)| gio::content_type_is_a(mime, t))
+        .map(|(_, filter)| *filter)
+}
+
 /// Whether a tool's output line says the archive wanted a password it did not get.
 fn wants_password(line: &str) -> bool {
     let line = line.to_lowercase();
@@ -412,9 +448,23 @@ pub async fn extract(
             "Archives can only be extracted to local folders",
         )));
     };
-    let total = archives.len() as f64;
+    // Progress is by the bytes of the archives themselves, as far as the tool has read.
+    let mut sizes = Vec::new();
+    for archive in &archives {
+        let info = archive
+            .query_info_future("standard::size", gio::FileQueryInfoFlags::NONE, PRIO)
+            .await;
+        sizes.push(info.map_or(0, |i| crate::file_utils::size_of(&i)));
+    }
+    job.set_bytes_total(sizes.iter().sum::<u64>());
+    job.start_clock();
+    let mut before = 0u64;
     for (i, archive) in archives.iter().enumerate() {
-        let Some(path) = archive.path() else { continue };
+        let size = sizes[i];
+        let Some(path) = archive.path() else {
+            before += size;
+            continue;
+        };
         let info = archive
             .query_info_future(
                 "standard::content-type",
@@ -429,7 +479,9 @@ pub async fn extract(
             return Err(no_tool(archive, tools));
         };
         job.set_detail(gettext("Extracting “%s”").replace("%s", &name(archive)));
-        job.set_fraction(i as f64 / total);
+        // tar reads the archive on its standard input, a file of ours, and where that
+        // file stands is how far tar is.
+        let filter = (tool == Tool::Tar).then(|| tar_filter(&mime)).flatten();
 
         let work = dest_path.join(format!("{EXTRACT_WORK}{}-{i}", std::process::id()));
         on_disk({
@@ -472,6 +524,12 @@ pub async fn extract(
                     format!("-o{out_s}"),
                     input_s.clone(),
                 ],
+                Tool::Tar if filter.is_some() => {
+                    let mut argv = vec![exe.clone(), "-x".into()];
+                    argv.extend(filter.into_iter().flatten().map(|f| f.to_string()));
+                    argv.extend(["-f".into(), "-".into(), "-C".into(), out_s.clone()]);
+                    argv
+                }
                 Tool::Bsdtar | Tool::Tar => {
                     let mut argv = vec![
                         exe.clone(),
@@ -519,6 +577,22 @@ pub async fn extract(
         };
         let mut password: Option<String> = None;
         loop {
+            let reading = match filter {
+                Some(_) => Some(
+                    on_disk({
+                        let path = path.clone();
+                        move || std::fs::File::open(path)
+                    })
+                    .await?,
+                ),
+                None => None,
+            };
+            let handed = match &reading {
+                Some(file) => Some(OwnedFd::from(
+                    file.try_clone().map_err(|e| Fail::Failed(e.to_string()))?,
+                )),
+                None => None,
+            };
             let cmd = Command {
                 argv: argv(password.as_deref()),
                 binds: vec![
@@ -530,15 +604,42 @@ pub async fn extract(
                 // reads it here; an empty one fails at once, as on the command line.
                 stdin: (tool == Tool::SevenZip)
                     .then(|| format!("{}\n", password.as_deref().unwrap_or(""))),
+                input: handed,
             };
             let mut encrypted = false;
-            let mut progress = |line: &str| {
-                encrypted |= wants_password(line);
-                percent(line)
-                    .map(|p| job.set_fraction(((i as f64 + p / 100.0) / total).clamp(0.0, 1.0)))
-                    .is_some()
+            let result = {
+                let mut progress = |line: &str| {
+                    encrypted |= wants_password(line);
+                    percent(line)
+                        .map(|p| {
+                            job.set_bytes_done(
+                                before + (size as f64 * p.min(100.0) / 100.0) as u64,
+                            );
+                            job.report(false);
+                        })
+                        .is_some()
+                };
+                let ran = run(cmd, &mut guard, &mut progress);
+                match reading.as_ref() {
+                    Some(mut file) => {
+                        let ticks =
+                            glib::interval_stream(Duration::from_millis(100)).for_each(|()| {
+                                if let Ok(at) = file.stream_position() {
+                                    job.set_bytes_done(before + at.min(size));
+                                    job.report(false);
+                                }
+                                std::future::ready(())
+                            });
+                        futures_util::pin_mut!(ran);
+                        match select(ran, ticks).await {
+                            Either::Left((result, _)) => result,
+                            Either::Right(((), ran)) => ran.await,
+                        }
+                    }
+                    None => ran.await,
+                }
             };
-            match run(cmd, &mut guard, &mut progress).await {
+            match result {
                 Ok(()) => break,
                 Err(Fail::Failed(_)) if encrypted => {}
                 Err(e) => return Err(e),
@@ -571,8 +672,10 @@ pub async fn extract(
             .created
             .push(gio::File::for_path(created));
         job.set_files_done(i as u64 + 1);
+        before += size;
+        job.set_bytes_done(before);
+        job.report(true);
     }
-    job.set_fraction(1.0);
     Ok(())
 }
 
@@ -626,6 +729,12 @@ fn sizes(path: &Path, rel: String, out: &mut HashMap<String, u64>) {
     } else {
         out.insert(rel, meta.len());
     }
+}
+
+/// What tar writes for an entry that holds `size` bytes: a header, and the file filled up
+/// to whole blocks. Its checkpoints count what it writes.
+fn in_tar(size: u64) -> u64 {
+    512 + size.div_ceil(512) * 512
 }
 
 /// Pack `files` (siblings in one folder) into `dest/<file_name>`, encrypted with `password`
@@ -697,7 +806,10 @@ pub async fn compress(
     })
     .await
     .unwrap_or_default();
-    let total: u64 = sizes.values().sum();
+    let total: u64 = match tool {
+        Tool::Tar => sizes.values().map(|size| in_tar(*size)).sum(),
+        _ => sizes.values().sum(),
+    };
     job.set_bytes_total(total);
     job.start_clock();
 
@@ -734,7 +846,14 @@ pub async fn compress(
             "-bsp1".into(),
         ],
         (Tool::SevenZip, _) => vec![exe, "a".into(), "-bso0".into(), "-bsp1".into()],
-        _ => vec![exe, "-cvaf".into()],
+        // A line for every hundred records written, which no name in the archive can be
+        // taken for.
+        _ => vec![
+            exe,
+            "--checkpoint=100".into(),
+            "--checkpoint-action=echo=#%u".into(),
+            "-caf".into(),
+        ],
     };
     match (&password, tool, ext) {
         (Some(pass), Tool::Zip, _) => argv.extend(["-P".into(), pass.clone()]),
@@ -763,31 +882,31 @@ pub async fn compress(
         stdin: password
             .filter(|_| tool == Tool::SevenZip)
             .map(|pass| format!("{pass}\n")),
+        input: None,
     };
-    // 7-Zip reports a percentage. zip ("adding: a/b (deflated 3%)"), GNU tar ("a/b") and
-    // bsdtar (same, prefixed with "a ") name each entry, which the size table turns into bytes.
+    // 7-Zip reports a percentage and tar the number of records written ("tar: #100"). zip
+    // names each entry once it is packed ("adding: a/b (deflated 3%)"), which the size
+    // table turns into bytes; the dots it can be asked for count what it writes, which
+    // says nothing of how much is left to read.
     let mut done = 0u64;
     let mut progress = |line: &str| {
-        let hit = if tool == Tool::SevenZip {
-            percent(line)
-                .map(|p| done = (total as f64 * p / 100.0) as u64)
-                .is_some()
-        } else {
-            let key = line
-                .strip_prefix("adding: ")
-                .map_or(line, |r| r.rsplit_once(" (").map_or(r, |(n, _)| n))
-                .trim_end_matches('/');
-            sizes
-                .remove(key)
-                .or_else(|| sizes.remove(key.strip_prefix("a ")?))
-                .map(|s| done += s)
-                .is_some()
+        let at = match tool {
+            Tool::SevenZip => percent(line).map(|p| (total as f64 * p / 100.0) as u64),
+            Tool::Tar => checkpoint(line).map(|records| records * RECORD),
+            _ => {
+                let entry = line
+                    .strip_prefix("adding: ")
+                    .and_then(|r| r.rsplit_once(" ("))
+                    .map(|(n, _)| n.trim_end_matches('/'));
+                entry.and_then(|n| sizes.remove(n)).map(|size| done + size)
+            }
         };
-        if hit {
+        if let Some(at) = at {
+            done = at.min(total);
             job.set_bytes_done(done);
             job.report(false);
         }
-        hit
+        at.is_some()
     };
     run(cmd, &mut guard, &mut progress).await?;
     guard.child = None;
@@ -803,7 +922,7 @@ pub async fn compress(
         .borrow_mut()
         .created
         .push(gio::File::for_path(target));
-    job.set_fraction(1.0);
+    job.set_bytes_done(total);
     Ok(())
 }
 
@@ -839,5 +958,19 @@ mod tests {
         }
         assert_eq!(super::stem("a.tar.gz"), "a");
         assert_eq!(super::stem("b.zip"), "b");
+    }
+
+    #[test]
+    fn what_tar_says_and_is_told() {
+        assert_eq!(super::checkpoint("/usr/bin/tar: #300"), Some(300));
+        assert_eq!(super::checkpoint("tar: a #1: Cannot open"), None);
+        assert_eq!(super::in_tar(0), 512);
+        assert_eq!(super::in_tar(513), 512 + 1024);
+        assert_eq!(
+            super::tar_filter("application/x-xz-compressed-tar"),
+            Some(&["-J"][..])
+        );
+        assert_eq!(super::tar_filter("application/x-tar"), Some(&[][..]));
+        assert_eq!(super::tar_filter("application/zip"), None);
     }
 }
