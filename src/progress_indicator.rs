@@ -6,7 +6,7 @@ use adw::prelude::*;
 use gettextrs::gettext;
 use gtk::subclass::prelude::*;
 
-use crate::ops::{Job, JobManager, JobStatus};
+use crate::ops::{Job, JobManager};
 use crate::{adw, gdk, glib, gtk};
 
 mod paintable_imp {
@@ -303,14 +303,7 @@ fn job_row(job: &Job) -> gtk::Widget {
     job.connect_status_notify(glib::clone!(
         #[weak]
         cancel,
-        #[weak]
-        bar,
-        move |job| {
-            cancel.set_visible(!job.is_finished());
-            if job.status() == JobStatus::Done {
-                bar.set_fraction(1.0);
-            }
-        }
+        move |job| cancel.set_visible(!job.is_finished())
     ));
     grid.attach(&status, 0, 0, 1, 1);
     grid.attach(&bar, 0, 1, 1, 1);

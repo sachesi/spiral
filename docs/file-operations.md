@@ -27,7 +27,11 @@ away. When the folder on screen is renamed or moved the view goes along with it;
 is deleted or trashed, the view goes up to the nearest folder that is still there.
 
 Copies, moves and deletes count their sources first so the total is known before the
-rate clock starts. Progress inside a single file comes from GIO's copy callback.
+rate clock starts, and progress is by bytes. Inside a single file it comes from GIO's
+callback, for a copy and for a move between filesystems alike. A folder that moves by a
+rename counts at once for all the counting pass found in it, a deleted file for its size,
+and what is skipped for what it weighed, so a job that finishes has reached its total.
+Permissions, trashing, restoring, renaming and linking go by items.
 
 ## Copy and move
 

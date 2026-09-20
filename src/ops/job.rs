@@ -1,4 +1,5 @@
 use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 
 use futures_util::future::AbortHandle;
 use gettextrs::{gettext, ngettext};
@@ -371,6 +372,9 @@ mod imp {
         pub kind: RefCell<Option<JobKind>>,
         pub abort: RefCell<Option<AbortHandle>>,
         pub apply_all: RefCell<Option<Resolution>>,
+        /// What the counting pass found in each folder, by URI: (items, bytes), the folder
+        /// itself among the items. A folder that moves by a rename is that much done at once.
+        pub weights: RefCell<HashMap<String, (u64, u64)>>,
         pub outcome: RefCell<Outcome>,
         /// Destination being written right now; removed if the job is cancelled mid-file.
         pub in_flight: RefCell<Option<gio::File>>,
