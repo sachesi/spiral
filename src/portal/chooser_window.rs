@@ -258,11 +258,19 @@ async fn run(
         item.set_action_and_target_value(Some("chooser.sort"), Some(&target.to_variant()));
         sort_menu.append_item(&item);
     }
+    let hidden_menu = gio::Menu::new();
+    hidden_menu.append(
+        Some(&gettext("Show _Hidden Files")),
+        Some("chooser.show-hidden"),
+    );
+    let view_menu = gio::Menu::new();
+    view_menu.append_section(None, &sort_menu);
+    view_menu.append_section(None, &hidden_menu);
     let sort_button = gtk::MenuButton::builder()
         .icon_name("view-sort-descending-symbolic")
         .tooltip_text(gettext("Sort"))
         .valign(gtk::Align::Center)
-        .menu_model(&sort_menu)
+        .menu_model(&view_menu)
         .build();
 
     // Search: the folder being shown, nothing under it.
@@ -485,6 +493,9 @@ async fn run(
     window.insert_action_group("view", Some(view.action_group()));
     let chooser_actions = gio::SimpleActionGroup::new();
     chooser_actions.add_action(&sort_action);
+    // Hidden files are the file manager's own setting, the one the view is already
+    // reading: a dialog that shows them is a dialog of a file manager that does.
+    chooser_actions.add_action(&settings.create_action("show-hidden"));
     window.insert_action_group("chooser", Some(&chooser_actions));
     // Typing in the view starts a search, as it does in the file manager; the search bar
     // leaves the keys alone while they are going into the name entry.
@@ -880,6 +891,11 @@ async fn run(
         )),
     );
     add_key("<Control>l", Box::new(move || location_bar.edit()));
+    // Named rather than a callback like the ones above: the menu item then shows the key.
+    keys.add_shortcut(gtk::Shortcut::new(
+        gtk::ShortcutTrigger::parse_string("<Control>h"),
+        Some(gtk::NamedAction::new("chooser.show-hidden")),
+    ));
     window.add_controller(keys);
 
     window.present();
