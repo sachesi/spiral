@@ -44,6 +44,12 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.17.2" date="2026-09-20">
+      <description>
+        <p>A copy was the only operation whose bar moved by what it had done. A move, a delete, an extraction and an archive being packed now each go by what they spend their time on: the bytes inside a file being moved across filesystems or read out of an archive, and items where a byte count would say nothing, since a file is unlinked and a folder is renamed in the same time whatever they hold. A move within one filesystem no longer walks the whole tree first for something that is over at once, what the trash cannot take is deleted at the end with a count of its own instead of running the bar past its total, and the clock stops while a question waits on screen, so an answer slept on no longer leaves hours left to go.</p>
+        <p>The file chooser shows hidden files, on Ctrl+H or from the item under the sort button. They are the file manager's own setting, so turning them on in a dialog turns them on in its windows too.</p>
+      </description>
+    </release>
     <release version="0.17.1" date="2026-09-20">
       <description>
         <p>Folders follow their changes again after a file is saved by being written under another name and renamed over, as editors and a replace on paste do; before, the tab stopped noticing changes until it was closed. What an operation, an undo or a redo leaves is selected, rows keep their selection and unfolded folders stay unfolded as the folder changes, search results follow renames and moves, and a view whose folder is moved or deleted goes along with it.</p>
