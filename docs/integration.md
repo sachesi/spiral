@@ -20,12 +20,15 @@ opened, or in save mode proposed as the name in its folder. A name in save mode 
 folder's goes into that folder, and a path typed there is saved to. Saving several files
 goes into the folder selected, or the one shown, and asks before replacing any. The keys of the file manager that a dialog has a use for are there: Ctrl+L, or a
 click on the current folder in the path bar, types a location; Ctrl+R and F5 read the
-folder again; Ctrl+S selects the items matching a pattern.
+folder again; Ctrl+S selects the items matching a pattern; Ctrl+H, or the item under the
+sort button, shows hidden files.
 
 The dialog remembers how it was left, in keys of its own: `chooser-view-mode` (list by
 default) for the view and `chooser-sort-key` with `chooser-sort-reversed` for the order,
 which the header's sort button sets. Nothing it is given changes the file manager's own
-view or order, and folders are not remembered one by one as they are there.
+view or order, and folders are not remembered one by one as they are there. Hidden files
+are the one thing shared: the dialog shows them when `show-hidden` says so, and turning
+them on here turns them on in the file manager's windows too.
 
 The search button, or Ctrl+F, or simply typing, searches the folder on screen and only
 that one: a dialog is being asked for a file in a folder, not for a walk of the disk, so
