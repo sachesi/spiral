@@ -17,7 +17,7 @@ use gettextrs::gettext;
 
 use crate::adw::prelude::*;
 use crate::gtk::subclass::prelude::ObjectSubclassIsExt;
-use crate::ops::job::{Job, JobStatus, name};
+use crate::ops::job::{Job, name};
 use crate::ops::manager::JobManager;
 use crate::ops::walk::Fail;
 use crate::{adw, gio, glib, gtk};
@@ -255,11 +255,14 @@ fn checkpoint(line: &str) -> Option<u64> {
 }
 
 /// Run `cmd`; every output line goes to `progress`, and those it does not claim are kept as
-/// the error text.
+/// the error text. `read` is called about ten times a second with the bytes the tool has
+/// read so far, zero where the kernel does not say, which is progress for a tool that
+/// reports none of its own and a floor under one that reports it coarsely.
 async fn run(
     cmd: Command,
     guard: &mut Guard,
     progress: &mut dyn FnMut(&str) -> bool,
+    read: &mut dyn FnMut(u64),
 ) -> Result<(), Fail> {
     let mut argv: Vec<String> = Vec::new();
     let mut flags = gio::SubprocessFlags::STDOUT_PIPE | gio::SubprocessFlags::STDERR_MERGE;
@@ -306,45 +309,64 @@ async fn run(
         let _ = stdin.close_future(glib::Priority::DEFAULT).await;
     }
 
+    let mut meter = child
+        .identifier()
+        .and_then(|pid| pid.parse().ok())
+        .map(crate::sandbox::ReadMeter::new);
+
     // Merged output: progress lines, everything else kept as the error text.
-    let mut tail: Vec<String> = Vec::new();
-    let mut pending = String::new();
-    if let Some(stdout) = child.stdout_pipe() {
-        let mut buf = vec![0u8; 4096];
-        loop {
-            let (b, n) = match stdout.read_future(buf, PRIO).await {
-                Ok(r) => r,
-                Err(_) => break,
-            };
-            buf = b;
-            if n == 0 {
-                break;
-            }
-            // 7-Zip redraws its percentage with backspaces; treat those as line breaks.
-            pending.push_str(&String::from_utf8_lossy(&buf[..n]).replace('\u{8}', "\n"));
-            // The last piece may be a partial line; keep it for the next read.
-            let Some(cut) = pending.rfind(['\r', '\n']) else {
-                continue;
-            };
-            let rest = pending.split_off(cut + 1);
-            for piece in pending.split(['\r', '\n']) {
-                let line = piece.trim();
-                if line.is_empty() {
-                    continue;
+    let reading = async {
+        let mut tail: Vec<String> = Vec::new();
+        let mut pending = String::new();
+        if let Some(stdout) = child.stdout_pipe() {
+            let mut buf = vec![0u8; 4096];
+            loop {
+                let (b, n) = match stdout.read_future(buf, PRIO).await {
+                    Ok(r) => r,
+                    Err(_) => break,
+                };
+                buf = b;
+                if n == 0 {
+                    break;
                 }
-                if !progress(line) {
-                    tail.push(line.to_string());
-                    if tail.len() > 20 {
-                        tail.remove(0);
+                // 7-Zip redraws its percentage with backspaces; treat those as line breaks.
+                pending.push_str(&String::from_utf8_lossy(&buf[..n]).replace('\u{8}', "\n"));
+                // The last piece may be a partial line; keep it for the next read.
+                let Some(cut) = pending.rfind(['\r', '\n']) else {
+                    continue;
+                };
+                let rest = pending.split_off(cut + 1);
+                for piece in pending.split(['\r', '\n']) {
+                    let line = piece.trim();
+                    if line.is_empty() {
+                        continue;
+                    }
+                    if !progress(line) {
+                        tail.push(line.to_string());
+                        if tail.len() > 20 {
+                            tail.remove(0);
+                        }
                     }
                 }
+                pending = rest;
             }
-            pending = rest;
+            if !pending.trim().is_empty() {
+                tail.push(pending.trim().to_string());
+            }
         }
-        if !pending.trim().is_empty() {
-            tail.push(pending.trim().to_string());
-        }
-    }
+        tail
+    };
+    // A tool that prints nothing until it is done would otherwise be read from only once,
+    // so the meter runs on a clock of its own beside the output.
+    let ticks = glib::interval_stream(Duration::from_millis(100)).for_each(|()| {
+        read(meter.as_mut().and_then(|m| m.bytes()).unwrap_or(0));
+        std::future::ready(())
+    });
+    futures_util::pin_mut!(reading);
+    let tail = match select(reading, ticks).await {
+        Either::Left((tail, _)) => tail,
+        Either::Right(((), reading)) => reading.await,
+    };
     match child.wait_check_future().await {
         Ok(()) => Ok(()),
         Err(_) if child.has_signaled() => Err(Fail::Cancelled),
@@ -607,37 +629,37 @@ pub async fn extract(
                 input: handed,
             };
             let mut encrypted = false;
+            // What the tool says of itself and how much of the archive it has read, the
+            // further of the two, never backwards and never past the archive.
+            let done = std::cell::Cell::new(before);
+            let advance = |at: u64| {
+                let at = at.min(before + size);
+                if at > done.get() {
+                    done.set(at);
+                    job.set_bytes_done(at);
+                    job.report(false);
+                }
+            };
             let result = {
                 let mut progress = |line: &str| {
                     encrypted |= wants_password(line);
                     percent(line)
-                        .map(|p| {
-                            job.set_bytes_done(
-                                before + (size as f64 * p.min(100.0) / 100.0) as u64,
-                            );
-                            job.report(false);
-                        })
+                        .map(|p| advance(before + (size as f64 * p.min(100.0) / 100.0) as u64))
                         .is_some()
                 };
-                let ran = run(cmd, &mut guard, &mut progress);
-                match reading.as_ref() {
-                    Some(mut file) => {
-                        let ticks =
-                            glib::interval_stream(Duration::from_millis(100)).for_each(|()| {
-                                if let Ok(at) = file.stream_position() {
-                                    job.set_bytes_done(before + at.min(size));
-                                    job.report(false);
-                                }
-                                std::future::ready(())
-                            });
-                        futures_util::pin_mut!(ran);
-                        match select(ran, ticks).await {
-                            Either::Left((result, _)) => result,
-                            Either::Right(((), ran)) => ran.await,
-                        }
-                    }
-                    None => ran.await,
-                }
+                // tar reads the archive on its standard input, a file of ours, so where
+                // that file stands says how far it is. What a tool has read is only asked
+                // of those that say nothing themselves: 7-Zip reads a block ahead of what
+                // it has unpacked, and the bar would be there before the files are.
+                let mut read = |n: u64| {
+                    let read = match reading.as_ref() {
+                        Some(mut file) => file.stream_position().unwrap_or(0),
+                        None if tool == Tool::SevenZip => 0,
+                        None => n,
+                    };
+                    advance(before + read);
+                };
+                run(cmd, &mut guard, &mut progress, &mut read).await
             };
             match result {
                 Ok(()) => break,
@@ -651,10 +673,12 @@ pub async fn extract(
                 move || std::fs::remove_dir_all(&work).and_then(|()| std::fs::create_dir(&work))
             })
             .await?;
-            job.set_status(JobStatus::WaitingUser);
-            job.set_detail(gettext("Waiting for your answer"));
-            let answer = ask_password(&mgr.parent_window(job), archive).await;
-            job.set_status(JobStatus::Running);
+            // The next attempt starts this archive over, and so does the bar.
+            job.set_bytes_done(before);
+            let window = mgr.parent_window(job);
+            let waiting = job.waiting();
+            let answer = ask_password(&window, archive).await;
+            drop(waiting);
             job.set_detail(gettext("Extracting “%s”").replace("%s", &name(archive)));
             password = Some(answer.ok_or(Fail::Cancelled)?);
         }
@@ -884,11 +908,22 @@ pub async fn compress(
             .map(|pass| format!("{pass}\n")),
         input: None,
     };
+    // What a tool says of itself and what it has read of the sources, the further of the
+    // two, never backwards and never past what there is to pack.
+    let done = std::cell::Cell::new(0u64);
+    let advance = |at: u64| {
+        let at = at.min(total);
+        if at > done.get() {
+            done.set(at);
+            job.set_bytes_done(at);
+            job.report(false);
+        }
+    };
     // 7-Zip reports a percentage and tar the number of records written ("tar: #100"). zip
-    // names each entry once it is packed ("adding: a/b (deflated 3%)"), which the size
-    // table turns into bytes; the dots it can be asked for count what it writes, which
-    // says nothing of how much is left to read.
-    let mut done = 0u64;
+    // says nothing while it packs and names each entry once it is done with it ("adding:
+    // a/b (deflated 3%)"), which the size table turns into bytes; the dots it can be asked
+    // for count what it writes, which says nothing of how much is left to read.
+    let packed = std::cell::Cell::new(0u64);
     let mut progress = |line: &str| {
         let at = match tool {
             Tool::SevenZip => percent(line).map(|p| (total as f64 * p / 100.0) as u64),
@@ -898,17 +933,25 @@ pub async fn compress(
                     .strip_prefix("adding: ")
                     .and_then(|r| r.rsplit_once(" ("))
                     .map(|(n, _)| n.trim_end_matches('/'));
-                entry.and_then(|n| sizes.remove(n)).map(|size| done + size)
+                entry.and_then(|n| sizes.remove(n)).map(|size| {
+                    packed.set(packed.get() + size);
+                    packed.get()
+                })
             }
         };
         if let Some(at) = at {
-            done = at.min(total);
-            job.set_bytes_done(done);
-            job.report(false);
+            advance(at);
         }
         at.is_some()
     };
-    run(cmd, &mut guard, &mut progress).await?;
+    // Only zip, which says nothing until an entry is packed; 7-Zip and tar report their
+    // own progress, and both read further ahead than they have written.
+    let mut read = |n: u64| {
+        if tool == Tool::Zip {
+            advance(n);
+        }
+    };
+    run(cmd, &mut guard, &mut progress, &mut read).await?;
     guard.child = None;
     let target = dest_path.join(&final_name);
     on_disk({

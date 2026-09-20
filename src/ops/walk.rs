@@ -23,7 +23,15 @@ type Res<T> = Result<T, Fail>;
 pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
     match job.kind() {
         JobKind::Transfer { pairs, is_move } => {
-            count(job, pairs.iter().map(|(s, _)| s.clone()).collect()).await;
+            // A move within one filesystem is a rename of each item, however much it
+            // holds, so nothing is counted first: walking a large tree would take longer
+            // than the move itself, and a rename is done whole or not at all.
+            if is_move && renames_only(&pairs).await {
+                job.set_files_total(pairs.len() as u64);
+                job.start_clock();
+            } else {
+                count(job, pairs.iter().map(|(s, _)| s.clone()).collect()).await;
+            }
             let mut warned_recursive = false;
             for (src, dest_dir) in pairs {
                 let same_parent = src.parent().is_some_and(|p| p.equal(&dest_dir));
@@ -44,7 +52,10 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                             ))
                             .build();
                         dialog.add_response("ok", &gettext("_OK"));
-                        dialog.choose_future(Some(&mgr.parent_window(job))).await;
+                        let window = mgr.parent_window(job);
+                        let waiting = job.waiting();
+                        dialog.choose_future(Some(&window)).await;
+                        drop(waiting);
                     }
                     continue;
                 }
@@ -68,7 +79,9 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
             let total = files.len();
             job.set_files_total(total as u64);
             // Asked once: from then on what the trash cannot take is deleted without asking
-            // again, while everything else still goes to the trash.
+            // again, while everything else still goes to the trash. Those come at the end,
+            // counted and shown as the delete they are rather than as trashed items.
+            let mut to_delete: Vec<gio::File> = Vec::new();
             let mut delete_allowed = false;
             for (i, f) in files.into_iter().enumerate() {
                 let more = i + 1 < total;
@@ -87,24 +100,12 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                                 return Err(Fail::Cancelled);
                             }
                             delete_allowed = true;
-                            // One item of this job, however much a folder held.
-                            let done = job.files_done();
-                            delete_item(job, mgr, &f).await?;
-                            job.set_files_done(done);
-                            // Something inside that could not be deleted was skipped, and
-                            // the item is still there.
-                            if !exists(&f).await {
-                                crate::tags::forget_all(&f);
-                                crate::starred::forget_all(&f);
-                                job.imp().outcome.borrow_mut().deleted.push(f.clone());
-                            }
+                            to_delete.push(f.clone());
                             break;
                         }
                         Err(e) => {
                             // Translators: fills %v in “Error While %v “%s””.
-                            match ask_error(&mgr.parent_window(job), &gettext("Trashing"), &f, &e)
-                                .await
-                            {
+                            match ask_about(job, mgr, &gettext("Trashing"), &f, &e).await {
                                 ErrorChoice::Skip => break,
                                 ErrorChoice::Retry => continue,
                                 ErrorChoice::Cancel => return Err(Fail::Cancelled),
@@ -115,17 +116,13 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                 job.set_files_done(job.files_done() + 1);
                 job.report(true);
             }
+            if !to_delete.is_empty() {
+                let gone = delete_all(job, mgr, to_delete).await?;
+                job.imp().outcome.borrow_mut().deleted.extend(gone);
+            }
         }
         JobKind::Delete { files } => {
-            count(job, files.clone()).await;
-            for f in files {
-                delete_item(job, mgr, &f).await?;
-                // Unless something inside it was skipped and it is still there.
-                if !exists(&f).await {
-                    crate::tags::forget_all(&f);
-                    crate::starred::forget_all(&f);
-                }
-            }
+            delete_all(job, mgr, files).await?;
         }
         JobKind::Rename { renames } => {
             let single = renames.len() == 1;
@@ -147,14 +144,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                         Err(e) if single => return Err(Fail::Failed(e.message().to_string())),
                         Err(e) => {
                             // Translators: fills %v in “Error While %v “%s””.
-                            match ask_error(
-                                &mgr.parent_window(job),
-                                &gettext("Renaming"),
-                                &file,
-                                &e,
-                            )
-                            .await
-                            {
+                            match ask_about(job, mgr, &gettext("Renaming"), &file, &e).await {
                                 ErrorChoice::Skip => break,
                                 ErrorChoice::Retry => continue,
                                 ErrorChoice::Cancel => return Err(Fail::Cancelled),
@@ -339,6 +329,19 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
     Ok(())
 }
 
+/// What to do about an error, with the job's clock stopped while the question is up.
+async fn ask_about(
+    job: &Job,
+    mgr: &JobManager,
+    verb: &str,
+    file: &gio::File,
+    error: &glib::Error,
+) -> ErrorChoice {
+    let window = mgr.parent_window(job);
+    let _waiting = job.waiting();
+    ask_error(&window, verb, file, error).await
+}
+
 /// `more`: other items come after this one, and the answer covers those the trash cannot
 /// take either.
 async fn confirm_permanent_delete(
@@ -364,7 +367,39 @@ async fn confirm_permanent_delete(
         ("delete", &gettext("_Delete Permanently")),
     ]);
     dialog.set_response_appearance("delete", adw::ResponseAppearance::Destructive);
-    dialog.choose_future(Some(&mgr.parent_window(job))).await == "delete"
+    let window = mgr.parent_window(job);
+    let _waiting = job.waiting();
+    dialog.choose_future(Some(&window)).await == "delete"
+}
+
+/// Whether every pair would move by a rename: each source on the same filesystem as the
+/// folder it goes to. Where that cannot be told, it is taken for a transfer that has to be
+/// counted.
+async fn renames_only(pairs: &[(gio::File, gio::File)]) -> bool {
+    let mut dests: std::collections::HashMap<String, Option<String>> =
+        std::collections::HashMap::new();
+    for (src, dest_dir) in pairs {
+        let key = dest_dir.uri().to_string();
+        if !dests.contains_key(&key) {
+            let id = filesystem_of(dest_dir).await;
+            dests.insert(key.clone(), id);
+        }
+        let dest = &dests[&key];
+        if dest.is_none() || &filesystem_of(src).await != dest {
+            return false;
+        }
+    }
+    true
+}
+
+/// The filesystem an item is on as GIO names it; None where it does not say.
+async fn filesystem_of(file: &gio::File) -> Option<String> {
+    let info = file
+        .query_info_future("id::filesystem", NOFOLLOW, PRIO)
+        .await
+        .ok()?;
+    info.attribute_string("id::filesystem")
+        .map(|id| id.to_string())
 }
 
 /// First counting pass: total files and bytes, so progress is meaningful. Errors are ignored.
@@ -376,6 +411,7 @@ async fn count(job: &Job, files: Vec<gio::File>) {
     }
     job.set_files_total(n);
     job.set_bytes_total(bytes);
+    job.imp().counted.set(true);
     job.start_clock();
     job.report(true);
 }
@@ -409,8 +445,6 @@ async fn count_one(job: &Job, file: &gio::File, n: &mut u64, bytes: &mut u64) {
     }
 }
 
-/// Items inside trash:/// cannot be modified individually; gvfs deletes a trashed
-/// directory as one unit, so never descend into one.
 /// Set the permissions of `dir`, then of what it holds, folders and files each by their
 /// `(value, mask)`. Links are left alone: changing a link's mode changes its target, which
 /// may be anywhere. What cannot be changed is counted in `failed` and passed over, since
@@ -511,9 +545,17 @@ async fn transfer_one(
     // Where the job stood before this item. However the item ends, moved, copied or
     // skipped, the job stands its weight further on, so the total is reached at the end.
     let (files_before, bytes_before) = (job.files_done(), job.bytes_done());
+    // A job that counted nothing is measured in items, and keeps no tally of bytes: they
+    // would have no total to be part of.
+    let counted = job.imp().counted.get();
+    let credit = |bytes: u64| {
+        if counted {
+            job.set_bytes_done(bytes);
+        }
+    };
     let settle = |(files, bytes): (u64, u64)| {
         job.set_files_done(files_before + files);
-        job.set_bytes_done(bytes_before + bytes);
+        credit(bytes_before + bytes);
         job.report(false);
     };
     loop {
@@ -528,7 +570,7 @@ async fn transfer_one(
             .await
         {
             Ok(i) => i,
-            Err(e) => match ask_error(&mgr.parent_window(job), &verb, src, &e).await {
+            Err(e) => match ask_about(job, mgr, &verb, src, &e).await {
                 ErrorChoice::Skip => {
                     settle((1, 0));
                     return Ok(None);
@@ -539,9 +581,9 @@ async fn transfer_one(
         };
         let is_dir = info.file_type() == gio::FileType::Directory;
         let size = crate::file_utils::size_of(&info);
-        let weight = if is_dir {
-            let counted = job.imp().weights.borrow().get(src.uri().as_str()).copied();
-            counted.unwrap_or((1, 0))
+        let mut weight = if is_dir {
+            let found = job.imp().weights.borrow().get(src.uri().as_str()).copied();
+            found.unwrap_or((1, 0))
         } else {
             (1, size)
         };
@@ -553,14 +595,14 @@ async fn transfer_one(
             let progress = progress.for_each(|(cur, _total)| {
                 // What it says of a folder is the size of the folder's own entry.
                 if !is_dir {
-                    job.set_bytes_done(bytes_before + cur.max(0) as u64);
+                    credit(bytes_before + cur.max(0) as u64);
                     job.report(false);
                 }
                 async {}
             });
             let (result, ()) = futures_util::join!(fut, progress);
             if result.is_err() {
-                job.set_bytes_done(bytes_before);
+                credit(bytes_before);
             }
             match result {
                 Ok(()) => {
@@ -573,7 +615,21 @@ async fn transfer_one(
                 }
                 Err(e)
                     if e.matches(gio::IOErrorEnum::WouldRecurse)
-                        || e.matches(gio::IOErrorEnum::WouldMerge) => {}
+                        || e.matches(gio::IOErrorEnum::WouldMerge) =>
+                {
+                    // A folder that has to be gone through item by item after all, in a
+                    // job that counted nothing: what it holds is counted now, and added to
+                    // the total, so the bar does not run past its own end. Counting it
+                    // leaves its weight behind, which is what keeps a retry from counting
+                    // the same folder twice.
+                    let known = job.imp().weights.borrow().contains_key(src.uri().as_str());
+                    if !job.imp().counted.get() && !known {
+                        let (mut items, mut bytes) = (0, 0);
+                        count_one(job, src, &mut items, &mut bytes).await;
+                        job.set_files_total(job.files_total() + items.saturating_sub(1));
+                        weight = (items, 0);
+                    }
+                }
                 Err(e) if e.matches(gio::IOErrorEnum::Exists) => {
                     match resolve_conflict(job, mgr, src, &dest, false).await? {
                         Step::Skip => {
@@ -586,7 +642,7 @@ async fn transfer_one(
                     continue;
                 }
                 Err(e) if e.matches(gio::IOErrorEnum::Cancelled) => return Err(Fail::Cancelled),
-                Err(e) => match ask_error(&mgr.parent_window(job), &verb, src, &e).await {
+                Err(e) => match ask_about(job, mgr, &verb, src, &e).await {
                     ErrorChoice::Skip => {
                         settle(weight);
                         return Ok(None);
@@ -624,7 +680,7 @@ async fn transfer_one(
                         }
                     }
                 }
-                Err(e) => match ask_error(&mgr.parent_window(job), &verb, src, &e).await {
+                Err(e) => match ask_about(job, mgr, &verb, src, &e).await {
                     ErrorChoice::Skip => {
                         settle(weight);
                         return Ok(None);
@@ -663,7 +719,7 @@ async fn transfer_one(
         }
         let (fut, progress) = src.copy_future(&dest, flags, PRIO);
         let progress = progress.for_each(|(cur, _total)| {
-            job.set_bytes_done(bytes_before + cur.max(0) as u64);
+            credit(bytes_before + cur.max(0) as u64);
             job.report(false);
             async {}
         });
@@ -697,8 +753,8 @@ async fn transfer_one(
             }
             Err(e) if e.matches(gio::IOErrorEnum::Cancelled) => return Err(Fail::Cancelled),
             Err(e) => {
-                job.set_bytes_done(bytes_before);
-                match ask_error(&mgr.parent_window(job), &verb, src, &e).await {
+                credit(bytes_before);
+                match ask_about(job, mgr, &verb, src, &e).await {
                     ErrorChoice::Skip => {
                         settle(weight);
                         return Ok(None);
@@ -728,11 +784,10 @@ async fn resolve_conflict(
     let resolution = match remembered {
         Some(r) => r,
         None => {
-            job.set_status(super::JobStatus::WaitingUser);
-            job.set_detail(gettext("Waiting for your answer"));
-            let (r, all) = ask_conflict(&mgr.parent_window(job), src, dest, is_dir).await;
-            job.set_status(super::JobStatus::Running);
-            job.report(true);
+            let window = mgr.parent_window(job);
+            let waiting = job.waiting();
+            let (r, all) = ask_conflict(&window, src, dest, is_dir).await;
+            drop(waiting);
             if all && matches!(r, Resolution::Skip | Resolution::Replace) {
                 job.imp().apply_all.replace(Some(r.clone()));
             }
@@ -747,34 +802,47 @@ async fn resolve_conflict(
     })
 }
 
-/// Delete `file` with all it holds.
-async fn delete_item(job: &Job, mgr: &JobManager, file: &gio::File) -> Res<()> {
-    let info = file
-        .query_info_future("standard::type,standard::size", NOFOLLOW, PRIO)
-        .await
-        .ok();
-    delete_recursive(job, mgr, file, info.as_ref()).await
+/// Delete every one of `files` with all they hold, counted first so there is a total to
+/// show, and return those that are gone afterwards. Unlinking a file takes the same time
+/// whatever it holds, so this one is measured in items, not in bytes.
+async fn delete_all(job: &Job, mgr: &JobManager, files: Vec<gio::File>) -> Res<Vec<gio::File>> {
+    job.set_files_done(0);
+    job.set_bytes_done(0);
+    count(job, files.clone()).await;
+    job.set_bytes_total(0);
+    let mut gone = Vec::new();
+    for f in files {
+        delete_item(job, mgr, &f).await?;
+        // Unless something inside it was skipped and it is still there.
+        if !exists(&f).await {
+            crate::tags::forget_all(&f);
+            crate::starred::forget_all(&f);
+            gone.push(f);
+        }
+    }
+    Ok(gone)
 }
 
-/// Post-order recursive delete. Each item is as many bytes done as the counting pass took
-/// it for, deleted or passed over, so the total is reached at the end.
-async fn delete_recursive(
-    job: &Job,
-    mgr: &JobManager,
-    file: &gio::File,
-    info: Option<&gio::FileInfo>,
-) -> Res<()> {
-    let is_dir = info.is_some_and(|i| i.file_type() == gio::FileType::Directory) && !in_trash(file);
+/// Delete `file` with all it holds.
+async fn delete_item(job: &Job, mgr: &JobManager, file: &gio::File) -> Res<()> {
+    let is_dir = file_type(file).await == gio::FileType::Directory;
+    delete_recursive(job, mgr, file, is_dir).await
+}
+
+/// Post-order recursive delete. Each item counts as one, deleted or passed over, so the
+/// total is reached at the end.
+async fn delete_recursive(job: &Job, mgr: &JobManager, file: &gio::File, is_dir: bool) -> Res<()> {
+    // Items inside trash:/// cannot be deleted one by one; gvfs takes a trashed directory
+    // as one unit, which is how the counting pass took it as well.
+    let is_dir = is_dir && !in_trash(file);
     if is_dir {
-        for (child, cinfo) in children(file, "standard::type,standard::size,standard::name").await {
-            Box::pin(delete_recursive(job, mgr, &child, Some(&cinfo))).await?;
+        for (child, cinfo) in children(file, "standard::type,standard::name").await {
+            let child_is_dir = cinfo.file_type() == gio::FileType::Directory;
+            Box::pin(delete_recursive(job, mgr, &child, child_is_dir)).await?;
         }
     }
     // Translators: fills %v in “Error While %v “%s””.
     delete_or_ask(job, mgr, &gettext("Deleting"), file).await?;
-    if !is_dir {
-        job.set_bytes_done(job.bytes_done() + info.map_or(0, crate::file_utils::size_of));
-    }
     job.set_files_done(job.files_done() + 1);
     job.report(false);
     Ok(())
@@ -787,7 +855,7 @@ async fn delete_or_ask(job: &Job, mgr: &JobManager, verb: &str, file: &gio::File
         match file.delete_future(PRIO).await {
             Ok(()) => return Ok(true),
             Err(e) if e.matches(gio::IOErrorEnum::NotFound) => return Ok(true),
-            Err(e) => match ask_error(&mgr.parent_window(job), verb, file, &e).await {
+            Err(e) => match ask_about(job, mgr, verb, file, &e).await {
                 ErrorChoice::Skip => return Ok(false),
                 ErrorChoice::Retry => {}
                 ErrorChoice::Cancel => return Err(Fail::Cancelled),
@@ -1091,8 +1159,11 @@ mod tests {
         assert_eq!((job.bytes_done(), job.bytes_total()), (bytes, bytes));
     }
 
+    /// A copy reads every byte, so it is counted first and shown by bytes. A move within
+    /// one filesystem renames, which is nothing to read and nothing to count: it goes by
+    /// the items it was given, and the tree under them is never walked.
     #[test]
-    fn a_copy_and_a_move_by_rename_are_done_by_bytes() {
+    fn a_copy_goes_by_bytes_and_a_move_by_rename_by_the_items_it_was_given() {
         let s = Scratch::new("bytes");
         heavy(&s.path("src/tree"));
         std::fs::create_dir(s.path("dest")).unwrap();
@@ -1106,7 +1177,36 @@ mod tests {
             pairs: vec![(s.file("dest/tree"), s.file("away"))],
             is_move: true,
         });
-        assert_whole(&rename, 4, 8_000_000);
+        assert_whole(&rename, 1, 0);
+        assert!(s.path("away/tree/sub/b.bin").exists());
+    }
+
+    /// A folder moved onto one of the same name is merged item by item; what it holds is
+    /// counted when it is met, so the bar still ends where it says it will.
+    #[test]
+    fn a_merge_counts_what_it_finds_on_the_way() {
+        let s = Scratch::new("merge");
+        heavy(&s.path("src/tree"));
+        std::fs::create_dir_all(s.path("dest/tree")).unwrap();
+        std::fs::write(s.path("dest/tree/kept.txt"), "k").unwrap();
+        let ctx = glib::MainContext::new();
+        let job = ctx
+            .with_thread_default(|| {
+                let mgr = glib::Object::new::<JobManager>();
+                let job = Job::new(JobKind::Transfer {
+                    pairs: vec![(s.file("src/tree"), s.file("dest"))],
+                    is_move: true,
+                });
+                // As if the dialog had been answered with Replace for the whole job.
+                job.imp().apply_all.replace(Some(Resolution::Replace));
+                assert!(ctx.block_on(run(&job, &mgr)).is_ok());
+                job
+            })
+            .unwrap();
+        assert_whole(&job, 4, 0);
+        assert!(s.path("dest/tree/kept.txt").exists());
+        assert!(s.path("dest/tree/sub/b.bin").exists());
+        assert!(!s.path("src/tree").exists());
     }
 
     #[test]
@@ -1146,9 +1246,11 @@ mod tests {
         );
     }
 
+    /// Both are as quick over a large file as over a small one, so both count items and
+    /// neither claims a size it would only show standing still at.
     #[test]
-    fn a_delete_is_done_by_bytes_and_permissions_by_items() {
-        let s = Scratch::new("bytes-delete");
+    fn a_delete_and_permissions_are_done_by_items() {
+        let s = Scratch::new("items");
         heavy(&s.path("tree"));
         let modes = run_job(JobKind::SetPermissions {
             folder: s.file("tree"),
@@ -1159,6 +1261,7 @@ mod tests {
         let delete = run_job(JobKind::Delete {
             files: vec![s.file("tree")],
         });
-        assert_whole(&delete, 4, 8_000_000);
+        assert_whole(&delete, 4, 0);
+        assert!(!s.path("tree").exists());
     }
 }

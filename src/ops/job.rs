@@ -372,6 +372,10 @@ mod imp {
         pub kind: RefCell<Option<JobKind>>,
         pub abort: RefCell<Option<AbortHandle>>,
         pub apply_all: RefCell<Option<Resolution>>,
+        /// Whether the counting pass ran: a move that is only renames skips it, and then
+        /// the job is measured in items and a folder that turns out to need a walk after
+        /// all is counted where it is met.
+        pub counted: Cell<bool>,
         /// What the counting pass found in each folder, by URI: (items, bytes), the folder
         /// itself among the items. A folder that moves by a rename is that much done at once.
         pub weights: RefCell<HashMap<String, (u64, u64)>>,
@@ -507,23 +511,42 @@ impl Job {
         self.imp().started.set(glib::monotonic_time());
     }
 
+    /// The job has a question on screen. The clock stops while the answer is thought
+    /// about: an operation someone left a dialog of open over lunch would otherwise have
+    /// a rate of nothing and hours left for the rest of its run.
+    pub(super) fn waiting(&self) -> Waiting<'_> {
+        self.set_status(super::JobStatus::WaitingUser);
+        self.set_detail(gettext("Waiting for your answer"));
+        Waiting {
+            job: self,
+            since: glib::monotonic_time(),
+        }
+    }
+
     /// Throttled progress update (≤ ~15 Hz) so the UI is not flooded.
     pub(super) fn report(&self, force: bool) {
         let imp = self.imp();
         let Some(now) = self.throttled(force) else {
             return;
         };
-        let fraction = if imp.bytes_total.get() > 0 {
-            imp.bytes_done.get() as f64 / imp.bytes_total.get() as f64
+        // Whatever the counting pass missed, an item that grew while it waited or a size
+        // the filesystem does not give, is part of the total by the time it is gone past.
+        // A job counted in items keeps to items, however many bytes went by on the way.
+        let bytes_total = match imp.bytes_total.get() {
+            0 => 0,
+            total => total.max(imp.bytes_done.get()),
+        };
+        let fraction = if bytes_total > 0 {
+            imp.bytes_done.get() as f64 / bytes_total as f64
         } else if imp.files_total.get() > 0 {
-            imp.files_done.get() as f64 / imp.files_total.get() as f64
+            imp.files_done.get() as f64 / imp.files_total.get().max(imp.files_done.get()) as f64
         } else {
             0.0
         };
         self.set_fraction(fraction.clamp(0.0, 1.0));
-        let detail = if imp.bytes_total.get() > 0 {
+        let detail = if bytes_total > 0 {
             let done = imp.bytes_done.get();
-            let total = imp.bytes_total.get();
+            let total = bytes_total;
             let elapsed = (now - imp.started.get()) as f64 / 1e6;
             let mut detail = gettext("%a of %b")
                 .replace("%a", &crate::prefs::size(done))
@@ -539,14 +562,28 @@ impl Job {
             }
             detail
         } else {
-            ngettext(
-                "%a of %b file",
-                "%a of %b files",
-                imp.files_total.get() as u32,
-            )
-            .replace("%a", &imp.files_done.get().to_string())
-            .replace("%b", &imp.files_total.get().to_string())
+            let total = imp.files_total.get().max(imp.files_done.get());
+            ngettext("%a of %b file", "%a of %b files", total as u32)
+                .replace("%a", &imp.files_done.get().to_string())
+                .replace("%b", &total.to_string())
         };
         self.set_detail(detail);
+    }
+}
+
+/// A question is on screen; the job runs again, with the clock where it left off, as soon
+/// as this goes out of scope.
+pub(super) struct Waiting<'a> {
+    job: &'a Job,
+    since: i64,
+}
+
+impl Drop for Waiting<'_> {
+    fn drop(&mut self) {
+        let imp = self.job.imp();
+        imp.started
+            .set(imp.started.get() + (glib::monotonic_time() - self.since));
+        self.job.set_status(super::JobStatus::Running);
+        self.job.report(true);
     }
 }
