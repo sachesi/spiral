@@ -6,7 +6,6 @@ pub mod chooser_window;
 
 use ashpd::WindowIdentifierType;
 use ashpd::backend::Result;
-use ashpd::desktop::HandleToken;
 use ashpd::desktop::file_chooser::{
     OpenFileOptions, SaveFileOptions, SaveFilesOptions, SelectedFiles,
 };
@@ -23,8 +22,6 @@ pub struct Request {
     pub kind: Kind,
     pub title: String,
     pub parent: Option<WindowIdentifierType>,
-    pub token: HandleToken,
+    /// Dropped on the other end when the portal closes the request.
     pub reply: oneshot::Sender<Result<SelectedFiles>>,
-    /// Fired when the portal asks us to close this request.
-    pub closed: oneshot::Receiver<()>,
 }
