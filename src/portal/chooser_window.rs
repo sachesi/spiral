@@ -31,11 +31,9 @@ pub async fn handle(req: Request) {
         kind,
         title,
         parent,
-        reply,
-        closed,
-        ..
+        mut reply,
     } = req;
-    let result = run(kind, &title, parent, closed).await;
+    let result = run(kind, &title, parent, reply.cancellation()).await;
     let _ = reply.send(result);
 }
 
@@ -43,7 +41,7 @@ async fn run(
     kind: Kind,
     title: &str,
     parent: Option<WindowIdentifierType>,
-    closed: futures_channel::oneshot::Receiver<()>,
+    closed: futures_channel::oneshot::Cancellation<'_, Result<SelectedFiles, PortalError>>,
 ) -> Result<SelectedFiles, PortalError> {
     let settings = gio::Settings::new(crate::config::APP_ID);
 
