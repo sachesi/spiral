@@ -727,11 +727,13 @@ mod tests {
 
     /// An entry of `network:///` or `computer:///` is worth listing only where what it
     /// points at can be opened. Local files always can; a protocol with no backend on
-    /// this system cannot, and in a test there are no backends at all.
+    /// this system cannot.
     #[test]
     fn an_entry_pointing_nowhere_openable_is_unreachable() {
         assert!(!is_unreachable(&pointing_at("file:///srv")));
-        assert!(is_unreachable(&pointing_at("afp://server/share")));
+        assert!(is_unreachable(&pointing_at(
+            "nosuchprotocol://server/share"
+        )));
         // A file of its own points at nothing and is never in question.
         let plain = gio::FileInfo::new();
         plain.set_file_type(gio::FileType::Regular);
