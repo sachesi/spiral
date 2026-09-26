@@ -3,17 +3,27 @@
 
 use super::*;
 
+/// The preview open over a window, or on its way there.
+static PREVIEW: Key<glib::WeakRef<crate::dialogs::PreviewDialog>> = Key::new("preview");
+
 impl BrowserView {
     /// The preview follows the selection while it is open, and its arrows move that
     /// selection, so a folder can be walked through without closing it.
     pub(super) fn show_preview(&self) {
         let infos = self.model().selected_infos();
         let Some(info) = infos.first() else { return };
-        let dialog = crate::dialogs::PreviewDialog::new();
-        // The preview is shaped to what it holds, within what the window can hold.
-        if let Some(window) = self.root().and_downcast::<gtk::Window>() {
-            dialog.set_bounds(window.width(), window.height());
+        let Some(window) = self.root().and_downcast::<gtk::Window>() else {
+            return;
+        };
+        // One at a time: Space pressed again while a file on another machine is still
+        // being read would open it once more for every press.
+        if PREVIEW.get(&window).and_then(|d| d.upgrade()).is_some() {
+            return;
         }
+        let dialog = crate::dialogs::PreviewDialog::new();
+        PREVIEW.set(&window, dialog.downgrade());
+        // The preview is shaped to what it holds, within what the window can hold.
+        dialog.set_bounds(window.width(), window.height());
         dialog.connect_step(glib::clone!(
             #[weak(rename_to = view)]
             self,
@@ -61,7 +71,11 @@ impl BrowserView {
         dialog.connect_closed(glib::clone!(
             #[weak(rename_to = view)]
             self,
+            #[weak]
+            window,
             move |_| {
+                // Now, not when it goes: a read it gave up can hold it a while yet.
+                PREVIEW.take(&window);
                 if let Some(id) = id.borrow_mut().take() {
                     selection.disconnect(id);
                 }
@@ -79,8 +93,6 @@ impl BrowserView {
                 ));
             }
         ));
-        // The file is shaped before the dialog is shown, so it opens at the shape it keeps;
-        // a PDF that will not say how large its pages are is asked as well.
         let info = info.clone();
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
@@ -88,11 +100,7 @@ impl BrowserView {
             // The dialog has no parent until it is presented, so the wait holds it.
             #[strong]
             dialog,
-            async move {
-                dialog.show_info(&info).await;
-                dialog.shape_ahead(&info).await;
-                dialog.present(Some(&view));
-            }
+            async move { dialog.present_info(&info, view.upcast_ref()).await }
         ));
     }
 
