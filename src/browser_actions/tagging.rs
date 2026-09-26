@@ -95,27 +95,33 @@ impl BrowserView {
     /// on screen are told as well: the folder monitor will say the same a moment later,
     /// but the dots should not wait for it.
     pub(crate) fn set_selection_tag(&self, name: &str, on: bool) {
-        for info in self.model().selected_infos() {
-            let file = file_utils::file_of(&info);
-            if let Err(e) = crate::tags::set(&file, name, on) {
+        let infos = self.model().selected_infos();
+        let files: Vec<gio::File> = infos.iter().map(file_utils::file_of).collect();
+        let name = name.to_string();
+        let view = self.downgrade();
+        glib::spawn_future_local(async move {
+            let (done, failed) = crate::tags::set(&files, &name, on).await;
+            for (info, names) in infos.iter().zip(&done) {
+                match crate::tags::attribute_value(names) {
+                    Some(v) => info.set_attribute_string(crate::tags::ATTRIBUTE, &v),
+                    None => info.remove_attribute(crate::tags::ATTRIBUTE),
+                }
+            }
+            let Some(view) = view.upgrade() else { return };
+            if let Some(e) = failed {
                 // The reason is nearly always that the filesystem keeps no extended
                 // attributes, which GIO says at length; the log gets its wording.
-                glib::g_debug!("spiral", "cannot tag {}: {e}", file.uri());
-                if let Some(win) = self.root().and_downcast::<crate::window::SpiralWindow>() {
+                let info = &infos[done.len()];
+                glib::g_debug!("spiral", "cannot tag {}: {e}", files[done.len()].uri());
+                if let Some(win) = view.root().and_downcast::<crate::window::SpiralWindow>() {
                     win.show_toast(
                         &gettext("Could not tag “%s”").replace("%s", &info.display_name()),
                         false,
                     );
                 }
-                break;
             }
-            let names = crate::tags::applied(crate::tags::of_info(&info), name, on);
-            match crate::tags::attribute_value(&names) {
-                Some(v) => info.set_attribute_string(crate::tags::ATTRIBUTE, &v),
-                None => info.remove_attribute(crate::tags::ATTRIBUTE),
-            }
-        }
-        self.refresh_cells();
+            view.refresh_cells();
+        });
     }
 
     /// The tags section of the item menu: the coloured tags as a row of dots to click,

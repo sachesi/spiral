@@ -243,6 +243,7 @@ pub fn rename(old: &str, new: &str) {
     glib::spawn_future_local(async move {
         let (o, n) = (old.clone(), new.clone());
         let _ = gio::spawn_blocking(move || {
+            let _writing = WRITING.lock();
             for file in files.into_iter().chain(in_trash(&trashed)) {
                 let mut names = read(&file);
                 if let Some(name) = names.iter_mut().find(|name| **name == o) {
@@ -283,6 +284,7 @@ pub fn remove(name: &str) {
     glib::spawn_future_local(async move {
         let n = name.clone();
         let _ = gio::spawn_blocking(move || {
+            let _writing = WRITING.lock();
             for file in files.into_iter().chain(in_trash(&trashed)) {
                 let mut names = read(&file);
                 if names.contains(&n) {
@@ -439,6 +441,10 @@ fn escape(value: &str) -> String {
     out
 }
 
+/// Held while the attribute of files is read and rewritten, so a change made while another
+/// is still being written does not start from what that one is about to replace.
+static WRITING: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 /// The tags on `file` now, asked of the file: a listing's info may be a moment old.
 pub fn read(file: &gio::File) -> Vec<String> {
     file.query_info(
@@ -486,10 +492,10 @@ fn remove_attribute(file: &gio::File) -> Result<(), glib::Error> {
 }
 
 /// `names` with `name` put on or taken off. A file carries one tag at a time, so the
-/// others on offer make way for it; a name only another program knows is left alone.
-pub fn applied(mut names: Vec<String>, name: &str, on: bool) -> Vec<String> {
+/// others `offered` make way for it; a name only another program knows is left alone.
+fn applied(mut names: Vec<String>, name: &str, on: bool, offered: &[String]) -> Vec<String> {
     if on {
-        names.retain(|n| n == name || !exists(n));
+        names.retain(|n| n == name || !offered.contains(n));
         if !names.iter().any(|n| n == name) {
             names.push(name.to_string());
         }
@@ -499,23 +505,47 @@ pub fn applied(mut names: Vec<String>, name: &str, on: bool) -> Vec<String> {
     names
 }
 
-/// Put `name` on `file` or take it off, on the file and in the index. A file that already
-/// stands as asked is left alone, but for the index, which may not have heard of it.
-pub fn set(file: &gio::File, name: &str, on: bool) -> Result<(), glib::Error> {
-    let old = read(file);
-    let names = applied(old.clone(), name, on);
-    if names != old {
-        write(file, &names)?;
+/// Put `name` on `files` or take it off, on the files and in the index. A file that
+/// already stands as asked is left alone, but for the index, which may not have heard of
+/// it. The files are read and written off the main loop, in order, until one will not take
+/// the change: what each file done carries now comes back, with why the next one failed.
+pub async fn set(
+    files: &[gio::File],
+    name: &str,
+    on: bool,
+) -> (Vec<Vec<String>>, Option<glib::Error>) {
+    let offered: Vec<String> = all().iter().map(|t| t.name.clone()).collect();
+    let (list, tag) = (files.to_vec(), name.to_string());
+    let (done, failed) = gio::spawn_blocking(move || {
+        let _writing = WRITING.lock();
+        let mut done = Vec::new();
+        for file in &list {
+            let old = read(file);
+            let names = applied(old.clone(), &tag, on, &offered);
+            if names != old
+                && let Err(e) = write(file, &names)
+            {
+                return (done, Some(e));
+            }
+            done.push((old, names));
+        }
+        (done, None)
+    })
+    .await
+    .unwrap_or_default();
+    let mut now = Vec::with_capacity(done.len());
+    for (file, (old, names)) in files.iter().zip(done) {
+        for gone in old.iter().filter(|n| !names.contains(n)) {
+            forget(gone, file);
+        }
+        if on {
+            note(file, std::slice::from_ref(&name.to_string()));
+        } else {
+            forget(name, file);
+        }
+        now.push(names);
     }
-    for gone in old.iter().filter(|n| !names.contains(n)) {
-        forget(gone, file);
-    }
-    if on {
-        note(file, std::slice::from_ref(&name.to_string()));
-    } else {
-        forget(name, file);
-    }
-    Ok(())
+    (now, failed)
 }
 
 /// The value the attribute has after `set`, for putting into an info by hand.
@@ -818,6 +848,19 @@ mod tests {
         assert_eq!(merge(&base, &ours, &theirs), v(&["a", "e", "d"]));
         // Nothing changed here: the file wins.
         assert_eq!(merge(&base, &base, &theirs), theirs);
+    }
+
+    #[test]
+    fn a_tag_put_on_takes_the_place_of_the_others_on_offer() {
+        let v = |s: &[&str]| s.iter().map(|l| l.to_string()).collect::<Vec<_>>();
+        let offered = v(&["Red", "Blue"]);
+        let on = |names: &[&str], name| applied(v(names), name, true, &offered);
+        assert_eq!(on(&["Red", "theirs"], "Blue"), v(&["theirs", "Blue"]));
+        assert_eq!(on(&["Blue"], "Blue"), v(&["Blue"]));
+        assert_eq!(
+            applied(v(&["Red", "theirs"]), "Red", false, &offered),
+            v(&["theirs"])
+        );
     }
 
     #[test]

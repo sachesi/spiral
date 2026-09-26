@@ -96,30 +96,31 @@ pub(super) fn tag_row(tag: &crate::tags::Tag) -> gtk::ListBoxRow {
             let Ok(list) = value.get::<gdk::FileList>() else {
                 return false;
             };
-            let mut failed = None;
-            for file in list.files() {
-                if let Err(e) = crate::tags::set(&file, &name, true) {
-                    failed = Some((file, e));
-                    break;
-                }
-            }
-            if let Some((file, e)) = failed {
-                glib::g_debug!("spiral", "cannot tag {}: {e}", file.uri());
-                if let Some(win) = row.root().and_downcast::<crate::window::SpiralWindow>() {
+            let files = list.files();
+            let name = name.clone();
+            let row = row.downgrade();
+            glib::spawn_future_local(async move {
+                let (done, failed) = crate::tags::set(&files, &name, true).await;
+                let Some(win) = row
+                    .upgrade()
+                    .and_then(|row| row.root())
+                    .and_downcast::<crate::window::SpiralWindow>()
+                else {
+                    return;
+                };
+                if let Some(e) = failed {
+                    let file = &files[done.len()];
+                    glib::g_debug!("spiral", "cannot tag {}: {e}", file.uri());
                     win.show_toast(
-                        &gettext("Could not tag “%s”").replace("%s", &crate::ops::name(&file)),
+                        &gettext("Could not tag “%s”").replace("%s", &crate::ops::name(file)),
                         false,
                     );
                 }
-            }
-            // The dots on the files are read as their cells are bound; make them look.
-            if let Some(view) = row
-                .root()
-                .and_downcast::<crate::window::SpiralWindow>()
-                .and_then(|w| w.current_view())
-            {
-                view.reload();
-            }
+                // The dots on the files are read as their cells are bound; make them look.
+                if let Some(view) = win.current_view() {
+                    view.reload();
+                }
+            });
             true
         }
     ));
