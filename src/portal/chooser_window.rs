@@ -67,13 +67,14 @@ async fn run(
                     .current_file()
                     .and_then(|f| gio::File::for_path(f).parent())
                     .or_else(|| o.current_folder().map(gio::File::for_path));
-                let name = o.current_name().map(str::to_string).or_else(|| {
-                    o.current_file().and_then(|f| {
-                        f.as_ref()
-                            .file_name()
-                            .map(|n| n.to_string_lossy().into_owned())
-                    })
-                });
+                // Only the last part of a proposed name: a path in it would be saved to
+                // somewhere other than the folder on screen, with nothing but the text of
+                // the entry to say so.
+                let name = o
+                    .current_name()
+                    .and_then(|n| std::path::Path::new(n).file_name())
+                    .or_else(|| o.current_file().and_then(|f| f.as_ref().file_name()))
+                    .map(|n| n.to_string_lossy().into_owned());
                 (
                     Mode::Save,
                     o.accept_label().map(str::to_string),
