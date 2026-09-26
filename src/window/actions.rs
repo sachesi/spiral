@@ -132,9 +132,6 @@ pub(super) fn install(klass: &mut <imp::SpiralWindow as ObjectSubclass>::Class) 
         crate::dialogs::captions_dialog().present(Some(win));
     });
     klass.install_action("win.switch-pane", None, |win, _, _| win.switch_pane());
-    klass.install_action("win.zoom-in", None, |win, _, _| win.zoom(1));
-    klass.install_action("win.zoom-out", None, |win, _, _| win.zoom(-1));
-    klass.install_action("win.zoom-reset", None, |win, _, _| win.zoom_reset());
     klass.install_action("win.stop", None, |win, _, _| {
         if let Some(v) = win.current_view() {
             v.model().stop_loading();
@@ -171,11 +168,11 @@ pub(super) fn install(klass: &mut <imp::SpiralWindow as ObjectSubclass>::Class) 
     klass.add_binding_action(Key::F3, M::empty(), "win.split-view");
     klass.add_binding_action(Key::F6, M::empty(), "win.switch-pane");
     klass.add_binding_action(Key::d, M::CONTROL_MASK, "win.bookmark");
-    klass.add_binding_action(Key::plus, M::CONTROL_MASK, "win.zoom-in");
-    klass.add_binding_action(Key::equal, M::CONTROL_MASK, "win.zoom-in");
-    klass.add_binding_action(Key::minus, M::CONTROL_MASK, "win.zoom-out");
-    klass.add_binding_action(Key::_0, M::CONTROL_MASK, "win.zoom-reset");
-    klass.add_binding_action(Key::KP_0, M::CONTROL_MASK, "win.zoom-reset");
+    klass.add_binding_action(Key::plus, M::CONTROL_MASK, "view.zoom-in");
+    klass.add_binding_action(Key::equal, M::CONTROL_MASK, "view.zoom-in");
+    klass.add_binding_action(Key::minus, M::CONTROL_MASK, "view.zoom-out");
+    klass.add_binding_action(Key::_0, M::CONTROL_MASK, "view.zoom-reset");
+    klass.add_binding_action(Key::KP_0, M::CONTROL_MASK, "view.zoom-reset");
     // Only bound while something is loading: the action is disabled otherwise, and
     // Escape goes on to whatever else wants it.
     klass.add_binding_action(Key::Escape, M::empty(), "win.stop");

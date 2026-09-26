@@ -21,11 +21,13 @@ folder's goes into that folder, and a path typed there is saved to. Saving sever
 goes into the folder selected, or the one shown, and asks before replacing any. The keys of the file manager that a dialog has a use for are there: Ctrl+L, or a
 click on the current folder in the path bar, types a location; Ctrl+R and F5 read the
 folder again; Ctrl+S selects the items matching a pattern; Ctrl+H, or the item under the
-sort button, shows hidden files.
+view options button, shows hidden files; Ctrl++, Ctrl+- and Ctrl+0, Ctrl and the wheel, or
+the buttons at the top of that menu change the size of the icons.
 
 The dialog remembers how it was left, in keys of its own: `chooser-view-mode` (list by
-default) for the view and `chooser-sort-key` with `chooser-sort-reversed` for the order,
-which the header's sort button sets. Nothing it is given changes the file manager's own
+default) for the view, `chooser-grid-zoom` and `chooser-list-zoom` for the size of the
+icons, and `chooser-sort-key` with `chooser-sort-reversed` for the order, which the
+header's view options button sets. Nothing it is given changes the file manager's own
 view or order, and folders are not remembered one by one as they are there. Hidden files
 are the one thing shared: the dialog shows them when `show-hidden` says so, and turning
 them on here turns them on in the file manager's windows too.

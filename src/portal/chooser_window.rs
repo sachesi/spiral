@@ -262,14 +262,37 @@ async fn run(
         Some(&gettext("Show _Hidden Files")),
         Some("chooser.show-hidden"),
     );
+    // The icon sizes on a line of their own, as in the file manager's view menu.
+    let zoom_menu = gio::Menu::new();
+    for id in ["zoom-out", "zoom-in"] {
+        let item = gio::MenuItem::new(None, None);
+        item.set_attribute_value("custom", Some(&id.to_variant()));
+        zoom_menu.append_item(&item);
+    }
+    let zoom_section = gio::MenuItem::new_section(Some(&gettext("Icon Size")), &zoom_menu);
+    zoom_section.set_attribute_value("display-hint", Some(&"inline-buttons".to_variant()));
     let view_menu = gio::Menu::new();
+    view_menu.append_item(&zoom_section);
     view_menu.append_section(None, &sort_menu);
     view_menu.append_section(None, &hidden_menu);
+    let view_popover = gtk::PopoverMenu::from_model(Some(&view_menu));
+    for (id, tooltip) in [
+        ("zoom-out", gettext("Zoom Out")),
+        ("zoom-in", gettext("Zoom In")),
+    ] {
+        let button = gtk::Button::builder()
+            .icon_name(format!("{id}-symbolic"))
+            .tooltip_text(tooltip)
+            .action_name(format!("view.{id}"))
+            .css_classes(["flat"])
+            .build();
+        view_popover.add_child(&button, id);
+    }
     let sort_button = gtk::MenuButton::builder()
         .icon_name("view-sort-descending-symbolic")
-        .tooltip_text(gettext("Sort"))
+        .tooltip_text(gettext("View Options"))
         .valign(gtk::Align::Center)
-        .menu_model(&view_menu)
+        .popover(&view_popover)
         .build();
 
     // Search: the folder being shown, nothing under it.
@@ -890,6 +913,7 @@ async fn run(
         )),
     );
     add_key("<Control>l", Box::new(move || location_bar.edit()));
+    crate::browser_view::add_zoom_keys(&keys);
     // Named rather than a callback like the ones above: the menu item then shows the key.
     keys.add_shortcut(gtk::Shortcut::new(
         gtk::ShortcutTrigger::parse_string("<Control>h"),

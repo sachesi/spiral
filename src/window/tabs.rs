@@ -253,7 +253,6 @@ impl SpiralWindow {
                 && win.current_view().as_ref() == Some(v)
             {
                 win.sync_view_button();
-                win.zoom(0);
             }
         });
     }

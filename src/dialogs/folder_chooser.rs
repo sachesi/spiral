@@ -201,7 +201,8 @@ pub async fn folder_chooser_dialog(
         }
     });
 
-    // The window's keys for the two things a picker can do with them.
+    // The window's keys for what a picker can do with them. Zooming is taken here too,
+    // or the window behind would zoom its own view.
     let keys = gtk::ShortcutController::new();
     let add_key = |trigger: &str, f: Box<dyn Fn()>| {
         keys.add_shortcut(gtk::Shortcut::new(
@@ -223,6 +224,7 @@ pub async fn folder_chooser_dialog(
         );
     }
     add_key("<Control>l", Box::new(move || location_bar.edit()));
+    crate::browser_view::add_zoom_keys(&keys);
     dialog.add_controller(keys);
 
     dialog.present(Some(parent));

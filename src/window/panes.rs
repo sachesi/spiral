@@ -32,7 +32,6 @@ impl SpiralWindow {
         self.sync_header();
         self.sync_sort_state();
         self.sync_view_button();
-        self.zoom(0);
     }
 
     /// Outline the pane in charge, so it is clear what the header acts on.
