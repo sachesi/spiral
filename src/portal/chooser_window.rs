@@ -985,20 +985,45 @@ fn make_filter(filter: Option<FileFilter>, directory: bool) -> gtk::Filter {
 
 /// Shell-style glob with `*`, `?` and `[...]` (what file filters use: GTK sends a suffix
 /// as "*.[pP][nN][gG]").
+///
+/// Everything but `*` takes one character, so on a mismatch only the latest `*` needs to
+/// take one more: the pattern comes from the application asking, and trying every split
+/// of the name among its stars would let a pattern of a few dozen of them hold the dialog
+/// for minutes.
 fn glob_match(pat: &[char], text: &[char]) -> bool {
-    match (pat.first(), text.first()) {
-        (None, None) => true,
-        (Some('*'), _) => {
-            glob_match(&pat[1..], text) || (!text.is_empty() && glob_match(pat, &text[1..]))
+    let (mut p, mut t) = (0, 0);
+    // Where the pattern goes on after the latest `*`, and where in the text it took over.
+    let mut star: Option<(usize, usize)> = None;
+    while t < text.len() {
+        let c = text[t];
+        let next = match pat.get(p) {
+            Some('*') => {
+                p += 1;
+                star = Some((p, t));
+                continue;
+            }
+            Some('?') => Some(p + 1),
+            Some('[') => match glob_class(&pat[p + 1..], c) {
+                Some((matched, rest)) => matched.then_some(pat.len() - rest.len()),
+                None => (c == '[').then_some(p + 1),
+            },
+            Some(&x) => (x == c).then_some(p + 1),
+            None => None,
+        };
+        match (next, star) {
+            (Some(next), _) => {
+                p = next;
+                t += 1;
+            }
+            (None, Some((after, from))) => {
+                p = after;
+                t = from + 1;
+                star = Some((after, t));
+            }
+            (None, None) => return false,
         }
-        (Some('?'), Some(_)) => glob_match(&pat[1..], &text[1..]),
-        (Some('['), Some(&c)) => match glob_class(&pat[1..], c) {
-            Some((matched, rest)) => matched && glob_match(rest, &text[1..]),
-            None => c == '[' && glob_match(&pat[1..], &text[1..]),
-        },
-        (Some(p), Some(t)) if p == t => glob_match(&pat[1..], &text[1..]),
-        _ => false,
     }
+    pat[p..].iter().all(|&x| x == '*')
 }
 
 /// Whether `c` is in the class a `[` opened, `pat` being what follows the `[`, and the
@@ -1150,5 +1175,18 @@ mod tests {
         assert!(matches("[]x]", "]"));
         assert!(matches("a[b", "a[b"));
         assert!(matches("résumé.*", "résumé.odt"));
+        assert!(matches("*", ""));
+        assert!(!matches("?", ""));
+        assert!(matches("*.tar.*", "backup.tar.tar.zst"));
+        assert!(matches("a*b*c", "aXbYbZc"));
+        assert!(!matches("a*b*c", "aXbYbZ"));
+    }
+
+    #[test]
+    fn a_pattern_full_of_stars_does_not_try_every_split_of_the_name() {
+        let pattern = "*?".repeat(40) + "x";
+        let name = "a-perfectly-ordinary-holiday-photo-from-the-summer-of-2025.jpeg";
+        assert!(!matches(&pattern, name));
+        assert!(matches(&pattern, &format!("{name}x")));
     }
 }
