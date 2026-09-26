@@ -96,6 +96,8 @@ mod imp {
         pub content: gtk::Stack,
         /// Bumped per file, so a slow load cannot land after a newer one.
         pub generation: Cell<u64>,
+        /// Set while the dialog waits to learn the shape of the file it opened for.
+        pub opening: Cell<bool>,
         /// The content size last asked for, to tell a shape that has to change from one
         /// that would only flinch.
         pub shaped: Cell<(i32, i32)>,
@@ -134,6 +136,9 @@ mod imp {
     impl WidgetImpl for PreviewDialog {}
     impl AdwDialogImpl for PreviewDialog {
         fn closed(&self) {
+            // What is still loading was for the dialog on screen: a film would play on
+            // with nothing to show it.
+            self.generation.set(self.generation.get() + 1);
             self.obj().stop_media();
             self.parent_closed();
         }
@@ -181,10 +186,12 @@ impl PreviewDialog {
         dialog
     }
 
-    /// Space closes the preview the way it opened it, Return hands the file to its
-    /// application, the arrows walk the folder, Page Up and Page Down turn the pages of a
-    /// PDF and Ctrl with +, - or 0 zooms. Captured, because the text view and the media
-    /// controls below would otherwise keep the keys to themselves.
+    /// Space closes the preview the way it opened it, once it has: pressed again while a
+    /// slow file keeps the dialog waiting for its shape, it is the preview asked for once
+    /// more, and Escape is there to give up. Return hands the file to its application, the
+    /// arrows walk the folder, Page Up and Page Down turn the pages of a PDF and Ctrl with
+    /// +, - or 0 zooms. Captured, because the text view and the media controls below would
+    /// otherwise keep the keys to themselves.
     fn setup_keys(&self) {
         use gdk::{Key, ModifierType as M};
         let keys = gtk::EventControllerKey::new();
@@ -219,7 +226,9 @@ impl PreviewDialog {
                 }
                 match key {
                     Key::space => {
-                        dialog.close();
+                        if !imp.opening.get() {
+                            dialog.close();
+                        }
                         glib::Propagation::Stop
                     }
                     Key::Return | Key::KP_Enter => {
@@ -290,11 +299,48 @@ impl PreviewDialog {
         self.shape_filled(size.0, size.1);
     }
 
+    /// Show `info` and present the dialog over `parent` once it knows the shape it keeps,
+    /// or before then, with a spinner, once that has taken as long as a spinner waits: a
+    /// file on another machine can take a while to say, and the dialog is shaped after.
+    pub async fn present_info(&self, info: &gio::FileInfo, parent: &gtk::Widget) {
+        self.imp().opening.set(true);
+        let presented = Rc::new(Cell::new(false));
+        glib::timeout_add_local_once(
+            SPINNER_DELAY,
+            glib::clone!(
+                #[weak(rename_to = dialog)]
+                self,
+                #[weak]
+                parent,
+                #[strong]
+                presented,
+                move || {
+                    if !presented.replace(true) {
+                        dialog.present(Some(&parent));
+                    }
+                }
+            ),
+        );
+        self.show_info(info).await;
+        self.shape_ahead(info).await;
+        self.imp().opening.set(false);
+        if !presented.replace(true) {
+            self.present(Some(parent));
+        }
+    }
+
     /// Show `info`: the header at once, the content when it has loaded.
     pub async fn show_info(&self, info: &gio::FileInfo) {
         let imp = self.imp();
         let generation = imp.generation.get() + 1;
         imp.generation.set(generation);
+        // The first file names itself at once, for a dialog that opens before its shape
+        // is known.
+        if imp.content.visible_child().is_none() {
+            imp.title.set_title(&file_utils::display_name(info));
+            imp.title.set_subtitle(&subtitle(info));
+            self.show_child(&spinner(SPINNER_DELAY), false);
+        }
         imp.flip.take();
         imp.zoom.take();
         imp.page_size.set(None);
@@ -320,8 +366,14 @@ impl PreviewDialog {
             .content
             .visible_child()
             .is_some_and(|page| page.is::<gtk::Video>());
+        let showing_spinner = imp
+            .content
+            .visible_child()
+            .is_some_and(|page| page.is::<adw::Spinner>());
         match placeholder {
             Some(texture) => self.show_child(&picture(&texture), false),
+            // One spinner in place of another would go blank for as long as it waits.
+            None if showing_spinner => {}
             // A stopped video is a black box.
             None if reshaped || showing_video => self.show_child(&spinner(SPINNER_DELAY), false),
             // Same shape and nothing to stand in: the page on screen stays until the next
