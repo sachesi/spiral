@@ -197,7 +197,6 @@ impl JobKind {
         }
     }
 
-    /// Text for the finished row in the operations list, and the toast after trashing.
     /// The folder the files a copy, a move, an extraction or a compression makes land in.
     pub fn destination(&self) -> Option<gio::File> {
         match self {
@@ -207,6 +206,7 @@ impl JobKind {
         }
     }
 
+    /// Text for the finished row in the operations list, and the toast after trashing.
     pub fn done_message(&self) -> String {
         match self {
             JobKind::Transfer {
