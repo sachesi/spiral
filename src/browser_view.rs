@@ -1,6 +1,7 @@
 //! One folder view (a tab): grid or list over a shared `FolderModel`, with history.
 
 use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 
 use adw::prelude::*;
 use gettextrs::{gettext, ngettext};
@@ -858,7 +859,7 @@ impl BrowserView {
     }
 
     /// Pick the view and sort order for a folder: remembered per folder, else (for the
-    /// view) guessed from its media content once loaded, else the global default.
+    /// view) guessed from its media content once its files are in, else the global default.
     fn resolve_view_mode(&self, file: &gio::File) {
         let imp = self.imp();
         let generation = imp.nav_gen.get() + 1;
@@ -878,16 +879,28 @@ impl BrowserView {
         // Columns belong to the pane, not to a folder: walking from one folder to the
         // next is how they are read, so a move that has nothing else to say leaves them
         // alone. Only a folder remembering a view of its own takes the pane out of them.
-        let keep = self.view_mode() == ViewMode::Columns;
-        if !keep {
-            self.set_view_mode(global_view_mode(&imp.settings, "view-mode"));
-        }
+        let shown = self.view_mode();
+        let default = if shown == ViewMode::Columns {
+            ViewMode::Columns
+        } else {
+            global_view_mode(&imp.settings, "view-mode")
+        };
         let remember = keeps_own_view(file);
         // Nor are the columns ever traded for a grid by a guess.
-        let guess = crate::prefs::guess_view() && self.view_mode() != ViewMode::Columns;
+        let guess = crate::prefs::guess_view()
+            && !(default == ViewMode::Columns && crate::prefs::column_view());
         if !remember && !guess {
+            self.set_view_mode(default);
             return;
         }
+        // The view on screen stays until the folder's own is known: the default, shown on
+        // the way, would flash up between two folders that keep another. A view picked
+        // meanwhile is left as it is.
+        let settle = move |view: &Self, mode: ViewMode| {
+            if view.imp().nav_gen.get() == generation && view.view_mode() == shown {
+                view.set_view_mode(mode);
+            }
+        };
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
             self,
@@ -909,35 +922,57 @@ impl BrowserView {
                         .and_then(|s| ViewMode::from_nick(&s))
                     {
                         view.imp().folder_view.set(Some(mode));
-                        view.set_view_mode(mode);
+                        settle(&view, mode);
                         return;
                     }
                 }
-                if !guess || view.imp().nav_gen.get() != generation {
+                if view.imp().nav_gen.get() != generation {
                     return;
                 }
-                let model = view.model();
-                if model.loading() {
-                    let (tx, rx) = futures_channel::oneshot::channel::<()>();
-                    let tx = std::cell::RefCell::new(Some(tx));
-                    let id = model.connect_loading_notify(move |m| {
-                        if !m.loading()
-                            && let Some(tx) = tx.take()
-                        {
-                            let _ = tx.send(());
-                        }
+                if guess {
+                    view.guess_view_mode(&file, move |view, media| {
+                        settle(view, if media { ViewMode::Grid } else { default })
                     });
-                    let _ = rx.await;
-                    model.disconnect(id);
-                }
-                if view.imp().nav_gen.get() == generation
-                    && view.view_mode() != ViewMode::Columns
-                    && mostly_media(&model)
-                {
-                    view.set_view_mode(ViewMode::Grid);
+                } else {
+                    settle(&view, default);
                 }
             }
         ));
+    }
+
+    /// Tell `guessed` whether `folder` is mostly pictures and videos as soon as its files
+    /// reach the views, in the same turn of the main loop, so none is drawn in a view
+    /// about to be traded for another. Until then, an empty folder keeps the view it is
+    /// shown in.
+    fn guess_view_mode(&self, folder: &gio::File, guessed: impl Fn(&Self, bool) + 'static) {
+        let model = self.model();
+        let sel = model.selection();
+        if sel.n_items() > 0 {
+            guessed(self, mostly_media(&model));
+            return;
+        }
+        let id = Rc::new(RefCell::new(None));
+        *id.borrow_mut() = Some(sel.connect_items_changed(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            #[strong]
+            id,
+            #[strong]
+            folder,
+            move |sel, _, _, added| {
+                if added == 0 {
+                    return;
+                }
+                if let Some(id) = id.borrow_mut().take() {
+                    sel.disconnect(id);
+                }
+                // Gone elsewhere before the folder's files came: these are another's.
+                let model = view.model();
+                if model.location().is_some_and(|l| l.equal(&folder)) {
+                    guessed(&view, mostly_media(&model));
+                }
+            }
+        )));
     }
 
     /// Step to the next view, in the order the view button shows.
