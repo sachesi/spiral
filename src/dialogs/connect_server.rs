@@ -149,7 +149,11 @@ pub async fn connect_server_dialog(parent: &impl IsA<gtk::Widget>) -> Option<gio
                 #[strong]
                 tx,
                 async move {
-                    let result = crate::network::mount(&file, &dialog, &cancellable).await;
+                    let wanted = {
+                        let cancellable = cancellable.clone();
+                        move || !cancellable.is_cancelled()
+                    };
+                    let result = crate::network::mount(&file, &dialog, &cancellable, wanted).await;
                     connect.set_label(&label);
                     connect.set_sensitive(true);
                     entry.set_sensitive(true);
