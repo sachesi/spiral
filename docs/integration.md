@@ -10,7 +10,9 @@ portal, Flatpaks, browsers, Qt with the xdg platform theme
 
 The dialog is a trimmed file manager window: sidebar, path bar, the same views, and a
 bottom bar with the filter dropdown, the name entry in save mode, a button for the
-application's extra options, and the accept button. Trash, delete, cut and paste, rename
+application's extra options, and the accept button. Narrow, the sidebar goes over the
+folders, the name entry gets a line of its own and the back and forward buttons move down
+beside the filters. Trash, delete, cut and paste, rename
 and drag and drop are off, and so are Open With, new tabs and emptying the trash. New
 Folder is there in save mode and when a folder is being asked for. The sidebar has the
 tags only when opening: a tag lists files from anywhere, and is nowhere to save one.
