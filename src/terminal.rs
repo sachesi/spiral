@@ -113,9 +113,9 @@ const TERMINALS: &[Terminal] = &[
     },
 ];
 
-/// Terminals present in `PATH`, in preference order.
-/// Which of the terminals are on the system, looked up once: `PATH` does not change under
-/// a running process, and this is asked again for every change of the selection.
+/// Which of the terminals are on the system, in preference order, looked up once: `PATH`
+/// does not change under a running process, and this is asked again for every change of
+/// the selection.
 pub fn installed() -> Vec<&'static Terminal> {
     thread_local! {
         static FOUND: std::cell::OnceCell<Vec<&'static Terminal>> =

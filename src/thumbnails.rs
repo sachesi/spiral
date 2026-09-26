@@ -107,10 +107,9 @@ struct Thumbnailer {
 }
 
 /// Thumbnail for `info`, or `None` if the type has no thumbnailer or generation failed.
-/// Thumbnail for `info`. `at` is the row it is for, counted from the top of the folder:
-/// where several are waiting, the one nearest the top of what is on screen is made first,
-/// so a screenful fills in the order it is read rather than in the order the rows happened
-/// to be bound.
+/// `at` is the row it is for, counted from the top of the folder: where several are
+/// waiting, the one nearest the top of what is on screen is made first, so a screenful
+/// fills in the order it is read rather than in the order the rows happened to be bound.
 pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
     if info.file_type() == gio::FileType::Directory {
         return None;

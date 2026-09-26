@@ -31,6 +31,8 @@ impl SpiralWindow {
             .collect()
     }
 
+    /// The pane everything outside the view acts on: the active one when it belongs to the
+    /// tab on screen, else that tab's left pane.
     pub fn current_view(&self) -> Option<BrowserView> {
         let page = self.imp().tab_view.selected_page()?;
         let paned = page.child().downcast::<gtk::Paned>().ok()?;

@@ -645,7 +645,6 @@ impl SpiralWindow {
         self.imp().toast_overlay.add_toast(toast);
     }
 
-    /// Pop up the file operations list (used when relaunched while jobs run).
     /// Say that an operation is done with what it put in `folder`: with a way there, which
     /// selects the files that `landed`, when the folder is not the one on screen, and on
     /// its own when it is but the operation was `slow`. Files that appear in the folder
@@ -700,6 +699,7 @@ impl SpiralWindow {
         self.imp().toast_overlay.add_toast(toast);
     }
 
+    /// Pop up the file operations list (used when relaunched while jobs run).
     pub fn show_progress(&self) {
         let indicator = self.imp().progress_indicator.clone();
         glib::idle_add_local_once(move || {
@@ -709,8 +709,6 @@ impl SpiralWindow {
         });
     }
 
-    /// The pane everything outside the view acts on: the active one when it belongs to the
-    /// tab on screen, else that tab's left pane.
     pub(crate) fn sidebar(&self) -> PlacesSidebar {
         self.imp().sidebar.clone()
     }
