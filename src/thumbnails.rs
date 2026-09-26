@@ -9,7 +9,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use futures_channel::oneshot;
@@ -61,10 +61,10 @@ thread_local! {
     /// Requests waiting for a slot, with the row each is for. Never more than a screen or
     /// two of them, so the one to serve next is found by looking at all of them.
     static WAITERS: RefCell<Vec<(u32, oneshot::Sender<()>)>> = const { RefCell::new(Vec::new()) };
-    static THUMBNAILERS: RefCell<Option<Rc<Vec<Thumbnailer>>>> = const { RefCell::new(None) };
 }
 
 static SEQ: AtomicU64 = AtomicU64::new(0);
+static THUMBNAILERS: OnceLock<Vec<Thumbnailer>> = OnceLock::new();
 
 /// What has been loaded, oldest first. Answers stay until the room they take is wanted by
 /// newer ones; a folder walked through end to end must not cost the memory of every
@@ -136,9 +136,6 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         return cached;
     }
 
-    // Which thumbnailer would make one is decided here, where the list of them lives;
-    // the cache the freedesktop directories already hold is looked at on the worker,
-    // where a thumbnail is decoded anyway.
     // Neither a type nor a local path stops the lookup: a file on a share may still have
     // a thumbnail in the cache, made when it was somewhere else or by something else.
     let content_type = crate::file_utils::content_type_of(info)
@@ -147,7 +144,6 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
     let source = Source {
         path: file.path(),
         content_type: content_type.clone(),
-        thumbnailers: thumbnailers_for(&content_type),
         // Images with no thumbnailer of their own go to the bundled helper.
         own: content_type.starts_with("image/"),
         // Only pictures are weighed: a video thumbnailer reads a frame, not the file, so
@@ -156,13 +152,6 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
         too_large: content_type.starts_with("image/")
             && crate::file_utils::size_of(info) > crate::prefs::thumbnail_limit(),
     };
-    if source.thumbnailers.is_empty() && !source.own {
-        glib::g_debug!(
-            "spiral",
-            "thumbnail {uri}: no thumbnailer claims {content_type}"
-        );
-    }
-
     // Every caller waits on a detached generation task, so a row being unbound mid-way
     // (scrolling) drops only its receiver and can never strand a concurrency slot.
     let (tx, rx) = oneshot::channel();
@@ -238,8 +227,6 @@ struct Source {
     /// Only a local file can be handed to a thumbnailer.
     path: Option<PathBuf>,
     content_type: String,
-    /// Every system entry claiming the type, in the order they are tried.
-    thumbnailers: Vec<Thumbnailer>,
     /// Whether the bundled helper would take it: images, which most thumbnailer entries
     /// leave alone.
     own: bool,
@@ -293,7 +280,16 @@ async fn generate_task(key: Key, source: Source, at: u32) {
                 Cached::Failed => return None,
                 Cached::Missing => {
                     let path = source.path?;
-                    if source.too_large || (source.thumbnailers.is_empty() && !source.own) {
+                    if source.too_large {
+                        return None;
+                    }
+                    let thumbnailers = thumbnailers_for(&source.content_type);
+                    if thumbnailers.is_empty() && !source.own {
+                        glib::g_debug!(
+                            "spiral",
+                            "thumbnail {uri}: no thumbnailer claims {}",
+                            source.content_type
+                        );
                         return None;
                     }
                     let out = cache_path(&uri);
@@ -303,7 +299,7 @@ async fn generate_task(key: Key, source: Source, at: u32) {
                         mtime,
                         &out,
                         &source.content_type,
-                        &source.thumbnailers,
+                        &thumbnailers,
                     );
                     // A file written this second or the one before may still be being
                     // written, pausing between writes: what was drawn of it, or the note
@@ -851,14 +847,13 @@ fn write_new(path: &Path, bytes: &[u8]) -> bool {
         .is_ok()
 }
 
-/// System thumbnailers win over gdk-pixbuf (gdk-pixbuf ships one itself).
+/// Every system entry claiming the type, in the order they are tried. System thumbnailers
+/// win over gdk-pixbuf (gdk-pixbuf ships one itself). Runs on a worker thread: the entries
+/// are read from disk the first time.
 fn thumbnailers_for(content_type: &str) -> Vec<Thumbnailer> {
-    let all = THUMBNAILERS.with(|t| {
-        t.borrow_mut()
-            .get_or_insert_with(|| Rc::new(load_thumbnailers()))
-            .clone()
-    });
-    all.iter()
+    THUMBNAILERS
+        .get_or_init(load_thumbnailers)
+        .iter()
         .filter(|t| {
             t.mime_types.iter().any(|m| {
                 gio::content_type_equals(content_type, m) || gio::content_type_is_a(content_type, m)
