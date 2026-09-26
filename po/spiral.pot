@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.17.2\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-09-20 20:09+0300\n"
+"POT-Creation-Date: 2026-09-26 15:18+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -260,27 +260,35 @@ msgstr ""
 msgid "Icon size in list view"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:201
+#: data/io.github.sachesi.spiral.gschema.xml:202
+msgid "Icon size in grid view of file chooser dialogs"
+msgstr ""
+
+#: data/io.github.sachesi.spiral.gschema.xml:207
+msgid "Icon size in list view of file chooser dialogs"
+msgstr ""
+
+#: data/io.github.sachesi.spiral.gschema.xml:211
 msgid "Window size"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:205
+#: data/io.github.sachesi.spiral.gschema.xml:215
 msgid "Window maximized"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:209
+#: data/io.github.sachesi.spiral.gschema.xml:219
 msgid "Show places sidebar"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:213
+#: data/io.github.sachesi.spiral.gschema.xml:223
 msgid "Show the details panel"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:217
+#: data/io.github.sachesi.spiral.gschema.xml:227
 msgid "Ask whether to copy or move dropped files"
 msgstr ""
 
-#: data/io.github.sachesi.spiral.gschema.xml:221
+#: data/io.github.sachesi.spiral.gschema.xml:231
 msgid "Show two folder panes side by side"
 msgstr ""
 
@@ -909,7 +917,7 @@ msgstr ""
 msgid "Open in _Terminal"
 msgstr ""
 
-#: src/browser_actions/open.rs:194 src/browser_view/opening.rs:97
+#: src/browser_actions/open.rs:202 src/browser_view/opening.rs:97
 #: src/browser_view/opening.rs:104 src/dialogs/open_with.rs:213
 #, no-c-format
 msgid "Could Not Open"
@@ -927,7 +935,7 @@ msgid_plural "Removed %d items from Favorites"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_actions/tagging.rs:106 src/places_sidebar/rows.rs:110
+#: src/browser_actions/tagging.rs:118 src/places_sidebar/rows.rs:115
 #, no-c-format
 msgid "Could not tag “%s”"
 msgstr ""
@@ -979,8 +987,8 @@ msgstr ""
 #: src/dialogs/open_with.rs:62 src/dialogs/properties/permissions.rs:285
 #: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:39
 #: src/ops/archive.rs:413 src/ops/conflict.rs:64 src/ops/conflict.rs:315
-#: src/ops/mod.rs:30 src/ops/walk.rs:366 src/places_sidebar/devices.rs:221
-#: src/places_sidebar/menu.rs:191 src/portal/chooser_window.rs:1087
+#: src/ops/mod.rs:30 src/ops/walk.rs:369 src/places_sidebar/devices.rs:226
+#: src/places_sidebar/menu.rs:191 src/portal/chooser_window.rs:1214
 #, no-c-format
 msgid "_Cancel"
 msgstr ""
@@ -1005,37 +1013,37 @@ msgstr ""
 msgid "Archive"
 msgstr ""
 
-#: src/browser_view.rs:980
+#: src/browser_view.rs:1106
 #, no-c-format
 msgid "Connecting to %s…"
 msgstr ""
 
-#: src/browser_view.rs:985
+#: src/browser_view.rs:1111
 #, no-c-format
 msgid "Could Not Connect"
 msgstr ""
 
-#: src/browser_view.rs:988
+#: src/browser_view.rs:1114
 #, no-c-format
 msgid "Reloading the folder tries again."
 msgstr ""
 
-#: src/browser_view.rs:993 ui/browser_view.ui:124
+#: src/browser_view.rs:1119 ui/browser_view.ui:124
 #, no-c-format
 msgid "Could Not Open Folder"
 msgstr ""
 
-#: src/browser_view.rs:1012
+#: src/browser_view.rs:1138
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:1016
+#: src/browser_view.rs:1142
 #, no-c-format
 msgid "No Servers Found"
 msgstr ""
 
-#: src/browser_view.rs:1020 ui/browser_view.ui:107
+#: src/browser_view.rs:1146 ui/browser_view.ui:107
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
@@ -1072,27 +1080,27 @@ msgstr ""
 msgid "Original Location"
 msgstr ""
 
-#: src/browser_view/opening.rs:151
+#: src/browser_view/opening.rs:164
 #, no-c-format
 msgid "The password dialog was dismissed."
 msgstr ""
 
-#: src/browser_view/opening.rs:168 src/dialogs/open_with.rs:216
+#: src/browser_view/opening.rs:180 src/dialogs/open_with.rs:216
 #: src/dialogs/properties.rs:170 src/dialogs/properties/permissions.rs:92
-#: src/ops/walk.rs:54 src/places_sidebar/devices.rs:250
-#: src/portal/chooser_window.rs:1130
+#: src/ops/walk.rs:54 src/places_sidebar/devices.rs:255
+#: src/portal/chooser_window.rs:1257
 #, no-c-format
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view/opening.rs:185
+#: src/browser_view/opening.rs:197
 #, no-c-format
 msgid ""
 "Machines that announce themselves on the network appear here. Others are "
 "reached with “Connect to Server…”."
 msgstr ""
 
-#: src/browser_view/opening.rs:194
+#: src/browser_view/opening.rs:206
 #, no-c-format
 msgid ""
 "One server was found but left out: no gvfs backend for %s addresses is "
@@ -1103,7 +1111,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view/opening.rs:214
+#: src/browser_view/opening.rs:226
 #, no-c-format
 msgid "No gvfs backend for %s addresses is installed."
 msgstr ""
@@ -1399,31 +1407,31 @@ msgstr ""
 msgid "Connect to Server"
 msgstr ""
 
-#: src/dialogs/connect_server.rs:268
+#: src/dialogs/connect_server.rs:272
 #, no-c-format
 msgid "Forget This Server"
 msgstr ""
 
-#: src/dialogs/folder_chooser.rs:33 src/portal/chooser_window.rs:177
+#: src/dialogs/folder_chooser.rs:33 src/portal/chooser_window.rs:197
 #: ui/shortcuts_dialog.ui:81 ui/window.ui:302 ui/window.ui:541
 #, no-c-format
 msgid "Back"
 msgstr ""
 
-#: src/dialogs/folder_chooser.rs:38 src/portal/chooser_window.rs:182
+#: src/dialogs/folder_chooser.rs:38 src/portal/chooser_window.rs:198
 #: ui/shortcuts_dialog.ui:87 ui/window.ui:310 ui/window.ui:549
 #, no-c-format
 msgid "Forward"
 msgstr ""
 
-#: src/dialogs/folder_chooser.rs:64 src/portal/chooser_window.rs:345
+#: src/dialogs/folder_chooser.rs:64 src/portal/chooser_window.rs:376
 #: ui/shortcuts_dialog.ui:188 ui/window.ui:292
 #, no-c-format
 msgid "Show Sidebar"
 msgstr ""
 
 #: src/dialogs/folder_chooser.rs:70 src/naming.rs:287
-#: src/portal/chooser_window.rs:326 ui/shortcuts_dialog.ui:271
+#: src/portal/chooser_window.rs:357 ui/shortcuts_dialog.ui:271
 #, no-c-format
 msgid "New Folder"
 msgstr ""
@@ -1433,7 +1441,7 @@ msgstr ""
 msgid "Open With"
 msgstr ""
 
-#: src/dialogs/open_with.rs:72 src/portal/chooser_window.rs:362
+#: src/dialogs/open_with.rs:72 src/portal/chooser_window.rs:397
 #: ui/browser_view.ui:185 ui/places_sidebar.ui:12 ui/places_sidebar.ui:54
 #, no-c-format
 msgid "_Open"
@@ -1788,13 +1796,13 @@ msgstr ""
 msgid "Terminal"
 msgstr ""
 
-#: src/dialogs/preview.rs:152 ui/shortcuts_dialog.ui:289
+#: src/dialogs/preview.rs:157 ui/shortcuts_dialog.ui:289
 #, no-c-format
 msgid "Preview"
 msgstr ""
 
 #. Translators: %t is a file type ("PDF document"), %s its size ("1.2 MB").
-#: src/dialogs/preview.rs:476
+#: src/dialogs/preview.rs:528
 #, no-c-format
 msgid "%t, %s"
 msgstr ""
@@ -1820,8 +1828,8 @@ msgstr ""
 msgid "Fit"
 msgstr ""
 
-#: src/dialogs/preview/viewers.rs:337 ui/shortcuts_dialog.ui:170
-#: ui/window.ui:492 ui/window.ui:577
+#: src/dialogs/preview/viewers.rs:337 src/portal/chooser_window.rs:289
+#: ui/shortcuts_dialog.ui:170 ui/window.ui:492 ui/window.ui:577
 #, no-c-format
 msgid "Zoom Out"
 msgstr ""
@@ -1831,8 +1839,8 @@ msgstr ""
 msgid "Fit to Window"
 msgstr ""
 
-#: src/dialogs/preview/viewers.rs:339 ui/shortcuts_dialog.ui:164
-#: ui/window.ui:502 ui/window.ui:587
+#: src/dialogs/preview/viewers.rs:339 src/portal/chooser_window.rs:290
+#: ui/shortcuts_dialog.ui:164 ui/window.ui:502 ui/window.ui:587
 #, no-c-format
 msgid "Zoom In"
 msgstr ""
@@ -2185,7 +2193,7 @@ msgstr ""
 msgid "Grid View"
 msgstr ""
 
-#: src/enums.rs:56 src/portal/chooser_window.rs:207 ui/shortcuts_dialog.ui:152
+#: src/enums.rs:56 src/portal/chooser_window.rs:215 ui/shortcuts_dialog.ui:152
 #: ui/window.ui:481 ui/window.ui:566
 #, no-c-format
 msgid "List View"
@@ -2276,12 +2284,12 @@ msgstr ""
 msgid "Trash"
 msgstr ""
 
-#: src/file_utils.rs:557 src/path_bar.rs:388
+#: src/file_utils.rs:560 src/path_bar.rs:388
 #, no-c-format
 msgid "System"
 msgstr ""
 
-#: src/location_entry.rs:170 src/progress_indicator.rs:296 ui/window.ui:364
+#: src/location_entry.rs:174 src/progress_indicator.rs:296 ui/window.ui:364
 #, no-c-format
 msgid "Cancel"
 msgstr ""
@@ -2657,7 +2665,7 @@ msgstr ""
 msgid "_Merge"
 msgstr ""
 
-#: src/ops/conflict.rs:81 src/portal/chooser_window.rs:1088
+#: src/ops/conflict.rs:81 src/portal/chooser_window.rs:1215
 #, no-c-format
 msgid "_Replace"
 msgstr ""
@@ -3041,7 +3049,7 @@ msgstr ""
 msgid "All items in the Trash will be permanently deleted."
 msgstr ""
 
-#: src/ops/mod.rs:31 src/places_sidebar/devices.rs:223 ui/browser_view.ui:393
+#: src/ops/mod.rs:31 src/places_sidebar/devices.rs:228 ui/browser_view.ui:393
 #, no-c-format
 msgid "_Empty Trash"
 msgstr ""
@@ -3080,65 +3088,65 @@ msgid_plural "The permissions of %d items could not be changed."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ops/walk.rs:273
+#: src/ops/walk.rs:276
 #, no-c-format
 msgid "Links can only point at local files"
 msgstr ""
 
-#: src/ops/walk.rs:355
+#: src/ops/walk.rs:358
 #, no-c-format
 msgid ""
 "This location does not support trashing. Delete it permanently instead, "
 "along with any other item that cannot be trashed either?"
 msgstr ""
 
-#: src/ops/walk.rs:358
+#: src/ops/walk.rs:361
 #, no-c-format
 msgid "This location does not support trashing. Delete it permanently instead?"
 msgstr ""
 
-#: src/ops/walk.rs:361
+#: src/ops/walk.rs:364
 #, no-c-format
 msgid "Cannot Move “%s” to Trash"
 msgstr ""
 
-#: src/ops/walk.rs:367
+#: src/ops/walk.rs:370
 #, no-c-format
 msgid "_Delete Permanently"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:540
+#: src/ops/walk.rs:543
 #, no-c-format
 msgid "Moving"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:543
+#: src/ops/walk.rs:546
 #, no-c-format
 msgid "Copying"
 msgstr ""
 
 #. Translators: fills %v in “Error While %v “%s””.
-#: src/ops/walk.rs:845
+#: src/ops/walk.rs:848
 #, no-c-format
 msgid "Deleting"
 msgstr ""
 
 #. Translators: name of a symbolic link, as in “Link to report.pdf”.
-#: src/ops/walk.rs:886
+#: src/ops/walk.rs:889
 #, no-c-format
 msgid "Link to %s"
 msgstr ""
 
 #. Translators: file name given to an image pasted from the clipboard.
-#: src/ops/walk.rs:908
+#: src/ops/walk.rs:911
 #, no-c-format
 msgid "Pasted Image"
 msgstr ""
 
 #. Translators: goes into duplicate names, as in “report (copy).pdf”.
-#: src/ops/walk.rs:930
+#: src/ops/walk.rs:933
 #, no-c-format
 msgid "copy"
 msgstr ""
@@ -3163,44 +3171,44 @@ msgstr ""
 msgid "Eject"
 msgstr ""
 
-#: src/places_sidebar/devices.rs:139
+#: src/places_sidebar/devices.rs:141
 #, no-c-format
 msgid "Could Not Mount"
 msgstr ""
 
-#: src/places_sidebar/devices.rs:178
+#: src/places_sidebar/devices.rs:183
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr ""
 
-#: src/places_sidebar/devices.rs:180
+#: src/places_sidebar/devices.rs:185
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr ""
 
-#: src/places_sidebar/devices.rs:199
+#: src/places_sidebar/devices.rs:204
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr ""
 
-#: src/places_sidebar/devices.rs:205
+#: src/places_sidebar/devices.rs:210
 #, no-c-format
 msgid "Could Not Eject"
 msgstr ""
 
-#: src/places_sidebar/devices.rs:216
+#: src/places_sidebar/devices.rs:221
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr ""
 
-#: src/places_sidebar/devices.rs:218
+#: src/places_sidebar/devices.rs:223
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
 "trashed items on the volume will be permanently lost."
 msgstr ""
 
-#: src/places_sidebar/devices.rs:222
+#: src/places_sidebar/devices.rs:227
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr ""
@@ -3227,103 +3235,113 @@ msgstr[1] ""
 msgid "_Remove"
 msgstr ""
 
-#: src/portal/chooser_window.rs:250 ui/window.ui:91
+#: src/portal/chooser_window.rs:258 ui/window.ui:91
 #, no-c-format
 msgid "_A-Z"
 msgstr ""
 
-#: src/portal/chooser_window.rs:251 ui/window.ui:96
+#: src/portal/chooser_window.rs:259 ui/window.ui:96
 #, no-c-format
 msgid "_Z-A"
 msgstr ""
 
-#: src/portal/chooser_window.rs:252 ui/window.ui:101
+#: src/portal/chooser_window.rs:260 ui/window.ui:101
 #, no-c-format
 msgid "Last _Modified"
 msgstr ""
 
-#: src/portal/chooser_window.rs:253 ui/window.ui:106
+#: src/portal/chooser_window.rs:261 ui/window.ui:106
 #, no-c-format
 msgid "_First Modified"
 msgstr ""
 
-#: src/portal/chooser_window.rs:254 ui/window.ui:111
+#: src/portal/chooser_window.rs:262 ui/window.ui:111
 #, no-c-format
 msgid "_Size"
 msgstr ""
 
-#: src/portal/chooser_window.rs:255 ui/window.ui:116
+#: src/portal/chooser_window.rs:263 ui/window.ui:116
 #, no-c-format
 msgid "_Type"
 msgstr ""
 
-#: src/portal/chooser_window.rs:263 ui/window.ui:135
+#: src/portal/chooser_window.rs:271 ui/window.ui:135
 #, no-c-format
 msgid "Show _Hidden Files"
 msgstr ""
 
-#: src/portal/chooser_window.rs:271 ui/window.ui:89
+#: src/portal/chooser_window.rs:281 ui/window.ui:79
 #, no-c-format
-msgid "Sort"
+msgid "Icon Size"
 msgstr ""
 
-#: src/portal/chooser_window.rs:278
+#: src/portal/chooser_window.rs:302 ui/window.ui:482 ui/window.ui:567
+#, no-c-format
+msgid "View Options"
+msgstr ""
+
+#: src/portal/chooser_window.rs:309
 #, no-c-format
 msgid "Search this folder"
 msgstr ""
 
-#: src/portal/chooser_window.rs:287 ui/window.ui:383
+#: src/portal/chooser_window.rs:318 ui/window.ui:383
 #, no-c-format
 msgid "Search"
 msgstr ""
 
-#: src/portal/chooser_window.rs:363
+#: src/portal/chooser_window.rs:396
+#, no-c-format
+msgid "_Choose"
+msgstr ""
+
+#: src/portal/chooser_window.rs:398
 #, no-c-format
 msgid "_Save"
 msgstr ""
 
-#: src/portal/chooser_window.rs:377
+#: src/portal/chooser_window.rs:412
 #, no-c-format
 msgid "Visible Files Filter"
 msgstr ""
 
-#: src/portal/chooser_window.rs:411
+#: src/portal/chooser_window.rs:471
 #, no-c-format
 msgid "File Name"
 msgstr ""
 
-#: src/portal/chooser_window.rs:423
+#: src/portal/chooser_window.rs:483
 #, no-c-format
 msgid "Show Options"
 msgstr ""
 
-#: src/portal/chooser_window.rs:1058
+#: src/portal/chooser_window.rs:1185
 #, no-c-format
 msgid "Replace “%s”?"
 msgstr ""
 
-#: src/portal/chooser_window.rs:1059
+#: src/portal/chooser_window.rs:1186
 #, no-c-format
 msgid "Replace %d File?"
 msgid_plural "Replace %d Files?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/portal/chooser_window.rs:1064
+#: src/portal/chooser_window.rs:1191
 #, no-c-format
 msgid ""
 "A file with that name already exists. Replacing it will overwrite its "
 "content."
 msgstr ""
 
-#: src/portal/chooser_window.rs:1067
+#: src/portal/chooser_window.rs:1194
 #, no-c-format
 msgid ""
 "Files with these names already exist: %s. Replacing them will overwrite "
 "their content."
 msgstr ""
 
-#: src/portal/chooser_window.rs:1072
+#: src/portal/chooser_window.rs:1199
 #, no-c-format
 msgid ""
 "Files with these names already exist: %s, and %d more. Replacing them will "
@@ -3334,12 +3352,12 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/portal/chooser_window.rs:1124
+#: src/portal/chooser_window.rs:1251
 #, no-c-format
 msgid "Not Available to the Application"
 msgstr ""
 
-#: src/portal/chooser_window.rs:1126
+#: src/portal/chooser_window.rs:1253
 #, no-c-format
 msgid ""
 "Only files in a folder on this computer or on a connected server can be "
@@ -3391,27 +3409,27 @@ msgstr ""
 msgid "Grey"
 msgstr ""
 
-#: src/terminal.rs:192
+#: src/terminal.rs:196
 #, no-c-format
 msgid "The command line of the application cannot be read"
 msgstr ""
 
-#: src/terminal.rs:233
+#: src/terminal.rs:237
 #, no-c-format
 msgid "No terminal emulator found"
 msgstr ""
 
-#: src/window.rs:642 src/window.rs:698 ui/shortcuts_dialog.ui:337
+#: src/window.rs:641 src/window.rs:696 ui/shortcuts_dialog.ui:337
 #, no-c-format
 msgid "Undo"
 msgstr ""
 
-#: src/window.rs:669
+#: src/window.rs:667
 #, no-c-format
 msgid "Open Folder"
 msgstr ""
 
-#: src/window/header.rs:119 ui/window.ui:73
+#: src/window/header.rs:56 ui/window.ui:73
 #, no-c-format
 msgid "_Columns"
 msgstr ""
@@ -3769,8 +3787,8 @@ msgstr ""
 msgid "_List"
 msgstr ""
 
-#: ui/window.ui:79
-msgid "Icon Size"
+#: ui/window.ui:89
+msgid "Sort"
 msgstr ""
 
 #: ui/window.ui:123
@@ -3887,8 +3905,4 @@ msgstr ""
 
 #: ui/window.ui:449
 msgid "Only Contents"
-msgstr ""
-
-#: ui/window.ui:482 ui/window.ui:567
-msgid "View Options"
 msgstr ""
