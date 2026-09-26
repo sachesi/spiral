@@ -605,6 +605,7 @@ thread_local! {
     static BASE: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
     static MONITOR: RefCell<Option<gio::FileMonitor>> = const { RefCell::new(None) };
     static SYNC_QUEUED: Cell<bool> = const { Cell::new(false) };
+    static SYNCING: Cell<bool> = const { Cell::new(false) };
     /// The entries the index let go with what was trashed since Spiral started, for a
     /// restore to put back.
     static TRASHED: RefCell<Vec<(String, String)>> = const { RefCell::new(Vec::new()) };
@@ -764,38 +765,55 @@ fn rewrite_index(f: impl Fn(String, String) -> Option<(String, String)>) {
 }
 
 /// A listing notes its tagged files one by one; the file is written once they are in.
-/// Another Spiral writing it brings it here the same way.
+/// Another Spiral writing it brings it here the same way. A change while the file is being
+/// written waits for that to finish, then goes in the next round.
 fn schedule_sync() {
-    if SYNC_QUEUED.replace(true) {
+    if SYNC_QUEUED.replace(true) || SYNCING.get() {
         return;
     }
     glib::idle_add_local_once(|| {
-        SYNC_QUEUED.set(false);
-        sync();
+        glib::spawn_future_local(sync());
     });
 }
 
 /// Bring the index and its file together. What changed here since they last agreed goes
-/// over what the file has now, which may hold what another Spiral changed meanwhile.
-fn sync() {
-    let Some(disk) = read_index() else {
-        return;
-    };
-    let ours = INDEX.with(|l| l.to_vec());
-    let merged = BASE.with(|b| merge(&b.borrow(), &ours, &disk));
-    if merged != disk {
-        let p = index_path();
-        let _ = p.parent().map(std::fs::create_dir_all);
-        let text: String = merged.iter().map(|l| format!("{l}\n")).collect();
-        if let Err(e) = glib::file_set_contents(&p, text.as_bytes()) {
-            glib::g_warning!("spiral", "cannot save tag index: {e}");
-            return;
+/// over what the file has now, which may hold what another Spiral changed meanwhile. The
+/// file is read and written off the main loop; the application stays up until it is.
+async fn sync() {
+    SYNCING.set(true);
+    let _hold = gio::Application::default().map(|app| app.hold());
+    while SYNC_QUEUED.replace(false) {
+        let ours = INDEX.with(|l| l.to_vec());
+        let base = BASE.with(|b| b.borrow().clone());
+        let sent = ours.clone();
+        let merged = gio::spawn_blocking(move || {
+            let disk = read_index()?;
+            let merged = merge(&base, &sent, &disk);
+            if merged != disk {
+                let p = index_path();
+                let _ = p.parent().map(std::fs::create_dir_all);
+                let text: String = merged.iter().map(|l| format!("{l}\n")).collect();
+                if let Err(e) = glib::file_set_contents(&p, text.as_bytes()) {
+                    glib::g_warning!("spiral", "cannot save tag index: {e}");
+                    return None;
+                }
+            }
+            Some(merged)
+        })
+        .await
+        .ok()
+        .flatten();
+        let Some(merged) = merged else { continue };
+        BASE.with(|b| b.replace(merged.clone()));
+        // What changed here while the file was being written goes over what was written,
+        // for the next round to write.
+        let now = INDEX.with(|l| l.to_vec());
+        let merged = merge(&ours, &now, &merged);
+        if merged != now {
+            INDEX.with(|list| list.replace(merged));
         }
     }
-    BASE.with(|b| b.replace(merged.clone()));
-    if merged != ours {
-        INDEX.with(|list| list.replace(merged));
-    }
+    SYNCING.set(false);
 }
 
 /// `theirs` with what `ours` added to `base` and without what it took away.
