@@ -121,7 +121,7 @@ impl BrowserView {
     }
 
     /// The folder on screen, local only.
-    pub(super) fn folder_dir(&self) -> Option<std::path::PathBuf> {
+    pub(crate) fn folder_dir(&self) -> Option<std::path::PathBuf> {
         local_path(self, &self.location()?)
     }
 

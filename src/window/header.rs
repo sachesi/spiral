@@ -21,11 +21,7 @@ impl SpiralWindow {
         let imp = self.imp();
         let text = self
             .current_view()
-            .and_then(|v| v.location())
-            .map(|f| match f.path() {
-                Some(p) => p.to_string_lossy().into_owned(),
-                None => f.uri().to_string(),
-            })
+            .map(|v| crate::location_entry::location_text(&v))
             .unwrap_or_default();
         imp.search_button.set_active(false);
         crate::location_entry::set_text_quiet(&imp.location_entry, &text);

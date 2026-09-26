@@ -143,17 +143,21 @@ async fn file_type(file: &gio::File) -> Option<gio::FileType> {
 
 /// Show the entry, filled with where the view is, and give it the keyboard.
 fn show_entry(stack: &gtk::Stack, entry: &gtk::Entry, view: &crate::browser_view::BrowserView) {
-    let text = view
-        .location()
-        .map(|f| match f.path() {
-            Some(p) => p.to_string_lossy().into_owned(),
-            None => f.uri().to_string(),
-        })
-        .unwrap_or_default();
-    set_text_quiet(entry, &text);
+    set_text_quiet(entry, &location_text(view));
     stack.set_visible_child_name("location");
     entry.grab_focus();
     entry.set_position(-1);
+}
+
+/// Where `view` is, as the entry shows it: the path, where the folder has one, or the URI.
+pub(crate) fn location_text(view: &crate::browser_view::BrowserView) -> String {
+    match view.folder_dir() {
+        Some(p) => p.to_string_lossy().into_owned(),
+        None => view
+            .location()
+            .map(|f| f.uri().to_string())
+            .unwrap_or_default(),
+    }
 }
 
 impl LocationBar {
