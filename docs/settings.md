@@ -42,6 +42,8 @@ Changes apply immediately to open windows.
 | `captions` | three of `size`, `date_modified`, `permissions`, `type`, `mime_type`, `owner`, `group`, `none` | all `none` | |
 | `grid-zoom` | 48 to 256 | 96 | |
 | `list-zoom` | 16 to 64 | 32 | |
+| `chooser-grid-zoom` | 48 to 256 | 96 | |
+| `chooser-list-zoom` | 16 to 64 | 32 | |
 | `window-size`, `window-maximized` | | 1000x680, false | |
 | `sidebar-visible` | bool | true | |
 | `details-visible` | bool | false | the details panel |

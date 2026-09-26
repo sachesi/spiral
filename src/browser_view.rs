@@ -31,6 +31,27 @@ static THUMB_MAP: Key<glib::SignalHandlerId> = Key::new("thumb-map");
 static LIST_ITEM: Key<glib::WeakRef<gtk::ListItem>> = Key::new("list-item");
 static SORT_KEY: Key<SortKey> = Key::new("sort-key");
 
+const GRID_ZOOM_SIZES: [i32; 5] = [48, 64, 96, 168, 256];
+
+const LIST_ZOOM_SIZES: [i32; 5] = [16, 24, 32, 48, 64];
+
+/// Ctrl++, Ctrl+- and Ctrl+0 for a dialog around a view, which the file manager's windows
+/// have as keys of their own.
+pub fn add_zoom_keys(keys: &gtk::ShortcutController) {
+    for (trigger, action) in [
+        ("<Control>plus", "view.zoom-in"),
+        ("<Control>equal", "view.zoom-in"),
+        ("<Control>minus", "view.zoom-out"),
+        ("<Control>0", "view.zoom-reset"),
+        ("<Control>KP_0", "view.zoom-reset"),
+    ] {
+        keys.add_shortcut(gtk::Shortcut::new(
+            gtk::ShortcutTrigger::parse_string(trigger),
+            Some(gtk::NamedAction::new(action)),
+        ));
+    }
+}
+
 mod imp {
     use super::*;
 
@@ -479,12 +500,17 @@ mod imp {
                 .connect_changed(Some("click-policy"), apply_click);
             // Each view zooms on its own, starting from the size last zoomed to.
             let start = gio::SettingsBindFlags::GET | gio::SettingsBindFlags::GET_NO_CHANGES;
+            let (grid_key, list_key) = if obj.chooser_mode() {
+                ("chooser-grid-zoom", "chooser-list-zoom")
+            } else {
+                ("grid-zoom", "list-zoom")
+            };
             self.settings
-                .bind("grid-zoom", &*obj, "icon-size")
+                .bind(grid_key, &*obj, "icon-size")
                 .flags(start)
                 .build();
             self.settings
-                .bind("list-zoom", &*obj, "list-icon-size")
+                .bind(list_key, &*obj, "list-icon-size")
                 .flags(start)
                 .build();
 
@@ -507,12 +533,7 @@ mod imp {
                     }
                     let sum = acc.get() + dy;
                     if sum.abs() >= 1.0 {
-                        let action = if sum < 0.0 {
-                            "win.zoom-in"
-                        } else {
-                            "win.zoom-out"
-                        };
-                        let _ = obj.activate_action(action, None);
+                        obj.zoom(if sum < 0.0 { 1 } else { -1 });
                         acc.set(0.0);
                     } else {
                         acc.set(sum);
@@ -546,7 +567,13 @@ mod imp {
                     }
                 ));
             }
-            obj.connect_icon_size_notify(|obj| obj.fit_grid_columns());
+            obj.connect_icon_size_notify(|obj| {
+                obj.fit_grid_columns();
+                obj.sync_zoom_actions();
+            });
+            obj.connect_list_icon_size_notify(|obj| obj.sync_zoom_actions());
+            obj.connect_view_mode_notify(|obj| obj.sync_zoom_actions());
+            obj.sync_zoom_actions();
 
             self.grid_view.connect_activate(glib::clone!(
                 #[weak]
@@ -1000,6 +1027,70 @@ impl BrowserView {
                 let _ = self.imp().settings.set_string("view-mode", nick);
             }
         }
+    }
+
+    /// The key the size of the icons shown starts from, and the sizes zooming steps
+    /// through. A chooser keeps its own, as it does its view and order.
+    fn zoom_key(&self) -> (&'static str, &'static [i32]) {
+        match (self.view_mode() == ViewMode::Grid, self.chooser_mode()) {
+            (true, false) => ("grid-zoom", &GRID_ZOOM_SIZES),
+            (true, true) => ("chooser-grid-zoom", &GRID_ZOOM_SIZES),
+            (false, false) => ("list-zoom", &LIST_ZOOM_SIZES),
+            (false, true) => ("chooser-list-zoom", &LIST_ZOOM_SIZES),
+        }
+    }
+
+    fn zoom_size(&self) -> i32 {
+        if self.view_mode() == ViewMode::Grid {
+            self.icon_size()
+        } else {
+            self.list_icon_size()
+        }
+    }
+
+    fn set_zoom_size(&self, size: i32) {
+        if self.view_mode() == ViewMode::Grid {
+            self.set_icon_size(size);
+        } else {
+            self.set_list_icon_size(size);
+        }
+    }
+
+    /// Where the icons shown are among the sizes zooming steps through.
+    fn zoom_index(&self) -> usize {
+        let (_, sizes) = self.zoom_key();
+        let size = self.zoom_size();
+        sizes
+            .iter()
+            .position(|&z| z >= size)
+            .unwrap_or(sizes.len() - 1)
+    }
+
+    /// Zoom the icons shown `step` sizes in, and start new views of the kind at the size
+    /// they end up at. Other views, here and in other windows, keep theirs.
+    pub fn zoom(&self, step: i32) {
+        let (key, sizes) = self.zoom_key();
+        let next = (self.zoom_index() as i32 + step).clamp(0, sizes.len() as i32 - 1);
+        let size = sizes[next as usize];
+        if size != self.zoom_size() {
+            self.set_zoom_size(size);
+            let _ = self.imp().settings.set_int(key, size);
+        }
+    }
+
+    /// Back to the size a view starts at, for the kind of view shown.
+    pub fn zoom_reset(&self) {
+        let (key, _) = self.zoom_key();
+        let settings = &self.imp().settings;
+        settings.reset(key);
+        self.set_zoom_size(settings.int(key));
+    }
+
+    fn sync_zoom_actions(&self) {
+        let (_, sizes) = self.zoom_key();
+        let at = self.zoom_index();
+        self.set_enabled("zoom-in", at + 1 < sizes.len());
+        self.set_enabled("zoom-out", at > 0);
     }
 
     fn update_stack(&self) {

@@ -196,6 +196,16 @@
       <default>32</default>
       <summary>Icon size in list view</summary>
     </key>
+    <key name="chooser-grid-zoom" type="i">
+      <range min="48" max="256"/>
+      <default>96</default>
+      <summary>Icon size in grid view of file chooser dialogs</summary>
+    </key>
+    <key name="chooser-list-zoom" type="i">
+      <range min="16" max="64"/>
+      <default>32</default>
+      <summary>Icon size in list view of file chooser dialogs</summary>
+    </key>
     <key name="window-size" type="(ii)">
       <default>(1000, 680)</default>
       <summary>Window size</summary>

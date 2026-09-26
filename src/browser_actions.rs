@@ -108,6 +108,9 @@ impl BrowserView {
             model.selection().set_selection(&inverted, &all);
         });
         add("select-pattern", |v| v.select_pattern());
+        add("zoom-in", |v| v.zoom(1));
+        add("zoom-out", |v| v.zoom(-1));
+        add("zoom-reset", |v| v.zoom_reset());
         add("context-menu", |v| v.popup_menu_for_selection());
         add("drop-copy", |v| v.finish_drop(gtk::gdk::DragAction::COPY));
         add("drop-move", |v| v.finish_drop(gtk::gdk::DragAction::MOVE));
@@ -382,7 +385,7 @@ impl BrowserView {
         self.add_controller(keys);
     }
 
-    fn set_enabled(&self, name: &str, enabled: bool) {
+    pub(crate) fn set_enabled(&self, name: &str, enabled: bool) {
         let imp = self.imp();
         if let Some(a) = imp
             .actions

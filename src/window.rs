@@ -266,7 +266,6 @@ mod imp {
                 ),
             );
             obj.sync_view_button();
-            obj.zoom(0);
 
             // Location entry: Escape or losing focus returns to the crumbs.
             let key = gtk::EventControllerKey::new();
