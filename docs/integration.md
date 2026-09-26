@@ -38,7 +38,9 @@ Leaving the folder ends the search.
 Honoured request options: title, accept label, modal, multiple, directory, filters and
 current filter (glob and MIME), choices (combos become dropdowns, booleans check boxes),
 current name, current file and current folder for saving, and the file list for
-SaveFiles. A current filter that is not in the list is offered after it. Saving over an
+SaveFiles. A current filter that is not in the list is offered after it. Of a current name
+with folders in it, only the last part is proposed, so what is saved goes where the
+dialog shows; a path the user types is still followed. Saving over an
 existing file asks first. The reply carries the URIs, the selected filter and the choice
 values.
 
