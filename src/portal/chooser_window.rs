@@ -390,6 +390,9 @@ async fn run(
     // Bottom bar: filters | file name | choices + accept.
     let accept = gtk::Button::builder()
         .label(accept_label.unwrap_or_else(|| match mode {
+            Mode::Open {
+                directory: true, ..
+            } => gettext("_Choose"),
             Mode::Open { .. } => gettext("_Open"),
             Mode::Save | Mode::SaveFiles(_) => gettext("_Save"),
         }))
