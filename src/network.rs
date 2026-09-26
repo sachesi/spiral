@@ -5,6 +5,9 @@
 //! gvfs has a backend for. A system without gvfs supports no scheme but `file:`, and the
 //! places that offer network locations ask `address_schemes()` before offering any.
 
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
+
 use crate::gio::prelude::*;
 use crate::gtk::prelude::*;
 use crate::{gio, glib, gtk};
@@ -102,19 +105,23 @@ fn split_address(text: &str) -> Option<(String, &str)> {
 
 /// Mount whatever `file` is on, asking for a password through the window `parent` is in.
 /// A location already mounted is nothing to do. Cancelling `cancellable` gives the attempt
-/// up: gvfs goes on with a mount its client has left, and asks for the password when it
-/// gets that far, so an attempt given up answers no question either.
+/// up. gvfs goes on with a mount its client has left, and asks for the password when it
+/// gets that far; `wanted` says whether anyone still waits for this attempt, and a question
+/// nobody waits for is turned down.
 pub async fn mount(
     file: &gio::File,
     parent: &impl IsA<gtk::Widget>,
     cancellable: &gio::Cancellable,
+    wanted: impl Fn() -> bool + 'static,
 ) -> Result<(), glib::Error> {
     let window = parent.root().and_downcast::<gtk::Window>();
     let op = gtk::MountOperation::new(window.as_ref());
+    let server = server_of(file);
+    let _waiting = Waiting::start(&server, Rc::new(wanted));
     for signal in ["ask-password", "ask-question"] {
-        let cancellable = cancellable.clone();
+        let server = server.clone();
         op.connect_local(signal, false, move |values| {
-            if cancellable.is_cancelled() {
+            if !Waiting::for_server(&server) {
                 let op = values[0].get::<gio::MountOperation>().unwrap();
                 op.reply(gio::MountOperationResult::Aborted);
                 op.stop_signal_emission_by_name(signal);
@@ -135,6 +142,60 @@ pub async fn mount(
         Ok(Err(e)) if e.matches(gio::IOErrorEnum::AlreadyMounted) => Ok(()),
         Ok(result) => result,
         Err(_) => Err(glib::Error::new(gio::IOErrorEnum::Cancelled, "")),
+    }
+}
+
+/// The server a location is on, as far as its address tells: the scheme, the user, the host
+/// and the port.
+fn server_of(file: &gio::File) -> String {
+    let uri = file.uri();
+    match glib::Uri::parse(&uri, glib::UriFlags::NONE) {
+        Ok(parsed) => format!(
+            "{}://{}@{}:{}",
+            parsed.scheme(),
+            parsed.userinfo().unwrap_or_default(),
+            parsed.host().unwrap_or_default(),
+            parsed.port()
+        ),
+        Err(_) => uri.to_string(),
+    }
+}
+
+type Wanted = Rc<dyn Fn() -> bool>;
+
+thread_local! {
+    static WAITING: RefCell<Vec<(u64, String, Wanted)>> = const { RefCell::new(Vec::new()) };
+    static NEXT_WAITING: Cell<u64> = const { Cell::new(0) };
+}
+
+/// A mount under way, for as long as its attempt lasts. gvfs mounts a server once for all
+/// who ask for it at the same time and puts its questions to whichever asked first, which
+/// may be one nobody waits for any more while another still does.
+struct Waiting(u64);
+
+impl Waiting {
+    fn start(server: &str, wanted: Wanted) -> Self {
+        let id = NEXT_WAITING.replace(NEXT_WAITING.get() + 1);
+        WAITING.with(|w| w.borrow_mut().push((id, server.to_string(), wanted)));
+        Self(id)
+    }
+
+    /// Whether anyone still waits for a mount of `server`.
+    fn for_server(server: &str) -> bool {
+        let wanted: Vec<Wanted> = WAITING.with(|w| {
+            w.borrow()
+                .iter()
+                .filter(|(_, s, _)| s == server)
+                .map(|(_, _, wanted)| wanted.clone())
+                .collect()
+        });
+        wanted.iter().any(|wanted| wanted())
+    }
+}
+
+impl Drop for Waiting {
+    fn drop(&mut self) {
+        WAITING.with(|w| w.borrow_mut().retain(|(id, _, _)| *id != self.0));
     }
 }
 
@@ -188,6 +249,15 @@ mod tests {
                 "“{text}” was taken for an address"
             );
         }
+    }
+
+    #[test]
+    fn locations_on_one_server_share_it() {
+        let server = |uri: &str| server_of(&gio::File::for_uri(uri));
+        assert_eq!(server("sftp://host/srv"), server("sftp://host/home/a"));
+        assert_ne!(server("sftp://host/"), server("sftp://host:2222/"));
+        assert_ne!(server("sftp://host/"), server("sftp://me@host/"));
+        assert_ne!(server("sftp://host/"), server("ftp://host/"));
     }
 
     #[test]

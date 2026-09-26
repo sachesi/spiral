@@ -129,35 +129,47 @@ impl BrowserView {
         }
         imp.mounting.replace(Mounting::Underway);
         self.update_stack();
-        glib::spawn_future_local(glib::clone!(
-            #[weak(rename_to = view)]
-            self,
-            async move {
-                let result = crate::network::mount(&file, &view, &gio::Cancellable::new()).await;
-                // The answer is about the location asked for; the view may have moved on.
-                if view.location().is_none_or(|now| !now.equal(&file)) {
-                    return;
+        // Held weakly while the server is reached, which can take a while: gvfs's questions
+        // are for a view that still shows the location, not one gone elsewhere or closed.
+        let parent: gtk::Widget = self
+            .root()
+            .map_or_else(|| self.clone().upcast(), Cast::upcast);
+        let weak = self.downgrade();
+        let showing = {
+            let (weak, file) = (weak.clone(), file.clone());
+            move || {
+                weak.upgrade()
+                    .and_then(|view| view.location())
+                    .is_some_and(|now| now.equal(&file))
+            }
+        };
+        glib::spawn_future_local(async move {
+            let result =
+                crate::network::mount(&file, &parent, &gio::Cancellable::new(), showing).await;
+            // The answer is about the location asked for; the view may have moved on.
+            let Some(view) = weak.upgrade() else { return };
+            if view.location().is_none_or(|now| !now.equal(&file)) {
+                return;
+            }
+            match result {
+                Ok(()) => {
+                    // Mounted: the address is worth trying again if it is ever lost,
+                    // and the location has a mount to be named after now.
+                    view.imp().mounting.replace(Mounting::Idle);
+                    view.notify_location();
+                    view.reload();
                 }
-                match result {
-                    Ok(()) => {
-                        // Mounted: the address is worth trying again if it is ever lost,
-                        // and the location has a mount to be named after now.
-                        view.imp().mounting.replace(Mounting::Idle);
-                        view.notify_location();
-                        view.reload();
-                    }
-                    Err(e) => {
-                        let why = if e.matches(gio::IOErrorEnum::FailedHandled) {
-                            gettext("The password dialog was dismissed.")
-                        } else {
-                            e.message().to_string()
-                        };
-                        view.imp().mounting.replace(Mounting::Failed(why));
-                        view.update_stack();
-                    }
+                Err(e) => {
+                    let why = if e.matches(gio::IOErrorEnum::FailedHandled) {
+                        gettext("The password dialog was dismissed.")
+                    } else {
+                        e.message().to_string()
+                    };
+                    view.imp().mounting.replace(Mounting::Failed(why));
+                    view.update_stack();
                 }
             }
-        ));
+        });
     }
 
     pub(crate) fn show_error(&self, heading: &str, message: &str) {
