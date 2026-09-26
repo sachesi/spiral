@@ -160,7 +160,10 @@ impl PlacesSidebar {
             async move {
                 let flags = gio::MountUnmountFlags::NONE;
                 // A volume's own trash is lost once it is unplugged; offer to empty it first.
+                // Not for a share: gvfs trashes nothing onto one, so a trash folder there is
+                // the server's own, and emptying it would delete what someone trashed there.
                 if let EjectTarget::Mount(m) = &target
+                    && !target.is_network()
                     && let Some(trash) = mount_trash(&m.root()).await
                     && !sidebar.offer_empty_trash(trash).await
                 {
