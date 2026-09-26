@@ -136,6 +136,8 @@ impl PlacesSidebar {
                             );
                         }
                     }
+                    // The password or passphrase dialog was dismissed: nothing to report.
+                    Err(e) if e.matches(gio::IOErrorEnum::FailedHandled) => {}
                     Err(e) => sidebar.show_error(&gettext("Could Not Mount"), &e),
                 }
             }
