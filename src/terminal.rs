@@ -146,21 +146,25 @@ pub fn chosen() -> Option<&'static Terminal> {
 
 /// Whether the application's desktop entry has `Terminal=true`. The entry is read from disk
 /// because the `gio` bindings do not carry `GDesktopAppInfo`, which is where GIO keeps it.
+/// The first entry found is the one GIO launches: a user's own copy hides the system's.
 fn wants_terminal(app: &gio::AppInfo) -> bool {
     let Some(id) = app.id() else { return false };
     let mut dirs = vec![glib::user_data_dir()];
     dirs.extend(glib::system_data_dirs());
-    dirs.into_iter().any(|dir| {
-        let file = glib::KeyFile::new();
-        file.load_from_file(
-            dir.join("applications").join(id.as_str()),
-            glib::KeyFileFlags::NONE,
-        )
-        .is_ok()
-            && file
-                .boolean(glib::KEY_FILE_DESKTOP_GROUP, "Terminal")
-                .unwrap_or(false)
-    })
+    dirs.into_iter()
+        .find_map(|dir| {
+            let file = glib::KeyFile::new();
+            file.load_from_file(
+                dir.join("applications").join(id.as_str()),
+                glib::KeyFileFlags::NONE,
+            )
+            .ok()?;
+            Some(
+                file.boolean(glib::KEY_FILE_DESKTOP_GROUP, "Terminal")
+                    .unwrap_or(false),
+            )
+        })
+        .unwrap_or(false)
 }
 
 /// Open `dir` in the chosen terminal.
