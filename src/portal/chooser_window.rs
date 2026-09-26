@@ -171,35 +171,44 @@ async fn run(
     }
     let location_bar = crate::location_entry::LocationBar::new(&view);
 
-    let back = gtk::Button::builder()
-        .icon_name("go-previous-symbolic")
-        .tooltip_text(gettext("Back"))
-        .valign(gtk::Align::Center)
-        .build();
-    let forward = gtk::Button::builder()
-        .icon_name("go-next-symbolic")
-        .tooltip_text(gettext("Forward"))
-        .valign(gtk::Align::Center)
-        .build();
-    view.bind_property("can-go-back", &back, "sensitive")
+    // Actions, for the buttons in the header and the ones that stand in for them at the
+    // bottom when the dialog is narrow.
+    let go_back = gio::SimpleAction::new("back", None);
+    let go_forward = gio::SimpleAction::new("forward", None);
+    view.bind_property("can-go-back", &go_back, "enabled")
         .sync_create()
         .build();
-    view.bind_property("can-go-forward", &forward, "sensitive")
+    view.bind_property("can-go-forward", &go_forward, "enabled")
         .sync_create()
         .build();
-    back.connect_clicked(glib::clone!(
+    go_back.connect_activate(glib::clone!(
         #[weak]
         view,
-        move |_| view.go_back()
+        move |_, _| view.go_back()
     ));
-    forward.connect_clicked(glib::clone!(
+    go_forward.connect_activate(glib::clone!(
         #[weak]
         view,
-        move |_| view.go_forward()
+        move |_, _| view.go_forward()
     ));
-    let nav = gtk::Box::builder().spacing(6).build();
-    nav.append(&back);
-    nav.append(&forward);
+    let nav_buttons = || {
+        let nav = gtk::Box::builder().spacing(6).build();
+        for (icon, tooltip, action) in [
+            ("go-previous-symbolic", gettext("Back"), "chooser.back"),
+            ("go-next-symbolic", gettext("Forward"), "chooser.forward"),
+        ] {
+            nav.append(
+                &gtk::Button::builder()
+                    .icon_name(icon)
+                    .tooltip_text(tooltip)
+                    .action_name(action)
+                    .valign(gtk::Align::Center)
+                    .build(),
+            );
+        }
+        nav
+    };
+    let nav = nav_buttons();
 
     let view_button = gtk::Button::builder()
         .valign(gtk::Align::Center)
@@ -400,6 +409,31 @@ async fn run(
         .visible(!filters.is_empty())
         .css_classes(["flat-dropdown"])
         .build();
+    // The application names its filters, at any length: on the button the name gives way
+    // before the dialog does. The list keeps GTK's own rows, which show it whole.
+    let filter_label = gtk::SignalListItemFactory::new();
+    filter_label.connect_setup(|_, item| {
+        if let Some(item) = item.downcast_ref::<gtk::ListItem>() {
+            let label = gtk::Label::builder()
+                .xalign(0.0)
+                .ellipsize(gtk::pango::EllipsizeMode::End)
+                .build();
+            item.set_child(Some(&label));
+        }
+    });
+    filter_label.connect_bind(|_, item| {
+        let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+            return;
+        };
+        if let (Some(label), Some(name)) = (
+            item.child().and_downcast::<gtk::Label>(),
+            item.item().and_downcast::<gtk::StringObject>(),
+        ) {
+            label.set_label(&name.string());
+        }
+    });
+    filter_dropdown.set_list_factory(filter_dropdown.factory().as_ref());
+    filter_dropdown.set_factory(Some(&filter_label));
     if let Some(cur) = &current_filter
         && let Some(i) = filters.iter().position(|f| f == cur)
     {
@@ -461,16 +495,53 @@ async fn run(
         choices_button.set_popover(Some(&gtk::Popover::builder().child(&bx).build()));
     }
 
-    let start_box = gtk::Box::builder().css_classes(["toolbar"]).build();
-    start_box.append(&filter_dropdown);
-    let end_box = gtk::Box::builder().css_classes(["toolbar"]).build();
-    end_box.append(&choices_button);
-    end_box.append(&accept);
-    let bottom = gtk::CenterBox::builder()
-        .start_widget(&start_box)
-        .center_widget(&name_entry)
-        .end_widget(&end_box)
+    // Wide, one bar: filters | file name | choices + accept. Narrow, the name gets a line
+    // of its own above the rest, which the buttons going back and forward join.
+    let toolbar = || gtk::Box::builder().css_classes(["toolbar"]).build();
+    let wide_start = toolbar();
+    wide_start.append(&adw::LayoutSlot::new("filter"));
+    let wide_end = toolbar();
+    wide_end.append(&adw::LayoutSlot::new("choices"));
+    wide_end.append(&adw::LayoutSlot::new("accept"));
+    let wide = gtk::CenterBox::builder()
+        .start_widget(&wide_start)
+        .center_widget(&adw::LayoutSlot::new("name"))
+        .end_widget(&wide_end)
         .build();
+    let name_row = toolbar();
+    name_row.set_visible(matches!(mode, Mode::Save));
+    let name_slot = adw::LayoutSlot::new("name");
+    name_slot.set_hexpand(true);
+    name_row.append(&name_slot);
+    let narrow_start = toolbar();
+    narrow_start.append(&nav_buttons());
+    narrow_start.append(&adw::LayoutSlot::new("filter"));
+    let narrow_end = toolbar();
+    narrow_end.append(&adw::LayoutSlot::new("choices"));
+    narrow_end.append(&adw::LayoutSlot::new("accept"));
+    let narrow = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .build();
+    narrow.append(&name_row);
+    narrow.append(
+        &gtk::CenterBox::builder()
+            .start_widget(&narrow_start)
+            .end_widget(&narrow_end)
+            .build(),
+    );
+    let bottom = adw::MultiLayoutView::new();
+    for (name, content) in [
+        ("wide", wide.upcast::<gtk::Widget>()),
+        ("narrow", narrow.upcast()),
+    ] {
+        let layout = adw::Layout::new(&content);
+        layout.set_name(Some(name));
+        bottom.add_layout(layout);
+    }
+    bottom.set_child("filter", &filter_dropdown);
+    bottom.set_child("name", &name_entry);
+    bottom.set_child("choices", &choices_button);
+    bottom.set_child("accept", &accept);
 
     let content_toolbar = adw::ToolbarView::new();
     content_toolbar.add_top_bar(&header);
@@ -515,6 +586,8 @@ async fn run(
     window.insert_action_group("view", Some(view.action_group()));
     let chooser_actions = gio::SimpleActionGroup::new();
     chooser_actions.add_action(&sort_action);
+    chooser_actions.add_action(&go_back);
+    chooser_actions.add_action(&go_forward);
     // Hidden files are the file manager's own setting, the one the view is already
     // reading: a dialog that shows them is a dialog of a file manager that does.
     chooser_actions.add_action(&settings.create_action("show-hidden"));
@@ -539,6 +612,8 @@ async fn run(
         Some(&adw::LengthUnit::Px.to_value()),
     );
     bp.add_setter(&show_sidebar, "visible", Some(&true.to_value()));
+    bp.add_setter(&nav, "visible", Some(&false.to_value()));
+    bp.add_setter(&bottom, "layout-name", Some(&"narrow".to_value()));
     window.add_breakpoint(bp);
 
     // ---- wiring ---------------------------------------------------------------------------
