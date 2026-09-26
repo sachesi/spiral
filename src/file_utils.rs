@@ -551,7 +551,10 @@ pub fn location_name(file: &gio::File) -> String {
     if crate::tags::is_tag_location(file) {
         return crate::tags::tag_of_location(file).unwrap_or_else(|| gettext("Tags"));
     }
-    if let Some(path) = file.path()
+    // Only a native file can be the root; asking another for its path blocks until gvfs
+    // has mounted it.
+    if file.is_native()
+        && let Some(path) = file.path()
         && path.as_os_str() == "/"
     {
         return gettext("System");
