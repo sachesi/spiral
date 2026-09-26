@@ -239,7 +239,10 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
         }
         JobKind::SaveImage { parent, image } => {
             let file = parent.child(&unique_image_name(&parent).await);
-            let png = image.save_to_png_bytes();
+            let image = image.clone();
+            let png = gio::spawn_blocking(move || image.save_to_png_bytes())
+                .await
+                .map_err(|_| Fail::Failed("interrupted".into()))?;
             let stream = file
                 .create_future(gio::FileCreateFlags::NONE, PRIO)
                 .await
