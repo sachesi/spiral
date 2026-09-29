@@ -17,17 +17,23 @@ Before a change goes in:
 ## Where things are
 
 The repository is a Cargo workspace. The root package, `spiral-core`, is the library that
-holds everything below; `crates/spiral` builds the three executables from it.
+holds everything below; `crates/spiral` builds the three executables of the file manager
+from it, and `crates/spiral-desktop` the desktop icons.
 
     build.rs               runs blueprint-compiler, bundles the GResource, compiles the
                            settings schema for the tests
     data/ui/*.blp          the window, browser view, path bar, sidebar, shortcuts dialog
     data/style.css         structural CSS, colours come from libadwaita
     crates/spiral/src/bin/ the three executables, thin mains
+    crates/spiral-desktop/ the desktop icons: a layer-shell window around the browser
+                           view
     src/application.rs     GtkApplication subclass, app actions, FileManager1 registration
     src/window.rs          the window; in window/ its win.* actions, tabs, panes, header bar
     src/browser_view.rs    one tab: grid and list, view mode, sort; in browser_view/ its
-                           navigation, opening, selection, cells, columns, drag and drop
+                           navigation, opening, selection, cells, columns, drag and drop,
+                           and the icons of the desktop (canvas.rs)
+    src/desktop/           what the desktop icons stand on: placement on the grid, the
+                           positions kept, Home, trash and drives, and menu drop-ins
     src/browser_actions.rs view.* actions; in browser_actions/ transfers, making and
                            renaming, tags, opening, context menus
     src/miller.rs          column view: the folder chain as a strip of lists

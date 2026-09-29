@@ -47,6 +47,14 @@ Changes apply immediately to open windows.
 | `window-size`, `window-maximized` | | 1000x680, false | |
 | `sidebar-visible` | bool | true | |
 | `details-visible` | bool | false | the details panel |
+| `desktop-arrangement` | `grid`, `auto`, `free` | `grid` | Arrangement (Desktop) |
+| `desktop-sort-key` | `name`, `size`, `type`, `modified` | `name` | Sort Order (Desktop) |
+| `desktop-sort-reversed` | bool | false | Reversed Order (Desktop) |
+| `desktop-alignment` | `left`, `right` | `right` | Alignment (Desktop) |
+| `desktop-icon-size` | 32 to 128 | 64 | Icon Size (Desktop) |
+| `desktop-icon-spacing` | 0 to 64 | 8 | Spacing (Desktop) |
+| `desktop-show-captions` | bool | false | Captions (Desktop) |
+| `desktop-show-home`, `desktop-show-trash`, `desktop-show-drives` | bool | true | Shown on the Desktop |
 
 Notes on a few of them:
 
@@ -86,10 +94,14 @@ mounts are skipped because reading every file on a share can take a while.
 are not weighed by it, and a thumbnail that already exists is shown whatever the size of
 the file.
 
+The `desktop-` keys belong to the desktop icons, described in [desktop.md](desktop.md);
+their page in Preferences is there only when `spiral-desktop` is installed.
+
 `captions` are the lines under grid icons, top to bottom. `size` becomes an item count on
 folders when `item-counts` allows it.
 
 Outside GSettings, Spiral keeps bookmarks in `~/.config/gtk-3.0/bookmarks`, favorites in
 `~/.local/share/spiral/starred`, the index of tagged files in `~/.local/share/spiral/tags`,
-the tags themselves in the `user.xdg.tags` extended attribute of each file, and per-folder
+the tags themselves in the `user.xdg.tags` extended attribute of each file, where the
+desktop icons were left in `~/.local/state/spiral/desktop-positions`, and per-folder
 view, sort order and custom icon in GIO file metadata.

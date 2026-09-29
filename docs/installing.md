@@ -3,11 +3,12 @@
 ## What you need
 
 To build: Rust 1.92 or newer, `blueprint-compiler`, `just`, and the development packages
-of GTK 4.22, libadwaita 1.9, GtkSourceView 5, libseccomp and GStreamer. On Fedora that is
-`gtk4-devel libadwaita-devel gtksourceview5-devel libseccomp-devel gstreamer1-devel
-gstreamer1-plugins-base-devel blueprint-compiler just`; on Debian `libgtk-4-dev
-libadwaita-1-dev libgtksourceview-5-dev libseccomp-dev libgstreamer1.0-dev
-libgstreamer-plugins-base1.0-dev blueprint-compiler just`. `just check` also wants
+of GTK 4.22, libadwaita 1.9, GtkSourceView 5, libseccomp, GStreamer and gtk4-layer-shell 1.3.
+On Fedora that is `gtk4-devel libadwaita-devel gtksourceview5-devel libseccomp-devel
+gstreamer1-devel gstreamer1-plugins-base-devel gtk4-layer-shell-devel blueprint-compiler
+just`; on Debian `libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libseccomp-dev
+libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgtk4-layer-shell-dev
+blueprint-compiler just`. `just check` also wants
 `desktop-file-validate` and `appstreamcli`.
 
 To run: GTK 4.22, libadwaita 1.9, GtkSourceView 5, `bwrap` from bubblewrap, a session bus,
@@ -27,6 +28,8 @@ icon instead. Network locations need gvfs and a backend for the protocol wanted:
 `gvfs` plus `gvfs-smb` or `gvfs-nfs`, on Debian `gvfs-backends`. Without gvfs Spiral opens
 local files only, and says as much where it would otherwise offer a server. Everything else
 is optional and picked up from `PATH` when present: archive tools, a terminal emulator.
+`spiral-desktop` links gtk4-layer-shell 1.3 and needs a compositor with `wlr-layer-shell`;
+see [desktop.md](desktop.md).
 
 Installing the sink after Spiral has run once may leave a stale GStreamer plugin registry
 behind, and the preview then reports the sink missing until the registry is rebuilt:
@@ -106,10 +109,12 @@ Spiral stays alive while file operations run, and the portal backend is a long-r
 process. After installing a new build:
 
     pkill -x spiral
+    pkill -x spiral-desktop
     pkill -f xdg-desktop-portal-spiral
 
-The second one needs `-f`: the process name is truncated to 15 characters by the kernel,
-so `pkill -x` never matches it.
+The session keeping the desktop icons running starts them again. The last one needs `-f`:
+the process name is truncated to 15 characters by the kernel, so `pkill -x` never matches
+it.
 
 ## Removing
 

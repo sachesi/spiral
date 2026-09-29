@@ -59,11 +59,13 @@ The same packages are attached to each [release](https://github.com/sachesi/spir
     just setup-portal        # file dialogs of other apps use Spiral
 
 Build needs Rust 1.92, `blueprint-compiler`, `just` and the development packages for GTK,
-libadwaita, GtkSourceView 5, libseccomp and GStreamer; running needs the GStreamer base plugins
-and the GTK 4 sink (`gstreamer1-plugin-gtk4` on Fedora) for the media preview. Details, other
-prefixes and removal are in [docs/installing.md](docs/installing.md).
+libadwaita, GtkSourceView 5, libseccomp, GStreamer and gtk4-layer-shell; running needs the
+GStreamer base plugins and the GTK 4 sink (`gstreamer1-plugin-gtk4` on Fedora) for the media
+preview. Details, other prefixes and removal are in [docs/installing.md](docs/installing.md).
 
-After an update, quit the old processes: `pkill -x spiral; pkill -f xdg-desktop-portal-spiral`.
+After an update, quit the old processes:
+`pkill -x spiral; pkill -x spiral-desktop; pkill -f xdg-desktop-portal-spiral`. The session
+keeping the desktop icons running starts them again.
 
 ## Documentation
 
@@ -72,6 +74,7 @@ After an update, quit the old processes: `pkill -x spiral; pkill -f xdg-desktop-
 - [File operations](docs/file-operations.md)
 - [Archives](docs/archives.md), [thumbnails](docs/thumbnails.md), [terminal](docs/terminal.md)
 - [Portal and D-Bus integration](docs/integration.md)
+- [Desktop icons](docs/desktop.md)
 - [Contributing](CONTRIBUTING.md), including where things are in the code, and [reporting a vulnerability](SECURITY.md)
 
 Search walks subfolders and can look inside text files, without an index. Tabs are not
