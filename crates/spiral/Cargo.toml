@@ -22,7 +22,3 @@ path = "src/bin/spiral-thumbnailer.rs"
 
 [dependencies]
 spiral-core.workspace = true
-ashpd.workspace = true
-async-channel.workspace = true
-futures-util.workspace = true
-tokio.workspace = true

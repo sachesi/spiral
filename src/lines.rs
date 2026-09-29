@@ -30,10 +30,6 @@ impl Lines {
         self.items.borrow().clone()
     }
 
-    pub fn len(&self) -> usize {
-        self.items.borrow().len()
-    }
-
     pub fn is_empty(&self) -> bool {
         self.items.borrow().is_empty()
     }
@@ -112,7 +108,7 @@ mod tests {
         let id = lines.watch({
             let (lines, heard) = (lines.clone(), heard.clone());
             // Reading the lines from inside the watcher is how a view reloads.
-            move || heard.set(heard.get() + lines.len())
+            move || heard.set(heard.get() + lines.to_vec().len())
         });
         lines.push("b".into());
         assert_eq!(heard.get(), 2);

@@ -1,10 +1,10 @@
-pub mod application;
-pub mod bookmarks;
-pub mod config;
-pub mod window;
+pub(crate) mod application;
+pub(crate) mod bookmarks;
+pub(crate) mod config;
+pub(crate) mod window;
 
 pub use adw::{gdk, gio, glib, gtk};
-pub use gstreamer as gst;
+pub(crate) use gstreamer as gst;
 pub use libadwaita as adw;
 
 /// Translations, resources, the application name: everything that does not touch GTK.
@@ -30,7 +30,7 @@ pub unsafe fn init_early() {
 
 /// The stylesheet and the bundled icons. Needs GTK started, so `AdwApplication` calls it
 /// from `startup`.
-pub fn init_style() {
+pub(crate) fn init_style() {
     let css = gtk::CssProvider::new();
     css.load_from_resource(&format!("{}/style.css", config::RESOURCE_PATH));
     if let Some(display) = gtk::gdk::Display::default() {
@@ -46,44 +46,46 @@ pub fn init_style() {
     }
 }
 
-/// GTK and the stylesheet, for binaries without an `AdwApplication` of their own, once
+/// GTK and the stylesheet, for programs without an `AdwApplication` of their own, once
 /// [`init_early`] has run.
-pub fn init() {
+pub(crate) fn init() {
     adw::init().expect("libadwaita init");
     init_style();
 }
-pub mod browser_actions;
-pub mod browser_view;
-pub mod clipboard;
-pub mod dbus;
+pub(crate) mod browser_actions;
+pub(crate) mod browser_view;
+pub(crate) mod clipboard;
+pub(crate) mod dbus;
 pub mod desktop;
-pub mod details_panel;
-pub mod dialogs;
-pub mod disks;
-pub mod enums;
-pub mod file_utils;
-pub mod folder_model;
-pub mod glycin;
-pub mod lines;
-pub mod location_entry;
-pub mod media;
-pub mod metadata;
-pub mod miller;
-pub mod naming;
-pub mod network;
-pub mod object_data;
-pub mod ops;
-pub mod path_bar;
-pub mod picture;
-pub mod places_sidebar;
-pub mod player;
-pub mod portal;
-pub mod prefs;
-pub mod progress_indicator;
-pub mod sandbox;
-pub mod search;
-pub mod starred;
-pub mod tags;
-pub mod templates;
-pub mod terminal;
-pub mod thumbnails;
+pub(crate) mod details_panel;
+pub(crate) mod dialogs;
+pub(crate) mod disks;
+pub(crate) mod enums;
+pub(crate) mod file_utils;
+pub(crate) mod folder_model;
+pub(crate) mod glycin;
+pub(crate) mod lines;
+pub(crate) mod location_entry;
+pub(crate) mod media;
+pub(crate) mod metadata;
+pub(crate) mod miller;
+pub(crate) mod naming;
+pub(crate) mod network;
+pub(crate) mod object_data;
+pub(crate) mod ops;
+pub(crate) mod path_bar;
+pub(crate) mod picture;
+pub(crate) mod places_sidebar;
+pub(crate) mod player;
+pub(crate) mod portal;
+pub(crate) mod prefs;
+#[doc(hidden)]
+pub mod programs;
+pub(crate) mod progress_indicator;
+pub(crate) mod sandbox;
+pub(crate) mod search;
+pub(crate) mod starred;
+pub(crate) mod tags;
+pub(crate) mod templates;
+pub(crate) mod terminal;
+pub(crate) mod thumbnails;

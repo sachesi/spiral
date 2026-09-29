@@ -4,8 +4,7 @@
 
 use gettextrs::gettext;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
-use spiral_core::application::SpiralApplication;
-use spiral_core::browser_view::BrowserView;
+use spiral_core::desktop::DesktopView;
 use spiral_core::gio::prelude::*;
 use spiral_core::gtk::prelude::*;
 pub use spiral_core::{gio, glib, gtk};
@@ -13,7 +12,7 @@ pub use spiral_core::{gio, glib, gtk};
 /// Runs the desktop until it is quit; a second one started meanwhile leaves the first
 /// running. Call [`spiral_core::init_early`] first.
 pub fn run() -> glib::ExitCode {
-    let app = SpiralApplication::new_desktop();
+    let app = spiral_core::desktop::application();
     app.connect_activate(|app| {
         if app.windows().is_empty() {
             desktop_window(app).present();
@@ -32,7 +31,7 @@ fn desktop_folder() -> gio::File {
     gio::File::for_path(path)
 }
 
-fn desktop_window(app: &SpiralApplication) -> gtk::ApplicationWindow {
+fn desktop_window(app: &spiral_core::adw::Application) -> gtk::ApplicationWindow {
     // Not an Adwaita window: dialogs then open as windows of their own rather than inside
     // a surface that every other window covers.
     let window = gtk::ApplicationWindow::builder()
@@ -60,7 +59,7 @@ fn desktop_window(app: &SpiralApplication) -> gtk::ApplicationWindow {
         ));
         glib::Propagation::Stop
     });
-    let view = BrowserView::new_desktop(&desktop_folder());
-    window.set_child(Some(&view));
+    let desktop = DesktopView::new(&desktop_folder());
+    window.set_child(Some(&desktop.widget()));
     window
 }

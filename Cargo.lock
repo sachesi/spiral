@@ -1494,11 +1494,7 @@ dependencies = [
 name = "spiral"
 version = "0.17.3"
 dependencies = [
- "ashpd",
- "async-channel",
- "futures-util",
  "spiral-core",
- "tokio",
 ]
 
 [[package]]

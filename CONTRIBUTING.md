@@ -18,13 +18,15 @@ Before a change goes in:
 
 The repository is a Cargo workspace. The root package, `spiral-core`, is the library that
 holds everything below; `crates/spiral` builds the three executables of the file manager
-from it, and `crates/spiral-desktop` the desktop icons.
+from it, and `crates/spiral-desktop` the desktop icons. The public API of `spiral-core` is
+only what a desktop needs, in `src/desktop/mod.rs`, and `init_early`; the programs' entry
+points are public but hidden, and everything else is crate-private.
 
     build.rs               runs blueprint-compiler, bundles the GResource, compiles the
                            settings schema for the tests
     data/ui/*.blp          the window, browser view, path bar, sidebar, shortcuts dialog
     data/style.css         structural CSS, colours come from libadwaita
-    crates/spiral/src/bin/ the three executables, thin mains
+    crates/spiral/src/bin/ the three executables, thin mains around src/programs.rs
     crates/spiral-desktop/ the desktop icons: a layer-shell window around the browser
                            view
     src/application.rs     GtkApplication subclass, app actions, FileManager1 registration
