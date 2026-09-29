@@ -33,7 +33,7 @@ jobs:
         run: >
           dnf install -y --setopt=install_weak_deps=False
           git-core rust cargo rustfmt clippy just blueprint-compiler
-          gtk4-devel libadwaita-devel gtksourceview5-devel libseccomp-devel
+          gtk4-devel libadwaita-devel gtksourceview5-devel libseccomp-devel gtk4-layer-shell-devel
           gstreamer1-devel gstreamer1-plugins-base-devel glib2-devel
           desktop-file-utils appstream gettext
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

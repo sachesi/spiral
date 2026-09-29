@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Desktop Icons
+Comment=Show the files of the desktop folder on the wallpaper
+Exec=spiral-desktop
+Icon=io.github.sachesi.spiral
+Terminal=false
+Type=Application
+NoDisplay=true

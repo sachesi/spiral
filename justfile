@@ -27,7 +27,7 @@ version := `sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml`
 default:
     @just --list
 
-# Release build of all three binaries.
+# Release build of all the binaries.
 build:
     cargo build --release
 
@@ -55,7 +55,7 @@ check:
     cargo clippy --all-targets -- -D warnings
     mkdir -p {{check_dir}}
     blueprint-compiler batch-compile {{check_dir}} data/ui data/ui/*.blp >/dev/null
-    desktop-file-validate data/{{app_id}}.desktop
+    desktop-file-validate data/{{app_id}}.desktop data/{{app_id}}.Desktop.desktop
     sed 's|@libexecdir@|/usr/libexec|' data/xdg-desktop-portal-spiral.desktop.in > {{check_dir}}/portal.desktop && desktop-file-validate {{check_dir}}/portal.desktop
     appstreamcli validate --no-net data/{{app_id}}.metainfo.xml
     for lang in $(cat po/LINGUAS); do msgfmt -c -o /dev/null po/$lang.po; done
@@ -67,15 +67,15 @@ pot:
     blueprint-compiler batch-compile {{pot_dir}}/ui data/ui data/ui/*.blp >/dev/null
     sed 's|@libexecdir@|/usr/libexec|' data/xdg-desktop-portal-spiral.desktop.in > {{pot_dir}}/xdg-desktop-portal-spiral.desktop
     # xgettext has no Rust mode; the C lexer copes once lifetimes ('a, 'static) are stripped.
-    rm -rf {{pot_dir}}/src && cp -r src {{pot_dir}}/src
-    find {{pot_dir}}/src -name '*.rs' -exec sed -i -E "s/'([A-Za-z_][A-Za-z0-9_]*)([^'A-Za-z0-9_]|$)/\1\2/g" {} +
+    rm -rf {{pot_dir}}/src {{pot_dir}}/crates && cp -r src {{pot_dir}}/src && mkdir {{pot_dir}}/crates && for c in crates/*; do mkdir {{pot_dir}}/$c && cp -r $c/src {{pot_dir}}/$c/src; done
+    find {{pot_dir}}/src {{pot_dir}}/crates -name '*.rs' -exec sed -i -E "s/'([A-Za-z_][A-Za-z0-9_]*)([^'A-Za-z0-9_]|$)/\1\2/g" {} +
     xgettext --from-code=UTF-8 --package-name=spiral --package-version={{version}} \
         --msgid-bugs-address=https://github.com/sachesi/spiral/issues \
         --language=C --keyword= --keyword=gettext --keyword=ngettext:1,2 \
         --flag=gettext:1:no-c-format --flag=ngettext:1:no-c-format --flag=ngettext:2:no-c-format \
-        --add-comments=Translators --sort-by-file --directory={{pot_dir}} -o po/spiral.pot $(cd {{pot_dir}} && find src -name '*.rs' | sort)
+        --add-comments=Translators --sort-by-file --directory={{pot_dir}} -o po/spiral.pot $(cd {{pot_dir}} && find src crates -name '*.rs' | sort)
     xgettext -j --from-code=UTF-8 --package-name=spiral --package-version={{version}} --msgid-bugs-address=https://github.com/sachesi/spiral/issues --add-comments=Translators --sort-by-file --directory={{pot_dir}} -o po/spiral.pot $(cd {{pot_dir}} && ls ui/*.ui)
-    xgettext -j --from-code=UTF-8 --package-name=spiral --package-version={{version}} --msgid-bugs-address=https://github.com/sachesi/spiral/issues --language=Desktop --sort-by-file -o po/spiral.pot data/{{app_id}}.desktop {{pot_dir}}/xdg-desktop-portal-spiral.desktop
+    xgettext -j --from-code=UTF-8 --package-name=spiral --package-version={{version}} --msgid-bugs-address=https://github.com/sachesi/spiral/issues --language=Desktop --sort-by-file -o po/spiral.pot data/{{app_id}}.desktop data/{{app_id}}.Desktop.desktop {{pot_dir}}/xdg-desktop-portal-spiral.desktop
     xgettext -j --from-code=UTF-8 --package-name=spiral --package-version={{version}} --msgid-bugs-address=https://github.com/sachesi/spiral/issues --sort-by-file -o po/spiral.pot data/{{app_id}}.metainfo.xml data/{{app_id}}.gschema.xml
 
 # Merge the current template into every po/<lang>.po.
@@ -89,12 +89,14 @@ test:
 
 # Install the release build. Does not build: run `just build` first.
 install:
-    @test -x {{release}}/spiral -a -x {{release}}/xdg-desktop-portal-spiral -a -x {{release}}/spiral-thumbnailer || { echo "error: {{release}}/spiral missing; run 'just build' first" >&2; exit 1; }
+    @test -x {{release}}/spiral -a -x {{release}}/spiral-desktop -a -x {{release}}/xdg-desktop-portal-spiral -a -x {{release}}/spiral-thumbnailer || { echo "error: {{release}}/spiral missing; run 'just build' first" >&2; exit 1; }
     install -Dm755 {{release}}/spiral {{bindir}}/spiral
+    install -Dm755 {{release}}/spiral-desktop {{bindir}}/spiral-desktop
     install -Dm755 {{release}}/xdg-desktop-portal-spiral {{libexecdir}}/xdg-desktop-portal-spiral
     install -Dm755 {{release}}/spiral-thumbnailer {{libexecdir}}/spiral-thumbnailer
     mkdir -p {{datadir}}/applications {{datadir}}/metainfo
     msgfmt --desktop --template=data/{{app_id}}.desktop -d po -o {{datadir}}/applications/{{app_id}}.desktop
+    msgfmt --desktop --template=data/{{app_id}}.Desktop.desktop -d po -o {{datadir}}/applications/{{app_id}}.Desktop.desktop
     msgfmt --xml --template=data/{{app_id}}.metainfo.xml -d po -o {{datadir}}/metainfo/{{app_id}}.metainfo.xml
     install -Dm644 data/{{app_id}}.gschema.xml {{datadir}}/glib-2.0/schemas/{{app_id}}.gschema.xml
     install -Dm644 data/icons/hicolor/scalable/apps/{{app_id}}.svg {{datadir}}/icons/hicolor/scalable/apps/{{app_id}}.svg
@@ -115,8 +117,8 @@ install:
     @echo "installed to {{prefix}}"
 
 uninstall:
-    rm -f {{bindir}}/spiral {{libexecdir}}/xdg-desktop-portal-spiral {{libexecdir}}/spiral-thumbnailer
-    rm -f {{datadir}}/applications/{{app_id}}.desktop {{datadir}}/applications/xdg-desktop-portal-spiral.desktop {{datadir}}/metainfo/{{app_id}}.metainfo.xml
+    rm -f {{bindir}}/spiral {{bindir}}/spiral-desktop {{libexecdir}}/xdg-desktop-portal-spiral {{libexecdir}}/spiral-thumbnailer
+    rm -f {{datadir}}/applications/{{app_id}}.desktop {{datadir}}/applications/{{app_id}}.Desktop.desktop {{datadir}}/applications/xdg-desktop-portal-spiral.desktop {{datadir}}/metainfo/{{app_id}}.metainfo.xml
     rm -f {{datadir}}/glib-2.0/schemas/{{app_id}}.gschema.xml
     rm -f {{datadir}}/icons/hicolor/scalable/apps/{{app_id}}.svg {{datadir}}/icons/hicolor/symbolic/apps/{{app_id}}-symbolic.svg
     rm -f {{datadir}}/xdg-desktop-portal/portals/spiral.portal

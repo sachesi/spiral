@@ -27,6 +27,8 @@ BuildRequires:  pkgconfig(libadwaita-1) >= 1.9
 BuildRequires:  pkgconfig(gtksourceview-5)
 BuildRequires:  pkgconfig(glib-2.0) >= 2.80
 BuildRequires:  pkgconfig(libseccomp)
+# spiral-desktop puts the desktop icons on the bottom layer of the compositor.
+BuildRequires:  pkgconfig(gtk4-layer-shell-0) >= 1.3
 BuildRequires:  pkgconfig(gstreamer-1.0)
 # The details panel reads recordings and videos through GStreamer's discoverer.
 BuildRequires:  pkgconfig(gstreamer-pbutils-1.0)
@@ -96,12 +98,16 @@ target="%{_cargo_target_dir}/release"
 target="target/release"
 %endif
 install -Dpm 0755 "$target/spiral" %{buildroot}%{_bindir}/spiral
+%{_bindir}/spiral-desktop
+install -Dpm 0755 "$target/spiral-desktop" %{buildroot}%{_bindir}/spiral-desktop
 install -Dpm 0755 "$target/xdg-desktop-portal-spiral" %{buildroot}%{_libexecdir}/xdg-desktop-portal-spiral
 install -Dpm 0755 "$target/spiral-thumbnailer" %{buildroot}%{_libexecdir}/spiral-thumbnailer
 
 install -d %{buildroot}%{_datadir}/applications %{buildroot}%{_metainfodir}
 msgfmt --desktop --template=data/%{app_id}.desktop -d po \
   -o %{buildroot}%{_datadir}/applications/%{app_id}.desktop
+msgfmt --desktop --template=data/%{app_id}.Desktop.desktop -d po \
+  -o %{buildroot}%{_datadir}/applications/%{app_id}.Desktop.desktop
 msgfmt --xml --template=data/%{app_id}.metainfo.xml -d po \
   -o %{buildroot}%{_metainfodir}/%{app_id}.metainfo.xml
 install -Dpm 0644 data/%{app_id}.gschema.xml %{buildroot}%{_datadir}/glib-2.0/schemas/%{app_id}.gschema.xml
@@ -130,6 +136,7 @@ done
 
 %check
 desktop-file-validate %{buildroot}%{_datadir}/applications/%{app_id}.desktop
+desktop-file-validate %{buildroot}%{_datadir}/applications/%{app_id}.Desktop.desktop
 desktop-file-validate %{buildroot}%{_datadir}/applications/xdg-desktop-portal-spiral.desktop
 appstreamcli validate --no-net %{buildroot}%{_metainfodir}/%{app_id}.metainfo.xml
 test -x %{buildroot}%{_bindir}/spiral
@@ -141,6 +148,7 @@ test -x %{buildroot}%{_bindir}/spiral
 %{_libexecdir}/xdg-desktop-portal-spiral
 %{_libexecdir}/spiral-thumbnailer
 %{_datadir}/applications/%{app_id}.desktop
+%{_datadir}/applications/%{app_id}.Desktop.desktop
 %{_datadir}/applications/xdg-desktop-portal-spiral.desktop
 %{_metainfodir}/%{app_id}.metainfo.xml
 %{_datadir}/glib-2.0/schemas/%{app_id}.gschema.xml

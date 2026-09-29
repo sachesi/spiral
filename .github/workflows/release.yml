@@ -135,7 +135,7 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends ca-certificates git cargo rustc just \
             dpkg-dev pkg-config blueprint-compiler gettext \
-            libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libseccomp-dev \
+            libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libseccomp-dev libgtk4-layer-shell-dev \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libglib2.0-dev
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -153,7 +153,7 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          bins="stage/usr/bin/spiral stage/usr/libexec/xdg-desktop-portal-spiral stage/usr/libexec/spiral-thumbnailer"
+          bins="stage/usr/bin/spiral stage/usr/bin/spiral-desktop stage/usr/libexec/xdg-desktop-portal-spiral stage/usr/libexec/spiral-thumbnailer"
           strip --strip-unneeded $bins
           # dpkg-shlibdeps wants a source package to belong to.
           mkdir debian
