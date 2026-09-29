@@ -96,6 +96,7 @@ struct Glass {
     queue: RefCell<EventQueue<State>>,
     manager: MeridianGlassManagerV1,
     appearance: Option<gio::Settings>,
+    glazed: RefCell<Vec<(glib::WeakRef<gtk::Widget>, Corners, &'static str)>>,
     panes: RefCell<Vec<Pane>>,
 }
 
@@ -258,11 +259,21 @@ impl Glass {
             .and_then(|source| source.lookup("org.meridian.appearance", true))
             .filter(|schema| schema.has_key("glass"))
             .map(|_| gio::Settings::new("org.meridian.appearance"));
+        let restyle = || {
+            if let Some(glass) = shared() {
+                glass.restyle();
+            }
+        };
+        if let Some(appearance) = &appearance {
+            appearance.connect_changed(Some("glass"), move |_, _| restyle());
+        }
+        adw::StyleManager::default().connect_dark_notify(move |_| restyle());
         Some(Rc::new(Self {
             connection,
             queue: RefCell::new(queue),
             manager,
             appearance,
+            glazed: RefCell::default(),
             panes: RefCell::default(),
         }))
     }
@@ -279,6 +290,9 @@ impl Glass {
             return;
         }
         part.add_css_class("spiral-glazed");
+        self.glazed
+            .borrow_mut()
+            .push((part.downgrade(), corners, tier));
         let glass = Rc::clone(self);
         part.connect_map(move |part| glass.attach(part, corners, tier));
         let glass = Rc::clone(self);
@@ -326,6 +340,27 @@ impl Glass {
             pane.parts.push((part.downgrade(), corners));
         }
         self.send(pane);
+    }
+
+    /// The parts showing now, to the scheme and glass setting as they are now.
+    fn restyle(&self) {
+        let showing: Vec<_> = {
+            let mut glazed = self.glazed.borrow_mut();
+            glazed.retain(|(part, _, _)| part.upgrade().is_some());
+            glazed
+                .iter()
+                .filter_map(|(part, corners, tier)| {
+                    Some((
+                        part.upgrade().filter(WidgetExt::is_mapped)?,
+                        *corners,
+                        *tier,
+                    ))
+                })
+                .collect()
+        };
+        for (part, corners, tier) in showing {
+            self.attach(&part, corners, tier);
+        }
     }
 
     fn detach(&self, part: &gtk::Widget) {
