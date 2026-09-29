@@ -1,0 +1,28 @@
+[package]
+name = "spiral"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "A GTK4 file manager with a file chooser portal backend"
+publish = false
+
+[[bin]]
+name = "spiral"
+path = "src/bin/spiral.rs"
+
+[[bin]]
+name = "xdg-desktop-portal-spiral"
+path = "src/bin/xdg-desktop-portal-spiral.rs"
+
+[[bin]]
+name = "spiral-thumbnailer"
+path = "src/bin/spiral-thumbnailer.rs"
+
+[dependencies]
+spiral-core.workspace = true
+ashpd.workspace = true
+async-channel.workspace = true
+futures-util.workspace = true
+tokio.workspace = true

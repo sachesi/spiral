@@ -3,16 +3,16 @@
 
 use ashpd::zbus;
 use futures_util::StreamExt;
-use spiral::portal::backend::{BUS_NAME, SpiralChooser};
-use spiral::portal::chooser_window;
-use spiral::{glib, gtk};
+use spiral_core::portal::backend::{BUS_NAME, SpiralChooser};
+use spiral_core::portal::chooser_window;
+use spiral_core::{glib, gtk};
 
 fn main() {
     // No GtkApplication here, so GDK falls back to the program name for the Wayland
     // app_id; it must match the hidden desktop entry for icon and name lookup.
     glib::set_prgname(Some("xdg-desktop-portal-spiral"));
     // SAFETY: before the bus thread below, the only other thread this program starts.
-    unsafe { spiral::init_early() };
+    unsafe { spiral_core::init_early() };
     let (tx, rx) = async_channel::unbounded();
     let (ready_tx, ready_rx) = std::sync::mpsc::channel::<()>();
 
@@ -57,7 +57,7 @@ fn main() {
     if ready_rx.recv().is_err() {
         std::process::exit(1);
     }
-    spiral::init();
+    spiral_core::init();
 
     let main_loop = glib::MainLoop::new(None, false);
     glib::MainContext::default().spawn_local(async move {

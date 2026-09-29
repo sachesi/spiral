@@ -67,7 +67,7 @@ owns its bus name. If the backend initialised GTK first, GTK would ask the porta
 settings while the portal is waiting for the backend, and both would hang. So the backend
 takes `org.freedesktop.impl.portal.desktop.spiral` on a separate thread and only starts
 GTK once the name is owned. Keep that order if you touch
-`src/bin/xdg-desktop-portal-spiral.rs`.
+`crates/spiral/src/bin/xdg-desktop-portal-spiral.rs`.
 
 ### Checking
 

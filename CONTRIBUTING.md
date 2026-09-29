@@ -16,11 +16,14 @@ Before a change goes in:
 
 ## Where things are
 
+The repository is a Cargo workspace. The root package, `spiral-core`, is the library that
+holds everything below; `crates/spiral` builds the three executables from it.
+
     build.rs               runs blueprint-compiler, bundles the GResource, compiles the
                            settings schema for the tests
     data/ui/*.blp          the window, browser view, path bar, sidebar, shortcuts dialog
     data/style.css         structural CSS, colours come from libadwaita
-    src/bin/               the three executables, thin mains
+    crates/spiral/src/bin/ the three executables, thin mains
     src/application.rs     GtkApplication subclass, app actions, FileManager1 registration
     src/window.rs          the window; in window/ its win.* actions, tabs, panes, header bar
     src/browser_view.rs    one tab: grid and list, view mode, sort; in browser_view/ its

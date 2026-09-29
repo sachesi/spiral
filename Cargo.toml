@@ -1,24 +1,42 @@
-[package]
-name = "spiral"
+[workspace]
+members = ["crates/spiral"]
+default-members = [".", "crates/spiral"]
+resolver = "3"
+
+[workspace.package]
 version = "0.17.3"
 edition = "2024"
 rust-version = "1.92"
 license = "GPL-3.0-or-later"
-description = "A GTK4 file manager with a file chooser portal backend"
 repository = "https://github.com/sachesi/spiral"
+
+[workspace.dependencies]
+spiral-core = { path = ".", version = "0.17.3" }
+ashpd = { version = "0.13", default-features = false, features = ["backend", "file_chooser", "tokio"] }
+async-channel = "2"
+futures-util = "0.3"
+tokio = { version = "1", features = ["rt"] }
+
+[package]
+name = "spiral-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The file views, file operations, previews and file chooser of the Spiral file manager"
 readme = "README.md"
-
-[[bin]]
-name = "spiral"
-path = "src/bin/spiral.rs"
-
-[[bin]]
-name = "xdg-desktop-portal-spiral"
-path = "src/bin/xdg-desktop-portal-spiral.rs"
-
-[[bin]]
-name = "spiral-thumbnailer"
-path = "src/bin/spiral-thumbnailer.rs"
+include = [
+    "/build.rs",
+    "/src/**/*.rs",
+    "/data/ui/*.blp",
+    "/data/icons/**/*.svg",
+    "/data/style.css",
+    "/data/spiral.gresource.xml",
+    "/data/io.github.sachesi.spiral.gschema.xml",
+    "/LICENSE",
+    "/README.md",
+]
 
 [dependencies]
 gtk4 = { version = "0.11", features = ["v4_22"] }
@@ -32,12 +50,12 @@ gstreamer-video = { version = "0.25", features = ["v1_24"] }
 gstreamer-allocators = { version = "0.25", features = ["v1_24"] }
 kamadak-exif = "0.6"
 miniz_oxide = "0.9"
-ashpd = { version = "0.13", default-features = false, features = ["backend", "file_chooser", "tokio"] }
-tokio = { version = "1", features = ["rt"] }
-async-channel = "2"
+ashpd.workspace = true
+tokio.workspace = true
+async-channel.workspace = true
 async-trait = "0.1"
 futures-channel = "0.3"
-futures-util = "0.3"
+futures-util.workspace = true
 gettext-rs = { version = "0.8", features = ["gettext-system"] }
 libseccomp = "0.4"
 libc = "0.2"

@@ -6,7 +6,7 @@
 
 use std::process::ExitCode;
 
-use spiral::gtk::gdk_pixbuf::Pixbuf;
+use spiral_core::gtk::gdk_pixbuf::Pixbuf;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();
@@ -15,7 +15,7 @@ fn main() -> ExitCode {
     {
         print!(
             "{}",
-            spiral::metadata::probe(kind, std::path::Path::new(input))
+            spiral_core::metadata::probe(kind, std::path::Path::new(input))
         );
         return ExitCode::SUCCESS;
     }
@@ -23,7 +23,7 @@ fn main() -> ExitCode {
         && flag == "--play"
     {
         let fd = |s: &String| s.parse().unwrap_or(-1);
-        return match spiral::media::serve(source, fd(control), fd(video), fd(audio), formats) {
+        return match spiral_core::media::serve(source, fd(control), fd(video), fd(audio), formats) {
             Ok(()) => ExitCode::SUCCESS,
             Err(e) => {
                 eprintln!("spiral-thumbnailer: {e}");
@@ -35,7 +35,7 @@ fn main() -> ExitCode {
         && flag == "--decode"
     {
         let orientation = orientation.parse().unwrap_or(1);
-        return match spiral::picture::decode(input.as_ref(), output.as_ref(), orientation) {
+        return match spiral_core::picture::decode(input.as_ref(), output.as_ref(), orientation) {
             Ok(()) => ExitCode::SUCCESS,
             Err(e) => {
                 eprintln!("spiral-thumbnailer: {e}");
