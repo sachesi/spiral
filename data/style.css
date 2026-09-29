@@ -433,6 +433,94 @@ window.spiral-desktop-window stack:drop(active) {
   padding: 1px 7px;
   font-weight: bold;
 }
+/* The desktop's menus, prompts and tooltips as the shell has its own, where the compositor
+   draws glass behind a shell's surfaces: on glass while its glass setting is on, the menus
+   plain dark cards while it is off. */
+.spiral-glass {
+  --glass-background: alpha(#1c1c20, 0.15);
+  --glass-foreground: white;
+  --glass-border: alpha(white, 0.12);
+  --glass-shine: inset 0 1px alpha(white, 0.2), inset 0 -1px alpha(white, 0.05);
+}
+.spiral-glass.light {
+  --glass-background: alpha(#fbfbfd, 0.05);
+  --glass-foreground: #1c1c20;
+  --glass-border: alpha(white, 0.4);
+  --glass-shine: inset 0 1px alpha(white, 0.7), inset 0 -1px alpha(white, 0.15);
+}
+popover.spiral-shell-menu > contents {
+  margin: 16px 12px 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 36px;
+  box-shadow: 0 2px 6px alpha(black, 0.25);
+}
+popover.spiral-shell-menu.menu > contents > scrolledwindow > viewport > stack > box {
+  padding: 0;
+}
+.spiral-shell-card {
+  padding: 12px;
+  border-radius: 36px;
+  background-color: #36363a;
+  color: white;
+  border: 1px solid #424247;
+}
+.spiral-shell-card.spiral-glass,
+tooltip.spiral-shell-tooltip.spiral-glass,
+window.spiral-prompt-window.spiral-glass {
+  background-color: var(--glass-background);
+  color: var(--glass-foreground);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shine);
+}
+.spiral-shell-card modelbutton {
+  padding: 6px 12px;
+  border-radius: 99px;
+}
+/* A menu selects its first item as it takes the keyboard, which shows only once the
+   keyboard is in use. */
+.spiral-shell-card modelbutton:selected {
+  background-color: transparent;
+}
+.spiral-shell-card modelbutton:hover,
+.spiral-shell-card modelbutton:selected:focus-visible {
+  background-color: alpha(currentColor, 0.1);
+}
+.spiral-shell-card separator {
+  margin: 4px 6px;
+  background-color: alpha(currentColor, 0.12);
+}
+tooltip.spiral-shell-tooltip {
+  border-radius: 99px;
+}
+window.spiral-prompt-window,
+window.spiral-prompt-window dialog {
+  border-radius: 28px;
+}
+/* Over whatever the wallpaper is, a clear prompt would leave its text unreadable. */
+window.spiral-prompt-window.spiral-glass {
+  --glass-background: alpha(#1c1c20, 0.55);
+}
+window.spiral-prompt-window.spiral-glass.light {
+  --glass-background: alpha(#fbfbfd, 0.7);
+}
+window.spiral-prompt-window.spiral-glass dialog {
+  background: none;
+}
+.spiral-prompt {
+  padding: 24px;
+  min-width: 332px;
+}
+window.spiral-prompt-window.spiral-glass .spiral-prompt .boxed-list {
+  background-color: alpha(currentColor, 0.08);
+  color: inherit;
+  box-shadow: none;
+}
+.spiral-prompt button {
+  min-height: 36px;
+  border-radius: 99px;
+}
 spiral-desktop .spiral-desktop-band {
   background-color: alpha(var(--accent-bg-color), 0.2);
   border: 1px solid var(--accent-bg-color);

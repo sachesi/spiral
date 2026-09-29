@@ -34,6 +34,7 @@ include = [
     "/data/style.css",
     "/data/spiral.gresource.xml",
     "/data/io.github.sachesi.spiral.gschema.xml",
+    "/data/protocols/*.xml",
     "/LICENSE",
     "/README.md",
 ]
@@ -43,7 +44,7 @@ gtk4 = { version = "0.11", features = ["v4_22"] }
 libadwaita = { version = "0.9", features = ["v1_9"] }
 gio = { version = "0.22", features = ["v2_80"] }
 gio-unix = "0.22"
-gdk4-wayland = "0.11"
+gdk4-wayland = { version = "0.11", features = ["wayland_crate"] }
 gstreamer = "0.25"
 gstreamer-pbutils = { version = "0.25", features = ["v1_20"] }
 gstreamer-tag = "0.25"
@@ -61,6 +62,8 @@ gettext-rs = { version = "0.8", features = ["gettext-system"] }
 libseccomp = "0.4"
 libc = "0.2"
 sourceview5 = "0.11"
+wayland-client = "0.31"
+wayland-scanner = "0.31"
 
 [build-dependencies]
 glib-build-tools = "0.22"

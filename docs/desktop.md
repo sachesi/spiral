@@ -42,6 +42,13 @@ puts them. Home, the trash and the drives have menus of their own: Open, Empty T
 Unmount or Eject. They are not files of the folder, so nothing done to the files reaches
 them.
 
+The desktop asks for the name of a new folder or document on a card, with Cancel beside
+Create, as a shell's prompts ask. Where the compositor draws glass behind a shell's
+surfaces (`meridian-glass-v1`), the desktop's menus, the names it shows in full in
+tooltips and that card look like the shell's own: on glass while its glass setting is on,
+the menus plain dark cards while it is off. With any other compositor they look as in a
+Spiral window, the card on the window's background.
+
 ## Arranging
 
 `desktop-arrangement` picks one of three:

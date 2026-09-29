@@ -30,6 +30,8 @@ BuildRequires:  pkgconfig(glib-2.0) >= 2.80
 BuildRequires:  pkgconfig(libseccomp)
 # spiral-desktop puts the desktop icons on the bottom layer of the compositor.
 BuildRequires:  pkgconfig(gtk4-layer-shell-0) >= 1.3
+# The desktop's menus ask the compositor for glass on GTK's own connection.
+BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  pkgconfig(gstreamer-1.0)
 # The details panel reads recordings and videos through GStreamer's discoverer.
 BuildRequires:  pkgconfig(gstreamer-pbutils-1.0)

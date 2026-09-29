@@ -11,7 +11,7 @@ url='https://github.com/sachesi/spiral'
 license=('GPL-3.0-or-later')
 depends=('gtk4>=1:4.22' 'libadwaita>=1:1.9' 'gtksourceview5' 'glib2' 'libseccomp'
          'gstreamer' 'gst-plugins-base-libs' 'gst-plugins-base' 'gst-plugin-gtk4'
-         'gtk4-layer-shell>=1.3' 'bubblewrap' 'xdg-desktop-portal' 'hicolor-icon-theme' 'libgcc' 'glibc')
+         'gtk4-layer-shell>=1.3' 'wayland' 'bubblewrap' 'xdg-desktop-portal' 'hicolor-icon-theme' 'libgcc' 'glibc')
 makedepends=('cargo' 'blueprint-compiler' 'just' 'gettext')
 optdepends=('glycin: decode pictures in glycin'\''s sandbox'
             'gst-plugins-good: play common video and sound formats'

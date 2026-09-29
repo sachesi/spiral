@@ -220,6 +220,9 @@ pub async fn rename_popover(
         .pointing_to(anchor)
         .build();
     popover.set_parent(parent);
+    if crate::desktop::glass::on_desktop(parent) {
+        crate::desktop::glass::dress_menu(&popover);
+    }
     bind_validation(
         &entry,
         &feedback,
@@ -353,6 +356,61 @@ pub async fn new_file_dialog(
 }
 
 /// Ask for a name for something about to be made in `dir`, and check it as it is typed.
+/// The card a name is asked for on over the desktop, as the shell asks for things: `title`
+/// over `entry` and `feedback`, with `create` beside a button that closes `dialog`.
+fn prompt(
+    dialog: &adw::Dialog,
+    title: &str,
+    entry: &adw::EntryRow,
+    feedback: &gtk::Revealer,
+    create: &gtk::Button,
+) -> gtk::Box {
+    let card = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(12)
+        .css_classes(["spiral-prompt"])
+        .build();
+    card.append(
+        &gtk::Label::builder()
+            .label(title)
+            .wrap(true)
+            .justify(gtk::Justification::Center)
+            .css_classes(["title-2"])
+            .build(),
+    );
+    let rows = gtk::ListBox::builder()
+        .selection_mode(gtk::SelectionMode::None)
+        .margin_top(12)
+        .css_classes(["boxed-list"])
+        .build();
+    rows.append(entry);
+    card.append(&rows);
+    // A revealer that fades keeps its room while hidden, which here would be a gap above
+    // the buttons.
+    feedback
+        .bind_property("reveal-child", feedback, "visible")
+        .sync_create()
+        .build();
+    card.append(feedback);
+    let cancel = gtk::Button::with_mnemonic(&gettext("_Cancel"));
+    cancel.connect_clicked(glib::clone!(
+        #[weak]
+        dialog,
+        move |_| {
+            dialog.close();
+        }
+    ));
+    let buttons = gtk::Box::builder()
+        .spacing(12)
+        .homogeneous(true)
+        .margin_top(12)
+        .build();
+    buttons.append(&cancel);
+    buttons.append(create);
+    card.append(&buttons);
+    card
+}
+
 async fn name_dialog(
     parent: &impl IsA<gtk::Widget>,
     dir: &gio::File,
@@ -378,25 +436,31 @@ async fn name_dialog(
     let create = gtk::Button::builder()
         .label(gettext("_Create"))
         .use_underline(true)
-        .margin_top(6)
-        .halign(gtk::Align::Center)
-        .css_classes(["pill", "suggested-action"])
+        .css_classes(["suggested-action"])
         .build();
-    let group = adw::PreferencesGroup::new();
-    group.add(&entry);
-    group.add(&revealer);
-    group.add(&create);
-    let page = adw::PreferencesPage::new();
-    page.add(&group);
-    let toolbar = adw::ToolbarView::new();
-    toolbar.add_top_bar(&adw::HeaderBar::new());
-    toolbar.set_content(Some(&page));
     let dialog = adw::Dialog::builder()
         .title(title)
-        .content_width(450)
-        .child(&toolbar)
         .focus_widget(&entry)
         .build();
+    if crate::desktop::glass::on_desktop(parent) {
+        dialog.set_child(Some(&prompt(&dialog, title, &entry, &revealer, &create)));
+        crate::desktop::glass::dress_prompt(&dialog);
+    } else {
+        create.set_margin_top(6);
+        create.set_halign(gtk::Align::Center);
+        create.add_css_class("pill");
+        let group = adw::PreferencesGroup::new();
+        group.add(&entry);
+        group.add(&revealer);
+        group.add(&create);
+        let page = adw::PreferencesPage::new();
+        page.add(&group);
+        let toolbar = adw::ToolbarView::new();
+        toolbar.add_top_bar(&adw::HeaderBar::new());
+        toolbar.set_content(Some(&page));
+        dialog.set_content_width(450);
+        dialog.set_child(Some(&toolbar));
+    }
     bind_validation(
         &entry,
         &feedback,

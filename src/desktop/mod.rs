@@ -6,6 +6,7 @@
 //! to them.
 
 pub(crate) mod drop_ins;
+pub(crate) mod glass;
 pub(crate) mod placement;
 pub(crate) mod positions;
 pub(crate) mod specials;

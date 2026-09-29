@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="meridian_glass_v1">
+  <copyright>
+    Copyright (c) 2026 sachesi
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.
+  </copyright>
+
+  <interface name="meridian_glass_manager_v1" version="1">
+    <description summary="glass behind a shell's surfaces">
+      For the shell's panels, docks and menus: what is behind parts of a
+      surface shows through them blurred and bent at their edges, as through
+      a pane of glass. The surface draws over it, a tint that lets it show.
+    </description>
+
+    <request name="destroy" type="destructor">
+      <description summary="destroy the manager">
+        Glass got from it is left alone.
+      </description>
+    </request>
+
+    <request name="get_glass">
+      <description summary="glass for a surface">
+        A surface has at most one; a second is a glass_exists error.
+      </description>
+      <arg name="id" type="new_id" interface="meridian_glass_v1"/>
+      <arg name="surface" type="object" interface="wl_surface"/>
+    </request>
+
+    <enum name="error">
+      <entry name="glass_exists" value="0" summary="the surface already has glass"/>
+    </enum>
+  </interface>
+
+  <interface name="meridian_glass_v1" version="1">
+    <description summary="the parts of a surface that are glass">
+      The shape, contrast and frost are double-buffered: requests change
+      pending ones, which the surface's next commit makes its own. A surface
+      starts with no shape, no contrast and a frost of 4.
+    </description>
+
+    <enum name="contrast">
+      <entry name="none" value="0" summary="what is behind shows as it is"/>
+      <entry name="dark" value="1"
+             summary="light content goes over the glass: what shows through is kept dark enough for it"/>
+      <entry name="light" value="2"
+             summary="dark content goes over the glass: what shows through is kept light enough for it"/>
+    </enum>
+
+    <request name="destroy" type="destructor">
+      <description summary="the surface is no longer glass"/>
+    </request>
+
+    <request name="clear">
+      <description summary="no part of the surface is glass"/>
+    </request>
+
+    <request name="add">
+      <description summary="a rounded rectangle of glass">
+        Adds a rectangle, in the surface's coordinates, with its corners
+        rounded to radius, to the pending shape. Below an opacity of 1 what
+        is behind shows through the blur, as it fades in or out with what
+        the surface draws over it.
+      </description>
+      <arg name="x" type="int"/>
+      <arg name="y" type="int"/>
+      <arg name="width" type="int"/>
+      <arg name="height" type="int"/>
+      <arg name="radius" type="int"/>
+      <arg name="opacity" type="fixed"/>
+    </request>
+
+    <request name="set_contrast">
+      <arg name="contrast" type="uint" enum="contrast"/>
+    </request>
+
+    <request name="set_frost">
+      <description summary="how much what is behind is blurred">
+        From 1, a little, to 6, all but its colours; others are taken as the
+        nearest of those.
+      </description>
+      <arg name="frost" type="uint"/>
+    </request>
+  </interface>
+</protocol>
