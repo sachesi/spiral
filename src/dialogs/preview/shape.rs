@@ -387,14 +387,17 @@ impl Probe {
         }
         if content_type.starts_with("image/") {
             // Reading the header of an image is a few bytes, not a decode. One too large to
-            // decode shows its thumbnail, and so opens in the thumbnail's shape; so does one
-            // whose header says nothing.
+            // decode, even cut down by glycin, shows its thumbnail, and so opens in the
+            // thumbnail's shape; so does one whose header says nothing.
             let decoded = self
                 .path
                 .as_deref()
                 .and_then(image_size)
                 .filter(|&(width, height)| {
-                    self.size <= IMAGE_LIMIT as u64 && width as i64 * height as i64 <= IMAGE_PIXELS
+                    let pixels = width as i64 * height as i64;
+                    self.size <= IMAGE_LIMIT as u64
+                        && (pixels <= IMAGE_PIXELS
+                            || pixels <= SOURCE_PIXELS && crate::glycin::get().is_some())
                 })
                 .map(|(width, height)| (width as f64, height as f64));
             return match decoded.or_else(|| self.thumbnail_size()) {

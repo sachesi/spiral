@@ -30,6 +30,11 @@ const TEXT_LIMIT: usize = 256 * 1024;
 /// rather than decoded whole: a panorama decodes to four bytes a pixel.
 const IMAGE_LIMIT: i64 = 128 * 1024 * 1024;
 const IMAGE_PIXELS: i64 = 80_000_000;
+/// Past `IMAGE_PIXELS`, and up to this many, glycin draws the picture at most `FIT_SIDE`
+/// pixels either way, which is more than a screen shows of it; where glycin is missing,
+/// such a picture is left to its thumbnail.
+const SOURCE_PIXELS: i64 = 150_000_000;
+const FIT_SIDE: u32 = 8192;
 /// Resolution PDF pages are rendered at.
 const PDF_DPI: u32 = 150;
 /// How far the proportions of what arrives may differ from the ones the dialog opened

@@ -45,6 +45,16 @@ pub(crate) fn load_file(path: &Path, max_pixels: i64) -> Option<gdk::Texture> {
     }
 }
 
+/// The picture at `path`, of at most `max_pixels`, drawn by glycin at most `side` pixels
+/// either way, or `None` where glycin is missing or cannot draw it. Blocks: for a worker
+/// thread.
+pub(crate) fn load_file_fitted(path: &Path, max_pixels: i64, side: u32) -> Option<gdk::Texture> {
+    crate::glycin::get()?
+        .load_file(&gio::File::for_path(path), max_pixels, Some(side))
+        .inspect_err(|e| glib::g_debug!("spiral", "glycin: {}: {e:?}", path.display()))
+        .ok()
+}
+
 /// As [`load_file`], for a picture that is not in a file of its own.
 pub(crate) fn load_bytes(bytes: &glib::Bytes, max_pixels: i64) -> Option<gdk::Texture> {
     if let Some(glycin) = crate::glycin::get() {

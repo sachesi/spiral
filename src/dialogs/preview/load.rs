@@ -8,7 +8,7 @@ pub(super) async fn load_texture(file: &gio::File) -> Option<gdk::Texture> {
     match file.path() {
         Some(path) => gio::spawn_blocking(move || {
             if image_size(&path).is_some_and(|(w, h)| w as i64 * h as i64 > IMAGE_PIXELS) {
-                return None;
+                return crate::picture::load_file_fitted(&path, SOURCE_PIXELS, FIT_SIDE);
             }
             crate::picture::load_file(&path, IMAGE_PIXELS)
         })
