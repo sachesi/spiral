@@ -1,7 +1,9 @@
 //! The desktop's menus, prompts and tooltips as the shell has its own, so the desktop looks a
 //! part of it, where the compositor draws glass behind a shell's surfaces
 //! (`meridian-glass-v1`): cards it blurs what is behind while its glass setting is on, and
-//! the shell's plain cards while that is off. Elsewhere they keep their usual look.
+//! the shell's plain cards while that is off. Their glass looks as the compositor's own
+//! stylesheet has it, installed with it; without that, or elsewhere, they keep their usual
+//! look.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -17,8 +19,13 @@ use crate::{adw, gdk, gio, glib, gtk};
 use self::protocol::meridian_glass_manager_v1::MeridianGlassManagerV1;
 use self::protocol::meridian_glass_v1::{Contrast, MeridianGlassV1};
 
-/// How much what is behind is blurred, as the shell's menus have it.
+/// Where the compositor installs the look of glass, among the data directories.
+const STYLESHEET: &str = "meridian/glass.css";
+/// How much what is behind is blurred, as the stylesheet has it for menus and dialogs.
 const FROST: u32 = 4;
+/// The stylesheet's tiers the desktop's parts are of.
+const MENU: &str = "glass-menu";
+const DIALOG: &str = "glass-dialog";
 /// Of a menu's card, as the stylesheet rounds it.
 const CARD_RADIUS: i32 = 36;
 /// Of the window a prompt over the desktop opens in, as the stylesheet rounds it.
@@ -132,7 +139,7 @@ pub(crate) fn dress_menu(popover: &gtk::Popover) {
         };
         card.add_css_class("spiral-shell-card");
         card.set_overflow(gtk::Overflow::Hidden);
-        glass.glaze(&card, Corners::Radius(CARD_RADIUS));
+        glass.glaze(&card, Corners::Radius(CARD_RADIUS), MENU);
     }
 }
 
@@ -184,8 +191,8 @@ pub(crate) fn dress_prompt(dialog: &adw::Dialog) {
         };
         window.add_css_class("spiral-prompt-window");
         if let Some(glass) = shared() {
-            glass.glaze(&window, Corners::Radius(PROMPT_RADIUS));
-            glass.attach(&window, Corners::Radius(PROMPT_RADIUS));
+            glass.glaze(&window, Corners::Radius(PROMPT_RADIUS), DIALOG);
+            glass.attach(&window, Corners::Radius(PROMPT_RADIUS), DIALOG);
         }
     });
 }
@@ -202,8 +209,8 @@ pub(crate) fn name_tooltip(label: &gtk::Label) {
         if let Some(tooltip) = text.native() {
             let tooltip: gtk::Widget = tooltip.upcast();
             tooltip.add_css_class("spiral-shell-tooltip");
-            glass.glaze(&tooltip, Corners::Pill);
-            glass.attach(&tooltip, Corners::Pill);
+            glass.glaze(&tooltip, Corners::Pill, MENU);
+            glass.attach(&tooltip, Corners::Pill, MENU);
         }
     });
     label.connect_query_tooltip(move |label, _, _, _, tooltip| {
@@ -226,14 +233,27 @@ fn each_descendant(widget: &gtk::Widget, f: &mut impl FnMut(&gtk::Widget)) {
 }
 
 impl Glass {
-    /// On GTK's connection, where the compositor draws glass.
+    /// On GTK's connection, where the compositor draws glass and its stylesheet for it is
+    /// installed.
     fn new() -> Option<Rc<Self>> {
         let display = gdk::Display::default()?;
-        let display = display.downcast_ref::<gdk4_wayland::WaylandDisplay>()?;
-        let backend = display.wl_display()?.backend().upgrade()?;
+        let wayland = display.downcast_ref::<gdk4_wayland::WaylandDisplay>()?;
+        let backend = wayland.wl_display()?.backend().upgrade()?;
         let connection = Connection::from_backend(backend);
         let (globals, queue) = registry_queue_init::<State>(&connection).ok()?;
         let manager = globals.bind(&queue.handle(), 1..=1, ()).ok()?;
+        let stylesheet = std::iter::once(glib::user_data_dir())
+            .chain(glib::system_data_dirs())
+            .map(|dir| dir.join(STYLESHEET))
+            .find(|path| path.is_file())?;
+        let style = gtk::CssProvider::new();
+        style.load_from_path(stylesheet);
+        // Above the app's own, so that glass' colours win over the cards' plain ones.
+        gtk::style_context_add_provider_for_display(
+            &display,
+            &style,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
+        );
         let appearance = gio::SettingsSchemaSource::default()
             .and_then(|source| source.lookup("org.meridian.appearance", true))
             .filter(|schema| schema.has_key("glass"))
@@ -253,22 +273,23 @@ impl Glass {
             .is_none_or(|settings| settings.boolean("glass"))
     }
 
-    /// Makes `part` a pane of glass each time it shows, while glass is on.
-    fn glaze(self: &Rc<Self>, part: &gtk::Widget, corners: Corners) {
+    /// Makes `part` a pane of glass of `tier` each time it shows, while glass is on.
+    fn glaze(self: &Rc<Self>, part: &gtk::Widget, corners: Corners, tier: &'static str) {
         if part.has_css_class("spiral-glazed") {
             return;
         }
         part.add_css_class("spiral-glazed");
         let glass = Rc::clone(self);
-        part.connect_map(move |part| glass.attach(part, corners));
+        part.connect_map(move |part| glass.attach(part, corners, tier));
         let glass = Rc::clone(self);
         part.connect_unmap(move |part| glass.detach(part));
     }
 
-    fn attach(&self, part: &gtk::Widget, corners: Corners) {
+    fn attach(&self, part: &gtk::Widget, corners: Corners, tier: &str) {
         let on = self.on();
         let light = !adw::StyleManager::default().is_dark();
-        set_class(part, "spiral-glass", on);
+        set_class(part, "glass", on);
+        set_class(part, tier, on);
         set_class(part, "light", on && light);
         if !on {
             self.detach(part);

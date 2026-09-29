@@ -434,20 +434,8 @@ window.spiral-desktop-window stack:drop(active) {
   font-weight: bold;
 }
 /* The desktop's menus, prompts and tooltips as the shell has its own, where the compositor
-   draws glass behind a shell's surfaces: on glass while its glass setting is on, the menus
-   plain dark cards while it is off. */
-.spiral-glass {
-  --glass-background: alpha(#1c1c20, 0.15);
-  --glass-foreground: white;
-  --glass-border: alpha(white, 0.12);
-  --glass-shine: inset 0 1px alpha(white, 0.2), inset 0 -1px alpha(white, 0.05);
-}
-.spiral-glass.light {
-  --glass-background: alpha(#fbfbfd, 0.05);
-  --glass-foreground: #1c1c20;
-  --glass-border: alpha(white, 0.4);
-  --glass-shine: inset 0 1px alpha(white, 0.7), inset 0 -1px alpha(white, 0.15);
-}
+   draws glass behind a shell's surfaces: plain dark cards here, and the compositor's own
+   stylesheet gives them their glass while its glass setting is on. */
 popover.spiral-shell-menu > contents {
   margin: 16px 12px 8px;
   padding: 0;
@@ -465,14 +453,6 @@ popover.spiral-shell-menu.menu > contents > scrolledwindow > viewport > stack > 
   background-color: #36363a;
   color: white;
   border: 1px solid #424247;
-}
-.spiral-shell-card.spiral-glass,
-tooltip.spiral-shell-tooltip.spiral-glass,
-window.spiral-prompt-window.spiral-glass {
-  background-color: var(--glass-background);
-  color: var(--glass-foreground);
-  border-color: var(--glass-border);
-  box-shadow: var(--glass-shine);
 }
 .spiral-shell-card modelbutton {
   padding: 6px 12px;
@@ -498,21 +478,14 @@ window.spiral-prompt-window,
 window.spiral-prompt-window dialog {
   border-radius: 28px;
 }
-/* Over whatever the wallpaper is, a clear prompt would leave its text unreadable. */
-window.spiral-prompt-window.spiral-glass {
-  --glass-background: alpha(#1c1c20, 0.55);
-}
-window.spiral-prompt-window.spiral-glass.light {
-  --glass-background: alpha(#fbfbfd, 0.7);
-}
-window.spiral-prompt-window.spiral-glass dialog {
+window.spiral-prompt-window.glass dialog {
   background: none;
 }
 .spiral-prompt {
   padding: 24px;
   min-width: 332px;
 }
-window.spiral-prompt-window.spiral-glass .spiral-prompt .boxed-list {
+window.spiral-prompt-window.glass .spiral-prompt .boxed-list {
   background-color: alpha(currentColor, 0.08);
   color: inherit;
   box-shadow: none;

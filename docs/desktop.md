@@ -44,10 +44,11 @@ them.
 
 The desktop asks for the name of a new folder or document on a card, with Cancel beside
 Create, as a shell's prompts ask. Where the compositor draws glass behind a shell's
-surfaces (`meridian-glass-v1`), the desktop's menus, the names it shows in full in
-tooltips and that card look like the shell's own: on glass while its glass setting is on,
-the menus plain dark cards while it is off. With any other compositor they look as in a
-Spiral window, the card on the window's background.
+surfaces (`meridian-glass-v1`) and installs its look for it (`meridian/glass.css` in the
+data directories), the desktop's menus, the names it shows in full in tooltips and that
+card look like the shell's own: on glass while its glass setting is on, the menus plain
+dark cards while it is off. With any other compositor, or without that stylesheet, they
+look as in a Spiral window, the card on the window's background.
 
 ## Arranging
 
