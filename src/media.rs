@@ -150,6 +150,10 @@ pub(crate) enum Note {
     NoVideoDecoder,
     /// The element decoding the picture, for the log: whether it runs on the GPU.
     Decoder(String),
+    /// Which way the picture is to be turned to be shown, as an index into
+    /// [`ORIENTATIONS`]: a phone records the way it was held beside the picture rather
+    /// than in it. Sent before [`Note::Ready`] when the file says.
+    Orientation(u8),
     Error(String),
 }
 
@@ -186,6 +190,19 @@ const PARTS_MAX: usize = 4;
 /// The most pictures in GPU memory sent and not yet handed back: more than the player
 /// holds at once, in its source, its queue and on screen.
 const FRAMES_AHEAD: usize = 16;
+
+/// The values of GStreamer's `image-orientation` tag, which [`Note::Orientation`] names by
+/// their place here.
+pub(crate) const ORIENTATIONS: [&str; 8] = [
+    "rotate-0",
+    "rotate-90",
+    "rotate-180",
+    "rotate-270",
+    "flip-rotate-0",
+    "flip-rotate-90",
+    "flip-rotate-180",
+    "flip-rotate-270",
+];
 
 fn time(t: u64) -> Option<u64> {
     (t != NONE).then_some(t)
@@ -256,6 +273,10 @@ pub(crate) fn write_note(w: &mut impl Write, note: &Note) -> io::Result<()> {
         Note::Decoder(name) => {
             body.extend_from_slice(name.as_bytes());
             6
+        }
+        Note::Orientation(index) => {
+            body.push(*index);
+            7
         }
         Note::Error(text) => {
             body.extend_from_slice(text.as_bytes());
@@ -341,6 +362,13 @@ pub(crate) fn read_note(r: &mut impl Read) -> io::Result<Note> {
                 .take(64)
                 .collect(),
         ),
+        7 => {
+            fixed(1)?;
+            if usize::from(body[0]) >= ORIENTATIONS.len() {
+                return Err(invalid("orientation out of bounds"));
+            }
+            Note::Orientation(body[0])
+        }
         _ => return Err(invalid("unknown note")),
     })
 }
@@ -655,6 +683,8 @@ struct Out {
     /// Told whenever one of them is handed back.
     returned: std::sync::Condvar,
     next: AtomicU64,
+    /// Which way the pictures are turned, from the stream's tags: see [`Note::Orientation`].
+    orientation: Mutex<Option<u8>>,
 }
 
 /// What the helper asks the GPU decoders for: DMA-BUFs in one of the formats the player's
@@ -803,6 +833,7 @@ pub fn serve(
                 held: Mutex::default(),
                 returned: std::sync::Condvar::new(),
                 next: AtomicU64::new(0),
+                orientation: Mutex::default(),
             })
         }),
         pending: Arc::new(AtomicU32::new(0)),
@@ -1092,6 +1123,10 @@ fn try_playing(session: &mut Session) -> Result<Tried, String> {
                     .filter(|c| c.len() <= COLORIMETRY_MAX && plain_colorimetry(c.as_bytes()));
                 let mut seeking = gst::query::Seeking::new(gst::Format::Time);
                 let seekable = pipeline.query(&mut seeking) && seeking.result().0;
+                let orientation = *session.outs[0].orientation.lock().unwrap();
+                if let Some(index) = orientation.filter(|_| video.is_some()) {
+                    send(notes, Note::Orientation(index))?;
+                }
                 send(
                     notes,
                     Note::Ready {
@@ -1219,10 +1254,19 @@ fn branch(
             gst::PadProbeReturn::Ok
         });
     }
-    // Wake the bus loop when the sink learns what it takes; see `serve`.
+    // Wake the bus loop when the sink learns what it takes; see `serve`. Which way the
+    // picture is turned comes as a tag, ahead of the first picture and so of the preroll.
     sink_pad.add_probe(gst::PadProbeType::EVENT_DOWNSTREAM, {
         let pipeline = pipeline.downgrade();
+        let out = out.clone();
         move |_, info| {
+            if let Some(gst::PadProbeData::Event(event)) = &info.data
+                && let gst::EventView::Tag(tag) = event.view()
+                && let Some(value) = tag.tag().get::<gst::tags::ImageOrientation>()
+                && let Some(index) = ORIENTATIONS.iter().position(|o| *o == value.get())
+            {
+                *out.orientation.lock().unwrap() = Some(index as u8);
+            }
             if let Some(gst::PadProbeData::Event(event)) = &info.data
                 && event.type_() == gst::EventType::Caps
                 && let Some(pipeline) = pipeline.upgrade()
@@ -1497,6 +1541,7 @@ mod tests {
             Note::Cover(vec![1, 2, 3]),
             Note::NoVideoDecoder,
             Note::Decoder("vah264dec".into()),
+            Note::Orientation(3),
             Note::Error("no decoder".into()),
         ];
         for note in notes {

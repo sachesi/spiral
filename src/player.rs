@@ -119,6 +119,9 @@ mod imp {
         pub seeking: Cell<bool>,
         pub has_audio: Cell<bool>,
         pub has_video: Cell<bool>,
+        /// Which way the helper says the pictures are turned, as an index into
+        /// [`media::ORIENTATIONS`].
+        pub orientation: Cell<Option<u8>>,
         /// The picture embedded in the file, as it came: the preview decides its size.
         pub cover: RefCell<Option<glib::Bytes>>,
     }
@@ -443,6 +446,7 @@ impl Player {
         imp.seeking.set(false);
         imp.has_audio.set(false);
         imp.has_video.set(false);
+        imp.orientation.set(None);
         imp.cover.take();
         imp.file.replace(file.clone());
         let Some(file) = file else { return };
@@ -606,6 +610,7 @@ impl Player {
                     self.emit_by_name::<()>("cover", &[]);
                 }
             }
+            Some(Note::Orientation(index)) => imp.orientation.set(Some(index)),
             Some(Note::NoVideoDecoder) => self.no_decoder(),
             Some(Note::Decoder(name)) => glib::g_debug!("spiral", "player: decoding with {name}"),
             Some(Note::Error(text)) => {
@@ -677,6 +682,19 @@ impl Player {
             gst::State::Paused
         };
         let _ = imp.pipeline().set_state(state);
+        // The sink turns the pictures the way a tag on their stream says, as it would the
+        // file's own; the helper sends the pictures as they were decoded.
+        if let Some(orientation) = imp
+            .orientation
+            .get()
+            .filter(|_| video.is_some())
+            .and_then(|index| media::ORIENTATIONS.get(usize::from(index)))
+        {
+            let mut tags = gst::TagList::new();
+            tags.make_mut()
+                .add::<gst::tags::ImageOrientation>(orientation, gst::TagMergeMode::Replace);
+            video_src.send_event(gst::event::Tag::new(tags));
+        }
         if let Some(session) = imp.session.borrow().as_ref() {
             let _ = session.gates[0].send(video.map(|p| match format {
                 Some(_) => Take::Frames {
