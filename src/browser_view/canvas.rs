@@ -57,6 +57,18 @@ struct SpecialTile {
 /// Where the band being drawn starts and ends, and the items and places selected before it.
 type Band = (Point, Point, gtk::Bitset, HashSet<String>);
 
+/// A drag of the desktop's icons that the system carries, so the files among them can go to
+/// other windows. The tiles stay where they are, and the drag shows the icons the whole
+/// way, over the windows too: in their layout over the desktop; away from it gathered under
+/// the pointer, led by the file nearest it as the drag began, while the places, which go
+/// nowhere else, leave it.
+struct Carry {
+    places: Vec<Place>,
+    flock: Option<flock::Flock>,
+    origin: (f64, f64),
+    away: bool,
+}
+
 /// What is under a point of the desktop.
 #[derive(Debug, Clone, PartialEq)]
 enum Hit {
@@ -95,12 +107,15 @@ mod imp {
         /// release unless a drag starts.
         pub(super) narrow: RefCell<Option<Hit>>,
         pub(super) typed: RefCell<(String, Option<Instant>)>,
-        /// Where a drag of the desktop's own icons started.
+        /// Where a drag of the desktop's own icons starts, until the system takes it up.
         pub(super) drag_origin: Cell<Option<(f64, f64)>>,
         /// What is being dragged across the desktop by a place, and how far it has come.
         /// Places are no files to hand over in a drag, so they move within the desktop only,
         /// and the files selected with them move along.
         pub(super) lifted: RefCell<Option<(Vec<Place>, Point)>>,
+        pub(super) carry: RefCell<Option<Carry>>,
+        /// Whether the system took the press the band or a place's move started from.
+        pub(super) band_cancelled: Cell<bool>,
         /// Names of files dropped on the desktop from elsewhere, and where they were dropped.
         pub(super) expected: RefCell<Vec<(String, Point, Instant)>>,
         pub(super) trash_monitor: RefCell<Option<gio::FileMonitor>>,
@@ -819,15 +834,18 @@ impl IconCanvas {
             let Some(&rest) = placed.get(&place) else {
                 continue;
             };
-            let at = match (&lifted, progress, from.get(&place)) {
-                (Some((places, by)), ..) if places.contains(&place) => {
+            let target = match &lifted {
+                Some((places, by)) if places.contains(&place) => {
                     Point::new(rest.x + by.x, rest.y + by.y)
                 }
-                (_, Some(t), Some(from)) => Point::new(
-                    from.x + (rest.x - from.x) * t,
-                    from.y + (rest.y - from.y) * t,
-                ),
                 _ => rest,
+            };
+            let at = match (progress, from.get(&place)) {
+                (Some(t), Some(from)) => Point::new(
+                    from.x + (target.x - from.x) * t,
+                    from.y + (target.y - from.y) * t,
+                ),
+                _ => target,
             };
             shown.insert(place, at);
             let (_, natural, _, _) = frame.measure(gtk::Orientation::Vertical, cw);
@@ -1075,9 +1093,146 @@ impl IconCanvas {
         self.queue_allocate();
     }
 
-    /// A drag of the desktop's icons starts at a point of the desktop.
-    pub(crate) fn note_drag(&self, x: f64, y: f64) {
-        self.imp().drag_origin.set(Some((x, y)));
+    /// What a drag from (`x`, `y`) carries away: the files selected, with the tile under the
+    /// pointer selected first, and the icons that show them and the places selected with
+    /// them the whole way. None when only places are selected, which move within the
+    /// desktop alone.
+    pub(crate) fn prepare_drag(
+        &self,
+        x: f64,
+        y: f64,
+    ) -> Option<(Vec<gio::File>, Option<flock::Flock>)> {
+        let hit = self.hit(x, y)?;
+        if !self.is_selected(&hit) {
+            self.select_only(&hit);
+        }
+        let view = self.view();
+        let files = view.model().selected_files();
+        if files.is_empty() {
+            return None;
+        }
+        let imp = self.imp();
+        imp.drag_origin.set(Some((x, y)));
+        let model = view.model().selection();
+        let tiles = imp.tiles.borrow();
+        let going: Vec<&Tile> = tiles
+            .iter()
+            .filter(|t| model.is_selected(t.slot.get()))
+            .collect();
+        let distance = |tile: &&Tile| {
+            tile.frame.compute_bounds(self).map_or(f32::MAX, |b| {
+                let (dx, dy) = (b.center().x() - x as f32, b.center().y() - y as f32);
+                dx * dx + dy * dy
+            })
+        };
+        let leader = (0..going.len())
+            .min_by(|&a, &b| distance(&going[a]).total_cmp(&distance(&going[b])))?;
+        let going: Vec<gtk::Widget> = going.iter().map(|t| t.cell.clone().upcast()).collect();
+        let selected = imp.special_selected.borrow();
+        let staying: Vec<gtk::Widget> = imp
+            .specials
+            .borrow()
+            .iter()
+            .filter(|t| selected.contains(&t.special.key))
+            .map(|t| t.cell.clone().upcast())
+            .collect();
+        let flock = flock::Flock::new(
+            self.upcast_ref(),
+            &going,
+            &staying,
+            leader,
+            x,
+            y,
+            files.len(),
+        );
+        Some((files, flock))
+    }
+
+    /// The system has taken up the drag `prepare_drag` offered.
+    pub(crate) fn begin_carry(&self, drag: &gdk::Drag, flock: Option<flock::Flock>) {
+        let imp = self.imp();
+        let Some(origin) = imp.drag_origin.take() else {
+            return;
+        };
+        // A press on a place starts the desktop's own move of it too, which this takes over.
+        imp.lifted.replace(None);
+        if let Some(flock) = &flock {
+            flock.begin(drag);
+        }
+        let places = self.selected_places();
+        self.let_through(&places, true);
+        imp.carry.replace(Some(Carry {
+            places,
+            flock,
+            origin,
+            away: false,
+        }));
+        self.queue_allocate();
+    }
+
+    /// The drag is over the desktop: coming back to it, the icons spread out of the pile.
+    fn carry_back(&self) {
+        let mut carry = self.imp().carry.borrow_mut();
+        let Some(carry) = carry.as_mut().filter(|carry| carry.away) else {
+            return;
+        };
+        carry.away = false;
+        if let Some(flock) = &carry.flock {
+            flock.spread();
+        }
+    }
+
+    /// The drag has left the desktop: the files gather under the pointer, and the places,
+    /// which cannot go anywhere else, leave the drag and the selection.
+    fn go_away(&self) {
+        let mut carry = self.imp().carry.borrow_mut();
+        let Some(carry) = carry.as_mut().filter(|carry| !carry.away) else {
+            return;
+        };
+        carry.away = true;
+        let (files, places): (Vec<Place>, Vec<Place>) = carry
+            .places
+            .drain(..)
+            .partition(|place| matches!(place, Place::File(_)));
+        carry.places = files;
+        self.let_through(&places, false);
+        self.select_special(None);
+        if let Some(flock) = &carry.flock {
+            flock.gather();
+        }
+    }
+
+    /// The drag is over without a drop on the desktop, which takes the carry itself.
+    pub(crate) fn end_carry(&self) {
+        let imp = self.imp();
+        imp.drag_origin.set(None);
+        if let Some(carry) = imp.carry.take() {
+            self.let_through(&carry.places, false);
+        }
+    }
+
+    fn frames_of(&self, places: &[Place]) -> Vec<gtk::Box> {
+        let imp = self.imp();
+        let tiles = imp.tiles.borrow();
+        let specials = imp.specials.borrow();
+        tiles
+            .iter()
+            .filter(|t| places.contains(&t.place))
+            .map(|t| t.frame.clone())
+            .chain(
+                specials
+                    .iter()
+                    .filter(|t| places.contains(&Place::Special(t.special.key.clone())))
+                    .map(|t| t.frame.clone()),
+            )
+            .collect()
+    }
+
+    /// Carried tiles are drawn under the pointer; a drop goes through them to what is below.
+    fn let_through(&self, places: &[Place], through: bool) {
+        for frame in self.frames_of(places) {
+            frame.set_can_target(!through);
+        }
     }
 
     /// Files dropped on the empty desktop at (`x`, `y`). Its own icons are moved there
@@ -1097,7 +1252,6 @@ impl IconCanvas {
             .iter()
             .all(|f| f.parent().is_some_and(|p| p.equal(&folder)));
         let imp = self.imp();
-        let origin = imp.drag_origin.take();
         if !here {
             let cell = self.grid().cell_size();
             let at = Point::new(x - cell.x / 2.0, y - cell.y / 2.0);
@@ -1106,27 +1260,33 @@ impl IconCanvas {
                 .extend(names.into_iter().map(|name| (name, at, Instant::now())));
             return false;
         }
-        let mut moved: Vec<Place> = names.into_iter().map(Place::File).collect();
-        // Dragged from the desktop itself, the places selected with the files go along.
-        if origin.is_some() {
-            moved.extend(
-                imp.special_selected
-                    .borrow()
-                    .iter()
-                    .map(|key| Place::Special(key.clone())),
-            );
-        }
-        let by = match origin {
-            Some((ox, oy)) => Point::new(x - ox, y - oy),
+        let carry = imp.carry.take();
+        let (moved, by) = match carry {
+            // Dragged from the desktop itself: what the drag still carries, the places with
+            // the files, glides into place from where the drag showed it.
+            Some(carry) => {
+                let by = Point::new(x - carry.origin.0, y - carry.origin.1);
+                self.let_through(&carry.places, false);
+                let placed = imp.placed.borrow().clone();
+                imp.shown
+                    .borrow_mut()
+                    .extend(carry.places.iter().filter_map(|place| {
+                        let at = placed.get(place)?;
+                        Some((place.clone(), Point::new(at.x + by.x, at.y + by.y)))
+                    }));
+                (carry.places, by)
+            }
             // Dragged from a window showing the desktop's folder: the first goes where it
             // was dropped, the rest keep their places beside it.
             None => {
+                let moved: Vec<Place> = names.into_iter().map(Place::File).collect();
                 let cell = self.grid().cell_size();
                 let first = moved
                     .first()
                     .and_then(|p| imp.placed.borrow().get(p).copied())
                     .unwrap_or(Point::new(MARGIN, MARGIN));
-                Point::new(x - cell.x / 2.0 - first.x, y - cell.y / 2.0 - first.y)
+                let by = Point::new(x - cell.x / 2.0 - first.x, y - cell.y / 2.0 - first.y);
+                (moved, by)
             }
         };
         self.move_places(&moved, by);
@@ -1215,13 +1375,25 @@ impl IconCanvas {
         drag.connect_drag_begin(glib::clone!(
             #[weak(rename_to = canvas)]
             self,
-            move |gesture, x, y| canvas.band_begin(gesture, x, y)
+            move |gesture, x, y| {
+                canvas.imp().band_cancelled.set(false);
+                canvas.band_begin(gesture, x, y);
+            }
+        ));
+        // The system takes the press over when a drag of files starts from it.
+        drag.connect_cancel(glib::clone!(
+            #[weak(rename_to = canvas)]
+            self,
+            move |_, _| canvas.imp().band_cancelled.set(true)
         ));
         drag.connect_drag_update(glib::clone!(
             #[weak(rename_to = canvas)]
             self,
             move |gesture, dx, dy| {
                 let imp = canvas.imp();
+                if imp.carry.borrow().is_some() || imp.band_cancelled.get() {
+                    return;
+                }
                 if let Some((_, by)) = imp.lifted.borrow_mut().as_mut() {
                     *by = Point::new(dx, dy);
                     canvas.queue_allocate();
@@ -1236,7 +1408,12 @@ impl IconCanvas {
             move |gesture, dx, dy| {
                 let imp = canvas.imp();
                 imp.banding.replace(None);
+                let cancelled = imp.band_cancelled.replace(false);
+                if imp.carry.borrow().is_some() {
+                    return;
+                }
                 if let Some((places, _)) = imp.lifted.take()
+                    && !cancelled
                     && let Some((x, y)) = gesture.start_point()
                     && canvas.drag_check_threshold(
                         x as i32,
@@ -1252,6 +1429,19 @@ impl IconCanvas {
             }
         ));
         self.add_controller(drag);
+
+        let over = gtk::DropControllerMotion::new();
+        over.connect_enter(glib::clone!(
+            #[weak(rename_to = canvas)]
+            self,
+            move |_, _, _| canvas.carry_back()
+        ));
+        over.connect_leave(glib::clone!(
+            #[weak(rename_to = canvas)]
+            self,
+            move |_| canvas.go_away()
+        ));
+        self.add_controller(over);
 
         let keys = gtk::EventControllerKey::new();
         keys.connect_key_pressed(glib::clone!(
@@ -1666,7 +1856,6 @@ impl IconCanvas {
             move |_, _| canvas.open_selected_places()
         ));
         group.add_action(&open);
-
         with_key("unmount-special", |c, key| c.leave_special(key, false));
         with_key("eject-special", |c, key| c.leave_special(key, true));
         with_key("drop-in", |c, path| c.run_drop_in(path));

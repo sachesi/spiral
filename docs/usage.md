@@ -217,7 +217,8 @@ Dropped Files" in Preferences turns the question off, and then dragging inside S
 moves, Ctrl makes it a copy, Ctrl+Shift makes a link, and drags from other applications
 copy.
 A drag starts anywhere on a row or a grid tile, and a folder accepts a drop anywhere on
-its row. Drop targets are folders in the view, breadcrumbs and sidebar entries except
+its row. Several items dragged from the grid gather from where they stand into a pile under
+the pointer, with how many there are on it. Drop targets are folders in the view, breadcrumbs and sidebar entries except
 Favorites; Trash takes a drop as well, and trashes what lands on it. A drag held for a
 moment over a folder, a breadcrumb or a sidebar entry opens it, so files can be carried
 into a folder that is nowhere on screen when the drag starts. Cut, copy and paste use the usual clipboard format for files, so they work

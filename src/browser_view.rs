@@ -17,6 +17,7 @@ mod canvas;
 mod cells;
 mod columns;
 mod dnd;
+mod flock;
 mod navigation;
 mod opening;
 mod selection;

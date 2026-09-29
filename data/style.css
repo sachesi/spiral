@@ -425,6 +425,14 @@ window.spiral-desktop-window stack:drop(active) {
   box-shadow: none;
   outline: none;
 }
+/* How many items a drag holds, on the pile they gather into. */
+.spiral-flock-count {
+  background-color: var(--accent-bg-color);
+  color: var(--accent-fg-color);
+  border-radius: 9999px;
+  padding: 1px 7px;
+  font-weight: bold;
+}
 spiral-desktop .spiral-desktop-band {
   background-color: alpha(var(--accent-bg-color), 0.2);
   border: 1px solid var(--accent-bg-color);

@@ -63,8 +63,13 @@ their edges as the first. A name takes two lines at most, shortened in the middl
 that.
 
 Icons glide to a new place when the arrangement, the sort, the alignment or the size of
-the cells moves them, and into their cell when dropped; with reduced motion they are put
-there at once.
+the cells moves them. A drag leaves the icons where they are and carries their images
+above the windows, in their layout while over the desktop; dropped there, the icons glide
+from where the drag showed them into their cells. Carried over a window the images gather
+into a pile under the pointer, as in the grid, with how many files there are on it, and
+spread out again on the way back. The places, which go nowhere else, leave the drag and the
+selection there. Files moved into a window leave the desktop once they have gone. With
+reduced motion the images and icons are put where they go at once.
 
 Where the icons were left is kept in `$XDG_STATE_HOME/spiral/desktop-positions`
 (`~/.local/state/spiral/desktop-positions`), measured from the side they start at, for each

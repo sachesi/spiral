@@ -112,13 +112,28 @@ impl BrowserView {
             )
             .propagation_phase(gtk::PropagationPhase::Capture)
             .build();
+        let flocking: Rc<RefCell<Option<flock::Flock>>> = Rc::default();
         source.connect_prepare(glib::clone!(
             #[weak(rename_to = view)]
             self,
+            #[strong]
+            flocking,
             #[upgrade_or]
             None,
             move |source, x, y| {
                 let stack = view.imp().stack.clone().upcast::<gtk::Widget>();
+                // The desktop leads its own drags: the places selected go along, and the
+                // icons keep their layout while over it.
+                if let Some(canvas) = view.imp().canvas.get() {
+                    let p = stack
+                        .compute_point(canvas, &gtk::graphene::Point::new(x as f32, y as f32))?;
+                    let (files, flock) = canvas.prepare_drag(p.x().into(), p.y().into())?;
+                    source.set_icon(None::<&gdk::Paintable>, 0, 0);
+                    flocking.replace(flock);
+                    return Some(gtk::gdk::ContentProvider::for_value(
+                        &gtk::gdk::FileList::from_array(&files).to_value(),
+                    ));
+                }
                 let cell = cell_at(&stack, x, y)?;
                 let pos = cell_position(&cell)?;
                 let sel = view.model().selection();
@@ -129,22 +144,43 @@ impl BrowserView {
                 if files.is_empty() {
                     return None;
                 }
-                if let Some(canvas) = view.imp().canvas.get()
-                    && let Some(p) = view
-                        .imp()
-                        .stack
-                        .compute_point(canvas, &gtk::graphene::Point::new(x as f32, y as f32))
-                {
-                    canvas.note_drag(p.x().into(), p.y().into());
-                }
-                // Drag the whole row, not the cell the gesture started on.
-                if let Some(row) = row_widget(&cell) {
+                let flock = view.flock(&stack, &cell, x, y, files.len());
+                if flock.is_some() {
+                    source.set_icon(None::<&gdk::Paintable>, 0, 0);
+                } else if let Some(row) = row_widget(&cell) {
+                    // Drag the whole row, not the cell the gesture started on.
                     let paintable = gtk::WidgetPaintable::new(Some(&row));
                     source.set_icon(Some(&paintable), row.width() / 2, row.height() / 2);
                 }
+                flocking.replace(flock);
                 Some(gtk::gdk::ContentProvider::for_value(
                     &gtk::gdk::FileList::from_array(&files).to_value(),
                 ))
+            }
+        ));
+        source.connect_drag_begin(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |_, drag| {
+                let flock = flocking.take();
+                match view.imp().canvas.get() {
+                    Some(canvas) => canvas.begin_carry(drag, flock),
+                    None => {
+                        if let Some(flock) = flock {
+                            flock.begin(drag);
+                            flock.gather();
+                        }
+                    }
+                }
+            }
+        ));
+        source.connect_drag_end(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |_, _, _| {
+                if let Some(canvas) = view.imp().canvas.get() {
+                    canvas.end_carry();
+                }
             }
         ));
         self.imp().stack.add_controller(source);
@@ -164,6 +200,32 @@ impl BrowserView {
             }
         ));
         self.imp().stack.add_controller(click);
+    }
+
+    /// The icons of several items dragged from the grid, `held` taken hold of at (`x`,
+    /// `y`) of `stack`, gathering under the pointer; `files` are dragged.
+    fn flock(
+        &self,
+        stack: &gtk::Widget,
+        held: &gtk::Widget,
+        x: f64,
+        y: f64,
+        files: usize,
+    ) -> Option<flock::Flock> {
+        if self.view_mode() != ViewMode::Grid || files < 2 {
+            return None;
+        }
+        let selection = self.model().selection();
+        let mut cells = vec![held.clone()];
+        each_cell(stack, &mut |cell| {
+            if cell != held
+                && cell.is_drawable()
+                && cell_position(cell).is_some_and(|at| selection.is_selected(at))
+            {
+                cells.push(cell.clone());
+            }
+        });
+        flock::Flock::new(stack, &cells, &[], 0, x, y, files)
     }
 
     /// Each cell is a drop target when it shows a folder; every cell of a row carries
