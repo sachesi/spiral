@@ -1,6 +1,6 @@
 [workspace]
-members = ["crates/spiral"]
-default-members = [".", "crates/spiral"]
+members = ["crates/spiral", "crates/spiral-desktop"]
+default-members = [".", "crates/spiral", "crates/spiral-desktop"]
 resolver = "3"
 
 [workspace.package]

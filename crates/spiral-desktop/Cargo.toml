@@ -1,0 +1,17 @@
+[package]
+name = "spiral-desktop"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Icons on the desktop of Wayland compositors with the layer shell, from the Spiral file manager"
+
+[[bin]]
+name = "spiral-desktop"
+path = "src/main.rs"
+
+[dependencies]
+spiral-core.workspace = true
+gettext-rs = { version = "0.8", features = ["gettext-system"] }
+gtk4-layer-shell = { version = "0.8", features = ["v1_3"] }
