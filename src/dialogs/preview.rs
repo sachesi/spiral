@@ -46,8 +46,8 @@ const SOUND_ICON_SIZE: i32 = 96;
 const LOAD_DELAY: Duration = Duration::from_millis(120);
 /// What the header takes before it has been measured.
 const HEADER_HEIGHT: i32 = 46;
-/// How much of the window the preview may take, and the bounds it keeps until it is told
-/// how large that window is.
+/// How much of the window the preview may take, and the bounds it keeps while it has no
+/// window to measure.
 const WINDOW_SHARE: f64 = 0.82;
 const MAX_WIDTH: i32 = 900;
 const MAX_HEIGHT: i32 = 620;
@@ -107,8 +107,10 @@ mod imp {
         /// The content size last asked for, to tell a shape that has to change from one
         /// that would only flinch.
         pub shaped: Cell<(i32, i32)>,
-        /// The largest content the dialog may take, from the window it opens over.
-        pub bounds: Cell<(i32, i32)>,
+        /// That size with the header, as handed to libadwaita.
+        pub asked: Cell<(i32, i32)>,
+        /// The window the preview opens over, whose size is the room it has.
+        pub window: glib::WeakRef<gtk::Window>,
         /// The page size of the PDF being shown, once anything has said what it is.
         pub page_size: Cell<Option<(f64, f64)>>,
         /// How many pages it has, so the tool is asked once and not twice.
@@ -133,12 +135,7 @@ mod imp {
         type ParentType = adw::Dialog;
     }
 
-    impl ObjectImpl for PreviewDialog {
-        fn constructed(&self) {
-            self.parent_constructed();
-            self.bounds.set((MAX_WIDTH, MAX_HEIGHT));
-        }
-    }
+    impl ObjectImpl for PreviewDialog {}
     impl WidgetImpl for PreviewDialog {}
     impl AdwDialogImpl for PreviewDialog {
         fn closed(&self) {
@@ -179,11 +176,16 @@ impl PreviewDialog {
             .set_transition_duration(CROSSFADE.as_millis() as u32);
         imp.content.set_hhomogeneous(false);
         imp.content.set_vhomogeneous(false);
-        imp.content.connect_transition_running_notify(|stack| {
-            if !stack.is_transition_running() {
-                drop_hidden(stack);
+        imp.content.connect_transition_running_notify(glib::clone!(
+            #[weak]
+            dialog,
+            move |stack| {
+                if !stack.is_transition_running() {
+                    drop_hidden(stack);
+                    dialog.settle_size();
+                }
             }
-        });
+        ));
         let toolbar = adw::ToolbarView::new();
         toolbar.add_top_bar(header);
         toolbar.set_content(Some(&imp.content));
@@ -255,15 +257,33 @@ impl PreviewDialog {
         self.add_controller(keys);
     }
 
+    /// The window the preview opens over. Its size, as it is when each file is shaped,
+    /// is the room the preview has, so a window resized or maximized under the preview
+    /// gives the next file the room there is now.
+    pub fn set_window(&self, window: &gtk::Window) {
+        self.imp().window.set(Some(window));
+    }
+
     /// The room the preview has: a share of the window it opens over, so a page or a
     /// picture is shown as large as that window can hold rather than at a fixed size.
-    pub fn set_bounds(&self, width: i32, height: i32) {
-        if width > 0 && height > 0 {
-            self.imp().bounds.set((
+    pub(super) fn room(&self) -> (i32, i32) {
+        let size = self.imp().window.upgrade().map(|w| (w.width(), w.height()));
+        match size {
+            Some((width, height)) if width > 0 && height > 0 => (
                 ((width as f64 * WINDOW_SHARE) as i32).max(MIN_SIDE),
                 ((height as f64 * WINDOW_SHARE) as i32).max(MIN_SIDE),
-            ));
+            ),
+            _ => (MAX_WIDTH, MAX_HEIGHT),
         }
+    }
+
+    /// Screen pixels to a point of the window the preview opens over, which it shares
+    /// before it has a surface of its own.
+    pub(super) fn device_scale(&self) -> f64 {
+        let window = self.imp().window.upgrade();
+        surface_scale(self)
+            .or_else(|| surface_scale(window.as_ref()?))
+            .unwrap_or(1.0)
     }
 
     /// Called with -1 or 1 when the arrows ask for the file before or after this one.
@@ -426,7 +446,7 @@ impl PreviewDialog {
                 if dialog.imp().generation.get() != generation {
                     return;
                 }
-                let child = dialog.build_content(&info).await;
+                let child = dialog.build_content(&info, generation).await;
                 if let Some(child) = child
                     && dialog.imp().generation.get() == generation
                 {
@@ -461,14 +481,36 @@ impl PreviewDialog {
         // pages replaced.
         if !stack.is_transition_running() {
             drop_hidden(stack);
+            self.settle_size();
         }
     }
 
-    /// The page for `info`, or `None` for a video, which puts itself on screen once it has
-    /// a frame to show.
-    async fn build_content(&self, info: &gio::FileInfo) -> Option<gtk::Widget> {
+    /// Ask again for the size last asked for. libadwaita holds the dialog to at least what
+    /// the page on screen needs, and the shape is asked for while the page before is still
+    /// there; with that page gone, the dialog can come down to the shape it was given.
+    fn settle_size(&self) {
+        let (width, height) = self.imp().asked.get();
+        if width > 0 && height > 0 {
+            self.set_content_width(width);
+            self.set_content_height(height);
+        }
+    }
+
+    /// Whether the file of `generation` is still the one on screen: what was loaded for
+    /// one the arrows have left, or for a dialog since closed, must not shape the dialog,
+    /// take its buttons or start the player.
+    pub(super) fn is_current(&self, generation: u64) -> bool {
+        self.imp().generation.get() == generation
+    }
+
+    /// The page for `info`, the file of `generation`, or `None` for a video, which puts
+    /// itself on screen once it has a frame to show, and for a file no longer current.
+    async fn build_content(&self, info: &gio::FileInfo, generation: u64) -> Option<gtk::Widget> {
         // An item in the trash is read from the file on the disk it is.
         let file = crate::thumbnails::on_disk(info).await;
+        if !self.is_current(generation) {
+            return None;
+        }
         let content_type = crate::file_utils::content_type_of(info)
             .unwrap_or_default()
             .to_string();
@@ -479,6 +521,9 @@ impl PreviewDialog {
             && crate::file_utils::size_of(info) <= IMAGE_LIMIT as u64
             && let Some(texture) = load_texture(&file).await
         {
+            if !self.is_current(generation) {
+                return None;
+            }
             self.shape_to(&texture);
             return Some(self.zoomable(&picture(&texture), &[]));
         }
@@ -497,12 +542,16 @@ impl PreviewDialog {
         }
         if content_type == "application/pdf"
             && let Some(path) = file.path()
-            && let Some(widget) = self.pdf(path).await
+            && let Some(widget) = self.pdf(path, generation).await
         {
             return Some(widget);
         }
         // The file being looked at goes before any row waiting behind it.
-        Some(match crate::thumbnails::load(info, 0).await {
+        let thumbnail = crate::thumbnails::load(info, 0).await;
+        if !self.is_current(generation) {
+            return None;
+        }
+        Some(match thumbnail {
             Some(texture) => {
                 self.shape_to(&texture);
                 picture(&texture).upcast()
@@ -577,6 +626,12 @@ fn spinner(delay: Duration) -> gtk::Widget {
         );
     }
     spinner.upcast()
+}
+
+/// How many screen pixels make a point where `widget` is drawn, once it is on a surface.
+pub(super) fn surface_scale(widget: &impl IsA<gtk::Widget>) -> Option<f64> {
+    let scale = widget.native()?.surface()?.scale();
+    (scale > 0.0).then_some(scale)
 }
 
 /// Drop every page of `stack` but the one on screen.

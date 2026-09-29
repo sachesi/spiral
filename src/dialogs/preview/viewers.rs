@@ -22,19 +22,24 @@ pub(super) fn picture(paintable: &impl IsA<gdk::Paintable>) -> gtk::Picture {
         .build()
 }
 
+/// The size of the picture on `picture` in points at a screen pixel to each of its own, the
+/// size zooming counts from: 100% is the picture as it is.
+pub(super) fn pixel_size(picture: &gtk::Picture) -> Option<(f64, f64)> {
+    let paintable = picture.paintable()?;
+    let scale = surface_scale(picture).unwrap_or(1.0);
+    let (width, height) = (
+        paintable.intrinsic_width() as f64 / scale,
+        paintable.intrinsic_height() as f64 / scale,
+    );
+    (width > 0.0 && height > 0.0).then_some((width, height))
+}
+
 /// The scale a fitted picture is drawn at: where zooming starts and where zooming out
 /// ends. Above 1 for a picture smaller than the dialog, which fitting enlarges.
 pub(super) fn fit_scale(picture: &gtk::Picture, scroll: &gtk::ScrolledWindow) -> f64 {
-    let Some(paintable) = picture.paintable() else {
+    let Some((width, height)) = pixel_size(picture) else {
         return 1.0;
     };
-    let (width, height) = (
-        paintable.intrinsic_width() as f64,
-        paintable.intrinsic_height() as f64,
-    );
-    if width <= 0.0 || height <= 0.0 {
-        return 1.0;
-    }
     (scroll.width() as f64 / width).min(scroll.height() as f64 / height)
 }
 
@@ -242,13 +247,17 @@ impl PreviewDialog {
         column.upcast()
     }
 
-    /// One PDF page with the buttons that turn it, or nothing when `pdftoppm` is missing.
-    pub(super) async fn pdf(&self, path: PathBuf) -> Option<gtk::Widget> {
+    /// One PDF page with the buttons that turn it, or nothing when `pdftoppm` is missing or
+    /// the file of `generation` is no longer the one on screen.
+    pub(super) async fn pdf(&self, path: PathBuf, generation: u64) -> Option<gtk::Widget> {
         let known = self.imp().page_count.get().zip(self.imp().page_size.get());
         let (pages, size) = match known {
             Some(facts) => facts,
             None => pdf_info(path.clone()).await?,
         };
+        if !self.is_current(generation) {
+            return None;
+        }
         // The shape was decided before the dialog opened, from the thumbnail or from the
         // file itself; the page dictionary of a modern PDF is compressed and neither may
         // have found it. Rather than resize a window the reader is already looking at, the
@@ -260,6 +269,9 @@ impl PreviewDialog {
             self.shape_filled(size.0, size.1);
         }
         let first = pdf_page(path.clone(), 1).await?;
+        if !self.is_current(generation) {
+            return None;
+        }
         let page = Rc::new(Cell::new(1u32));
         let picture = picture(&first);
         let label = gtk::Label::new(Some(&page_text(1, pages)));
@@ -383,7 +395,7 @@ impl PreviewDialog {
                     if wanted <= fit { 0.0 } else { wanted }
                 };
                 level.set(next);
-                let Some(paintable) = picture.paintable() else {
+                let Some((width, height)) = pixel_size(&picture) else {
                     return;
                 };
                 scroll.set_cursor_from_name(pan_cursor(next));
@@ -396,10 +408,7 @@ impl PreviewDialog {
                 }
                 picture.set_content_fit(gtk::ContentFit::Contain);
                 scroll.set_policy(gtk::PolicyType::External, gtk::PolicyType::External);
-                let (width, height) = (
-                    paintable.intrinsic_width() as f64 * next,
-                    paintable.intrinsic_height() as f64 * next,
-                );
+                let (width, height) = (width * next, height * next);
                 picture.set_size_request(width as i32, height as i32);
                 label.set_label(&format!("{}%", (next * 100.0).round()));
                 // Hold the point the zoom happened around still. The scrolled window only

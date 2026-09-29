@@ -467,7 +467,7 @@ impl PreviewDialog {
             .measure(gtk::Orientation::Vertical, -1)
             .0
             .max(HEADER_HEIGHT);
-        let (most_width, most_height) = self.imp().bounds.get();
+        let (most_width, most_height) = self.room();
         let (width, height) = (
             width.clamp(MIN_SIDE, most_width),
             height.clamp(MIN_SIDE, most_height),
@@ -478,6 +478,7 @@ impl PreviewDialog {
             return false;
         }
         self.imp().shaped.set((width, height));
+        self.imp().asked.set((width, height + header));
         glib::g_debug!("spiral", "preview: shaped {width}x{height}");
         self.set_content_width(width);
         self.set_content_height(height + header);
@@ -495,15 +496,16 @@ impl PreviewDialog {
     /// `width` by `height` scaled to fill the room there is, up as well as down: what is
     /// shown at a size of its own choosing keeps its proportions but not its pixel count.
     pub(super) fn shape_filled(&self, width: f64, height: f64) -> bool {
-        filled(width, height, self.imp().bounds.get())
-            .is_some_and(|(width, height)| self.shape(width, height))
+        filled(width, height, self.room()).is_some_and(|(width, height)| self.shape(width, height))
     }
 
     /// A `width` by `height` picture at its own size, within the room there is and not
     /// below the floor: a thumbnail should not open a window the size of a wall, nor a
-    /// small photograph one the size of a stamp.
+    /// small photograph one the size of a stamp. Its own size is a screen pixel to each of
+    /// its pixels, which on a scaled display is fewer points than it has pixels.
     pub(super) fn shape_fitted(&self, width: f64, height: f64) -> bool {
-        fitted(width, height, self.imp().bounds.get())
+        let scale = self.device_scale();
+        fitted(width / scale, height / scale, self.room())
             .is_some_and(|(width, height)| self.shape(width, height))
     }
 }

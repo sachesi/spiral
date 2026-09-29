@@ -23,7 +23,7 @@ impl BrowserView {
         let dialog = crate::dialogs::PreviewDialog::new();
         PREVIEW.set(&window, dialog.downgrade());
         // The preview is shaped to what it holds, within what the window can hold.
-        dialog.set_bounds(window.width(), window.height());
+        dialog.set_window(&window);
         dialog.connect_step(glib::clone!(
             #[weak(rename_to = view)]
             self,
