@@ -86,6 +86,12 @@ const ZOOM_MAX: f64 = 8.0;
 /// file, turning a page.
 type Slot<T> = RefCell<Option<Box<dyn Fn(T)>>>;
 
+thread_local! {
+    /// The preview the one player plays for. A preview over another window takes it over,
+    /// and the one it was taken from is closed: its controls would drive the other file.
+    static MEDIA_OWNER: RefCell<glib::WeakRef<PreviewDialog>> = RefCell::default();
+}
+
 mod imp {
     use super::*;
 
@@ -509,9 +515,9 @@ impl PreviewDialog {
         })
     }
 
-    /// Stop listening to the player and take its file away; the player itself stays for
-    /// the next preview.
-    fn stop_media(&self) {
+    /// Stop listening to the player and, while it is still playing for this dialog, take
+    /// its file away; the player itself stays for the next preview.
+    pub(super) fn stop_media(&self) {
         let handlers = self.imp().player_handlers.take();
         let Some(player) = crate::player::current() else {
             return;
@@ -519,7 +525,16 @@ impl PreviewDialog {
         for id in handlers {
             player.disconnect(id);
         }
-        player.set_file(None);
+        let owned = MEDIA_OWNER.with(|owner| {
+            let owned = owner.borrow().upgrade().as_ref() == Some(self);
+            if owned {
+                owner.replace(glib::WeakRef::new());
+            }
+            owned
+        });
+        if owned {
+            player.set_file(None);
+        }
     }
 }
 

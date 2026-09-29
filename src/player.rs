@@ -144,7 +144,21 @@ mod imp {
             if self.file.borrow().is_none() {
                 return false;
             }
-            !self.configured.get() || self.pipeline().set_state(gst::State::Playing).is_ok()
+            // The file on the pipeline is on its way out: playing is only remembered, for
+            // the one after it.
+            if !self.configured.get() || self.pending.borrow().is_some() {
+                return true;
+            }
+            // Played again from the end: the helper has sent all it has, and sends more only
+            // from where a seek puts it.
+            let obj = self.obj();
+            if obj.is_ended() {
+                if !obj.is_seekable() {
+                    return false;
+                }
+                obj.seek(0);
+            }
+            self.pipeline().set_state(gst::State::Playing).is_ok()
         }
 
         fn pause(&self) {
@@ -419,6 +433,11 @@ impl Player {
         }
         let _ = imp.pipeline().set_state(gst::State::Null);
         imp.configured.set(false);
+        // Playing asked for while the file before was starting would otherwise carry over
+        // to whatever file is set next.
+        if file.is_none() {
+            self.pause();
+        }
         // The helper of the file before goes, and whatever it sent with it.
         imp.session.take();
         imp.seeking.set(false);
@@ -651,7 +670,8 @@ impl Player {
                 .set_property("max-size-buffers", queued);
         }
         imp.configured.set(true);
-        let state = if self.is_playing() {
+        // A file already switched away from is not heard while it finishes starting.
+        let state = if self.is_playing() && imp.pending.borrow().is_none() {
             gst::State::Playing
         } else {
             gst::State::Paused

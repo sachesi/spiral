@@ -115,6 +115,13 @@ impl PreviewDialog {
         file: &gio::File,
     ) -> Option<crate::player::Player> {
         let player = crate::player::player()?;
+        // A preview over another window playing gives the player up first, and closes:
+        // what it shows would go on driving this file.
+        let other = MEDIA_OWNER.with(|owner| owner.replace(self.downgrade()).upgrade());
+        if let Some(other) = other.filter(|other| other != self) {
+            other.stop_media();
+            other.close();
+        }
         player.set_file(Some(file.clone()));
         let generation = self.imp().generation.get();
         let info = info.clone();

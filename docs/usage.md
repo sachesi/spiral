@@ -281,7 +281,9 @@ the theme, only the words are the scheme's. Lines are numbered down the side. Li
 way it was written, and long ones scroll sideways. The Left and Right arrows walk
 through the folder without leaving the preview, Page Up and Page Down turn the pages of a
 PDF, and Return hands the file to its application. The preview has no close button: it is
-a preview, and the keys that opened it close it again.
+a preview, and the keys that opened it close it again. Video and sound play in one
+preview at a time: a preview over another window that starts playing closes the one
+playing before it.
 
 The preview takes the proportions of what it holds, and takes them before it opens, so it
 does not resize itself in front of you. A picture opens at its own size, read from the
