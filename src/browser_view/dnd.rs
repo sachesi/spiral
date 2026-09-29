@@ -414,7 +414,15 @@ impl BrowserView {
             self.imp()
                 .pending_drop
                 .replace(Some((files, folder.clone())));
-            self.ask_drop_action(target, x, y);
+            // Once the drop is finished: the menu takes the pointer, and a drop that loses it
+            // first is finished as refused, which the source takes for a drag given up.
+            glib::idle_add_local_once(glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                #[strong]
+                target,
+                move || view.ask_drop_action(&target, x, y)
+            ));
             return true;
         }
         self.run_drop(files, folder, preferred_action(target))
