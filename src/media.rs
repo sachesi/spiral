@@ -896,9 +896,58 @@ fn try_playing(session: &mut Session) -> Result<Tried, String> {
             src
         }
     };
-    let decode = make("decodebin3")?;
+    let decode = make("decodebin3")?
+        .downcast::<gst::Bin>()
+        .map_err(|_| "decodebin3 is not a bin".to_string())?;
+    // The first stream of picture and the first of sound are played, and nothing else.
+    // decodebin3 would otherwise pick one stream of every other kind too, such as the
+    // timed metadata an iPhone writes next to its video (`mebx`), and a stream it has no
+    // decoder for stops the demuxer and the whole file. Every stream is answered: one left
+    // to decodebin3 has it pick by kind again, turned-down streams included.
+    decode.connect("select-stream", false, |args| {
+        let collection = args[1].get::<gst::StreamCollection>().ok()?;
+        let stream = args[2].get::<gst::Stream>().ok()?;
+        let first_of = |kind: gst::StreamType| {
+            stream.stream_type().contains(kind)
+                && collection
+                    .iter()
+                    .find(|s| s.stream_type().contains(kind))
+                    .is_some_and(|s| s == stream)
+        };
+        let wanted = first_of(gst::StreamType::VIDEO) || first_of(gst::StreamType::AUDIO);
+        Some(i32::from(wanted).to_value())
+    });
+    // Turning a stream down is not enough: decodebin3 refuses the caps of any stream it
+    // has no decoder for as they arrive, and the demuxer stops on that. A timed-metadata
+    // track (`meta/x-gst-fourcc-*`, one per sample entry) is taken as needing no decoder,
+    // before its caps get there: its parser's pad is announced first, on the same thread.
+    decode.connect_deep_element_added(|decode, _, element| {
+        if element.factory().is_none_or(|f| f.name() != "parsebin") {
+            return;
+        }
+        let decode = decode.downgrade();
+        element.connect_pad_added(move |_, pad| {
+            let Some(caps) = pad.current_caps() else {
+                return;
+            };
+            let Some(decode) = decode.upgrade() else {
+                return;
+            };
+            if caps
+                .structure(0)
+                .is_none_or(|s| !s.name().starts_with("meta/"))
+            {
+                return;
+            }
+            let mut raw = decode.property::<gst::Caps>("caps");
+            if !raw.can_intersect(&caps) {
+                raw.make_mut().append(caps);
+                decode.set_property("caps", &raw);
+            }
+        });
+    });
     pipeline
-        .add_many([&src, &decode])
+        .add_many([&src, decode.upcast_ref()])
         .map_err(|e| e.to_string())?;
     src.link(&decode).map_err(|e| e.to_string())?;
 
