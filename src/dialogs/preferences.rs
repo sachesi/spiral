@@ -200,6 +200,11 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
     page.add(&optional);
     dialog.add(&page);
 
+    // Only where there is a desktop to set: the file manager alone has none.
+    if glib::find_program_in_path("spiral-desktop").is_some() {
+        dialog.add(&desktop_page(&settings));
+    }
+
     let page = adw::PreferencesPage::builder()
         .title(gettext("Speed"))
         .icon_name("power-profile-performance-symbolic")
@@ -240,6 +245,152 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
 
     dialog.add(&page);
     dialog
+}
+
+/// How the desktop shows its icons, and which places it shows beside the files.
+fn desktop_page(settings: &gio::Settings) -> adw::PreferencesPage {
+    let page = adw::PreferencesPage::builder()
+        .name("desktop")
+        .title(gettext("Desktop"))
+        .icon_name("user-desktop-symbolic")
+        .build();
+    let icons = adw::PreferencesGroup::builder()
+        .title(gettext("Icons"))
+        .build();
+    icons.add(&choice_row(
+        settings,
+        "desktop-arrangement",
+        &gettext("Arrangement"),
+        Some(&gettext("Where an icon goes when it is dropped")),
+        &[
+            gettext("In a Grid"),
+            gettext("By Sort Order"),
+            gettext("Anywhere"),
+        ],
+    ));
+    icons.add(&choice_row(
+        settings,
+        "desktop-sort-key",
+        &gettext("Sort Order"),
+        Some(&gettext("While the icons are arranged by it")),
+        &[
+            gettext("Name"),
+            gettext("Size"),
+            gettext("Type"),
+            gettext("Modified"),
+        ],
+    ));
+    let reversed = adw::SwitchRow::builder()
+        .title(gettext("Reversed Order"))
+        .build();
+    settings
+        .bind("desktop-sort-reversed", &reversed, "active")
+        .build();
+    icons.add(&reversed);
+    icons.add(&choice_row(
+        settings,
+        "desktop-alignment",
+        &gettext("Alignment"),
+        Some(&gettext("The side the first column of icons is at")),
+        &[gettext("Left"), gettext("Right")],
+    ));
+    icons.add(&slider_row(
+        settings,
+        "desktop-icon-size",
+        &gettext("Icon Size"),
+        8,
+        &crate::browser_view::DESKTOP_ZOOM_SIZES,
+    ));
+    icons.add(&slider_row(
+        settings,
+        "desktop-icon-spacing",
+        &gettext("Spacing"),
+        4,
+        &[],
+    ));
+    let captions = adw::SwitchRow::builder()
+        .title(gettext("Captions"))
+        .subtitle(gettext(
+            "Those chosen for the grid of folders, under the names",
+        ))
+        .build();
+    settings
+        .bind("desktop-show-captions", &captions, "active")
+        .build();
+    icons.add(&captions);
+    page.add(&icons);
+
+    let shown = adw::PreferencesGroup::builder()
+        .title(gettext("Shown on the Desktop"))
+        .build();
+    for (key, title) in [
+        ("desktop-show-home", gettext("Home Folder")),
+        ("desktop-show-trash", gettext("Trash")),
+        ("desktop-show-drives", gettext("Mounted Drives")),
+    ] {
+        let row = adw::SwitchRow::builder().title(title).build();
+        settings.bind(key, &row, "active").build();
+        shown.add(&row);
+    }
+    page.add(&shown);
+    page
+}
+
+/// A number setting on a slider over its range, set in steps of `step`, with a mark at each
+/// of `marks`.
+fn slider_row(
+    settings: &gio::Settings,
+    key: &str,
+    title: &str,
+    step: i32,
+    marks: &[i32],
+) -> adw::ActionRow {
+    let range = settings.settings_schema().unwrap().key(key).range();
+    let (_, bounds) = range.get::<(String, glib::Variant)>().unwrap();
+    let (min, max) = bounds.get::<(i32, i32)>().unwrap();
+    let adjustment = gtk::Adjustment::new(
+        f64::from(settings.int(key)),
+        f64::from(min),
+        f64::from(max),
+        f64::from(step),
+        f64::from(step),
+        0.0,
+    );
+    let scale = gtk::Scale::builder()
+        .adjustment(&adjustment)
+        .draw_value(false)
+        .round_digits(0)
+        .hexpand(true)
+        .valign(gtk::Align::Center)
+        .build();
+    for &mark in marks {
+        scale.add_mark(f64::from(mark), gtk::PositionType::Bottom, None);
+    }
+    let row = adw::ActionRow::builder().title(title).build();
+    row.add_suffix(&scale);
+    scale.update_property(&[gtk::accessible::Property::Label(title)]);
+    let key = key.to_string();
+    adjustment.connect_value_changed(glib::clone!(
+        #[strong]
+        settings,
+        #[strong]
+        key,
+        move |adjustment| {
+            let value = (adjustment.value() / f64::from(step)).round() as i32 * step;
+            if settings.int(&key) != value {
+                let _ = settings.set_int(&key, value);
+            }
+        }
+    ));
+    settings.connect_changed(
+        Some(&key),
+        glib::clone!(
+            #[weak]
+            adjustment,
+            move |s, key| adjustment.set_value(f64::from(s.int(key)))
+        ),
+    );
+    row
 }
 
 /// The order folders open in, the same six the view menu offers. It is the default only:

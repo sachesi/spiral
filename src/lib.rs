@@ -56,6 +56,7 @@ pub mod browser_actions;
 pub mod browser_view;
 pub mod clipboard;
 pub mod dbus;
+pub mod desktop;
 pub mod details_panel;
 pub mod dialogs;
 pub mod disks;

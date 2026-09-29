@@ -129,6 +129,14 @@ impl BrowserView {
                 if files.is_empty() {
                     return None;
                 }
+                if let Some(canvas) = view.imp().canvas.get()
+                    && let Some(p) = view
+                        .imp()
+                        .stack
+                        .compute_point(canvas, &gtk::graphene::Point::new(x as f32, y as f32))
+                {
+                    canvas.note_drag(p.x().into(), p.y().into());
+                }
                 // Drag the whole row, not the cell the gesture started on.
                 if let Some(row) = row_widget(&cell) {
                     let paintable = gtk::WidgetPaintable::new(Some(&row));
@@ -214,6 +222,10 @@ impl BrowserView {
     /// not on screen when the drag starts. The wait starts again whenever the drag reaches
     /// a different folder, and is dropped when it leaves the view or lands.
     pub(super) fn hover_folder(&self, x: f64, y: f64) {
+        // Springing open would take the desktop itself somewhere else.
+        if self.desktop_mode() {
+            return;
+        }
         let imp = self.imp();
         let over = self.item_at(x, y).filter(|&pos| {
             self.model()

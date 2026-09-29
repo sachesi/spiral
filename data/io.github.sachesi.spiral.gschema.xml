@@ -29,6 +29,15 @@
     <value nick="always" value="1"/>
     <value nick="never" value="2"/>
   </enum>
+  <enum id="io.github.sachesi.spiral.Arrangement">
+    <value nick="grid" value="0"/>
+    <value nick="auto" value="1"/>
+    <value nick="free" value="2"/>
+  </enum>
+  <enum id="io.github.sachesi.spiral.Alignment">
+    <value nick="left" value="0"/>
+    <value nick="right" value="1"/>
+  </enum>
   <schema id="io.github.sachesi.spiral" path="/io/github/sachesi/spiral/">
     <key name="size-units" enum="io.github.sachesi.spiral.SizeUnits">
       <default>'decimal'</default>
@@ -166,6 +175,53 @@
     <key name="chooser-sort-reversed" type="b">
       <default>false</default>
       <summary>Reverse sort order of file chooser dialogs</summary>
+    </key>
+    <key name="desktop-arrangement" enum="io.github.sachesi.spiral.Arrangement">
+      <default>'grid'</default>
+      <summary>How the icons on the desktop are arranged</summary>
+      <description>“grid” keeps each icon in the cell of the grid it was put in, “auto” lines them up in the sort order, and “free” leaves each where it was dropped.</description>
+    </key>
+    <key name="desktop-sort-key" enum="io.github.sachesi.spiral.SortKey">
+      <default>'name'</default>
+      <summary>Sort order of the icons on the desktop</summary>
+      <description>Used while they are lined up in the sort order.</description>
+    </key>
+    <key name="desktop-sort-reversed" type="b">
+      <default>false</default>
+      <summary>Reverse the sort order of the icons on the desktop</summary>
+    </key>
+    <key name="desktop-icon-size" type="i">
+      <range min="32" max="128"/>
+      <default>64</default>
+      <summary>Size of the icons on the desktop</summary>
+    </key>
+    <key name="desktop-icon-spacing" type="i">
+      <range min="0" max="64"/>
+      <default>8</default>
+      <summary>Space between the icons on the desktop</summary>
+      <description>In pixels, between the areas each icon and its name take.</description>
+    </key>
+    <key name="desktop-alignment" enum="io.github.sachesi.spiral.Alignment">
+      <default>'right'</default>
+      <summary>Side of the desktop the icons start at</summary>
+      <description>The first column of icons is at the “left” or “right” edge.</description>
+    </key>
+    <key name="desktop-show-captions" type="b">
+      <default>false</default>
+      <summary>Show captions under the names of the icons on the desktop</summary>
+      <description>The same captions the file manager’s grid shows.</description>
+    </key>
+    <key name="desktop-show-home" type="b">
+      <default>true</default>
+      <summary>Show the home folder on the desktop</summary>
+    </key>
+    <key name="desktop-show-trash" type="b">
+      <default>true</default>
+      <summary>Show the trash on the desktop</summary>
+    </key>
+    <key name="desktop-show-drives" type="b">
+      <default>true</default>
+      <summary>Show mounted drives on the desktop</summary>
     </key>
     <key name="compression-format" type="s">
       <default>'zip'</default>

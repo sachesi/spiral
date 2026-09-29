@@ -273,7 +273,7 @@ impl BrowserView {
         ));
     }
 
-    pub(super) fn empty_trash(&self) {
+    pub(crate) fn empty_trash(&self) {
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = view)]
             self,

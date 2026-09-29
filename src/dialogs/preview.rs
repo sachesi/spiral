@@ -317,6 +317,7 @@ impl PreviewDialog {
                 move || {
                     if !presented.replace(true) {
                         dialog.present(Some(&parent));
+                        dialog.resizable_alone(&parent);
                     }
                 }
             ),
@@ -326,6 +327,17 @@ impl PreviewDialog {
         self.imp().opening.set(false);
         if !presented.replace(true) {
             self.present(Some(parent));
+            self.resizable_alone(parent);
+        }
+    }
+
+    /// Over the desktop, which has no window to hold it, the preview is a window of its
+    /// own, and one that can be made larger by hand: libadwaita makes such windows fixed.
+    fn resizable_alone(&self, parent: &gtk::Widget) {
+        if let Some(window) = self.root().and_downcast::<gtk::Window>()
+            && parent.root().and_downcast::<gtk::Window>().as_ref() != Some(&window)
+        {
+            window.set_resizable(true);
         }
     }
 

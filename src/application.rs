@@ -16,6 +16,9 @@ mod imp {
     pub struct SpiralApplication {
         pub job_manager: std::cell::OnceCell<JobManager>,
         pub file_manager1: std::cell::RefCell<Option<crate::dbus::file_manager1::Registration>>,
+        /// The desktop's own instance: no windows of its own when started, and not the
+        /// one that answers for the file manager on the bus.
+        pub desktop: std::cell::Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -41,7 +44,9 @@ mod imp {
 
         /// D-Bus activation without arguments: a window at the home folder.
         fn activate(&self) {
-            self.obj().open_window(&[]);
+            if !self.desktop.get() {
+                self.obj().open_window(&[]);
+            }
         }
 
         fn handle_local_options(&self, options: &glib::VariantDict) -> ControlFlow<glib::ExitCode> {
@@ -103,8 +108,10 @@ mod imp {
             object_path: &str,
         ) -> Result<(), glib::Error> {
             self.parent_dbus_register(connection, object_path)?;
-            self.file_manager1
-                .replace(Some(crate::dbus::file_manager1::register(connection)));
+            if !self.desktop.get() {
+                self.file_manager1
+                    .replace(Some(crate::dbus::file_manager1::register(connection)));
+            }
             Ok(())
         }
 
@@ -183,6 +190,17 @@ impl SpiralApplication {
             "",
             Some(&gettext("[FILE…]")),
         );
+        app
+    }
+
+    /// The instance the desktop runs in, apart from the file manager's own: its windows
+    /// come and go without taking the desktop with them.
+    pub fn new_desktop() -> Self {
+        let app: Self = glib::Object::builder()
+            .property("application-id", format!("{}.Desktop", config::APP_ID))
+            .property("resource-base-path", config::RESOURCE_PATH)
+            .build();
+        app.imp().desktop.set(true);
         app
     }
 

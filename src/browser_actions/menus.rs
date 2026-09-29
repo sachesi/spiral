@@ -91,7 +91,7 @@ impl BrowserView {
 
     /// The menu of the item at `pos`, which is selected unless it already is, or the
     /// folder's with no item, at a point in `stack` coordinates.
-    pub(super) fn popup_menu_on(&self, pos: Option<u32>, x: f64, y: f64) {
+    pub(crate) fn popup_menu_on(&self, pos: Option<u32>, x: f64, y: f64) {
         let imp = self.imp();
         let selection = self.model().selection();
         if let Some(pos) = pos
@@ -100,6 +100,7 @@ impl BrowserView {
             selection.select_item(pos, true);
         }
         let on_item = pos.is_some();
+        let desktop_menu;
         // The menus that are built rather than laid out follow what the actions say, so
         // they are made once the selection has been taken in.
         self.update_action_state();
@@ -109,7 +110,8 @@ impl BrowserView {
             &imp.item_menu
         } else {
             self.sync_new_menu();
-            &imp.background_menu
+            desktop_menu = imp.canvas.get().map(|c| c.background_menu());
+            desktop_menu.as_ref().unwrap_or(&imp.background_menu)
         };
         let point = imp
             .stack

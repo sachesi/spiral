@@ -37,8 +37,9 @@ impl BrowserView {
     /// top. After the change, for the same reason as picking the first result; not where
     /// the whole folder went, as it does on leaving it.
     pub(super) fn queue_select_neighbor(&self, position: u32) {
-        // Not in a file chooser, where what is selected fills the name to save under.
-        if self.chooser_mode() {
+        // Not in a file chooser, where what is selected fills the name to save under, nor
+        // on the desktop, whose icons stand in no order that has a neighbour.
+        if self.chooser_mode() || self.desktop_mode() {
             return;
         }
         glib::idle_add_local_once(glib::clone!(
@@ -129,6 +130,11 @@ impl BrowserView {
     /// Bottom-right status: selection summary while something is selected, spinner while loading.
     pub(super) fn update_floating_bar(&self) {
         let imp = self.imp();
+        // The desktop says nothing over the wallpaper.
+        if self.desktop_mode() {
+            imp.floating_bar.set_visible(false);
+            return;
+        }
         let infos = imp.model.selected_infos();
         let loading = imp.model.loading();
         imp.floating_spinner.set_visible(loading);

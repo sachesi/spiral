@@ -12,6 +12,24 @@ pub(super) const NAME_MIN_WIDTH: i32 = 220;
 /// The star column: one flat button wide.
 pub(super) const STAR_WIDTH: i32 = 40;
 
+/// Let go of what a tile made by [`BrowserView::grid_cell`] is still loading.
+pub(crate) fn unbind_grid_cell(bx: &gtk::Widget) {
+    if let Some(image) = bx
+        .first_child()
+        .and_then(|row| row.first_child())
+        .and_downcast::<gtk::Image>()
+    {
+        unbind_icon(&image);
+    }
+    if let Some(captions) = bx
+        .last_child()
+        .and_then(|l| l.last_child())
+        .and_downcast::<gtk::Label>()
+    {
+        unbind_captions(&captions);
+    }
+}
+
 impl BrowserView {
     pub(super) fn setup_grid_factory(&self) {
         let factory = gtk::SignalListItemFactory::new();
@@ -19,61 +37,7 @@ impl BrowserView {
         factory.connect_setup(move |_, item| {
             let Some(view) = view.upgrade() else { return };
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let image = gtk::Image::builder()
-                .pixel_size(view.icon_size())
-                .css_classes(["spiral-image"])
-                .build();
-            view.bind_property("icon-size", &image, "pixel-size")
-                .sync_create()
-                .build();
-            let label = gtk::Label::builder()
-                .wrap(true)
-                .wrap_mode(gtk::pango::WrapMode::WordChar)
-                .ellipsize(gtk::pango::EllipsizeMode::Middle)
-                .lines(3)
-                .max_width_chars(1)
-                .justify(gtk::Justification::Center)
-                .css_classes(["spiral-grid-name"])
-                .build();
-            name_tooltip(&label);
-            view.bind_property("icon-size", &label, "width-request")
-                .sync_create()
-                .build();
-            let captions = gtk::Label::builder()
-                .wrap(true)
-                .wrap_mode(gtk::pango::WrapMode::WordChar)
-                .ellipsize(gtk::pango::EllipsizeMode::Middle)
-                .lines(3)
-                .max_width_chars(1)
-                .justify(gtk::Justification::Center)
-                .visible(false)
-                .css_classes(["caption", "dim-label"])
-                .build();
-            view.bind_property("icon-size", &captions, "width-request")
-                .sync_create()
-                .build();
-            let labels = gtk::Box::builder()
-                .orientation(gtk::Orientation::Vertical)
-                .build();
-            labels.append(&label);
-            labels.append(&captions);
-            // Icon between two emblem-wide margins, the lock stacked at the top of the
-            // right one.
-            image.set_margin_start(EMBLEM_MARGIN);
-            image.set_hexpand(true);
-            let emblem = emblem_image();
-            emblem.set_width_request(EMBLEM_MARGIN);
-            emblem.set_valign(gtk::Align::Start);
-            let icon_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-            icon_row.append(&image);
-            icon_row.append(&emblem);
-            let bx = gtk::Box::builder()
-                .orientation(gtk::Orientation::Vertical)
-                .spacing(6)
-                .css_classes(["spiral-view-cell"])
-                .build();
-            bx.append(&icon_row);
-            bx.append(&labels);
+            let bx = view.grid_cell(false);
             item.set_child(Some(&bx));
             remember_list_item(&bx, item);
             view.setup_cell_dnd(&bx);
@@ -86,38 +50,106 @@ impl BrowserView {
                 return;
             };
             let bx = item.child().unwrap();
-            let icon_row = bx.first_child().unwrap();
-            let image = icon_row.first_child().and_downcast::<gtk::Image>().unwrap();
-            let emblem = icon_row.last_child().and_downcast::<gtk::Image>().unwrap();
-            let labels = bx.last_child().unwrap();
-            let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
-            let captions = labels.last_child().and_downcast::<gtk::Label>().unwrap();
-            view.bind_icon(&image, &emblem, &info, item.position());
-            set_cut(&bx, &info);
-            label.set_text(&info.display_name());
+            view.bind_grid_cell(&bx, &info, item.position());
             item.set_accessible_label(&info.display_name());
-            bind_tags(&bx, Some(&label), &info);
-            view.bind_captions(&captions, &info);
         });
         factory.connect_unbind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let Some(bx) = item.child() else { return };
-            if let Some(image) = bx
-                .first_child()
-                .and_then(|row| row.first_child())
-                .and_downcast::<gtk::Image>()
-            {
-                unbind_icon(&image);
-            }
-            if let Some(captions) = bx
-                .last_child()
-                .and_then(|l| l.last_child())
-                .and_downcast::<gtk::Label>()
-            {
-                unbind_captions(&captions);
+            if let Some(bx) = item.child() {
+                unbind_grid_cell(&bx);
             }
         });
         self.imp().grid_view.set_factory(Some(&factory));
+    }
+
+    /// A tile of the grid: the icon between two emblem-wide margins, the name under it and
+    /// the captions under that. The name is as wide as the icon in the grid; on the desktop
+    /// it is as wide as it needs up to a little more, so what is drawn behind it fits it.
+    pub(crate) fn grid_cell(&self, desktop: bool) -> gtk::Box {
+        let image = gtk::Image::builder()
+            .pixel_size(self.icon_size())
+            .css_classes(["spiral-image"])
+            .build();
+        self.bind_property("icon-size", &image, "pixel-size")
+            .sync_create()
+            .build();
+        let label = gtk::Label::builder()
+            .wrap(true)
+            .wrap_mode(gtk::pango::WrapMode::WordChar)
+            .ellipsize(gtk::pango::EllipsizeMode::Middle)
+            .lines(if desktop { canvas::NAME_LINES } else { 3 })
+            .max_width_chars(1)
+            .justify(gtk::Justification::Center)
+            .css_classes(["spiral-grid-name"])
+            .build();
+        name_tooltip(&label);
+        self.size_name(&label, desktop);
+        let captions = gtk::Label::builder()
+            .wrap(true)
+            .wrap_mode(gtk::pango::WrapMode::WordChar)
+            .ellipsize(gtk::pango::EllipsizeMode::Middle)
+            .lines(3)
+            .max_width_chars(1)
+            .justify(gtk::Justification::Center)
+            .visible(false)
+            .css_classes(["caption", "dim-label"])
+            .build();
+        self.size_name(&captions, desktop);
+        let labels = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .build();
+        if desktop {
+            labels.set_halign(gtk::Align::Center);
+        }
+        labels.append(&label);
+        labels.append(&captions);
+        // Icon between two emblem-wide margins, the lock stacked at the top of the
+        // right one.
+        image.set_margin_start(EMBLEM_MARGIN);
+        image.set_hexpand(true);
+        let emblem = emblem_image();
+        emblem.set_width_request(EMBLEM_MARGIN);
+        emblem.set_valign(gtk::Align::Start);
+        let icon_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        icon_row.append(&image);
+        icon_row.append(&emblem);
+        let bx = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .spacing(6)
+            .css_classes(["spiral-view-cell"])
+            .build();
+        bx.append(&icon_row);
+        bx.append(&labels);
+        bx
+    }
+
+    fn size_name(&self, label: &gtk::Label, desktop: bool) {
+        if desktop {
+            label.set_halign(gtk::Align::Center);
+            self.bind_property("icon-size", label, "max-width-chars")
+                .transform_to(|_, size: i32| Some((size + canvas::NAME_EXTRA) / 7))
+                .sync_create()
+                .build();
+        } else {
+            self.bind_property("icon-size", label, "width-request")
+                .sync_create()
+                .build();
+        }
+    }
+
+    /// Show `info` in a tile made by [`Self::grid_cell`], the item at `at` in the model.
+    pub(crate) fn bind_grid_cell(&self, bx: &gtk::Widget, info: &gio::FileInfo, at: u32) {
+        let icon_row = bx.first_child().unwrap();
+        let image = icon_row.first_child().and_downcast::<gtk::Image>().unwrap();
+        let emblem = icon_row.last_child().and_downcast::<gtk::Image>().unwrap();
+        let labels = bx.last_child().unwrap();
+        let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
+        let captions = labels.last_child().and_downcast::<gtk::Label>().unwrap();
+        self.bind_icon(&image, &emblem, info, at);
+        set_cut(bx, info);
+        label.set_text(&info.display_name());
+        bind_tags(bx, Some(&label), info);
+        self.bind_captions(&captions, info);
     }
 
     /// Let the grid have as many columns as fit, and no more. It keeps thirty rows of

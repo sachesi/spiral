@@ -61,9 +61,12 @@ impl BrowserView {
         };
 
         add("open", |v| {
+            if let Some(canvas) = v.desktop_canvas() {
+                canvas.open_selected_places();
+            }
             for info in v.model().selected_infos() {
                 let file = file_utils::file_of(&info);
-                if file_utils::is_dir(&info) {
+                if file_utils::is_dir(&info) && !v.desktop_mode() {
                     v.go_to(&file);
                     break;
                 } else if let Some(target) = file_utils::target_of(&info) {
@@ -99,6 +102,9 @@ impl BrowserView {
         });
         add("select-all", |v| {
             v.model().selection().select_all();
+            if let Some(canvas) = v.desktop_canvas() {
+                canvas.select_all_places();
+            }
         });
         add("invert-selection", |v| {
             let model = v.model();
@@ -106,6 +112,9 @@ impl BrowserView {
             let inverted = all.copy();
             inverted.subtract(&model.selection().selection());
             model.selection().set_selection(&inverted, &all);
+            if let Some(canvas) = v.desktop_canvas() {
+                canvas.invert_places();
+            }
         });
         add("select-pattern", |v| v.select_pattern());
         add("zoom-in", |v| v.zoom(1));

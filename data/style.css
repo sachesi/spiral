@@ -379,3 +379,54 @@ modelbutton > popover.menu > contents {
 levelbar.spiral-nearly-full > trough > block.filled {
   background-color: var(--warning-bg-color);
 }
+
+/* The desktop: its surface lets the wallpaper through, and the names stand on it with a
+   shadow. */
+window.spiral-desktop-window,
+window.spiral-desktop-window > * {
+  background: none;
+}
+spiral-desktop .spiral-desktop-tile {
+  border-radius: 12px;
+  padding: 4px 0;
+}
+spiral-desktop .spiral-desktop-tile .spiral-grid-name {
+  color: white;
+  text-shadow: 0 1px 2px alpha(black, 0.8), 0 0 6px alpha(black, 0.6);
+}
+/* Hover and selection light the tile as the grid does its items, in its neutral grey. */
+spiral-desktop .spiral-desktop-tile:hover {
+  background-color: color-mix(in srgb, #959595 12%, transparent);
+}
+spiral-desktop .spiral-desktop-tile.selected {
+  background-color: color-mix(in srgb, #959595 25%, transparent);
+}
+spiral-desktop .spiral-desktop-tile.selected:hover {
+  background-color: color-mix(in srgb, #959595 32%, transparent);
+}
+@media (prefers-contrast: more) {
+  spiral-desktop .spiral-desktop-tile:hover,
+  spiral-desktop .spiral-desktop-tile.selected {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, white 50%, transparent);
+  }
+}
+spiral-desktop.keyboard .spiral-desktop-tile.cursor {
+  outline: 2px solid color-mix(in srgb, var(--accent-color) 50%, transparent);
+  outline-offset: -2px;
+}
+@media (prefers-contrast: more) {
+  spiral-desktop.keyboard .spiral-desktop-tile.cursor {
+    outline-color: color-mix(in srgb, var(--accent-color) 80%, transparent);
+  }
+}
+/* Files dropped on the empty desktop land where they are dropped; the whole desktop lit up
+   as the target would only draw a line along its edges. */
+window.spiral-desktop-window stack:drop(active) {
+  box-shadow: none;
+  outline: none;
+}
+spiral-desktop .spiral-desktop-band {
+  background-color: alpha(var(--accent-bg-color), 0.2);
+  border: 1px solid var(--accent-bg-color);
+  border-radius: 4px;
+}

@@ -13,6 +13,7 @@ use crate::folder_model::FolderModel;
 use crate::object_data::Key;
 use crate::{adw, gdk, gio, glib, gtk};
 
+mod canvas;
 mod cells;
 mod columns;
 mod dnd;
@@ -20,7 +21,10 @@ mod navigation;
 mod opening;
 mod selection;
 
+pub use canvas::IconCanvas;
+pub(crate) use canvas::ZOOM_SIZES as DESKTOP_ZOOM_SIZES;
 pub(crate) use cells::*;
+use columns::unbind_grid_cell;
 pub(crate) use dnd::*;
 use navigation::*;
 use opening::*;
@@ -167,6 +171,11 @@ mod imp {
         /// Portal chooser mode: no destructive actions, activation selects instead of launching.
         #[property(get, set, construct_only)]
         pub chooser_mode: Cell<bool>,
+        /// The desktop: the icons of the folder where they were put, on a surface under
+        /// the windows, and folders opened elsewhere rather than in it.
+        #[property(get, set, construct_only)]
+        pub desktop_mode: Cell<bool>,
+        pub canvas: std::cell::OnceCell<IconCanvas>,
         /// Actions kept off whatever the selection, by `withhold_action`.
         pub withheld: RefCell<Vec<String>>,
 
@@ -298,6 +307,8 @@ mod imp {
                 hover_timer: Default::default(),
                 drop_row: Default::default(),
                 chooser_mode: Default::default(),
+                desktop_mode: Default::default(),
+                canvas: Default::default(),
                 withheld: Default::default(),
                 actions: gio::SimpleActionGroup::new(),
                 popover: Default::default(),
@@ -357,6 +368,11 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
             let obj = self.obj();
+            if obj.desktop_mode() {
+                let canvas = IconCanvas::new(&obj);
+                self.stack.add_named(&canvas, Some("desktop"));
+                self.canvas.set(canvas).ok();
+            }
             obj.setup_actions();
             obj.setup_drag_source();
             obj.setup_background_click();
@@ -396,15 +412,28 @@ mod imp {
                     obj,
                     #[upgrade_or]
                     false,
-                    move |t, value, x, y| match obj.location() {
-                        // The folder under the pointer takes the drop. Cells carry targets
-                        // of their own, but only the grid's ever see a drag: in a column
-                        // view the crossing never reaches them, so the view looks for itself.
-                        Some(loc) if !obj.in_side_column(x, y) => {
-                            let dest = obj.folder_at(x, y).unwrap_or(loc);
-                            obj.drop_files(t, value, &dest, x, y)
+                    move |t, value, x, y| {
+                        if let Some(canvas) = obj.imp().canvas.get()
+                            && obj.folder_at(x, y).is_none()
+                            && let Ok(list) = value.get::<gtk::gdk::FileList>()
+                            && let Some(p) = obj.imp().stack.compute_point(
+                                canvas,
+                                &gtk::graphene::Point::new(x as f32, y as f32),
+                            )
+                            && canvas.take_drop(&list.files(), p.x().into(), p.y().into())
+                        {
+                            return true;
                         }
-                        _ => false,
+                        match obj.location() {
+                            // The folder under the pointer takes the drop. Cells carry targets
+                            // of their own, but only the grid's ever see a drag: in a column
+                            // view the crossing never reaches them, so the view looks for itself.
+                            Some(loc) if !obj.in_side_column(x, y) => {
+                                let dest = obj.folder_at(x, y).unwrap_or(loc);
+                                obj.drop_files(t, value, &dest, x, y)
+                            }
+                            _ => false,
+                        }
                     }
                 ));
                 self.stack.add_controller(target);
@@ -499,8 +528,15 @@ mod imp {
             self.settings
                 .connect_changed(Some("click-policy"), apply_click);
             // Each view zooms on its own, starting from the size last zoomed to.
-            let start = gio::SettingsBindFlags::GET | gio::SettingsBindFlags::GET_NO_CHANGES;
-            let (grid_key, list_key) = if obj.chooser_mode() {
+            // The desktop follows its size as it is set; a window zooms on its own.
+            let start = if obj.desktop_mode() {
+                gio::SettingsBindFlags::GET
+            } else {
+                gio::SettingsBindFlags::GET | gio::SettingsBindFlags::GET_NO_CHANGES
+            };
+            let (grid_key, list_key) = if obj.desktop_mode() {
+                ("desktop-icon-size", "list-zoom")
+            } else if obj.chooser_mode() {
                 ("chooser-grid-zoom", "chooser-list-zoom")
             } else {
                 ("grid-zoom", "list-zoom")
@@ -794,6 +830,31 @@ impl BrowserView {
         &self.imp().actions
     }
 
+    /// The icons of the desktop, when this is the desktop.
+    pub fn desktop_canvas(&self) -> Option<IconCanvas> {
+        self.imp().canvas.get().cloned()
+    }
+
+    /// The desktop, showing `location`, the desktop folder.
+    pub fn new_desktop(location: &gio::File) -> Self {
+        let view: Self = glib::Object::builder()
+            .property("desktop-mode", true)
+            .build();
+        for name in [
+            "open-new-tab",
+            "open-new-window",
+            "open-item-location",
+            "open-item-location-new-tab",
+            "copy-to-other-pane",
+            "move-to-other-pane",
+            "bookmark",
+        ] {
+            view.withhold_action(name);
+        }
+        view.go_to(location);
+        view
+    }
+
     pub fn new_chooser(location: &gio::File) -> Self {
         let view: Self = glib::Object::builder()
             .property("chooser-mode", true)
@@ -830,7 +891,9 @@ impl BrowserView {
     /// Where the sort order is kept: a chooser has keys of its own, so ordering a dialog
     /// leaves the file manager's windows as they were, and is there again next time.
     pub(crate) fn sort_keys(&self) -> (&'static str, &'static str) {
-        if self.chooser_mode() {
+        if self.desktop_mode() {
+            ("desktop-sort-key", "desktop-sort-reversed")
+        } else if self.chooser_mode() {
             ("chooser-sort-key", "chooser-sort-reversed")
         } else {
             ("sort-key", "sort-reversed")
@@ -896,6 +959,12 @@ impl BrowserView {
         // The default may have changed meanwhile, from another window or pane.
         if self.global_sort() != (imp.model.sort_key(), imp.model.sort_reversed()) {
             self.apply_global_sort();
+        }
+        // The desktop is a grid in its own order, whatever the file manager remembers for
+        // its folder.
+        if self.desktop_mode() {
+            self.set_view_mode(ViewMode::Grid);
+            return;
         }
         // A chooser keeps one view of its own; per-folder memory and guessing are for
         // the file manager.
@@ -1032,6 +1101,9 @@ impl BrowserView {
     /// The key the size of the icons shown starts from, and the sizes zooming steps
     /// through. A chooser keeps its own, as it does its view and order.
     fn zoom_key(&self) -> (&'static str, &'static [i32]) {
+        if self.desktop_mode() {
+            return ("desktop-icon-size", &canvas::ZOOM_SIZES);
+        }
         match (self.view_mode() == ViewMode::Grid, self.chooser_mode()) {
             (true, false) => ("grid-zoom", &GRID_ZOOM_SIZES),
             (true, true) => ("chooser-grid-zoom", &GRID_ZOOM_SIZES),
@@ -1056,23 +1128,19 @@ impl BrowserView {
         }
     }
 
-    /// Where the icons shown are among the sizes zooming steps through.
-    fn zoom_index(&self) -> usize {
-        let (_, sizes) = self.zoom_key();
-        let size = self.zoom_size();
-        sizes
-            .iter()
-            .position(|&z| z >= size)
-            .unwrap_or(sizes.len() - 1)
-    }
-
-    /// Zoom the icons shown `step` sizes in, and start new views of the kind at the size
-    /// they end up at. Other views, here and in other windows, keep theirs.
+    /// Zoom the icons shown in to the next of the sizes zooming steps through, or out
+    /// for a negative `step`, and start new views of the kind at the size they end up at.
+    /// Other views, here and in other windows, keep theirs. A size set between two of
+    /// them, as the desktop's can be, goes to the nearer one on that side.
     pub fn zoom(&self, step: i32) {
         let (key, sizes) = self.zoom_key();
-        let next = (self.zoom_index() as i32 + step).clamp(0, sizes.len() as i32 - 1);
-        let size = sizes[next as usize];
-        if size != self.zoom_size() {
+        let now = self.zoom_size();
+        let next = if step > 0 {
+            sizes.iter().find(|&&z| z > now)
+        } else {
+            sizes.iter().rev().find(|&&z| z < now)
+        };
+        if let Some(&size) = next {
             self.set_zoom_size(size);
             let _ = self.imp().settings.set_int(key, size);
         }
@@ -1088,13 +1156,20 @@ impl BrowserView {
 
     fn sync_zoom_actions(&self) {
         let (_, sizes) = self.zoom_key();
-        let at = self.zoom_index();
-        self.set_enabled("zoom-in", at + 1 < sizes.len());
-        self.set_enabled("zoom-out", at > 0);
+        let now = self.zoom_size();
+        self.set_enabled("zoom-in", sizes.last().is_some_and(|&z| now < z));
+        self.set_enabled("zoom-out", sizes.first().is_some_and(|&z| now > z));
     }
 
     fn update_stack(&self) {
         let imp = self.imp();
+        // The desktop is the desktop whatever its folder holds; when the folder cannot be
+        // read it is empty, with the places beside it still there.
+        if let Some(canvas) = imp.canvas.get() {
+            imp.stack.set_visible_child_name("desktop");
+            canvas.set_model(&imp.model.selection());
+            return;
+        }
         let empty = !imp.model.loading() && imp.model.n_items() == 0;
         let name = if let Some(msg) = imp.model.error_message() {
             match &*imp.mounting.borrow() {
@@ -1212,7 +1287,11 @@ impl BrowserView {
             self,
             move |gesture, _, x, y| {
                 let stack = view.imp().stack.clone().upcast::<gtk::Widget>();
-                if cell_at(&stack, x, y).is_some() || view.in_side_column(x, y) {
+                // The desktop's places are no cells, and the desktop sees to its own presses.
+                if view.desktop_mode()
+                    || cell_at(&stack, x, y).is_some()
+                    || view.in_side_column(x, y)
+                {
                     return;
                 }
                 view.grab_view_focus();
@@ -1234,6 +1313,7 @@ impl BrowserView {
             Some("grid") => imp.grid_view.grab_focus(),
             Some("columns") => imp.miller_list.grab_focus(),
             Some("list") => imp.column_view.grab_focus(),
+            Some("desktop") => imp.canvas.get().is_some_and(|c| c.grab_focus()),
             // The empty and the error page have no view to hand the keyboard to, so the box
             // around each takes it. Handing it to a view that is not on screen leaves it on
             // a widget outside everything the window looks at, and the keys bound to the

@@ -33,7 +33,7 @@ impl BrowserView {
             return;
         };
         let file = file_utils::file_of(&info);
-        if file_utils::is_dir(&info) {
+        if file_utils::is_dir(&info) && !self.desktop_mode() {
             self.go_to(&file);
         } else if let Some(target) = file_utils::target_of(&info) {
             self.open_target(target, file_utils::listed_as(&info));

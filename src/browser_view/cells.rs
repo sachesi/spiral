@@ -290,7 +290,8 @@ pub(crate) fn cell_at(root: &gtk::Widget, x: f64, y: f64) -> Option<gtk::Widget>
 pub(crate) fn row_widget(inner: &gtk::Widget) -> Option<gtk::Widget> {
     let mut w = inner.clone();
     while let Some(parent) = w.parent() {
-        if parent.is::<gtk::ListView>() || parent.is::<gtk::GridView>() {
+        if parent.is::<gtk::ListView>() || parent.is::<gtk::GridView>() || parent.is::<IconCanvas>()
+        {
             return Some(w);
         }
         w = parent;
@@ -302,7 +303,7 @@ pub(crate) fn row_widget(inner: &gtk::Widget) -> Option<gtk::Widget> {
 pub(super) fn each_cell(root: &gtk::Widget, f: &mut impl FnMut(&gtk::Widget)) {
     let mut child = root.first_child();
     while let Some(c) = child {
-        if LIST_ITEM.has(&c) {
+        if LIST_ITEM.has(&c) || canvas::SLOT.has(&c) {
             f(&c);
         } else {
             each_cell(&c, f);
@@ -321,25 +322,34 @@ pub(super) fn cell_emblem(cell: &gtk::Widget) -> Option<gtk::Image> {
 }
 
 pub(crate) fn cell_position(cell: &impl IsA<gtk::Widget>) -> Option<u32> {
-    let pos = LIST_ITEM
-        .get(cell.upcast_ref::<gtk::Widget>())?
-        .upgrade()?
-        .position();
+    let cell = cell.upcast_ref::<gtk::Widget>();
+    if let Some(slot) = canvas::SLOT.get(cell) {
+        return Some(slot.get());
+    }
+    let pos = LIST_ITEM.get(cell)?.upgrade()?.position();
     (pos != gtk::INVALID_LIST_POSITION).then_some(pos)
 }
 
 impl BrowserView {
     /// Caption lines under the name, per the `captions` setting. Folder item counts arrive async.
-    pub(super) fn bind_captions(&self, label: &gtk::Label, info: &gio::FileInfo) {
-        unbind_captions(label);
-        let kinds: Vec<String> = self
-            .imp()
-            .settings
+    /// The captions shown under a name in the grid, in order; none on the desktop unless it
+    /// is set to show them.
+    pub(super) fn caption_kinds(&self) -> Vec<String> {
+        let settings = &self.imp().settings;
+        if self.desktop_mode() && !settings.boolean("desktop-show-captions") {
+            return Vec::new();
+        }
+        settings
             .strv("captions")
             .iter()
             .map(|s| s.to_string())
             .filter(|s| s != "none")
-            .collect();
+            .collect()
+    }
+
+    pub(super) fn bind_captions(&self, label: &gtk::Label, info: &gio::FileInfo) {
+        unbind_captions(label);
+        let kinds = self.caption_kinds();
         if kinds.is_empty() {
             label.set_visible(false);
             return;
