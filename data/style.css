@@ -494,6 +494,9 @@ window.spiral-prompt-window.glass .spiral-prompt .boxed-list {
   min-height: 36px;
   border-radius: 99px;
 }
+window.spiral-prompt-window.glass .spiral-prompt button.suggested-action:not(:disabled) {
+  background-color: alpha(var(--accent-bg-color), 0.75);
+}
 spiral-desktop .spiral-desktop-band {
   background-color: alpha(var(--accent-bg-color), 0.2);
   border: 1px solid var(--accent-bg-color);

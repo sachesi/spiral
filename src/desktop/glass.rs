@@ -26,10 +26,14 @@ const FROST: u32 = 4;
 /// The stylesheet's tiers the desktop's parts are of.
 const MENU: &str = "glass-menu";
 const DIALOG: &str = "glass-dialog";
+/// A part set into another's glass, which keeps its own colours.
+const INSET: &str = "glass-inset";
 /// Of a menu's card, as the stylesheet rounds it.
 const CARD_RADIUS: i32 = 36;
 /// Of the window a prompt over the desktop opens in, as the stylesheet rounds it.
 const PROMPT_RADIUS: i32 = 28;
+/// Of a prompt's list of rows, as libadwaita rounds a boxed list.
+const LIST_RADIUS: i32 = 12;
 /// How far inside the rectangle GTK places a menu by its card is, sideways and at the top:
 /// the stylesheet's margins around the card, less what GTK counts of them as the shadow's
 /// (2px sideways and none at the top, for `0 2px 6px`).
@@ -194,6 +198,18 @@ pub(crate) fn dress_prompt(dialog: &adw::Dialog) {
         if let Some(glass) = shared() {
             glass.glaze(&window, Corners::Radius(PROMPT_RADIUS), DIALOG);
             glass.attach(&window, Corners::Radius(PROMPT_RADIUS), DIALOG);
+            // After the window, for the compositor to draw them over it.
+            each_descendant(&window, &mut |widget| {
+                let corners = if widget.is::<gtk::Button>() {
+                    Corners::Pill
+                } else if widget.has_css_class("boxed-list") {
+                    Corners::Radius(LIST_RADIUS)
+                } else {
+                    return;
+                };
+                glass.glaze(widget, corners, INSET);
+                glass.attach(widget, corners, INSET);
+            });
         }
     });
 }
@@ -302,9 +318,10 @@ impl Glass {
     fn attach(&self, part: &gtk::Widget, corners: Corners, tier: &str) {
         let on = self.on();
         let light = !adw::StyleManager::default().is_dark();
-        set_class(part, "glass", on);
+        let inset = tier == INSET;
+        set_class(part, "glass", on && !inset);
         set_class(part, tier, on);
-        set_class(part, "light", on && light);
+        set_class(part, "light", on && light && !inset);
         if !on {
             self.detach(part);
             return;
