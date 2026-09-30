@@ -147,11 +147,7 @@ pub async fn run(
             return;
         }
         let Ok(en) = dir
-            .enumerate_children_future(
-                file_utils::ATTRIBUTES,
-                gio::FileQueryInfoFlags::NOFOLLOW_SYMLINKS,
-                PRIO,
-            )
+            .enumerate_children_future(file_utils::ATTRIBUTES, gio::FileQueryInfoFlags::NONE, PRIO)
             .await
         else {
             continue;
@@ -192,5 +188,52 @@ pub async fn run(
                 found(hits);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A link found by a search is described by what it points to, as it is in its folder,
+    /// and a linked folder is a hit without what is in it being found a second time.
+    #[test]
+    fn a_link_is_found_as_what_it_points_to() {
+        let dir = std::env::temp_dir().join(format!("spiral-search-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("inside")).unwrap();
+        std::fs::write(dir.join("inside/note.txt"), "words").unwrap();
+        std::os::unix::fs::symlink("inside/note.txt", dir.join("note-link.txt")).unwrap();
+        std::os::unix::fs::symlink("inside", dir.join("note-folder")).unwrap();
+        let query = Query {
+            text: "note".into(),
+            kind: "any".into(),
+            recursive: true,
+            ..Default::default()
+        };
+        let mut hits = Vec::new();
+        let context = glib::MainContext::new();
+        context
+            .with_thread_default(|| {
+                context.block_on(run(
+                    gio::File::for_path(&dir),
+                    query,
+                    || true,
+                    |found| hits.extend(found),
+                ));
+            })
+            .unwrap();
+        let mut names: Vec<String> = hits.iter().map(|i| i.display_name().into()).collect();
+        names.sort();
+        assert_eq!(names, ["note-folder", "note-link.txt", "note.txt"]);
+        let named = |name: &str| hits.iter().find(|i| i.display_name() == name).unwrap();
+        let link = named("note-link.txt");
+        assert!(link.is_symlink());
+        assert_eq!(
+            file_utils::content_type_of(link),
+            file_utils::content_type_of(named("note.txt"))
+        );
+        assert!(file_utils::is_dir(named("note-folder")));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
