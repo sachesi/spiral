@@ -344,10 +344,7 @@ impl BrowserView {
         let star_col = self.star_column();
         cv.append_column(&star_col);
         columns.push(("star", star_col));
-        // Search results come from anywhere below the folder; say where. A chooser searches
-        // the one folder, so every result is in it and the column would say the same thing
-        // on every row.
-        let searchable_below = !self.chooser_mode();
+        // Search results come from anywhere below the folder; say where.
         let location_col = text_col(
             gettext("Location"),
             0.0,
@@ -386,7 +383,7 @@ impl BrowserView {
         self.imp().model.connect_searching_notify(glib::clone!(
             #[weak]
             location_col,
-            move |m| location_col.set_visible(searchable_below && m.searching())
+            move |m| location_col.set_visible(m.searching())
         ));
         let column = |key: &str| {
             columns

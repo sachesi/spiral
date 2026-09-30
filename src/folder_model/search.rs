@@ -56,11 +56,6 @@ impl FolderModel {
         ));
     }
 
-    /// Keep a search inside the folder being shown, wherever the preference stands.
-    pub fn set_search_recursive(&self, recursive: bool) {
-        self.imp().search_recursive.set(recursive);
-    }
-
     /// Drop the results and search again after a short pause, so typing does not start a
     /// walk per keystroke.
     pub(super) fn restart_search(&self) {
@@ -103,9 +98,7 @@ impl FolderModel {
             },
             kind: imp.search_kind.borrow().clone(),
             since: crate::search::since_for(&imp.search_date.borrow()),
-            recursive: imp.search_recursive.get()
-                && !imp.is_list()
-                && crate::prefs::recursive_search_for(&root),
+            recursive: !imp.is_list() && crate::prefs::recursive_search_for(&root),
             show_hidden: imp.show_hidden.get(),
         };
         glib::spawn_future_local(glib::clone!(

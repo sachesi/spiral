@@ -91,9 +91,6 @@ mod imp {
         /// index and the settings -- and a column view makes and drops models as it walks,
         /// so they have to come off again.
         tree_handler: RefCell<Option<glib::SignalHandlerId>>,
-        /// Whether a search walks the folders below this one. A file chooser searches the
-        /// folder it is showing and nothing else: it is picking a file, not looking for one.
-        pub search_recursive: Cell<bool>,
         /// Root of the pipeline while searching; filled by `search::run`.
         pub search_store: gio::ListStore,
         pub search_gen: Cell<u64>,
@@ -185,7 +182,6 @@ mod imp {
                 starred_handler: Default::default(),
                 tags_handler: Default::default(),
                 tree_handler: Default::default(),
-                search_recursive: Cell::new(true),
                 search_store: gio::ListStore::new::<gio::FileInfo>(),
                 search_gen: Default::default(),
                 hidden_filter,

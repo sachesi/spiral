@@ -304,7 +304,6 @@ async fn run(
         .popover(&view_popover)
         .build();
 
-    // Search: the folder being shown, nothing under it.
     let search_entry = gtk::SearchEntry::builder()
         .placeholder_text(gettext("Search this folder"))
         .hexpand(true)

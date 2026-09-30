@@ -860,9 +860,6 @@ impl BrowserView {
         let view: Self = glib::Object::builder()
             .property("chooser-mode", true)
             .build();
-        // A dialog searches the folder it is showing, not the tree below it: what is being
-        // asked for is a file in a folder, and a walk of the disk is not part of the answer.
-        view.model().set_search_recursive(false);
         view.go_to(location);
         view
     }

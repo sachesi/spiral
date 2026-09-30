@@ -34,10 +34,9 @@ view or order, and folders are not remembered one by one as they are there. Hidd
 are the one thing shared: the dialog shows them when `show-hidden` says so, and turning
 them on here turns them on in the file manager's windows too.
 
-The search button, or Ctrl+F, or simply typing, searches the folder on screen and only
-that one: a dialog is being asked for a file in a folder, not for a walk of the disk, so
-the "Search in Subfolders" preference does not apply and results carry no location column.
-Leaving the folder ends the search.
+The search button, or Ctrl+F, or simply typing, searches the folder on screen and, as the
+"Search in Subfolders" preference has it, the folders below it; the list view says where
+each result lives. Leaving the folder ends the search.
 
 Honoured request options: title, accept label, modal, multiple, directory, filters and
 current filter (glob and MIME), choices (combos become dropdowns, booleans check boxes),
