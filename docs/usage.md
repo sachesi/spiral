@@ -150,8 +150,9 @@ A folder opened takes the keyboard with it, so the keys that act on files work a
 it is on screen, without a click first.
 
 Files and folders you cannot read or change carry a small lock, and the actions they do
-not allow (cut, rename, trash, delete) are greyed out. Folders you are looking at update
-themselves when something else creates, deletes or rewrites a file in them.
+not allow (cut, rename, trash, delete) are greyed out. Symbolic links carry a small arrow.
+Folders you are looking at update themselves when something else creates, deletes or
+rewrites a file in them.
 
 With "Expandable Folders in List View" on, every folder in the list gets an arrow that
 unfolds its contents in place, as deep as you like; the grid never shows children.

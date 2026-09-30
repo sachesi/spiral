@@ -13,8 +13,8 @@ use std::time::Duration;
 use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
 use crate::browser_view::{
-    BrowserView, bind_tags, emblem_image, keeps_own_view, preferred_action, remember_list_item,
-    remembered, remembered_sort, set_cut, unbind_icon,
+    BrowserView, bind_tags, emblem_image, keeps_own_view, link_image, preferred_action,
+    remember_list_item, remembered, remembered_sort, set_cut, unbind_icon,
 };
 use crate::enums::ViewMode;
 use crate::file_utils;
@@ -539,7 +539,7 @@ impl BrowserView {
                 .is_some_and(|w| !w.has_css_class("spiral-miller-current"))
     }
 
-    /// Icon, name and lock emblem. Only the current folder's column carries the position
+    /// Icon, name, link and lock emblems. Only the current folder's column carries the position
     /// and the drop targets the shared view code reads back.
     fn miller_factory(&self, current: bool) -> gtk::SignalListItemFactory {
         let factory = gtk::SignalListItemFactory::new();
@@ -568,6 +568,7 @@ impl BrowserView {
                 .build();
             crate::browser_view::name_tooltip(&label);
             bx.append(&label);
+            bx.append(&link_image());
             bx.append(&emblem_image());
             item.set_child(Some(&bx));
             if current {
@@ -586,7 +587,8 @@ impl BrowserView {
             let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
             let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
-            view.bind_icon(&image, &emblem, &info, item.position());
+            let link = emblem.prev_sibling().and_downcast::<gtk::Image>().unwrap();
+            view.bind_icon(&image, &emblem, &link, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             item.set_accessible_label(&info.display_name());

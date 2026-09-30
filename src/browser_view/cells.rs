@@ -82,6 +82,18 @@ pub(super) fn set_emblem(emblem: &gtk::Image, locked: bool) {
     emblem.set_icon_name(locked.then_some("changes-prevent-symbolic"));
 }
 
+/// Mark shown on symbolic links, next to the lock. It takes no room in a row when empty.
+pub(crate) fn link_image() -> gtk::Image {
+    let link = emblem_image();
+    link.set_visible(false);
+    link
+}
+
+fn set_link(link: &gtk::Image, is_link: bool) {
+    link.set_icon_name(is_link.then_some("go-jump-symbolic"));
+    link.set_visible(is_link);
+}
+
 /// A tag's colour as a dot; CSS paints it.
 pub(crate) fn tag_dot(color: &str) -> gtk::Image {
     gtk::Image::builder()
@@ -312,11 +324,13 @@ pub(super) fn each_cell(root: &gtk::Widget, f: &mut impl FnMut(&gtk::Widget)) {
     }
 }
 
-/// The lock emblem of a grid or list name cell: its last child, or the icon row's.
+/// The lock emblem of a grid or list name cell: its last child, or the first of the
+/// emblems that end the icon row.
 pub(super) fn cell_emblem(cell: &gtk::Widget) -> Option<gtk::Image> {
     cell.last_child().and_downcast::<gtk::Image>().or_else(|| {
         cell.first_child()?
-            .last_child()
+            .last_child()?
+            .first_child()
             .and_downcast::<gtk::Image>()
     })
 }
@@ -400,11 +414,12 @@ impl BrowserView {
     }
 
     /// Icon now, thumbnail later (cancelled on unbind); the lock emblem for files that
-    /// cannot be read or changed.
+    /// cannot be read or changed, and the link emblem for symbolic links.
     pub(crate) fn bind_icon(
         &self,
         image: &gtk::Image,
         emblem: &gtk::Image,
+        link: &gtk::Image,
         info: &gio::FileInfo,
         at: u32,
     ) {
@@ -413,6 +428,7 @@ impl BrowserView {
             emblem,
             file_utils::is_locked(info, self.imp().can_write.get()),
         );
+        set_link(link, info.is_symlink());
         image.set_from_gicon(&crate::file_utils::icon_of(info));
         if file_utils::is_hidden(info) {
             image.add_css_class("hidden-file");

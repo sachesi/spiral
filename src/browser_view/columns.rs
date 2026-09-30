@@ -107,16 +107,20 @@ impl BrowserView {
         }
         labels.append(&label);
         labels.append(&captions);
-        // Icon between two emblem-wide margins, the lock stacked at the top of the
-        // right one.
+        // Icon between two emblem-wide margins, the lock and the link mark stacked at
+        // the top of the right one.
         image.set_margin_start(EMBLEM_MARGIN);
         image.set_hexpand(true);
-        let emblem = emblem_image();
-        emblem.set_width_request(EMBLEM_MARGIN);
-        emblem.set_valign(gtk::Align::Start);
+        let emblems = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .width_request(EMBLEM_MARGIN)
+            .valign(gtk::Align::Start)
+            .build();
+        emblems.append(&emblem_image());
+        emblems.append(&link_image());
         let icon_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         icon_row.append(&image);
-        icon_row.append(&emblem);
+        icon_row.append(&emblems);
         let bx = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .spacing(6)
@@ -145,11 +149,13 @@ impl BrowserView {
     pub(crate) fn bind_grid_cell(&self, bx: &gtk::Widget, info: &gio::FileInfo, at: u32) {
         let icon_row = bx.first_child().unwrap();
         let image = icon_row.first_child().and_downcast::<gtk::Image>().unwrap();
-        let emblem = icon_row.last_child().and_downcast::<gtk::Image>().unwrap();
+        let emblems = icon_row.last_child().unwrap();
+        let emblem = emblems.first_child().and_downcast::<gtk::Image>().unwrap();
+        let link = emblems.last_child().and_downcast::<gtk::Image>().unwrap();
         let labels = bx.last_child().unwrap();
         let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
         let captions = labels.last_child().and_downcast::<gtk::Label>().unwrap();
-        self.bind_icon(&image, &emblem, info, at);
+        self.bind_icon(&image, &emblem, &link, info, at);
         set_cut(bx, info);
         label.set_text(&info.display_name());
         bind_tags(bx, Some(&label), info);
@@ -201,6 +207,7 @@ impl BrowserView {
                 .build();
             name_tooltip(&label);
             bx.append(&label);
+            bx.append(&link_image());
             bx.append(&emblem_image());
             // Folders unfold in place when the tree preference is on.
             let expander = gtk::TreeExpander::builder().child(&bx).build();
@@ -222,7 +229,8 @@ impl BrowserView {
             let image = bx.first_child().and_downcast::<gtk::Image>().unwrap();
             let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
-            view.bind_icon(&image, &emblem, &info, item.position());
+            let link = emblem.prev_sibling().and_downcast::<gtk::Image>().unwrap();
+            view.bind_icon(&image, &emblem, &link, &info, item.position());
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             bind_tags(&bx, None, &info);
