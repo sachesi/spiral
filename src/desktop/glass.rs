@@ -321,7 +321,7 @@ impl Glass {
         let inset = tier == INSET;
         set_class(part, "glass", on && !inset);
         set_class(part, tier, on);
-        set_class(part, "light", on && light && !inset);
+        set_class(part, "light", on && light);
         if !on {
             self.detach(part);
             return;
