@@ -135,18 +135,47 @@ pub(crate) fn dress_menu(popover: &gtk::Popover) {
         }
     });
     for popover in &popovers {
-        if popover.has_css_class("spiral-shell-menu") {
-            continue;
-        }
-        popover.add_css_class("spiral-shell-menu");
-        popover.set_has_arrow(false);
         let Some(card) = popover.child() else {
             continue;
         };
-        card.add_css_class("spiral-shell-card");
-        card.set_overflow(gtk::Overflow::Hidden);
-        glass.glaze(&card, Corners::Radius(CARD_RADIUS), MENU);
+        if !popover.has_css_class("spiral-shell-menu") {
+            popover.add_css_class("spiral-shell-menu");
+            popover.set_has_arrow(false);
+            card.add_css_class("spiral-shell-card");
+            card.set_overflow(gtk::Overflow::Hidden);
+            glass.glaze(&card, Corners::Radius(CARD_RADIUS), MENU);
+        }
+        // A menu kept for the next one makes its items again for each model.
+        each_descendant(&card, &mut |widget| {
+            if widget.css_name() == "modelbutton" {
+                glaze_item(widget);
+            }
+        });
     }
+}
+
+/// Sets a menu's `item` into the card's glass while it has a fill: under the pointer, or
+/// chosen from the keyboard.
+fn glaze_item(item: &gtk::Widget) {
+    if item.has_css_class("spiral-glazed") {
+        return;
+    }
+    item.add_css_class("spiral-glazed");
+    item.connect_state_flags_changed(|item, _| {
+        let Some(glass) = shared() else {
+            return;
+        };
+        let state = item.state_flags();
+        let lit = state.contains(gtk::StateFlags::PRELIGHT)
+            || state.contains(gtk::StateFlags::SELECTED | gtk::StateFlags::FOCUS_VISIBLE);
+        if lit && item.is_mapped() {
+            glass.attach(item, Corners::Pill, INSET);
+        } else {
+            glass.detach(item);
+            set_class(item, INSET, false);
+            set_class(item, "light", false);
+        }
+    });
 }
 
 /// Points `submenu` past the sides of the menu's card, as far on the left as on the right,
