@@ -32,8 +32,8 @@ const INSET: &str = "glass-inset";
 const CARD_RADIUS: i32 = 36;
 /// Of the window a prompt over the desktop opens in, as the stylesheet rounds it.
 const PROMPT_RADIUS: i32 = 28;
-/// Of a prompt's list of rows, as libadwaita rounds a boxed list.
-const LIST_RADIUS: i32 = 12;
+/// Of a prompt's list of rows, as Meridian's stylesheet rounds a dialog's.
+const LIST_RADIUS: i32 = 20;
 /// How far inside the rectangle GTK places a menu by its card is, sideways and at the top:
 /// the stylesheet's margins around the card, less what GTK counts of them as the shadow's
 /// (2px sideways and none at the top, for `0 2px 6px`).
@@ -204,6 +204,7 @@ pub(crate) fn dress_prompt(dialog: &adw::Dialog) {
                 let corners = if widget.is::<gtk::Button>() {
                     Corners::Pill
                 } else if widget.has_css_class("boxed-list") {
+                    widget.add_css_class("dialog-list");
                     Corners::Radius(LIST_RADIUS)
                 } else {
                     return;
