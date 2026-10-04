@@ -99,6 +99,7 @@ struct Glass {
     connection: Connection,
     queue: RefCell<EventQueue<State>>,
     manager: MeridianGlassManagerV1,
+    style: gtk::CssProvider,
     appearance: Option<gio::Settings>,
     glazed: RefCell<Vec<(glib::WeakRef<gtk::Widget>, Corners, &'static str)>>,
     panes: RefCell<Vec<Pane>>,
@@ -284,14 +285,28 @@ impl Glass {
             appearance.connect_changed(Some("glass"), move |_, _| restyle());
         }
         adw::StyleManager::default().connect_dark_notify(move |_| restyle());
-        Some(Rc::new(Self {
+        let glass = Rc::new(Self {
             connection,
             queue: RefCell::new(queue),
             manager,
+            style,
             appearance,
             glazed: RefCell::default(),
             panes: RefCell::default(),
-        }))
+        });
+        glass.follow_style();
+        Some(glass)
+    }
+
+    /// Has the stylesheet's colours take the style libadwaita has, which a style forced on it
+    /// leaves the system's preference behind.
+    fn follow_style(&self) {
+        self.style
+            .set_prefers_color_scheme(if adw::StyleManager::default().is_dark() {
+                gtk::InterfaceColorScheme::Dark
+            } else {
+                gtk::InterfaceColorScheme::Light
+            });
     }
 
     fn on(&self) -> bool {
@@ -361,6 +376,7 @@ impl Glass {
 
     /// The parts showing now, to the scheme and glass setting as they are now.
     fn restyle(&self) {
+        self.follow_style();
         let showing: Vec<_> = {
             let mut glazed = self.glazed.borrow_mut();
             glazed.retain(|(part, _, _)| part.upgrade().is_some());

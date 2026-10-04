@@ -434,8 +434,8 @@ window.spiral-desktop-window stack:drop(active) {
   font-weight: bold;
 }
 /* The desktop's menus, prompts and tooltips as the shell has its own, where the compositor
-   draws glass behind a shell's surfaces: plain dark cards here, and the compositor's own
-   stylesheet gives them their glass while its glass setting is on. */
+   draws glass behind a shell's surfaces: the colours are its stylesheet's, plain cards in
+   the style there is, and glass while its glass setting is on. */
 popover.spiral-shell-menu > contents {
   margin: 16px 12px 8px;
   padding: 0;
@@ -450,9 +450,9 @@ popover.spiral-shell-menu.menu > contents > scrolledwindow > viewport > stack > 
 .spiral-shell-card {
   padding: 12px;
   border-radius: 36px;
-  background-color: #36363a;
-  color: white;
-  box-shadow: inset 0 0 0 1px #424247;
+  background-color: var(--card-background);
+  color: var(--card-foreground);
+  box-shadow: inset 0 0 0 1px var(--card-rim);
 }
 .spiral-shell-card modelbutton {
   padding: 6px 12px;
@@ -465,7 +465,7 @@ popover.spiral-shell-menu.menu > contents > scrolledwindow > viewport > stack > 
 }
 .spiral-shell-card modelbutton:hover,
 .spiral-shell-card modelbutton:selected:focus-visible {
-  background-color: alpha(currentColor, 0.1);
+  background-color: var(--control-fill);
 }
 .spiral-shell-card separator {
   margin: 4px 6px;
@@ -487,17 +487,9 @@ window.spiral-prompt-window.glass dialog {
   padding: 24px;
   min-width: 332px;
 }
-window.spiral-prompt-window.glass .spiral-prompt .boxed-list {
-  background-color: alpha(currentColor, 0.08);
-  color: inherit;
-  box-shadow: none;
-}
 .spiral-prompt button {
   min-height: 36px;
   border-radius: 99px;
-}
-window.spiral-prompt-window.glass .spiral-prompt button.suggested-action:not(:disabled) {
-  background-color: alpha(var(--accent-bg-color), 0.75);
 }
 spiral-desktop .spiral-desktop-band {
   background-color: alpha(var(--accent-bg-color), 0.2);
