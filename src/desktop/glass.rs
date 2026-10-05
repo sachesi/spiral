@@ -28,6 +28,8 @@ const MENU: &str = "glass-menu";
 const DIALOG: &str = "glass-dialog";
 /// A part set into another's glass, which keeps its own colours.
 const INSET: &str = "glass-inset";
+/// A part set into glass only while it has a fill, which keeps that fill.
+const TRANSIENT: &str = "glass-transient";
 /// Of a menu's card, as the stylesheet rounds it.
 const CARD_RADIUS: i32 = 36;
 /// Of the window a prompt over the desktop opens in, as the stylesheet rounds it.
@@ -161,6 +163,7 @@ fn glaze_item(item: &gtk::Widget) {
         return;
     }
     item.add_css_class("spiral-glazed");
+    item.add_css_class(TRANSIENT);
     item.connect_state_flags_changed(|item, _| {
         let Some(glass) = shared() else {
             return;
