@@ -60,6 +60,7 @@ pub mod desktop;
 pub(crate) mod details_panel;
 pub(crate) mod dialogs;
 pub(crate) mod disks;
+pub(crate) mod drop_ins;
 pub(crate) mod enums;
 pub(crate) mod file_utils;
 pub(crate) mod folder_model;

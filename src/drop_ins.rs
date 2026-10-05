@@ -1,18 +1,45 @@
-//! Entries other programs add to the menu of the desktop: desktop entry files in
-//! `spiral/desktop-menu/` under the data directories, the user's first. A file there hides
-//! any of the same name further down the list, as the XDG base directories have it.
+//! Entries other programs add to Spiral's menus: desktop entry files in
+//! `spiral/desktop-menu/` for the menu of the empty desktop and in `spiral/item-menu/` for
+//! the menu of files, under the data directories, the user's first. A file there hides any
+//! of the same name further down the list, as the XDG base directories have it.
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use crate::glib;
+use crate::gio::prelude::*;
+use crate::{gio, glib};
 
-/// Where the entries are looked for, in the order they win.
-pub fn dirs() -> Vec<PathBuf> {
+/// The menu of the empty desktop.
+pub const DESKTOP_MENU: &str = "desktop-menu";
+/// The menu of files, in a folder or on the desktop.
+pub const ITEM_MENU: &str = "item-menu";
+
+/// Where the entries of `menu` are looked for, in the order they win.
+pub fn dirs(menu: &str) -> Vec<PathBuf> {
     std::iter::once(glib::user_data_dir())
         .chain(glib::system_data_dirs())
-        .map(|dir| dir.join("spiral").join("desktop-menu"))
+        .map(|dir| dir.join("spiral").join(menu))
         .collect()
+}
+
+/// Whether an entry of the menu of files is for files of these content types: each of a
+/// type its `MimeType` names, any when it names none, and only one unless its `Exec` takes
+/// a list.
+pub fn takes(app: &gio_unix::DesktopAppInfo, types: &[String]) -> bool {
+    let many = app.commandline().is_some_and(|line| {
+        let line = line.to_string_lossy();
+        line.contains("%F") || line.contains("%U")
+    });
+    if types.is_empty() || (types.len() > 1 && !many) {
+        return false;
+    }
+    let wanted = app.supported_types();
+    wanted.is_empty()
+        || types.iter().all(|kind| {
+            wanted.iter().any(|want| {
+                gio::content_type_is_a(kind, want) || gio::content_type_is_mime_type(kind, want)
+            })
+        })
 }
 
 /// The entries in `dirs` to offer, ordered by file name. One is left out when its `TryExec`
@@ -55,7 +82,6 @@ fn entries(dir: &Path) -> Vec<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::gio::prelude::*;
 
     fn scratch(name: &str) -> PathBuf {
         let dir =
@@ -109,6 +135,30 @@ mod tests {
             ["Only here"]
         );
         assert_eq!(names(&load(&[dir], Some("elsewhere"))), ["Not here"]);
+    }
+
+    #[test]
+    fn an_entry_of_the_file_menu_takes_the_types_it_names_one_at_a_time_unless_a_list() {
+        let dir = scratch("types");
+        let at = |file: &str, extra: &str| {
+            std::fs::write(
+                dir.join(file),
+                format!("[Desktop Entry]\nType=Application\nName={file}\n{extra}"),
+            )
+            .unwrap();
+            gio_unix::DesktopAppInfo::from_filename(dir.join(file)).unwrap()
+        };
+        let pictures = at("pictures.desktop", "Exec=true %f\nMimeType=image/*;\n");
+        let pngs = at("pngs.desktop", "Exec=true %F\nMimeType=image/png;\n");
+        let any = at("any.desktop", "Exec=true %U\n");
+        let kinds = |kinds: &[&str]| kinds.iter().map(|k| (*k).to_owned()).collect::<Vec<_>>();
+        assert!(takes(&pictures, &kinds(&["image/png"])));
+        assert!(!takes(&pictures, &kinds(&["image/png", "image/jpeg"])));
+        assert!(!takes(&pictures, &kinds(&["text/plain"])));
+        assert!(takes(&pngs, &kinds(&["image/png", "image/png"])));
+        assert!(!takes(&pngs, &kinds(&["image/png", "image/jpeg"])));
+        assert!(takes(&any, &kinds(&["text/plain", "image/png"])));
+        assert!(!takes(&any, &[]));
     }
 
     #[test]

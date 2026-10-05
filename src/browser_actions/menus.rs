@@ -64,6 +64,39 @@ impl BrowserView {
         }
     }
 
+    /// The entries other programs add that take the selection, each running with it. A
+    /// dialog offers none, as it offers no Open With.
+    fn sync_drop_ins_menu(&self) {
+        let section = &self.imp().drop_ins_section;
+        section.remove_all();
+        if self.chooser_mode() {
+            return;
+        }
+        let types: Vec<String> = self
+            .model()
+            .selected_infos()
+            .iter()
+            .map(|info| file_utils::content_type_of(info).map(|t| t.to_string()))
+            .collect::<Option<_>>()
+            .unwrap_or_default();
+        let entries =
+            crate::drop_ins::load(&crate::drop_ins::dirs(crate::drop_ins::ITEM_MENU), None);
+        for app in entries
+            .iter()
+            .filter(|app| crate::drop_ins::takes(app, &types))
+        {
+            let Some(path) = app.filename() else {
+                continue;
+            };
+            let item = gio::MenuItem::new(Some(&app.name()), None);
+            item.set_action_and_target_value(
+                Some("view.drop-in"),
+                Some(&path.to_string_lossy().to_variant()),
+            );
+            section.append_item(&item);
+        }
+    }
+
     /// Model position of the item cell under (x, y) in `stack` coordinates.
     pub(crate) fn item_at(&self, x: f64, y: f64) -> Option<u32> {
         let stack = &self.imp().stack;
@@ -106,6 +139,7 @@ impl BrowserView {
         self.update_action_state();
         let model: &gio::MenuModel = if on_item {
             self.sync_open_menu();
+            self.sync_drop_ins_menu();
             self.sync_tags_menu();
             &imp.item_menu
         } else {

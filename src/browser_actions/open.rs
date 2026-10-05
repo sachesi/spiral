@@ -177,6 +177,17 @@ impl BrowserView {
     }
 
     /// Scripts run in the terminal so their output can be seen; binaries start directly.
+    /// Runs the entry of another program at `path` with the selection.
+    pub(super) fn run_drop_in(&self, path: &str) {
+        let Some(app) = gio_unix::DesktopAppInfo::from_filename(path) else {
+            return;
+        };
+        let files = self.selected();
+        if let Err(e) = app.launch(&files, Some(&self.display().app_launch_context())) {
+            self.show_error(&gettext("Could Not Open"), e.message());
+        }
+    }
+
     pub(super) fn run_selected(&self) {
         let infos = self.model().selected_infos();
         let [info] = infos.as_slice() else { return };

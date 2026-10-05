@@ -6,10 +6,10 @@
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
-use crate::desktop::drop_ins;
 use crate::desktop::placement::{self, Arrangement, Grid, Point};
 use crate::desktop::positions::{Place, Positions};
 use crate::desktop::specials::{self, Special};
+use crate::drop_ins;
 
 use super::*;
 
@@ -1805,7 +1805,7 @@ impl IconCanvas {
         );
         menu.append_section(None, &settings);
 
-        let entries = drop_ins::load(&drop_ins::dirs(), None);
+        let entries = drop_ins::load(&drop_ins::dirs(drop_ins::DESKTOP_MENU), None);
         if !entries.is_empty() {
             let section = gio::Menu::new();
             for app in &entries {

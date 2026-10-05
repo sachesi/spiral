@@ -207,6 +207,17 @@ impl BrowserView {
             }
         ));
         group.add_action(&from_template);
+        let drop_in = gio::SimpleAction::new("drop-in", Some(glib::VariantTy::STRING));
+        drop_in.connect_activate(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |_, param| {
+                if let Some(path) = param.and_then(glib::Variant::str) {
+                    view.run_drop_in(path);
+                }
+            }
+        ));
+        group.add_action(&drop_in);
         if chooser {
             // A dialog hands files to the application that asked; it changes nothing, and
             // launches nothing and opens no windows of its own.

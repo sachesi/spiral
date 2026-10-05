@@ -35,7 +35,9 @@ points are public but hidden, and everything else is crate-private.
                            navigation, opening, selection, cells, columns, drag and drop,
                            and the icons of the desktop (canvas.rs)
     src/desktop/           what the desktop icons stand on: placement on the grid, the
-                           positions kept, Home, trash and drives, and menu drop-ins
+                           positions kept, Home, trash and drives
+    src/drop_ins.rs        entries other programs add to the desktop's menu and the
+                           menu of files
     src/browser_actions.rs view.* actions; in browser_actions/ transfers, making and
                            renaming, tags, opening, context menus
     src/miller.rs          column view: the folder chain as a strip of lists

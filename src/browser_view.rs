@@ -99,6 +99,8 @@ mod imp {
         /// How many items the template put in `open_section`; what follows is ours.
         pub open_items: Cell<u32>,
         #[template_child]
+        pub drop_ins_section: TemplateChild<gio::Menu>,
+        #[template_child]
         pub tags_section: TemplateChild<gio::Menu>,
         /// The row of tag dots the item menu shows, kept between menus; the popover drops
         /// it whenever it builds a menu afresh, and it is put back.
@@ -298,6 +300,7 @@ mod imp {
                 item_menu: Default::default(),
                 open_section: Default::default(),
                 open_items: Default::default(),
+                drop_ins_section: Default::default(),
                 tags_section: Default::default(),
                 tag_picker: Default::default(),
                 background_menu: Default::default(),

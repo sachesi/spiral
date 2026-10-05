@@ -87,6 +87,24 @@ dialog at all usually means `WAYLAND_DISPLAY` is missing from the D-Bus activati
 environment, or the portal file is not where xdg-desktop-portal looks. A stale backend
 after an update: `pkill -f xdg-desktop-portal-spiral`.
 
+## Menu entries of other programs
+
+Programs add entries to the menu of files with desktop entry files in
+`spiral/item-menu/` under the data directories, found, hidden and left out as those of the
+desktop's menu are (see [desktop.md](desktop.md)). An entry is offered when every file
+selected is of a type its `MimeType` names, or of any type when it names none. One whose
+`Exec` takes a single file (`%f`, `%u`) is offered for one file at a time, one that takes a
+list (`%F`, `%U`) for any number. The entries come in a section of their own, below
+Compress, and choosing one runs its `Exec` with the files selected. The file chooser
+offers none.
+
+    [Desktop Entry]
+    Type=Application
+    Name=Set as Wallpaper
+    Exec=example-settings --set-wallpaper %f
+    TryExec=example-settings
+    MimeType=image/*;
+
 ## org.freedesktop.FileManager1
 
 Spiral owns `org.freedesktop.FileManager1` while running and is D-Bus activatable for it
