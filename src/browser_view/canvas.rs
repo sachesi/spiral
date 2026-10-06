@@ -939,8 +939,15 @@ impl IconCanvas {
                 let size = canvas.display_size();
                 // What has no tile keeps its place for when it has one: a drive taken out,
                 // a place not shown for now, a file the view has yet to hand over, which it
-                // may do after saying the folder is read. A file gone from the folder is gone.
+                // may do after saying the folder is read. A file gone from the folder is gone,
+                // unless the folder went with it and the desktop waits for it to be back.
                 let folder = canvas.view().location();
+                if folder
+                    .as_ref()
+                    .is_none_or(|f| !f.query_exists(gio::Cancellable::NONE))
+                {
+                    return;
+                }
                 let mut kept: HashMap<Place, Point> = imp
                     .kept
                     .borrow()

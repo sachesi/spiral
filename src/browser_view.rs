@@ -113,6 +113,8 @@ mod imp {
         pub drop_menu: TemplateChild<gio::MenuModel>,
         /// Files waiting for the drop menu to say what to do with them.
         pub pending_drop: RefCell<Option<(Vec<gio::File>, gio::File)>>,
+        /// Watches for the desktop's folder to be back, while it is gone.
+        pub folder_awaited: RefCell<Option<gio::FileMonitor>>,
         /// The folder a drag is resting on, and the wait before it springs open.
         pub hover_pos: Cell<Option<u32>>,
         pub hover_timer: RefCell<Option<glib::SourceId>>,
@@ -307,6 +309,7 @@ mod imp {
                 new_section: Default::default(),
                 drop_menu: Default::default(),
                 pending_drop: Default::default(),
+                folder_awaited: Default::default(),
                 hover_pos: Default::default(),
                 hover_timer: Default::default(),
                 drop_row: Default::default(),

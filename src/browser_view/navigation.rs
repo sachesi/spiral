@@ -205,6 +205,10 @@ impl BrowserView {
         if from.equal(to) {
             return;
         }
+        if self.desktop_mode() {
+            self.await_folder(&from);
+            return;
+        }
         // Nothing of a folder that is gone is left to select above it.
         let keep: Vec<gio::File> = if from.has_prefix(to) {
             Vec::new()
@@ -217,6 +221,39 @@ impl BrowserView {
         };
         self.go_to(to);
         self.select_files_when_loaded(keep);
+    }
+
+    /// The desktop's folder moved or went away: the desktop shows nothing until there is a
+    /// folder by that name again, rather than the folder it went to or one above it.
+    fn await_folder(&self, folder: &gio::File) {
+        self.set_location_internal(folder, None);
+        let monitor = folder.parent().and_then(|parent| {
+            parent
+                .monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
+                .ok()
+        });
+        if let Some(monitor) = &monitor {
+            monitor.connect_changed(glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                #[strong]
+                folder,
+                move |_, file, other, event| {
+                    let back = match event {
+                        gio::FileMonitorEvent::Created | gio::FileMonitorEvent::MovedIn => {
+                            file.equal(&folder)
+                        }
+                        gio::FileMonitorEvent::Renamed => other.is_some_and(|o| o.equal(&folder)),
+                        _ => false,
+                    };
+                    if back && let Some(monitor) = view.imp().folder_awaited.take() {
+                        monitor.cancel();
+                        view.set_location_internal(&folder, None);
+                    }
+                }
+            ));
+        }
+        self.imp().folder_awaited.replace(monitor);
     }
 
     /// Backspace: back to the search this folder was opened from, up otherwise.
