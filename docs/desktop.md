@@ -28,7 +28,8 @@ click on something selected keeps the selection: with files in it the menu is th
 and its Open opens the places as well; a place alone has its own menu. The arrow keys move
 between icons by where they stand on the screen, Shift with them adds to the selection,
 Enter opens, F2 renames, Escape clears the selection, and typing a name jumps to it. The
-keyboard goes to the desktop once it is clicked.
+keyboard goes to the desktop once it is clicked. While tags are on, the menu of files has
+the tags' colours to put on them, and a tagged file's name stands on its tag's colour.
 
 Space previews the selected file, as in a Spiral window. Over the desktop the preview is a
 window of its own, one that can be made larger by hand; where it opens, and whether it

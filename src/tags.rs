@@ -91,7 +91,9 @@ pub fn css_for(color: &str) -> String {
          .spiral-list-view columnview > listview > row.{wash}:not(:selected),\n\
          .spiral-miller-column listview > row.{wash}:not(:selected),\n\
          .spiral-grid-view label.{wash} {{\n\
-           background-color: color-mix(in srgb, {color} 18%, transparent);\n}}\n"
+           background-color: color-mix(in srgb, {color} 18%, transparent);\n}}\n\
+         spiral-desktop label.{wash} {{\n\
+           background-color: color-mix(in srgb, {color} 70%, transparent);\n}}\n"
     )
 }
 

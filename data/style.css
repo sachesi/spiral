@@ -315,6 +315,31 @@ window {
 .spiral-grid-view label.spiral-tag-wash-gray {
   background-color: color-mix(in srgb, var(--spiral-tag-gray) 18%, transparent);
 }
+/* On the desktop the name stands white on the wallpaper, where only a strong wash shows. */
+spiral-desktop label.spiral-tag-wash {
+  border-radius: 6px;
+}
+spiral-desktop label.spiral-tag-wash-red {
+  background-color: color-mix(in srgb, var(--spiral-tag-red) 70%, transparent);
+}
+spiral-desktop label.spiral-tag-wash-orange {
+  background-color: color-mix(in srgb, var(--spiral-tag-orange) 70%, transparent);
+}
+spiral-desktop label.spiral-tag-wash-yellow {
+  background-color: color-mix(in srgb, var(--spiral-tag-yellow) 70%, transparent);
+}
+spiral-desktop label.spiral-tag-wash-green {
+  background-color: color-mix(in srgb, var(--spiral-tag-green) 70%, transparent);
+}
+spiral-desktop label.spiral-tag-wash-blue {
+  background-color: color-mix(in srgb, var(--spiral-tag-blue) 70%, transparent);
+}
+spiral-desktop label.spiral-tag-wash-purple {
+  background-color: color-mix(in srgb, var(--spiral-tag-purple) 70%, transparent);
+}
+spiral-desktop label.spiral-tag-wash-gray {
+  background-color: color-mix(in srgb, var(--spiral-tag-gray) 70%, transparent);
+}
 /* The wash takes the place of the shade a row gets when hovered or pressed, so the
    shade goes over it instead. */
 .spiral-list-view columnview > listview > row.spiral-tag-wash:not(:selected):hover,

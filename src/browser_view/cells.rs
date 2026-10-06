@@ -466,11 +466,13 @@ impl BrowserView {
     pub(crate) fn refresh_cells(&self) {
         let imp = self.imp();
         let writable = imp.can_write.get();
-        let roots: [gtk::Widget; 3] = [
-            imp.grid_view.clone().upcast(),
+        let roots = [
+            imp.grid_view.clone().upcast::<gtk::Widget>(),
             imp.column_view.clone().upcast(),
             imp.miller_list.clone().upcast(),
-        ];
+        ]
+        .into_iter()
+        .chain(imp.canvas.get().map(|canvas| canvas.clone().upcast()));
         for root in roots {
             each_cell(&root, &mut |cell| {
                 let Some(info) = cell_position(cell).and_then(|p| self.model().info_at(p)) else {
