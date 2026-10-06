@@ -368,8 +368,9 @@ impl BrowserView {
 
         // Space previews the selection, and the first arrow in a folder with nothing
         // selected picks its first item, where GTK would only give it the focus and leave
-        // the press looking lost. Captured, because the window's search entry takes typing
-        // before the view is asked; a text entry inside the view keeps its keys.
+        // the press looking lost; the desktop moves by where its icons stand instead.
+        // Captured, because the window's search entry takes typing before the view is
+        // asked; a text entry inside the view keeps its keys.
         let keys = gtk::EventControllerKey::new();
         keys.set_propagation_phase(gtk::PropagationPhase::Capture);
         keys.connect_key_pressed(glib::clone!(
@@ -389,7 +390,8 @@ impl BrowserView {
                         glib::Propagation::Stop
                     }
                     Key::Up | Key::Down | Key::Left | Key::Right
-                        if view.model().n_items() > 0
+                        if !view.desktop_mode()
+                            && view.model().n_items() > 0
                             && view.model().selection().selection().is_empty() =>
                     {
                         view.reveal_position(

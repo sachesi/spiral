@@ -1703,8 +1703,8 @@ impl IconCanvas {
             .collect()
     }
 
-    /// The tile nearest the cursor's in the direction `(dx, dy)`, or the first of all when
-    /// the keyboard is on none.
+    /// The tile nearest the cursor's in the direction `(dx, dy)`, or the first of all, in the
+    /// corner the icons start at, when the keyboard is on none.
     fn neighbour(&self, (dx, dy): (f64, f64)) -> Option<Hit> {
         let hits = self.hits();
         let current = self.imp().cursor.borrow().clone();
@@ -1712,9 +1712,13 @@ impl IconCanvas {
             .as_ref()
             .and_then(|c| hits.iter().find(|(h, _)| h == c).map(|(_, at)| *at));
         let Some(from) = from else {
+            let grid = self.grid();
             return hits
                 .iter()
-                .min_by(|a, b| (a.1.x, a.1.y).partial_cmp(&(b.1.x, b.1.y)).unwrap())
+                .min_by(|(_, a), (_, b)| {
+                    let (a, b) = (grid.in_cells(*a), grid.in_cells(*b));
+                    a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y))
+                })
                 .map(|(h, _)| h.clone());
         };
         hits.into_iter()
