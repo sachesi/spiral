@@ -113,6 +113,23 @@ impl Grid {
         )
     }
 
+    /// Where a tile at `point` is in cells from the corner the grid starts at, as places are
+    /// kept: a tile stays in its cell whatever size the cells have.
+    pub fn in_cells(&self, point: Point) -> Point {
+        Point::new(
+            (self.seen_from_start(point.x) - self.margin) / self.cell.x,
+            (point.y - self.margin) / self.cell.y,
+        )
+    }
+
+    /// The top left corner of a tile `cells` from the corner the grid starts at.
+    pub fn at_cells(&self, cells: Point) -> Point {
+        Point::new(
+            self.seen_from_start(self.margin + cells.x * self.cell.x),
+            self.margin + cells.y * self.cell.y,
+        )
+    }
+
     /// The cell whose middle is nearest a tile whose top left corner is at `point`.
     pub fn cell_at(&self, point: Point) -> Cell {
         let index = |at: f64, step: f64, count: usize| {
@@ -359,6 +376,19 @@ mod tests {
         let placed = arrange(&grid, Arrangement::Grid, &items, &HashMap::new());
         assert_eq!(placed["a"], Point::new(210.0, 10.0));
         assert_eq!(placed["c"], Point::new(110.0, 10.0));
+    }
+
+    #[test]
+    fn a_tile_kept_in_cells_stays_in_its_cell_as_the_cells_grow() {
+        for right in [false, true] {
+            let small = grid().aligned_right(right);
+            let large = Grid::new(Point::new(320.0, 220.0), Point::new(150.0, 100.0), 10.0)
+                .aligned_right(right);
+            let kept = small.in_cells(small.origin((1, 1)));
+            assert_eq!(kept, Point::new(1.0, 1.0));
+            assert_eq!(large.cell_at(large.at_cells(kept)), (1, 1));
+            assert_eq!(large.at_cells(kept), large.origin((1, 1)));
+        }
     }
 
     #[test]

@@ -87,9 +87,9 @@ mod imp {
         pub(super) specials: RefCell<Vec<SpecialTile>>,
         pub(super) band: RefCell<Option<gtk::Box>>,
         pub(super) banding: RefCell<Option<Band>>,
-        /// Places kept for the display, as they are kept: measured from the side the
-        /// icons start at, which a change of icon size leaves where they are. And the
-        /// places the tiles are at, the kept ones fitted to the area the panels leave.
+        /// Places kept for the display, as they are kept: in cells from the corner the icons
+        /// start at. And the places the tiles are at, the kept ones fitted to the area the
+        /// panels leave.
         pub(super) kept: RefCell<HashMap<Place, Point>>,
         pub(super) placed: RefCell<HashMap<Place, Point>>,
         pub(super) positions: RefCell<Option<Positions>>,
@@ -790,11 +790,12 @@ impl IconCanvas {
         let resized = imp.area.replace((width, height)) != (width, height);
         let display = self.display_size();
         if imp.display_size.replace(Some(display)) != Some(display) {
+            let grid = self.grid();
             let kept = imp
                 .positions
                 .borrow()
                 .as_ref()
-                .map(|p| p.kept(display))
+                .map(|p| p.kept(display, grid.cell_size(), MARGIN))
                 .unwrap_or_default();
             imp.kept.replace(kept);
             imp.placed.borrow_mut().clear();
@@ -803,7 +804,7 @@ impl IconCanvas {
         let places = self.places();
         // A place the area the panels leave moved a tile from is still where it goes.
         let mut known = imp.placed.borrow().clone();
-        known.extend(self.seen_from_start_side(&imp.kept.borrow()));
+        known.extend(at_cells(&grid, &imp.kept.borrow()));
         {
             let mut expected = imp.expected.borrow_mut();
             expected.retain(|(_, _, when)| when.elapsed() < EXPECTED_FOR);
@@ -964,7 +965,7 @@ impl IconCanvas {
                 // keeps where it had none, since the others are where the area the panels
                 // leave just now fitted them.
                 let sorted = canvas.arrangement() == Arrangement::Auto;
-                let placed = canvas.seen_from_start_side(&imp.placed.borrow());
+                let placed = in_cells(&canvas.grid(), &imp.placed.borrow());
                 for (place, at) in placed {
                     if sorted || !kept.contains_key(&place) {
                         kept.insert(place, at);
@@ -982,16 +983,6 @@ impl IconCanvas {
                 imp.kept.replace(kept);
             }
         ));
-    }
-
-    /// Places measured from the side the icons start at, or back: they are kept that way,
-    /// so the icons stay by that side whichever it is.
-    fn seen_from_start_side(&self, places: &HashMap<Place, Point>) -> HashMap<Place, Point> {
-        let grid = self.grid();
-        places
-            .iter()
-            .map(|(place, at)| (place.clone(), Point::new(grid.seen_from_start(at.x), at.y)))
-            .collect()
     }
 
     /// The icons go over to the other side, each as far from it as it was from this one, as
@@ -1127,7 +1118,7 @@ impl IconCanvas {
         );
         imp.kept
             .borrow_mut()
-            .extend(self.seen_from_start_side(&placed));
+            .extend(in_cells(&self.grid(), &placed));
         imp.placed.replace(placed);
         self.queue_save();
         self.queue_allocate();
@@ -1139,7 +1130,7 @@ impl IconCanvas {
         let placed = placement::move_by(&grid, self.arrangement(), &imp.placed.borrow(), moved, by);
         imp.kept
             .borrow_mut()
-            .extend(self.seen_from_start_side(&placed));
+            .extend(in_cells(&self.grid(), &placed));
         imp.placed.replace(placed);
         self.queue_save();
         self.queue_allocate();
@@ -2021,6 +2012,22 @@ impl IconCanvas {
             }
         ));
     }
+}
+
+/// Places on `grid` in the cells they are kept in.
+fn in_cells(grid: &Grid, places: &HashMap<Place, Point>) -> HashMap<Place, Point> {
+    places
+        .iter()
+        .map(|(place, at)| (place.clone(), grid.in_cells(*at)))
+        .collect()
+}
+
+/// Places kept in cells where they are on `grid`.
+fn at_cells(grid: &Grid, places: &HashMap<Place, Point>) -> HashMap<Place, Point> {
+    places
+        .iter()
+        .map(|(place, cells)| (place.clone(), grid.at_cells(*cells)))
+        .collect()
 }
 
 /// Add or take off a CSS class as `on` says.

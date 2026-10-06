@@ -1,7 +1,8 @@
 //! Where the icons of the desktop were left, kept in a key file of the user's state: a group
 //! for each size of display they were placed on, so that a display of another size keeps its
 //! own layout, and one never seen before starts from the nearest one kept, scaled to fit.
-//! A display's layout stays the same while panels and docks come and go over it.
+//! A display's layout stays the same while panels and docks come and go over it, and as the
+//! icons change size: places are kept in cells from the corner the icons start at.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -19,8 +20,8 @@ pub enum Place {
 
 const SPECIAL_GROUP: &str = " special";
 /// Before the group of a display's layout. Groups without it were kept for the area the
-/// panels left free, which changed as they came and went; they are only read until the
-/// display has a layout of its own.
+/// panels left free, which changed as they came and went, and in pixels; they are only read
+/// until the display has a layout of its own.
 const DISPLAY: &str = "display ";
 
 pub struct Positions {
@@ -56,8 +57,17 @@ impl Positions {
     }
 
     /// The places kept for a display `size` large, or else those kept for the size nearest
-    /// it, scaled to fit.
-    pub fn kept(&self, size: Point) -> HashMap<Place, Point> {
+    /// it, scaled to fit. Places kept in pixels are read on a grid of `cell` within `margin`.
+    pub fn kept(&self, size: Point, cell: Point, margin: f64) -> HashMap<Place, Point> {
+        let in_cells = |places: HashMap<Place, Point>| {
+            places
+                .into_iter()
+                .map(|(place, at)| {
+                    let cells = Point::new((at.x - margin) / cell.x, (at.y - margin) / cell.y);
+                    (place, cells)
+                })
+                .collect()
+        };
         let groups = self.file.groups();
         let sizes = |display: bool| {
             groups.iter().filter_map(move |group| {
@@ -81,18 +91,19 @@ impl Positions {
             .filter(|area| area.x == size.x && area.y <= size.y)
             .min_by(|a, b| a.y.total_cmp(&b.y))
         {
-            return self.read(&group_name(area));
+            return in_cells(self.read(&group_name(area)));
         }
         if let Some(from) = nearest(true) {
             return rescale(&self.read(&display_group(from)), from, size);
         }
         match nearest(false) {
-            Some(from) => rescale(&self.read(&group_name(from)), from, size),
+            Some(from) => in_cells(rescale(&self.read(&group_name(from)), from, size)),
             None => HashMap::new(),
         }
     }
 
-    /// Keeps `places` as the layout of a display `size` large, in place of what was kept for it.
+    /// Keeps `places`, in cells, as the layout of a display `size` large, in place of what was
+    /// kept for it.
     pub fn keep(&mut self, size: Point, places: &HashMap<Place, Point>) {
         let files = display_group(size);
         let specials = format!("{files}{SPECIAL_GROUP}");
@@ -106,7 +117,7 @@ impl Positions {
                 Place::File(_) => &files,
                 Place::Special(_) => &specials,
             };
-            let value = format!("{};{}", point.x.round(), point.y.round());
+            let value = format!("{};{}", number(point.x), number(point.y));
             self.file.set_string(group, &key_of(place), &value);
         }
     }
@@ -162,6 +173,12 @@ fn group_name(size: Point) -> String {
     format!("{}x{}", size.x.round() as i64, size.y.round() as i64)
 }
 
+/// To a thousandth of a cell, which is less than a pixel, without the zeros after it.
+fn number(value: f64) -> String {
+    let text = format!("{value:.3}");
+    text.trim_end_matches('0').trim_end_matches('.').to_owned()
+}
+
 fn display_group(size: Point) -> String {
     format!("{DISPLAY}{}", group_name(size))
 }
@@ -179,6 +196,9 @@ fn distance(a: Point, b: Point) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const CELL: Point = Point::new(100.0, 100.0);
+    const MARGIN: f64 = 4.0;
 
     fn scratch(name: &str) -> PathBuf {
         let dir =
@@ -201,7 +221,7 @@ mod tests {
         let mut positions = Positions::open(&path);
         positions.keep(size, &places);
         positions.save().expect("saved");
-        assert_eq!(Positions::open(&path).kept(size), places);
+        assert_eq!(Positions::open(&path).kept(size, CELL, MARGIN), places);
     }
 
     #[test]
@@ -215,7 +235,7 @@ mod tests {
         let mut positions = Positions::open(&path);
         positions.keep(size, &places);
         positions.save().expect("saved");
-        assert_eq!(Positions::open(&path).kept(size), places);
+        assert_eq!(Positions::open(&path).kept(size, CELL, MARGIN), places);
     }
 
     #[test]
@@ -228,7 +248,7 @@ mod tests {
         let mut large = HashMap::new();
         large.insert(file("a"), Point::new(7.0, 7.0));
         positions.keep(Point::new(4000.0, 2000.0), &large);
-        let a = positions.kept(Point::new(1100.0, 550.0))[&file("a")];
+        let a = positions.kept(Point::new(1100.0, 550.0), CELL, MARGIN)[&file("a")];
         assert!(
             (a.x - 110.0).abs() < 1e-9 && (a.y - 110.0).abs() < 1e-9,
             "{a:?}"
@@ -248,14 +268,14 @@ mod tests {
         let mut positions = Positions::open(&path);
         let display = Point::new(1280.0, 800.0);
         assert_eq!(
-            positions.kept(display)[&file("a")],
-            Point::new(600.0, 300.0)
+            positions.kept(display, CELL, MARGIN)[&file("a")],
+            Point::new(5.96, 2.96)
         );
         let mut moved = HashMap::new();
-        moved.insert(file("a"), Point::new(12.0, 12.0));
+        moved.insert(file("a"), Point::new(1.0, 2.5));
         positions.keep(display, &moved);
         positions.save().expect("saved");
-        assert_eq!(Positions::open(&path).kept(display), moved);
+        assert_eq!(Positions::open(&path).kept(display, CELL, MARGIN), moved);
     }
 
     #[test]
@@ -269,7 +289,7 @@ mod tests {
         let mut second = HashMap::new();
         second.insert(file("here"), Point::new(2.0, 2.0));
         positions.keep(size, &second);
-        assert_eq!(positions.kept(size), second);
+        assert_eq!(positions.kept(size, CELL, MARGIN), second);
     }
 
     #[test]
@@ -277,14 +297,14 @@ mod tests {
         let path = scratch("broken");
         assert!(
             Positions::open(&path)
-                .kept(Point::new(10.0, 10.0))
+                .kept(Point::new(10.0, 10.0), CELL, MARGIN)
                 .is_empty()
         );
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, b"\xff\xfe not a key file [[[").unwrap();
         assert!(
             Positions::open(&path)
-                .kept(Point::new(10.0, 10.0))
+                .kept(Point::new(10.0, 10.0), CELL, MARGIN)
                 .is_empty()
         );
     }

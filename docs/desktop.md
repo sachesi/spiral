@@ -82,8 +82,8 @@ selection there. Files moved into a window leave the desktop once they have gone
 reduced motion the images and icons are put where they go at once.
 
 Where the icons were left is kept in `$XDG_STATE_HOME/spiral/desktop-positions`
-(`~/.local/state/spiral/desktop-positions`), measured from the side they start at, for each
-size of display on its own. Panels and docks coming and going over a display, as they do
+(`~/.local/state/spiral/desktop-positions`), in cells from the corner they start at, so
+they keep their cells as the icons change size, for each size of display on its own. Panels and docks coming and going over a display, as they do
 while a session starts, move the icons with the desktop but leave their layout as it was. A
 display of a size not seen before starts from the layout of the nearest size kept, scaled to
 fit.
