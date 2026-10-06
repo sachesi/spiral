@@ -87,7 +87,9 @@ mod imp {
         pub(super) specials: RefCell<Vec<SpecialTile>>,
         pub(super) band: RefCell<Option<gtk::Box>>,
         pub(super) banding: RefCell<Option<Band>>,
-        /// Places kept for the desktop's size, and the places the tiles are at.
+        /// Places kept for the display, as they are kept: measured from the side the
+        /// icons start at, which a change of icon size leaves where they are. And the
+        /// places the tiles are at, the kept ones fitted to the area the panels leave.
         pub(super) kept: RefCell<HashMap<Place, Point>>,
         pub(super) placed: RefCell<HashMap<Place, Point>>,
         pub(super) positions: RefCell<Option<Positions>>,
@@ -98,6 +100,8 @@ mod imp {
         pub(super) glide_from: RefCell<HashMap<Place, Point>>,
         pub(super) glide: std::cell::OnceCell<adw::TimedAnimation>,
         pub(super) area: Cell<(i32, i32)>,
+        /// The size of the display the places are kept for.
+        pub(super) display_size: Cell<Option<Point>>,
         pub(super) save_queued: Cell<bool>,
         /// The places selected, on their own or along with files.
         pub(super) special_selected: RefCell<HashSet<String>>,
@@ -146,6 +150,19 @@ mod imp {
     impl WidgetImpl for IconCanvas {
         fn measure(&self, _: gtk::Orientation, _: i32) -> (i32, i32, i32, i32) {
             (0, 0, -1, -1)
+        }
+
+        fn realize(&self) {
+            self.parent_realize();
+            let canvas = self.obj();
+            // Laid out before the surface is on a display, the places may be another's.
+            if let Some(surface) = canvas.native().and_then(|native| native.surface()) {
+                surface.connect_enter_monitor(glib::clone!(
+                    #[weak]
+                    canvas,
+                    move |_, _| canvas.queue_allocate()
+                ));
+            }
         }
 
         fn size_allocate(&self, width: i32, height: i32, _baseline: i32) {
@@ -278,10 +295,11 @@ impl IconCanvas {
             && added == 1
             && gone.place != came
         {
-            let mut placed = imp.placed.borrow_mut();
-            if let Some(at) = placed.remove(&gone.place) {
-                placed.insert(came.clone(), at);
-                imp.kept.borrow_mut().insert(came, at);
+            for places in [&imp.placed, &imp.kept] {
+                let mut places = places.borrow_mut();
+                if let Some(at) = places.remove(&gone.place) {
+                    places.insert(came.clone(), at);
+                }
             }
         }
         for tile in old {
@@ -754,23 +772,38 @@ impl IconCanvas {
         glide.play();
     }
 
+    /// The size of the display the desktop is on, or of the desktop itself before it is on one.
+    fn display_size(&self) -> Point {
+        let monitor = self
+            .native()
+            .and_then(|native| native.surface())
+            .and_then(|surface| self.display().monitor_at_surface(&surface));
+        let (w, h) = match monitor {
+            Some(monitor) => (monitor.geometry().width(), monitor.geometry().height()),
+            None => self.imp().area.get(),
+        };
+        Point::new(f64::from(w), f64::from(h))
+    }
+
     fn lay_out(&self, width: i32, height: i32) {
         let imp = self.imp();
-        if imp.area.replace((width, height)) != (width, height) {
-            let size = Point::new(f64::from(width), f64::from(height));
+        let resized = imp.area.replace((width, height)) != (width, height);
+        let display = self.display_size();
+        if imp.display_size.replace(Some(display)) != Some(display) {
             let kept = imp
                 .positions
                 .borrow()
                 .as_ref()
-                .map(|p| p.kept(size))
+                .map(|p| p.kept(display))
                 .unwrap_or_default();
-            imp.kept.replace(self.seen_from_start_side(&kept));
+            imp.kept.replace(kept);
             imp.placed.borrow_mut().clear();
         }
         let grid = self.grid();
         let places = self.places();
-        let mut known = imp.kept.borrow().clone();
-        known.extend(imp.placed.borrow().iter().map(|(p, at)| (p.clone(), *at)));
+        // A place the area the panels leave moved a tile from is still where it goes.
+        let mut known = imp.placed.borrow().clone();
+        known.extend(self.seen_from_start_side(&imp.kept.borrow()));
         {
             let mut expected = imp.expected.borrow_mut();
             expected.retain(|(_, _, when)| when.elapsed() < EXPECTED_FOR);
@@ -808,7 +841,8 @@ impl IconCanvas {
                     }
             })
         };
-        if settles {
+        // Panels coming and going move the tiles at once, with the surface.
+        if settles && !resized {
             self.glide();
         }
         let glide = imp
@@ -902,26 +936,35 @@ impl IconCanvas {
                 if canvas.view().model().loading() {
                     return;
                 }
-                let (w, h) = imp.area.get();
-                let size = Point::new(f64::from(w), f64::from(h));
-                let mut placed = imp.placed.borrow().clone();
+                let size = canvas.display_size();
                 // What has no tile keeps its place for when it has one: a drive taken out,
                 // a place not shown for now, a file the view has yet to hand over, which it
                 // may do after saying the folder is read. A file gone from the folder is gone.
                 let folder = canvas.view().location();
-                for (place, at) in imp.kept.borrow().iter() {
-                    let there = match place {
+                let mut kept: HashMap<Place, Point> = imp
+                    .kept
+                    .borrow()
+                    .iter()
+                    .filter(|(place, _)| match place {
                         Place::Special(_) => true,
                         Place::File(name) => folder
                             .as_ref()
                             .is_some_and(|f| f.child(name).query_exists(gio::Cancellable::NONE)),
-                    };
-                    if there {
-                        placed.entry(place.clone()).or_insert(*at);
+                    })
+                    .map(|(place, at)| (place.clone(), *at))
+                    .collect();
+                // The sort decides every place; otherwise a tile only takes its place for
+                // keeps where it had none, since the others are where the area the panels
+                // leave just now fitted them.
+                let sorted = canvas.arrangement() == Arrangement::Auto;
+                let placed = canvas.seen_from_start_side(&imp.placed.borrow());
+                for (place, at) in placed {
+                    if sorted || !kept.contains_key(&place) {
+                        kept.insert(place, at);
                     }
                 }
                 if let Some(positions) = imp.positions.borrow_mut().as_mut() {
-                    positions.keep(size, &canvas.seen_from_start_side(&placed));
+                    positions.keep(size, &kept);
                     if let Err(e) = positions.save() {
                         glib::g_warning!(
                             "spiral",
@@ -929,7 +972,7 @@ impl IconCanvas {
                         );
                     }
                 }
-                imp.kept.replace(placed);
+                imp.kept.replace(kept);
             }
         ));
     }
@@ -945,20 +988,18 @@ impl IconCanvas {
     }
 
     /// The icons go over to the other side, each as far from it as it was from this one, as
-    /// the side the grid starts at changes.
+    /// the side the grid starts at changes. The places kept are measured from that side
+    /// already.
     fn mirror_places(&self) {
         let imp = self.imp();
         let width = f64::from(imp.area.get().0);
         let cell = self.grid().cell_size();
-        let mirrored = |places: &HashMap<Place, Point>| {
-            places
-                .iter()
-                .map(|(place, at)| (place.clone(), Point::new(width - cell.x - at.x, at.y)))
-                .collect::<HashMap<_, _>>()
-        };
-        let kept = mirrored(&imp.kept.borrow());
-        imp.kept.replace(kept);
-        let placed = mirrored(&imp.placed.borrow());
+        let placed = imp
+            .placed
+            .borrow()
+            .iter()
+            .map(|(place, at)| (place.clone(), Point::new(width - cell.x - at.x, at.y)))
+            .collect();
         imp.placed.replace(placed);
         self.queue_save();
         self.queue_allocate();
@@ -1077,7 +1118,9 @@ impl IconCanvas {
             &self.places(),
             &HashMap::new(),
         );
-        imp.kept.borrow_mut().extend(placed.clone());
+        imp.kept
+            .borrow_mut()
+            .extend(self.seen_from_start_side(&placed));
         imp.placed.replace(placed);
         self.queue_save();
         self.queue_allocate();
@@ -1087,7 +1130,9 @@ impl IconCanvas {
         let imp = self.imp();
         let grid = self.grid();
         let placed = placement::move_by(&grid, self.arrangement(), &imp.placed.borrow(), moved, by);
-        imp.kept.borrow_mut().extend(placed.clone());
+        imp.kept
+            .borrow_mut()
+            .extend(self.seen_from_start_side(&placed));
         imp.placed.replace(placed);
         self.queue_save();
         self.queue_allocate();

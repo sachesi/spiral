@@ -1,6 +1,7 @@
 //! Where the icons of the desktop were left, kept in a key file of the user's state: a group
-//! for each size of desktop they were placed on, so that a display of another size keeps its
+//! for each size of display they were placed on, so that a display of another size keeps its
 //! own layout, and one never seen before starts from the nearest one kept, scaled to fit.
+//! A display's layout stays the same while panels and docks come and go over it.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -17,6 +18,10 @@ pub enum Place {
 }
 
 const SPECIAL_GROUP: &str = " special";
+/// Before the group of a display's layout. Groups without it were kept for the area the
+/// panels left free, which changed as they came and went; they are only read until the
+/// display has a layout of its own.
+const DISPLAY: &str = "display ";
 
 pub struct Positions {
     path: PathBuf,
@@ -50,28 +55,46 @@ impl Positions {
         }
     }
 
-    /// The places kept for a desktop `size` large, or else those kept for the size nearest
+    /// The places kept for a display `size` large, or else those kept for the size nearest
     /// it, scaled to fit.
     pub fn kept(&self, size: Point) -> HashMap<Place, Point> {
-        let exact = group_name(size);
-        if self.file.has_group(&exact) {
-            return self.read(&exact);
+        let groups = self.file.groups();
+        let sizes = |display: bool| {
+            groups.iter().filter_map(move |group| {
+                let group = group.as_str();
+                match group.strip_prefix(DISPLAY) {
+                    Some(size) if display => parse_size(size),
+                    None if !display => parse_size(group),
+                    _ => None,
+                }
+            })
+        };
+        let nearest = |display: bool| {
+            sizes(display).min_by(|a, b| distance(*a, size).total_cmp(&distance(*b, size)))
+        };
+        if sizes(true).any(|kept| kept == size) {
+            return self.read(&display_group(size));
         }
-        let nearest = self
-            .file
-            .groups()
-            .iter()
-            .filter_map(|g| parse_size(g.as_str()))
-            .min_by(|a, b| distance(*a, size).total_cmp(&distance(*b, size)));
-        match nearest {
+        // Of the areas kept for this display, the one with the least room was the one with
+        // all of the panels on it, as it mostly is.
+        if let Some(area) = sizes(false)
+            .filter(|area| area.x == size.x && area.y <= size.y)
+            .min_by(|a, b| a.y.total_cmp(&b.y))
+        {
+            return self.read(&group_name(area));
+        }
+        if let Some(from) = nearest(true) {
+            return rescale(&self.read(&display_group(from)), from, size);
+        }
+        match nearest(false) {
             Some(from) => rescale(&self.read(&group_name(from)), from, size),
             None => HashMap::new(),
         }
     }
 
-    /// Keeps `places` as the layout of a desktop `size` large, in place of what was kept for it.
+    /// Keeps `places` as the layout of a display `size` large, in place of what was kept for it.
     pub fn keep(&mut self, size: Point, places: &HashMap<Place, Point>) {
-        let files = group_name(size);
+        let files = display_group(size);
         let specials = format!("{files}{SPECIAL_GROUP}");
         for group in [&files, &specials] {
             let _ = self.file.remove_group(group);
@@ -137,6 +160,10 @@ fn key_of(place: &Place) -> String {
 
 fn group_name(size: Point) -> String {
     format!("{}x{}", size.x.round() as i64, size.y.round() as i64)
+}
+
+fn display_group(size: Point) -> String {
+    format!("{DISPLAY}{}", group_name(size))
 }
 
 fn parse_size(group: &str) -> Option<Point> {
@@ -206,6 +233,29 @@ mod tests {
             (a.x - 110.0).abs() < 1e-9 && (a.y - 110.0).abs() < 1e-9,
             "{a:?}"
         );
+    }
+
+    #[test]
+    fn a_display_without_a_layout_reads_the_area_kept_with_every_panel_on_it() {
+        let path = scratch("areas");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(
+            &path,
+            "[1280x800]\na=4;4\n\n[1280x692]\na=600;300\n\n[1280x768]\na=4;136\n\n\
+             [1920x1080]\na=7;7\n",
+        )
+        .unwrap();
+        let mut positions = Positions::open(&path);
+        let display = Point::new(1280.0, 800.0);
+        assert_eq!(
+            positions.kept(display)[&file("a")],
+            Point::new(600.0, 300.0)
+        );
+        let mut moved = HashMap::new();
+        moved.insert(file("a"), Point::new(12.0, 12.0));
+        positions.keep(display, &moved);
+        positions.save().expect("saved");
+        assert_eq!(Positions::open(&path).kept(display), moved);
     }
 
     #[test]

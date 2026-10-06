@@ -81,8 +81,10 @@ reduced motion the images and icons are put where they go at once.
 
 Where the icons were left is kept in `$XDG_STATE_HOME/spiral/desktop-positions`
 (`~/.local/state/spiral/desktop-positions`), measured from the side they start at, for each
-size of desktop on its own. A display
-of a size not seen before starts from the layout of the nearest size kept, scaled to fit.
+size of display on its own. Panels and docks coming and going over a display, as they do
+while a session starts, move the icons with the desktop but leave their layout as it was. A
+display of a size not seen before starts from the layout of the nearest size kept, scaled to
+fit.
 Removing the file puts every icon back in order.
 
 ## Menu entries of other programs
