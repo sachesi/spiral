@@ -76,7 +76,8 @@
         Adds a rectangle, in the surface's coordinates, with its corners
         rounded to radius, to the pending shape. Below an opacity of 1 what
         is behind shows through the blur, as it fades in or out with what
-        the surface draws over it.
+        the surface draws over it. A rectangle added after another is
+        drawn over it, as a pane set into it, with its own rim.
       </description>
       <arg name="x" type="int"/>
       <arg name="y" type="int"/>

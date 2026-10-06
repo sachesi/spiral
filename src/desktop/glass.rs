@@ -102,6 +102,8 @@ struct Glass {
     queue: RefCell<EventQueue<State>>,
     manager: MeridianGlassManagerV1,
     style: gtk::CssProvider,
+    /// The accent laid over glass' tint, while the compositor's settings ask for it.
+    tint: gtk::CssProvider,
     appearance: Option<gio::Settings>,
     glazed: RefCell<Vec<(glib::WeakRef<gtk::Widget>, Corners, &'static str)>>,
     panes: RefCell<Vec<Pane>>,
@@ -305,6 +307,12 @@ impl Glass {
             &style,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
         );
+        let tint = gtk::CssProvider::new();
+        gtk::style_context_add_provider_for_display(
+            &display,
+            &tint,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
+        );
         let appearance = gio::SettingsSchemaSource::default()
             .and_then(|source| source.lookup("org.meridian.appearance", true))
             .filter(|schema| schema.has_key("glass"))
@@ -314,20 +322,37 @@ impl Glass {
                 glass.restyle();
             }
         };
+        let retint = || {
+            if let Some(glass) = shared() {
+                glass.tint();
+            }
+        };
         if let Some(appearance) = &appearance {
             appearance.connect_changed(Some("glass"), move |_, _| restyle());
+            appearance.connect_changed(None, move |_, key| {
+                if key.starts_with("glass-tint") || key.contains("accent") {
+                    retint();
+                }
+            });
         }
-        adw::StyleManager::default().connect_dark_notify(move |_| restyle());
+        let styles = adw::StyleManager::default();
+        styles.connect_dark_notify(move |_| {
+            restyle();
+            retint();
+        });
+        styles.connect_accent_color_rgba_notify(move |_| retint());
         let glass = Rc::new(Self {
             connection,
             queue: RefCell::new(queue),
             manager,
             style,
+            tint,
             appearance,
             glazed: RefCell::default(),
             panes: RefCell::default(),
         });
         glass.follow_style();
+        glass.tint();
         Some(glass)
     }
 
@@ -340,6 +365,46 @@ impl Glass {
             } else {
                 gtk::InterfaceColorScheme::Light
             });
+    }
+
+    /// Lays the accent over glass' tint as far as the compositor's settings say, as slightly
+    /// as it tints its own.
+    fn tint(&self) {
+        let amount = self
+            .appearance
+            .as_ref()
+            .filter(|appearance| {
+                has_key(appearance, "glass-tint") && appearance.boolean("glass-tint")
+            })
+            .map(|appearance| {
+                0.04 + 0.12 * appearance.double("glass-tint-strength").clamp(0.0, 1.0)
+            });
+        self.tint
+            .load_from_string(&amount.map_or_else(String::new, |amount| {
+                format!(
+                    ":root {{ --glass-tint: {}; --glass-tint-amount: {:.0}%; }}",
+                    self.accent(),
+                    amount * 100.0
+                )
+            }));
+    }
+
+    /// The accent as the compositor has it: the wallpaper's for the style while it follows
+    /// the wallpaper, which libadwaita only knows the nearest of its own to.
+    fn accent(&self) -> String {
+        let styles = adw::StyleManager::default();
+        self.appearance
+            .as_ref()
+            .filter(|appearance| {
+                has_key(appearance, "wallpaper-accent")
+                    && appearance.boolean("accent-from-wallpaper")
+            })
+            .and_then(|appearance| {
+                let (light, dark): (String, String) = appearance.value("wallpaper-accent").get()?;
+                let accent = if styles.is_dark() { dark } else { light };
+                gdk::RGBA::parse(&accent).ok().map(|_| accent)
+            })
+            .unwrap_or_else(|| crate::tags::hex(&styles.accent_color_rgba()))
     }
 
     fn on(&self) -> bool {
@@ -548,6 +613,12 @@ impl Glass {
         let _ = self.queue.borrow_mut().dispatch_pending(&mut State);
         let _ = self.connection.flush();
     }
+}
+
+fn has_key(settings: &gio::Settings, key: &str) -> bool {
+    settings
+        .settings_schema()
+        .is_some_and(|schema| schema.has_key(key))
 }
 
 fn set_class(widget: &gtk::Widget, class: &str, on: bool) {
