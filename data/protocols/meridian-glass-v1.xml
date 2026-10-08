@@ -22,7 +22,7 @@
     DEALINGS IN THE SOFTWARE.
   </copyright>
 
-  <interface name="meridian_glass_manager_v1" version="1">
+  <interface name="meridian_glass_manager_v1" version="2">
     <description summary="glass behind a shell's surfaces">
       For the shell's panels, docks and menus: what is behind parts of a
       surface shows through them blurred and bent at their edges, as through
@@ -48,7 +48,7 @@
     </enum>
   </interface>
 
-  <interface name="meridian_glass_v1" version="1">
+  <interface name="meridian_glass_v1" version="2">
     <description summary="the parts of a surface that are glass">
       The shape, contrast and frost are double-buffered: requests change
       pending ones, which the surface's next commit makes its own. A surface
@@ -84,6 +84,25 @@
       <arg name="width" type="int"/>
       <arg name="height" type="int"/>
       <arg name="radius" type="int"/>
+      <arg name="opacity" type="fixed"/>
+    </request>
+
+    <request name="add_corners" since="2">
+      <description summary="a rectangle of glass rounded corner by corner">
+        As add, each corner rounded to a radius of its own. A negative
+        radius curves the corner the other way: the edge above or below it
+        reaches that far out past the side and curves in to meet it, as
+        where a bar meets the edge of the output it hangs from. Such a
+        corner reaches no further than half the rectangle's height.
+      </description>
+      <arg name="x" type="int"/>
+      <arg name="y" type="int"/>
+      <arg name="width" type="int"/>
+      <arg name="height" type="int"/>
+      <arg name="top_left" type="int"/>
+      <arg name="top_right" type="int"/>
+      <arg name="bottom_right" type="int"/>
+      <arg name="bottom_left" type="int"/>
       <arg name="opacity" type="fixed"/>
     </request>
 
