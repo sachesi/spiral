@@ -399,7 +399,18 @@ impl IconCanvas {
                 }
             })
             .collect();
-        let selected = imp.special_selected.borrow().clone();
+        // A drive taken out leaves the selection and the keyboard with its icon.
+        let shown = |key: &String| tiles.iter().any(|t| t.special.key == *key);
+        let selected: HashSet<String> = imp
+            .special_selected
+            .take()
+            .into_iter()
+            .filter(shown)
+            .collect();
+        imp.special_selected.replace(selected.clone());
+        if matches!(&*imp.cursor.borrow(), Some(Hit::Special(key)) if !shown(key)) {
+            imp.cursor.replace(None);
+        }
         for tile in &tiles {
             mark(
                 &tile.frame,
