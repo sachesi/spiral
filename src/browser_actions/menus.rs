@@ -225,6 +225,10 @@ impl BrowserView {
     /// of the folder when nothing is selected, in the middle of the pane: whatever file
     /// sits there is not the one the keys were on.
     pub(super) fn popup_menu_for_selection(&self) {
+        if let Some(canvas) = self.imp().canvas.get() {
+            canvas.popup_menu_for_cursor();
+            return;
+        }
         let stack = self.imp().stack.upcast_ref::<gtk::Widget>();
         let focused = self
             .root()

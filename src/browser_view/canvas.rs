@@ -649,13 +649,15 @@ impl IconCanvas {
     /// The menu of the places selected without files: a place's own, or Open for several.
     fn places_menu(&self) -> Option<gio::Menu> {
         let selected = self.imp().special_selected.borrow().clone();
-        if selected.len() == 1 {
-            let key = selected.iter().next()?;
-            return Some(self.special_menu(&self.special(key)?));
+        match selected.len() {
+            0 => None,
+            1 => Some(self.special_menu(&self.special(selected.iter().next()?)?)),
+            _ => {
+                let menu = gio::Menu::new();
+                menu.append(Some(&gettext("_Open")), Some("desktop.open-places"));
+                Some(menu)
+            }
         }
-        let menu = gio::Menu::new();
-        menu.append(Some(&gettext("_Open")), Some("desktop.open-places"));
-        Some(menu)
     }
 
     /// The places of what is selected, files and places both.
@@ -1381,8 +1383,6 @@ impl IconCanvas {
         ));
         self.add_controller(click);
 
-        // A click on something selected keeps the selection, and the menu is that of the
-        // files selected, whose Open opens the places as well; places alone have their own.
         // The view's menu handles the empty desktop.
         let secondary = gtk::GestureClick::builder()
             .button(gdk::BUTTON_SECONDARY)
@@ -1394,31 +1394,9 @@ impl IconCanvas {
                 let Some(hit) = canvas.hit(x, y) else {
                     return;
                 };
+                gesture.set_state(gtk::EventSequenceState::Claimed);
                 canvas.grab_focus();
-                if !canvas.is_selected(&hit) {
-                    canvas.select_only(&hit);
-                }
-                canvas.set_cursor(Some(hit.clone()));
-                let view = canvas.view();
-                let first_file = view.model().selection().selection().minimum();
-                match hit {
-                    Hit::Item(_) => {}
-                    Hit::Special(_) if !view.model().selection().selection().is_empty() => {
-                        gesture.set_state(gtk::EventSequenceState::Claimed);
-                        if let Some(p) = canvas.compute_point(
-                            &view.imp().stack.get(),
-                            &gtk::graphene::Point::new(x as f32, y as f32),
-                        ) {
-                            view.popup_menu_on(Some(first_file), p.x().into(), p.y().into());
-                        }
-                    }
-                    Hit::Special(_) => {
-                        gesture.set_state(gtk::EventSequenceState::Claimed);
-                        if let Some(menu) = canvas.places_menu() {
-                            canvas.popup(&menu, x, y);
-                        }
-                    }
-                }
+                canvas.popup_menu_on(&hit, x, y);
             }
         ));
         self.add_controller(secondary);
@@ -1776,6 +1754,67 @@ impl IconCanvas {
         });
         if let Some(at) = found {
             self.go_to_hit(Hit::Item(at), false);
+        }
+    }
+
+    /// The menu of `hit`, selected unless it already is, at a point on the desktop. A click
+    /// on something selected keeps the selection.
+    fn popup_menu_on(&self, hit: &Hit, x: f64, y: f64) {
+        if !self.is_selected(hit) {
+            self.select_only(hit);
+        }
+        self.set_cursor(Some(hit.clone()));
+        self.popup_selection_menu(x, y);
+    }
+
+    /// The menu of the files selected, whose Open opens the places as well; places alone
+    /// have their own, and with nothing selected the desktop's.
+    fn popup_selection_menu(&self, x: f64, y: f64) {
+        let view = self.view();
+        let selected = view.model().selection().selection();
+        if selected.is_empty()
+            && let Some(menu) = self.places_menu()
+        {
+            self.popup(&menu, x, y);
+        } else if let Some(p) = self.compute_point(
+            &view.imp().stack.get(),
+            &gtk::graphene::Point::new(x as f32, y as f32),
+        ) {
+            let first = (!selected.is_empty()).then(|| selected.minimum());
+            view.popup_menu_on(first, p.x().into(), p.y().into());
+        }
+    }
+
+    /// Menu or Shift+F10: the menu a right click on the icon the keyboard is on would open,
+    /// over that icon; with the keyboard on none, the menu of what is selected in the
+    /// middle of the desktop.
+    pub(crate) fn popup_menu_for_cursor(&self) {
+        let cursor = self.imp().cursor.borrow().clone();
+        let frame = cursor.as_ref().and_then(|hit| match hit {
+            Hit::Item(at) => self
+                .imp()
+                .tiles
+                .borrow()
+                .get(*at as usize)
+                .map(|t| t.frame.clone()),
+            Hit::Special(key) => self
+                .imp()
+                .specials
+                .borrow()
+                .iter()
+                .find(|t| t.special.key == *key)
+                .map(|t| t.frame.clone()),
+        });
+        match cursor.zip(frame.and_then(|frame| frame.compute_bounds(self))) {
+            Some((hit, b)) => self.popup_menu_on(
+                &hit,
+                f64::from(b.x() + b.width() / 2.0),
+                f64::from(b.y() + b.height() / 2.0),
+            ),
+            None => self.popup_selection_menu(
+                f64::from(self.width()) / 2.0,
+                f64::from(self.height()) / 2.0,
+            ),
         }
     }
 
