@@ -199,6 +199,25 @@ impl BrowserView {
         }
         popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
         popover.popup();
+        if imp.canvas.get().is_some() {
+            // GTK lets a menu flip above the point or shrink, never slide, so one that fits
+            // on neither side would scroll its last entries out of sight. The desktop has
+            // the whole display: such a menu goes as far down as it still fits. Its height
+            // is known once it is styled as shown, on its first frame.
+            let room = f64::from(self.height());
+            popover.add_tick_callback(move |popover, _| {
+                if let Some(card) = popover.child().and_then(|card| card.parent()) {
+                    let height = f64::from(card.measure(gtk::Orientation::Vertical, -1).1);
+                    if y + height > room && y < height {
+                        let y = (room - height - 1.0).max(0.0);
+                        popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(
+                            x as i32, y as i32, 1, 1,
+                        )));
+                    }
+                }
+                glib::ControlFlow::Break
+            });
+        }
     }
 
     /// Menu or Shift+F10: the menu a right click on the file the keyboard is on would
