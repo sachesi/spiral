@@ -58,6 +58,12 @@ const TERMINALS: &[Terminal] = &[
         run_args: &["--"],
     },
     Terminal {
+        exec: "caret",
+        label: "Caret",
+        args: &["--working-directory={}"],
+        run_args: &["--"],
+    },
+    Terminal {
         exec: "ptyxis",
         label: "Ptyxis",
         args: &["--working-directory={}"],

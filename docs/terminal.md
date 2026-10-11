@@ -7,8 +7,8 @@ Terminals are found in `PATH`, like the archive tools. Preferences lists the ins
 ones under "Terminal" and says which one "Automatic" would use. The setting stores the
 executable name; empty means automatic, which takes the first installed of:
 
-`xdg-terminal-exec`, ghostty, kitty, alacritty, foot, wezterm, ptyxis, kgx (Console),
-gnome-terminal, konsole, xfce4-terminal, tilix, terminator, xterm, urxvt.
+`xdg-terminal-exec`, ghostty, kitty, alacritty, foot, wezterm, caret, ptyxis, kgx
+(Console), gnome-terminal, konsole, xfce4-terminal, tilix, terminator, xterm, urxvt.
 
 The same terminal opens an application that asks for one. A desktop entry with
 `Terminal=true`, an editor that runs in a terminal or anything of that kind, cannot be
