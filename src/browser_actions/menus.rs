@@ -20,6 +20,12 @@ pub(super) fn first_cell_position(w: &gtk::Widget, depth: u32) -> Option<u32> {
     None
 }
 
+/// Where a menu `height` tall opened at `y` goes on a desktop `room` tall when it fits
+/// neither below nor above that point: as far down as all of it still shows.
+fn slid_up(y: f64, height: f64, room: f64) -> Option<f64> {
+    (y + height > room && y < height).then(|| (room - height - 1.0).max(0.0))
+}
+
 impl BrowserView {
     /// The ways of opening the selection other than the plain one: a tab, a window, a
     /// terminal. Only the ones on offer are there, each an item of its own rather than a
@@ -208,8 +214,7 @@ impl BrowserView {
             popover.add_tick_callback(move |popover, _| {
                 if let Some(card) = popover.child().and_then(|card| card.parent()) {
                     let height = f64::from(card.measure(gtk::Orientation::Vertical, -1).1);
-                    if y + height > room && y < height {
-                        let y = (room - height - 1.0).max(0.0);
+                    if let Some(y) = slid_up(y, height, room) {
                         popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(
                             x as i32, y as i32, 1, 1,
                         )));
@@ -250,5 +255,21 @@ impl BrowserView {
                 self.popup_menu_on(pos, w / 2.0, h / 2.0);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::slid_up;
+
+    #[test]
+    fn a_menu_with_room_on_neither_side_slides_up_until_all_of_it_shows() {
+        // Fits below, or above: GTK places it.
+        assert_eq!(slid_up(100.0, 400.0, 800.0), None);
+        assert_eq!(slid_up(700.0, 400.0, 800.0), None);
+        // Fits on neither side of the click: its bottom one pixel off the edge.
+        assert_eq!(slid_up(500.0, 600.0, 800.0), Some(199.0));
+        // Taller than the desktop: from the top.
+        assert_eq!(slid_up(500.0, 900.0, 800.0), Some(0.0));
     }
 }

@@ -275,6 +275,40 @@ pub fn rescale<K: Hash + Eq + Clone>(
         .collect()
 }
 
+/// The tile nearest `from`'s in the direction `(dx, dy)`, or the first of all, in the corner
+/// the icons start at, when `from` is none of `tiles`.
+pub fn neighbour<K: PartialEq + Clone>(
+    grid: &Grid,
+    tiles: &[(K, Point)],
+    from: Option<&K>,
+    (dx, dy): (f64, f64),
+) -> Option<K> {
+    let at = from.and_then(|from| tiles.iter().find(|(k, _)| k == from).map(|(_, at)| *at));
+    let Some(at) = at else {
+        return tiles
+            .iter()
+            .min_by(|(_, a), (_, b)| {
+                let (a, b) = (grid.in_cells(*a), grid.in_cells(*b));
+                a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y))
+            })
+            .map(|(k, _)| k.clone());
+    };
+    tiles
+        .iter()
+        .filter(|(k, _)| Some(k) != from)
+        .filter_map(|(k, to)| {
+            let (x, y) = (to.x - at.x, to.y - at.y);
+            let along = x * dx + y * dy;
+            if along <= 0.5 {
+                return None;
+            }
+            let across = (x * dy - y * dx).abs();
+            Some((k, along + 2.0 * across))
+        })
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(k, _)| k.clone())
+}
+
 /// The cells a tile at `point` covers some of.
 fn cells_under(grid: &Grid, point: Point) -> impl Iterator<Item = Cell> {
     let cell = grid.cell_size();
@@ -568,5 +602,57 @@ mod tests {
             assert_eq!(Arrangement::from_nick(nick), Some(arrangement));
         }
         assert_eq!(Arrangement::from_nick("spiral"), None);
+    }
+
+    fn tiles(at: &[(&'static str, f64, f64)]) -> Vec<(&'static str, Point)> {
+        at.iter()
+            .map(|&(name, x, y)| (name, Point::new(x, y)))
+            .collect()
+    }
+
+    const RIGHT: (f64, f64) = (1.0, 0.0);
+    const DOWN: (f64, f64) = (0.0, 1.0);
+
+    #[test]
+    fn the_first_arrow_picks_the_icon_in_the_corner_the_icons_start_at() {
+        let left = grid();
+        let shown = tiles(&[("c", 210.0, 10.0), ("b", 10.0, 110.0), ("a", 10.0, 10.0)]);
+        assert_eq!(neighbour(&left, &shown, None, DOWN), Some("a"));
+        let right = grid().aligned_right(true);
+        assert_eq!(neighbour(&right, &shown, None, DOWN), Some("c"));
+        // A column is filled before the next, so down the first column comes first.
+        let shown = tiles(&[("top", 110.0, 10.0), ("under", 10.0, 110.0)]);
+        assert_eq!(neighbour(&left, &shown, None, RIGHT), Some("under"));
+    }
+
+    #[test]
+    fn a_cursor_on_an_icon_gone_counts_as_none() {
+        let shown = tiles(&[("b", 110.0, 10.0), ("a", 10.0, 10.0)]);
+        assert_eq!(neighbour(&grid(), &shown, Some(&"drive"), RIGHT), Some("a"));
+        assert_eq!(neighbour(&grid(), &[], Some(&"drive"), RIGHT), None);
+    }
+
+    #[test]
+    fn an_arrow_keeps_to_the_row_before_it_goes_aslant() {
+        let shown = tiles(&[
+            ("a", 10.0, 10.0),
+            ("far", 210.0, 10.0),
+            ("aslant", 110.0, 110.0),
+        ]);
+        assert_eq!(neighbour(&grid(), &shown, Some(&"a"), RIGHT), Some("far"));
+        assert_eq!(neighbour(&grid(), &shown, Some(&"a"), DOWN), Some("aslant"));
+    }
+
+    #[test]
+    fn an_arrow_past_the_last_icon_that_way_goes_nowhere() {
+        let shown = tiles(&[("a", 10.0, 10.0), ("b", 110.0, 10.0)]);
+        assert_eq!(neighbour(&grid(), &shown, Some(&"b"), RIGHT), None);
+        assert_eq!(
+            neighbour(&grid(), &shown, Some(&"b"), (-1.0, 0.0)),
+            Some("a")
+        );
+        // An icon freely placed a pixel off the row is not further along it.
+        let shown = tiles(&[("a", 10.0, 10.0), ("nudged", 10.4, 120.0)]);
+        assert_eq!(neighbour(&grid(), &shown, Some(&"a"), RIGHT), None);
     }
 }

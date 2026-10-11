@@ -320,3 +320,24 @@ impl LocationBar {
         show_entry(&self.stack, &self.entry, &self.view);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::*;
+
+    #[test]
+    fn a_typed_location_is_a_uri_a_path_from_home_or_a_path() {
+        let home = gio::File::for_path(glib::home_dir());
+        assert!(resolve("~").equal(&home));
+        assert!(resolve("~/").equal(&home));
+        assert!(resolve("~/Documents/x").equal(&home.resolve_relative_path("Documents/x")));
+        assert_eq!(
+            resolve("/etc/hosts").path().unwrap(),
+            Path::new("/etc/hosts")
+        );
+        assert_eq!(resolve("smb://nas/share").uri_scheme().unwrap(), "smb");
+        assert_eq!(resolve("file:///etc").path().unwrap(), Path::new("/etc"));
+    }
+}

@@ -587,3 +587,79 @@ impl Drop for Waiting<'_> {
         self.job.report(true);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn file(path: &str) -> gio::File {
+        gio::File::for_path(path)
+    }
+
+    #[test]
+    fn one_file_is_named_and_several_are_counted() {
+        let copy = |sources: &[&str]| JobKind::Transfer {
+            pairs: sources
+                .iter()
+                .map(|s| (file(s), file("/home/me/Backup")))
+                .collect(),
+            is_move: false,
+        };
+        assert_eq!(
+            copy(&["/home/me/a.txt"]).description(),
+            "Copying “a.txt” to “Backup”"
+        );
+        assert_eq!(
+            copy(&["/home/me/a.txt", "/home/me/b.txt"]).description(),
+            "Copying 2 files to “Backup”"
+        );
+        assert_eq!(copy(&["/home/me/a.txt"]).done_message(), "Copied “a.txt”");
+        let rename = JobKind::Rename {
+            renames: vec![(file("/home/me/old.txt"), "new.txt".into())],
+        };
+        assert_eq!(rename.description(), "Renaming “old.txt” to “new.txt”");
+        assert_eq!(rename.done_message(), "Renamed to “new.txt”");
+    }
+
+    #[test]
+    fn files_gathered_into_a_new_folder_are_moving_into_it() {
+        let job = JobKind::NewFolderWith {
+            parent: file("/home/me"),
+            name: "Box".into(),
+            files: vec![file("/home/me/x"), file("/home/me/y")],
+        };
+        assert_eq!(job.description(), "Moving 2 files to “Box”");
+        assert_eq!(job.done_message(), "Created folder “Box”");
+    }
+
+    #[test]
+    fn only_jobs_that_make_files_have_a_destination() {
+        let to = file("/home/me/Backup");
+        let copy = JobKind::Transfer {
+            pairs: vec![(file("/home/me/a"), to.clone())],
+            is_move: true,
+        };
+        assert_eq!(copy.destination(), Some(to));
+        let trash = JobKind::Trash {
+            files: vec![file("/home/me/a")],
+        };
+        assert_eq!(trash.destination(), None);
+    }
+
+    #[test]
+    fn time_left_is_rounded_up_to_the_unit_it_is_said_in() {
+        assert_eq!(time_left(0), "0 seconds");
+        assert_eq!(time_left(1), "1 second");
+        assert_eq!(time_left(59), "59 seconds");
+        assert_eq!(time_left(60), "1 minute");
+        assert_eq!(time_left(61), "2 minutes");
+        assert_eq!(time_left(3600), "1 hour");
+        assert_eq!(time_left(3601), "2 hours");
+    }
+
+    #[test]
+    fn a_file_is_named_by_its_last_component() {
+        assert_eq!(name(&file("/home/me/a b.txt")), "a b.txt");
+        assert_eq!(name(&file("/")), "/");
+    }
+}

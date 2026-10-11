@@ -1267,4 +1267,107 @@ mod tests {
         assert_whole(&delete, 4, 0);
         assert!(!s.path("tree").exists());
     }
+
+    #[test]
+    fn a_new_document_is_empty_or_a_copy_of_its_template_until_undone() {
+        use std::os::unix::fs::PermissionsExt;
+        let s = Scratch::new("document");
+        std::fs::write(s.path("template.odt"), "body").unwrap();
+        std::fs::set_permissions(
+            s.path("template.odt"),
+            std::fs::Permissions::from_mode(0o444),
+        )
+        .unwrap();
+        let empty = run_job(JobKind::CreateFile {
+            parent: s.file(""),
+            name: "Notes.txt".into(),
+            template: None,
+        });
+        let copy = run_job(JobKind::CreateFile {
+            parent: s.file(""),
+            name: "Letter.odt".into(),
+            template: Some(s.file("template.odt")),
+        });
+        assert_eq!(std::fs::read_to_string(s.path("Notes.txt")).unwrap(), "");
+        assert_eq!(
+            std::fs::read_to_string(s.path("Letter.odt")).unwrap(),
+            "body"
+        );
+        // A document of its own, to be written to: the template's being read-only is not.
+        let mode = std::fs::metadata(s.path("Letter.odt"))
+            .unwrap()
+            .permissions()
+            .mode();
+        assert_ne!(mode & 0o200, 0, "the copy is read-only: {mode:o}");
+        undo(&empty);
+        undo(&copy);
+        assert!(!s.path("Notes.txt").exists() && !s.path("Letter.odt").exists());
+        assert!(s.path("template.odt").exists());
+    }
+
+    #[test]
+    fn links_point_at_their_files_and_undo_takes_only_the_links() {
+        let s = Scratch::new("link");
+        std::fs::write(s.path("a.txt"), "a").unwrap();
+        std::fs::create_dir(s.path("dest")).unwrap();
+        let job = run_job(JobKind::Link {
+            files: vec![s.file("a.txt")],
+            dest: s.file("dest"),
+        });
+        let link = std::fs::read_dir(s.path("dest"))
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .path();
+        assert_eq!(std::fs::read_link(&link).unwrap(), s.path("a.txt"));
+        undo(&job);
+        assert!(!link.exists() && link.symlink_metadata().is_err());
+        assert!(s.path("a.txt").exists());
+    }
+
+    #[test]
+    fn a_new_folder_undone_can_be_made_again() {
+        let s = Scratch::new("refold");
+        std::fs::write(s.path("x.txt"), "x").unwrap();
+        let job = run_job(JobKind::NewFolderWith {
+            parent: s.file(""),
+            name: "Box".into(),
+            files: vec![s.file("x.txt")],
+        });
+        let unfolded = undo(&job);
+        assert!(!s.path("Box").exists() && s.path("x.txt").exists());
+        undo(&unfolded);
+        assert_eq!(contents(&s.0), [("Box/x.txt".into(), "x".into())]);
+    }
+
+    #[test]
+    fn a_folder_given_something_else_since_is_kept_when_undone() {
+        let s = Scratch::new("unfold-kept");
+        std::fs::write(s.path("x.txt"), "x").unwrap();
+        let job = run_job(JobKind::NewFolderWith {
+            parent: s.file(""),
+            name: "Box".into(),
+            files: vec![s.file("x.txt")],
+        });
+        std::fs::write(s.path("Box/later.txt"), "l").unwrap();
+        undo(&job);
+        assert_eq!(
+            contents(&s.0),
+            [
+                ("Box/later.txt".into(), "l".into()),
+                ("x.txt".into(), "x".into())
+            ]
+        );
+    }
+
+    #[test]
+    fn a_delete_cannot_be_undone() {
+        let s = Scratch::new("no-undo");
+        std::fs::write(s.path("a.txt"), "a").unwrap();
+        let job = run_job(JobKind::Delete {
+            files: vec![s.file("a.txt")],
+        });
+        assert!(undo_for(&job).is_none());
+    }
 }

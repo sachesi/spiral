@@ -343,3 +343,85 @@ fn preview_rows(list: &gtk::ListBox, names: &[String]) -> Vec<adw::ActionRow> {
     }
     rows
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn names(n: &[&str]) -> Vec<String> {
+        n.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn numbering_keeps_each_extension_and_counts_in_selection_order() {
+        let old = names(&["b.jpg", "a.png", "README", ".bashrc", "backup.tar.gz"]);
+        assert_eq!(
+            numbered(&old, "Trip", 2),
+            names(&[
+                "Trip 01.jpg",
+                "Trip 02.png",
+                "Trip 03",
+                "Trip 04",
+                "Trip 05.gz"
+            ])
+        );
+    }
+
+    #[test]
+    fn a_number_wider_than_the_padding_is_written_in_full() {
+        let old: Vec<String> = (0..12).map(|i| format!("{i}.txt")).collect();
+        let made = numbered(&old, "Scan", 1);
+        assert_eq!(made[0], "Scan 1.txt");
+        assert_eq!(made[11], "Scan 12.txt");
+    }
+
+    #[test]
+    fn the_suggested_base_is_the_first_name_without_its_extension() {
+        assert_eq!(
+            common_stem(&names(&["Holiday.jpg", "Other.png"])),
+            "Holiday"
+        );
+        assert_eq!(common_stem(&names(&[".hidden"])), ".hidden");
+        assert_eq!(common_stem(&[]), "");
+    }
+
+    #[test]
+    fn replacing_touches_every_occurrence_and_nothing_with_no_text_to_find() {
+        let old = names(&["IMG_001_IMG.jpg", "photo.jpg"]);
+        assert_eq!(
+            replaced(&old, "IMG", "Trip"),
+            names(&["Trip_001_Trip.jpg", "photo.jpg"])
+        );
+        assert_eq!(replaced(&old, "", "x"), old);
+    }
+
+    #[test]
+    fn the_first_complaint_is_the_one_a_reader_sees_first() {
+        let old = names(&["a.txt", "b.txt"]);
+        let none = HashSet::new();
+        assert_eq!(check(&old, &names(&["x.txt", "y.txt"]), &none, None), None);
+        // An empty name says so, rather than the empty message validate gives.
+        assert_eq!(
+            check(&old, &names(&["", "y.txt"]), &none, None),
+            Some(gettext("File names cannot be empty."))
+        );
+        assert_eq!(
+            check(&old, &names(&["x/y", "y.txt"]), &none, None),
+            Some(gettext("File names cannot contain “/”."))
+        );
+        assert_eq!(
+            check(&old, &names(&["x.txt", "x.txt"]), &none, None),
+            Some(gettext("Two files would end up with the same name."))
+        );
+        let others = HashSet::from(["y.txt".to_string()]);
+        assert_eq!(
+            check(&old, &names(&["x.txt", "y.txt"]), &others, None),
+            Some(gettext("A file with that name already exists."))
+        );
+        // A name invalid in itself is reported before any clash it is part of.
+        assert_eq!(
+            check(&old, &names(&["x.txt", "x.txt"]), &none, Some(4)),
+            Some(gettext("File name is too long."))
+        );
+    }
+}

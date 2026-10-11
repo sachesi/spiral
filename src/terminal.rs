@@ -119,6 +119,21 @@ const TERMINALS: &[Terminal] = &[
     },
 ];
 
+impl Terminal {
+    /// The terminal started in `dir`, running `command` there, or a shell without one.
+    fn argv(&self, dir: &Path, command: &[String]) -> Vec<String> {
+        let dir = dir.to_string_lossy();
+        let mut argv: Vec<String> = std::iter::once(self.exec.to_string())
+            .chain(self.args.iter().map(|a| a.replace("{}", &dir)))
+            .collect();
+        if !command.is_empty() {
+            argv.extend(self.run_args.iter().map(|a| a.to_string()));
+            argv.extend(command.iter().cloned());
+        }
+        argv
+    }
+}
+
 /// Which of the terminals are on the system, in preference order, looked up once: `PATH`
 /// does not change under a running process, and this is asked again for every change of
 /// the selection.
@@ -202,8 +217,17 @@ pub fn launch_if_wanted(
             &gettext("The command line of the application cannot be read"),
         )));
     };
-    // The desktop entry names where the files go with a field code; one that names none
-    // takes them at the end, as the specification says a launcher should.
+    let dir = files
+        .first()
+        .and_then(|f| f.parent())
+        .and_then(|p| p.path())
+        .unwrap_or_else(glib::home_dir);
+    Some(spawn(&dir, &command_line(&argv, files)))
+}
+
+/// The application's command line with `files` put where its field codes say. One that
+/// names none takes them at the end, as the specification says a launcher should.
+fn command_line(argv: &[std::ffi::OsString], files: &[gio::File]) -> Vec<String> {
     let mut command: Vec<String> = Vec::new();
     let mut placed = false;
     for arg in argv {
@@ -228,12 +252,7 @@ pub fn launch_if_wanted(
                 .map(|p| p.to_string_lossy().into_owned()),
         );
     }
-    let dir = files
-        .first()
-        .and_then(|f| f.parent())
-        .and_then(|p| p.path())
-        .unwrap_or_else(glib::home_dir);
-    Some(spawn(&dir, &command))
+    command
 }
 
 fn spawn(dir: &Path, command: &[String]) -> Result<(), glib::Error> {
@@ -243,17 +262,103 @@ fn spawn(dir: &Path, command: &[String]) -> Result<(), glib::Error> {
             &gettext("No terminal emulator found"),
         ));
     };
-    let dir_s = dir.to_string_lossy();
-    let mut argv: Vec<String> = std::iter::once(t.exec.to_string())
-        .chain(t.args.iter().map(|a| a.replace("{}", &dir_s)))
-        .collect();
-    if !command.is_empty() {
-        argv.extend(t.run_args.iter().map(|a| a.to_string()));
-        argv.extend(command.iter().cloned());
-    }
+    let argv = t.argv(dir, command);
     let argv: Vec<&std::ffi::OsStr> = argv.iter().map(std::ffi::OsStr::new).collect();
     // The launcher inherits the environment (display, session bus) and reaps the child.
     let launcher = gio::SubprocessLauncher::new(gio::SubprocessFlags::NONE);
     launcher.set_cwd(dir);
     launcher.spawn(&argv).map(|_| ())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn terminal(exec: &str) -> &'static Terminal {
+        TERMINALS.iter().find(|t| t.exec == exec).unwrap()
+    }
+
+    fn argv(line: &str) -> Vec<std::ffi::OsString> {
+        glib::shell_parse_argv(line).unwrap()
+    }
+
+    #[test]
+    fn a_folder_opens_with_the_terminal_s_own_option_for_it() {
+        let dir = Path::new("/home/me/My Files");
+        assert_eq!(
+            terminal("caret").argv(dir, &[]),
+            ["caret", "--working-directory=/home/me/My Files"]
+        );
+        assert_eq!(
+            terminal("wezterm").argv(dir, &[]),
+            ["wezterm", "start", "--cwd", "/home/me/My Files"]
+        );
+        // Started in the folder, which it inherits.
+        assert_eq!(terminal("xterm").argv(dir, &[]), ["xterm"]);
+    }
+
+    #[test]
+    fn a_command_follows_what_introduces_it_and_keeps_its_arguments_whole() {
+        let command = ["vim".to_string(), "a b.txt".to_string()];
+        assert_eq!(
+            terminal("caret").argv(Path::new("/tmp"), &command),
+            ["caret", "--working-directory=/tmp", "--", "vim", "a b.txt"]
+        );
+        assert_eq!(
+            terminal("konsole").argv(Path::new("/tmp"), &command),
+            ["konsole", "--workdir=/tmp", "-e", "vim", "a b.txt"]
+        );
+        assert_eq!(
+            terminal("xdg-terminal-exec").argv(Path::new("/tmp"), &command),
+            ["xdg-terminal-exec", "vim", "a b.txt"]
+        );
+    }
+
+    #[test]
+    fn every_terminal_has_one_entry() {
+        let mut execs: Vec<_> = TERMINALS.iter().map(|t| t.exec).collect();
+        execs.sort_unstable();
+        execs.dedup();
+        assert_eq!(execs.len(), TERMINALS.len());
+    }
+
+    #[test]
+    fn files_go_where_the_field_code_puts_them() {
+        let files = [
+            gio::File::for_path("/home/me/a.rs"),
+            gio::File::for_path("/home/me/b c.rs"),
+        ];
+        assert_eq!(
+            command_line(&argv("nvim --remote %F -c 'set nu'"), &files),
+            [
+                "nvim",
+                "--remote",
+                "/home/me/a.rs",
+                "/home/me/b c.rs",
+                "-c",
+                "set nu"
+            ]
+        );
+        // Icon, name and entry path are dropped.
+        assert_eq!(
+            command_line(&argv("hx %i %c %k %f"), &files[..1]),
+            ["hx", "/home/me/a.rs"]
+        );
+    }
+
+    #[test]
+    fn a_command_line_without_a_field_code_takes_the_files_at_the_end() {
+        let files = [gio::File::for_path("/home/me/a.rs")];
+        assert_eq!(
+            command_line(&argv("micro -autosave 1"), &files),
+            ["micro", "-autosave", "1", "/home/me/a.rs"]
+        );
+    }
+
+    #[test]
+    fn a_file_with_no_path_is_given_by_its_uri() {
+        let files = [gio::File::for_uri("sftp://host/srv/a.rs")];
+        let command = command_line(&argv("vim %U"), &files);
+        assert_eq!(command[1], files[0].uri().as_str());
+    }
 }

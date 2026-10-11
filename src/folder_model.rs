@@ -1048,3 +1048,52 @@ impl FolderModel {
         imp.start_listing(self.location().as_ref());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn file(path: &str) -> gio::File {
+        gio::File::for_path(path)
+    }
+
+    fn path_of(file: Option<gio::File>) -> Option<String> {
+        file.and_then(|f| f.path())
+            .map(|p| p.to_string_lossy().into_owned())
+    }
+
+    #[test]
+    fn a_moved_file_and_everything_below_a_moved_folder_follow_it() {
+        let moves = [(file("/home/me/Photos"), file("/home/me/Pictures"))];
+        assert_eq!(
+            path_of(moved_to(&file("/home/me/Photos"), &moves)),
+            Some("/home/me/Pictures".into())
+        );
+        assert_eq!(
+            path_of(moved_to(&file("/home/me/Photos/2024/a.jpg"), &moves)),
+            Some("/home/me/Pictures/2024/a.jpg".into())
+        );
+        assert_eq!(moved_to(&file("/home/me/Photos.old"), &moves), None);
+        assert_eq!(moved_to(&file("/home/me"), &moves), None);
+    }
+
+    #[test]
+    fn the_latest_move_of_a_place_is_the_one_followed() {
+        let moves = [
+            (file("/home/me/a"), file("/home/me/b")),
+            (file("/home/me/a"), file("/home/me/c")),
+        ];
+        assert_eq!(
+            path_of(moved_to(&file("/home/me/a/x"), &moves)),
+            Some("/home/me/c/x".into())
+        );
+    }
+
+    #[test]
+    fn below_means_inside_not_sharing_the_start_of_a_name() {
+        assert!(at_or_below(&file("/home/me/a"), &file("/home/me/a")));
+        assert!(at_or_below(&file("/home/me/a/b/c"), &file("/home/me/a")));
+        assert!(!at_or_below(&file("/home/me/ab"), &file("/home/me/a")));
+        assert!(!at_or_below(&file("/home/me"), &file("/home/me/a")));
+    }
+}

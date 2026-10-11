@@ -1692,37 +1692,9 @@ impl IconCanvas {
             .collect()
     }
 
-    /// The tile nearest the cursor's in the direction `(dx, dy)`, or the first of all, in the
-    /// corner the icons start at, when the keyboard is on none.
-    fn neighbour(&self, (dx, dy): (f64, f64)) -> Option<Hit> {
-        let hits = self.hits();
+    fn neighbour(&self, step: (f64, f64)) -> Option<Hit> {
         let current = self.imp().cursor.borrow().clone();
-        let from = current
-            .as_ref()
-            .and_then(|c| hits.iter().find(|(h, _)| h == c).map(|(_, at)| *at));
-        let Some(from) = from else {
-            let grid = self.grid();
-            return hits
-                .iter()
-                .min_by(|(_, a), (_, b)| {
-                    let (a, b) = (grid.in_cells(*a), grid.in_cells(*b));
-                    a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y))
-                })
-                .map(|(h, _)| h.clone());
-        };
-        hits.into_iter()
-            .filter(|(h, _)| Some(h) != current.as_ref())
-            .filter_map(|(h, at)| {
-                let (x, y) = (at.x - from.x, at.y - from.y);
-                let along = x * dx + y * dy;
-                if along <= 0.5 {
-                    return None;
-                }
-                let across = (x * dy - y * dx).abs();
-                Some((h, along + 2.0 * across))
-            })
-            .min_by(|a, b| a.1.total_cmp(&b.1))
-            .map(|(h, _)| h)
+        placement::neighbour(&self.grid(), &self.hits(), current.as_ref(), step)
     }
 
     fn go_to_hit(&self, hit: Hit, extend: bool) {
