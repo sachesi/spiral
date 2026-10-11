@@ -95,16 +95,21 @@ pub enum JobKind {
 
 /// "Moving … to “`to`”", for moves whose files all go to one folder.
 fn moving(files: &[gio::File], to: &str) -> String {
-    match files {
-        [file] => gettext("Moving “%s” to “%t”").replace("%s", &name(file)),
-        _ => ngettext(
-            "Moving %d file to “%t”",
-            "Moving %d files to “%t”",
-            files.len() as u32,
-        )
-        .replace("%d", &files.len().to_string()),
-    }
-    .replace("%t", to)
+    let (text, file) = match files {
+        [file] => (gettext("Moving “%s” to “%t”"), name(file)),
+        _ => (
+            ngettext(
+                "Moving %d file to “%t”",
+                "Moving %d files to “%t”",
+                files.len() as u32,
+            ),
+            String::new(),
+        ),
+    };
+    fill(
+        &text,
+        &[("%s", &file), ("%d", &files.len().to_string()), ("%t", to)],
+    )
 }
 
 impl JobKind {
@@ -113,29 +118,39 @@ impl JobKind {
             JobKind::Transfer {
                 pairs,
                 is_move: false,
-            } => match pairs.len() {
-                1 => gettext("Copying “%s” to “%t”").replace("%s", &name(&pairs[0].0)),
-                k => ngettext(
-                    "Copying %d file to “%t”",
-                    "Copying %d files to “%t”",
-                    k as u32,
-                )
-                .replace("%d", &k.to_string()),
-            }
-            .replace("%t", &name(&pairs[0].1)),
+            } => fill(
+                &match pairs.len() {
+                    1 => gettext("Copying “%s” to “%t”"),
+                    k => ngettext(
+                        "Copying %d file to “%t”",
+                        "Copying %d files to “%t”",
+                        k as u32,
+                    ),
+                },
+                &[
+                    ("%s", &name(&pairs[0].0)),
+                    ("%d", &pairs.len().to_string()),
+                    ("%t", &name(&pairs[0].1)),
+                ],
+            ),
             JobKind::Transfer {
                 pairs,
                 is_move: true,
-            } => match pairs.len() {
-                1 => gettext("Moving “%s” to “%t”").replace("%s", &name(&pairs[0].0)),
-                k => ngettext(
-                    "Moving %d file to “%t”",
-                    "Moving %d files to “%t”",
-                    k as u32,
-                )
-                .replace("%d", &k.to_string()),
-            }
-            .replace("%t", &name(&pairs[0].1)),
+            } => fill(
+                &match pairs.len() {
+                    1 => gettext("Moving “%s” to “%t”"),
+                    k => ngettext(
+                        "Moving %d file to “%t”",
+                        "Moving %d files to “%t”",
+                        k as u32,
+                    ),
+                },
+                &[
+                    ("%s", &name(&pairs[0].0)),
+                    ("%d", &pairs.len().to_string()),
+                    ("%t", &name(&pairs[0].1)),
+                ],
+            ),
             JobKind::Trash { files } => match files.len() {
                 1 => gettext("Moving “%s” to trash").replace("%s", &name(&files[0])),
                 k => ngettext(
@@ -151,9 +166,10 @@ impl JobKind {
                     .replace("%d", &k.to_string()),
             },
             JobKind::Rename { renames } => match renames.as_slice() {
-                [(file, new_name)] => gettext("Renaming “%s” to “%t”")
-                    .replace("%s", &name(file))
-                    .replace("%t", new_name),
+                [(file, new_name)] => fill(
+                    &gettext("Renaming “%s” to “%t”"),
+                    &[("%s", &name(file)), ("%t", new_name)],
+                ),
                 many => ngettext("Renaming %d file", "Renaming %d files", many.len() as u32)
                     .replace("%d", &many.len().to_string()),
             },
@@ -291,6 +307,25 @@ fn time_left(secs: u64) -> String {
             ngettext("%d hour", "%d hours", h as u32).replace("%d", &h.to_string())
         }
     }
+}
+
+/// `text` with each placeholder in `values` replaced by its value, all in one pass: a value
+/// that holds a placeholder itself, a file called “50%t.txt” say, is left as it is.
+pub fn fill(text: &str, values: &[(&str, &str)]) -> String {
+    let mut filled = String::with_capacity(text.len());
+    let mut rest = text;
+    'text: while let Some(c) = rest.chars().next() {
+        for (placeholder, value) in values {
+            if let Some(after) = rest.strip_prefix(placeholder) {
+                filled.push_str(value);
+                rest = after;
+                continue 'text;
+            }
+        }
+        filled.push(c);
+        rest = &rest[c.len_utf8()..];
+    }
+    filled
 }
 
 pub fn name(file: &gio::File) -> String {
@@ -619,6 +654,25 @@ mod tests {
         };
         assert_eq!(rename.description(), "Renaming “old.txt” to “new.txt”");
         assert_eq!(rename.done_message(), "Renamed to “new.txt”");
+    }
+
+    #[test]
+    fn a_name_holding_a_placeholder_is_shown_as_it_is() {
+        let copy = JobKind::Transfer {
+            pairs: vec![(file("/home/me/50%t.txt"), file("/home/me/%s"))],
+            is_move: false,
+        };
+        assert_eq!(copy.description(), "Copying “50%t.txt” to “%s”");
+        let rename = JobKind::Rename {
+            renames: vec![(file("/home/me/%t"), "%s".into())],
+        };
+        assert_eq!(rename.description(), "Renaming “%t” to “%s”");
+        let gather = JobKind::NewFolderWith {
+            parent: file("/home/me"),
+            name: "%s".into(),
+            files: vec![file("/home/me/%t")],
+        };
+        assert_eq!(gather.description(), "Moving “%t” to “%s”");
     }
 
     #[test]

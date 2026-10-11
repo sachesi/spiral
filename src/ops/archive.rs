@@ -384,11 +384,10 @@ async fn run(
 
 fn no_tool(file: &gio::File, tools: &[Tool]) -> Fail {
     let hints: Vec<&str> = tools.iter().map(|t| t.hint()).collect();
-    Fail::Failed(
-        gettext("Cannot extract “%s”: install %t")
-            .replace("%s", &name(file))
-            .replace("%t", &hints.join(", ")),
-    )
+    Fail::Failed(super::fill(
+        &gettext("Cannot extract “%s”: install %t"),
+        &[("%s", &name(file)), ("%t", &hints.join(", "))],
+    ))
 }
 
 /// Ask for the password of `archive`; None if cancelled.
