@@ -124,38 +124,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
         JobKind::Delete { files } => {
             delete_all(job, mgr, files).await?;
         }
-        JobKind::Rename { renames } => {
-            let single = renames.len() == 1;
-            job.set_files_total(renames.len() as u64);
-            for (file, new_name) in renames {
-                let old = name(&file);
-                loop {
-                    match file.set_display_name_future(&new_name, PRIO).await {
-                        Ok(new_file) => {
-                            crate::tags::relocate(&file, &new_file);
-                            crate::starred::relocate(&file, &new_file);
-                            crate::bookmarks::relocate(&file, &new_file);
-                            crate::folder_model::moved(&file, &new_file);
-                            job.imp().outcome.borrow_mut().renamed.push((new_file, old));
-                            break;
-                        }
-                        // One name was typed for one file, so its answer is the whole
-                        // job's; a batch asks, so the rest of it can go on.
-                        Err(e) if single => return Err(Fail::Failed(e.message().to_string())),
-                        Err(e) => {
-                            // Translators: fills %v in “Error While %v “%s””.
-                            match ask_about(job, mgr, &gettext("Renaming"), &file, &e).await {
-                                ErrorChoice::Skip => break,
-                                ErrorChoice::Retry => continue,
-                                ErrorChoice::Cancel => return Err(Fail::Cancelled),
-                            }
-                        }
-                    }
-                }
-                job.set_files_done(job.files_done() + 1);
-                job.report(true);
-            }
-        }
+        JobKind::Rename { renames } => rename_all(job, mgr, renames).await?,
         JobKind::CreateFolder { parent, name } => {
             let dir = parent.child(&name);
             dir.make_directory_future(PRIO)
@@ -343,6 +312,98 @@ async fn ask_about(
     let window = mgr.parent_window(job);
     let _waiting = job.waiting();
     ask_error(&window, verb, file, error).await
+}
+
+/// Give each file of `renames` its new name. A file whose name another of them takes steps
+/// aside first, under a name of its own, so names can be swapped and a run of numbers
+/// shifted along; one left there by a skip or a cancel gets its old name back.
+async fn rename_all(job: &Job, mgr: &JobManager, renames: Vec<(gio::File, String)>) -> Res<()> {
+    let single = renames.len() == 1;
+    job.set_files_total(renames.len() as u64);
+    let mut aside = Aside::default();
+    let mut current = Vec::with_capacity(renames.len());
+    for (at, (file, _)) in renames.iter().enumerate() {
+        let taken = renames
+            .iter()
+            .enumerate()
+            .any(|(other, (sibling, new_name))| {
+                other != at
+                    && sibling
+                        .parent()
+                        .is_some_and(|p| p.child(new_name).equal(file))
+            });
+        let stepped = if taken {
+            let temporary = format!(".spiral-renaming-{}-{at}", std::process::id());
+            file.set_display_name_future(&temporary, PRIO).await.ok()
+        } else {
+            None
+        };
+        if let Some(temporary) = &stepped {
+            aside.0.push((temporary.clone(), name(file)));
+        }
+        current.push(stepped.unwrap_or_else(|| file.clone()));
+    }
+    for ((file, new_name), now) in renames.into_iter().zip(current) {
+        let old = name(&file);
+        // GIO refuses a name the file already has; a rule that leaves it alone is done.
+        while old != new_name || !now.equal(&file) {
+            match now.set_display_name_future(&new_name, PRIO).await {
+                Ok(new_file) => {
+                    aside.0.retain(|(temporary, _)| !temporary.equal(&now));
+                    crate::tags::relocate(&file, &new_file);
+                    crate::starred::relocate(&file, &new_file);
+                    crate::bookmarks::relocate(&file, &new_file);
+                    crate::folder_model::moved(&file, &new_file);
+                    job.imp().outcome.borrow_mut().renamed.push((new_file, old));
+                    break;
+                }
+                // One name was typed for one file, so its answer is the whole job's; a
+                // batch asks, so the rest of it can go on.
+                Err(e) if single => return Err(Fail::Failed(e.message().to_string())),
+                Err(e) => {
+                    // Translators: fills %v in “Error While %v “%s””.
+                    match ask_about(job, mgr, &gettext("Renaming"), &file, &e).await {
+                        ErrorChoice::Skip => break,
+                        ErrorChoice::Retry => continue,
+                        ErrorChoice::Cancel => return Err(Fail::Cancelled),
+                    }
+                }
+            }
+        }
+        job.set_files_done(job.files_done() + 1);
+        job.report(true);
+    }
+    aside.put_back().await;
+    Ok(())
+}
+
+/// Files a batch rename moved out of the way, each under its temporary name with the name
+/// it had. Whatever is still here when the job is dropped, cancelled or stopped by an
+/// error is put back on the main loop.
+#[derive(Default)]
+struct Aside(Vec<(gio::File, String)>);
+
+impl Aside {
+    async fn put_back(&mut self) {
+        for (temporary, old) in std::mem::take(&mut self.0) {
+            if let Err(e) = temporary.set_display_name_future(&old, PRIO).await {
+                glib::g_debug!(
+                    "spiral",
+                    "cannot rename {} back to {old}: {e}",
+                    temporary.uri()
+                );
+            }
+        }
+    }
+}
+
+impl Drop for Aside {
+    fn drop(&mut self) {
+        if !self.0.is_empty() {
+            let mut left = Self(std::mem::take(&mut self.0));
+            glib::spawn_future_local(async move { left.put_back().await });
+        }
+    }
 }
 
 /// `more`: other items come after this one, and the answer covers those the trash cannot
@@ -1123,6 +1184,76 @@ mod tests {
         assert!(s.path("new.txt").exists() && !s.path("old.txt").exists());
         undo(&job);
         assert!(s.path("old.txt").exists() && !s.path("new.txt").exists());
+    }
+
+    #[test]
+    fn a_batch_can_swap_two_names_and_undo_the_swap() {
+        let s = Scratch::new("swap");
+        std::fs::write(s.path("a.txt"), "a").unwrap();
+        std::fs::write(s.path("b.txt"), "b").unwrap();
+        let job = run_job(JobKind::Rename {
+            renames: vec![
+                (s.file("a.txt"), "b.txt".into()),
+                (s.file("b.txt"), "a.txt".into()),
+            ],
+        });
+        assert_eq!(
+            contents(&s.0),
+            [("a.txt".into(), "b".into()), ("b.txt".into(), "a".into())]
+        );
+        undo(&job);
+        assert_eq!(
+            contents(&s.0),
+            [("a.txt".into(), "a".into()), ("b.txt".into(), "b".into())]
+        );
+    }
+
+    #[test]
+    fn a_batch_can_shift_a_run_of_numbers_along() {
+        let s = Scratch::new("shift");
+        for n in 1..=3 {
+            std::fs::write(s.path(&format!("Trip {n}.jpg")), n.to_string()).unwrap();
+        }
+        run_job(JobKind::Rename {
+            renames: (1..=3)
+                .map(|n| {
+                    (
+                        s.file(&format!("Trip {n}.jpg")),
+                        format!("Trip {}.jpg", n + 1),
+                    )
+                })
+                .collect(),
+        });
+        assert_eq!(
+            contents(&s.0),
+            [
+                ("Trip 2.jpg".into(), "1".into()),
+                ("Trip 3.jpg".into(), "2".into()),
+                ("Trip 4.jpg".into(), "3".into())
+            ]
+        );
+    }
+
+    #[test]
+    fn a_batch_leaves_a_name_it_does_not_change_without_asking() {
+        let s = Scratch::new("unchanged");
+        std::fs::write(s.path("IMG_1.jpg"), "1").unwrap();
+        std::fs::write(s.path("photo.jpg"), "p").unwrap();
+        let job = run_job(JobKind::Rename {
+            renames: vec![
+                (s.file("IMG_1.jpg"), "Trip_1.jpg".into()),
+                (s.file("photo.jpg"), "photo.jpg".into()),
+            ],
+        });
+        assert_eq!(
+            contents(&s.0),
+            [
+                ("Trip_1.jpg".into(), "1".into()),
+                ("photo.jpg".into(), "p".into())
+            ]
+        );
+        assert_eq!(job.files_done(), 2);
+        assert_eq!(job.imp().outcome.borrow().renamed.len(), 1);
     }
 
     #[test]
