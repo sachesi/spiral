@@ -223,7 +223,7 @@ pub async fn run(job: &Job, mgr: &JobManager) -> Res<()> {
                     // Templates are documents to start from, so what the copy leaves is a
                     // file of its own: none of the source's times or permissions follow it.
                     let (copy, progress) =
-                        template.copy_future(&file, gio::FileCopyFlags::NONE, PRIO);
+                        template.copy_future(&file, gio::FileCopyFlags::TARGET_DEFAULT_PERMS, PRIO);
                     let (result, ()) = futures_util::join!(copy, progress.for_each(|_| async {}));
                     result.map_err(|e| Fail::Failed(e.message().to_string()))?;
                 }
