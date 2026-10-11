@@ -737,15 +737,28 @@ pub fn moved(from: &gio::File, to: &gio::File) {
 }
 
 /// Where `file` is now, if it or a folder above it was moved: `to` with the rest of the
-/// way from `from` to `file` after it.
+/// way from `from` to `file` after it. `moves` are in the order they were made; the last
+/// that took `file` away is the one that counts, and each made after it is followed on, so
+/// a folder renamed twice is found under its latest name.
 fn moved_to(file: &gio::File, moves: &[(gio::File, gio::File)]) -> Option<gio::File> {
-    moves.iter().rev().find_map(|(from, to)| {
+    let follow = |file: &gio::File, (from, to): &(gio::File, gio::File)| {
         if file.equal(from) {
             Some(to.clone())
         } else {
             Some(to.resolve_relative_path(from.relative_path(file)?))
         }
-    })
+    };
+    let (at, mut now) = moves
+        .iter()
+        .enumerate()
+        .rev()
+        .find_map(|(at, step)| Some((at, follow(file, step)?)))?;
+    for step in &moves[at + 1..] {
+        if let Some(next) = follow(&now, step) {
+            now = next;
+        }
+    }
+    Some(now)
 }
 
 /// Whether `file` is `other` or somewhere below it.
@@ -1086,6 +1099,27 @@ mod tests {
         assert_eq!(
             path_of(moved_to(&file("/home/me/a/x"), &moves)),
             Some("/home/me/c/x".into())
+        );
+    }
+
+    #[test]
+    fn a_folder_renamed_twice_is_found_under_its_latest_name() {
+        let moves = [
+            (file("/home/me/a"), file("/home/me/b")),
+            (file("/home/me/b"), file("/home/me/c")),
+        ];
+        assert_eq!(
+            path_of(moved_to(&file("/home/me/a/x"), &moves)),
+            Some("/home/me/c/x".into())
+        );
+        // Moved back where it was, it is there again.
+        let moves = [
+            (file("/home/me/a"), file("/home/me/b")),
+            (file("/home/me/b"), file("/home/me/a")),
+        ];
+        assert_eq!(
+            path_of(moved_to(&file("/home/me/a/x"), &moves)),
+            Some("/home/me/a/x".into())
         );
     }
 
