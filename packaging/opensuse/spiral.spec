@@ -98,7 +98,6 @@ target="%{_cargo_target_dir}/release"
 target="target/release"
 %endif
 install -Dpm 0755 "$target/spiral" %{buildroot}%{_bindir}/spiral
-%{_bindir}/spiral-desktop
 install -Dpm 0755 "$target/spiral-desktop" %{buildroot}%{_bindir}/spiral-desktop
 install -Dpm 0755 "$target/xdg-desktop-portal-spiral" %{buildroot}%{_libexecdir}/xdg-desktop-portal-spiral
 install -Dpm 0755 "$target/spiral-thumbnailer" %{buildroot}%{_libexecdir}/spiral-thumbnailer
@@ -145,6 +144,7 @@ test -x %{buildroot}%{_bindir}/spiral
 %license LICENSE
 %doc README.md docs
 %{_bindir}/spiral
+%{_bindir}/spiral-desktop
 %{_libexecdir}/xdg-desktop-portal-spiral
 %{_libexecdir}/spiral-thumbnailer
 %{_datadir}/applications/%{app_id}.desktop
