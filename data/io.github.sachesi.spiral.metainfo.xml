@@ -44,6 +44,13 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.18.0" date="2026-10-11">
+      <description>
+        <p>The desktop folder can now show as icons on the wallpaper, through spiral-desktop, with the home folder, the trash and mounted drives beside them, on a Wayland compositor with layer shell. It is the file manager's own grid spread over the screen, so selecting, renaming, dragging, the menus, undo and the keys work as they do in a window. The icons stand on a grid, in the sort order or wherever they are left, keep their places for each display as panels come and go, and gather into a pile under the pointer while they are dragged. Where the compositor draws glass, as Meridian does, the desktop's menus, prompts and tooltips are set into it, tinted with the accent where its settings ask, and a tagged file's name stands on its tag's colour.</p>
+        <p>Other programs can add entries to the menu of files, with desktop entries in spiral/item-menu/ offered for the file types they name. The file chooser searches the folders below the one shown, as the “Search in Subfolders” preference has it, a link found by a search shows as what it points to, and symbolic links carry a small arrow. Folders open in Caret where it is installed.</p>
+        <p>A batch rename can swap two names or shift a numbered run along, and passes over the files whose names it leaves as they are instead of saying they already exist. A document made from a read-only template can be written to, a folder renamed twice in a row is followed to its latest name, and a file name holding %s or %t shows as it is in the operations list. The preview plays videos that carry a timed-metadata track, as iPhone videos do, turns a video the way it was recorded, plays finished media again, opens a picture of more pixels than it decodes whole at its proper size, and keeps a file switched away from silent.</p>
+      </description>
+    </release>
     <release version="0.17.3" date="2026-09-26">
       <description>
         <p>The window no longer waits for a server where it did: naming a location on a share, filling the location entry (Ctrl+L on the network froze it for seconds), reading and writing tags and the tag index, encoding a pasted picture and reading the system's thumbnailer entries all happen without holding it. Space on a file on a slow share opens one preview, with the file's name and a spinner until the file has said what it is; pressed again meanwhile it no longer stacks previews over the window, and Escape gives the wait up.</p>
