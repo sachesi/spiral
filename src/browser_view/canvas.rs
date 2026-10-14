@@ -378,8 +378,7 @@ impl IconCanvas {
             .into_iter()
             .map(|special| {
                 let cell = view.grid_cell(true);
-                let icon_row = cell.first_child().unwrap();
-                let image = icon_row.first_child().and_downcast::<gtk::Image>().unwrap();
+                let image = tile_image(cell.upcast_ref()).unwrap();
                 image.set_from_gicon(&special.icon);
                 let label = cell
                     .last_child()
@@ -456,11 +455,7 @@ impl IconCanvas {
                 let full = specials::trash_full().await;
                 for tile in canvas.imp().specials.borrow().iter() {
                     if tile.special.is_trash()
-                        && let Some(image) = tile
-                            .cell
-                            .first_child()
-                            .and_then(|row| row.first_child())
-                            .and_downcast::<gtk::Image>()
+                        && let Some(image) = tile_image(tile.cell.upcast_ref())
                     {
                         image.set_from_gicon(&specials::trash_icon(full));
                     }

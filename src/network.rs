@@ -145,6 +145,31 @@ pub async fn mount(
     }
 }
 
+/// The protocol an entry of `network:///` is reached by, as the tag that names it there:
+/// the page lists a machine's Samba server and its NFS exports under much the same names.
+/// None for anything else.
+pub fn protocol_tag(info: &gio::FileInfo) -> Option<&'static str> {
+    if crate::file_utils::file_of(info).uri_scheme()? != "network" {
+        return None;
+    }
+    scheme_tag(&crate::file_utils::target_of(info)?.uri_scheme()?)
+}
+
+/// The secure variant of a protocol is named apart, so an encrypted server shows as one.
+/// Protocol names are the same in every language.
+fn scheme_tag(scheme: &str) -> Option<&'static str> {
+    Some(match scheme {
+        "smb" => "SMB",
+        "nfs" => "NFS",
+        "sftp" => "SFTP",
+        "ftp" => "FTP",
+        "dav" | "dav+sd" => "DAV",
+        "davs" | "davs+sd" => "DAVS",
+        "afp" => "AFP",
+        _ => return None,
+    })
+}
+
 /// Where `file`, just mounted, is found. A backend may register its mount under an address
 /// of its own: gvfs's NFS backend keeps no port, while `network:///` lists every export with
 /// one, so the export is never found by the address it was asked for, and mounting it again
@@ -304,6 +329,26 @@ mod tests {
         assert_ne!(server("sftp://host/"), server("sftp://host:2222/"));
         assert_ne!(server("sftp://host/"), server("sftp://me@host/"));
         assert_ne!(server("sftp://host/"), server("ftp://host/"));
+    }
+
+    #[test]
+    fn an_entry_of_the_network_page_is_tagged_by_its_target() {
+        let entry = |at: &str, target: &str| {
+            let info = gio::FileInfo::new();
+            info.set_file_type(gio::FileType::Shortcut);
+            info.set_attribute_string("standard::target-uri", target);
+            info.set_attribute_object("standard::file", &gio::File::for_uri(at));
+            protocol_tag(&info)
+        };
+        let listed = "network:///dnssd-server-x";
+        assert_eq!(entry(listed, "nfs://host:2049/srv/nfs/bak"), Some("NFS"));
+        assert_eq!(entry(listed, "smb://host.local:445/"), Some("SMB"));
+        assert_eq!(
+            entry(listed, "davs+sd://host._webdavs._tcp.local/"),
+            Some("DAVS")
+        );
+        assert_eq!(entry(listed, "gopher://host/"), None);
+        assert_eq!(entry("computer:///root.link", "file:///"), None);
     }
 
     #[test]

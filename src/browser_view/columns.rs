@@ -14,11 +14,7 @@ pub(super) const STAR_WIDTH: i32 = 40;
 
 /// Let go of what a tile made by [`BrowserView::grid_cell`] is still loading.
 pub(crate) fn unbind_grid_cell(bx: &gtk::Widget) {
-    if let Some(image) = bx
-        .first_child()
-        .and_then(|row| row.first_child())
-        .and_downcast::<gtk::Image>()
-    {
+    if let Some(image) = tile_image(bx) {
         unbind_icon(&image);
     }
     if let Some(captions) = bx
@@ -108,9 +104,28 @@ impl BrowserView {
         labels.append(&label);
         labels.append(&captions);
         // Icon between two emblem-wide margins, the lock and the link mark stacked at
-        // the top of the right one.
-        image.set_margin_start(EMBLEM_MARGIN);
-        image.set_hexpand(true);
+        // the top of the right one. The protocol tag sits on the icon's own corner, so
+        // the icon takes its own size in the middle of the room rather than all of it.
+        let protocol = protocol_label();
+        protocol.set_halign(gtk::Align::End);
+        protocol.set_valign(gtk::Align::End);
+        self.bind_property("icon-size", &protocol, "attributes")
+            .transform_to(|_, size: i32| {
+                let attrs = gtk::pango::AttrList::new();
+                attrs.insert(gtk::pango::AttrFloat::new_scale(
+                    (f64::from(size) / 96.0).clamp(0.75, 1.75),
+                ));
+                Some(attrs)
+            })
+            .sync_create()
+            .build();
+        let icon = gtk::Overlay::builder()
+            .child(&image)
+            .margin_start(EMBLEM_MARGIN)
+            .hexpand(true)
+            .halign(gtk::Align::Center)
+            .build();
+        icon.add_overlay(&protocol);
         let emblems = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .width_request(EMBLEM_MARGIN)
@@ -119,7 +134,7 @@ impl BrowserView {
         emblems.append(&emblem_image());
         emblems.append(&link_image());
         let icon_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        icon_row.append(&image);
+        icon_row.append(&icon);
         icon_row.append(&emblems);
         let bx = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
@@ -148,7 +163,8 @@ impl BrowserView {
     /// Show `info` in a tile made by [`Self::grid_cell`], the item at `at` in the model.
     pub(crate) fn bind_grid_cell(&self, bx: &gtk::Widget, info: &gio::FileInfo, at: u32) {
         let icon_row = bx.first_child().unwrap();
-        let image = icon_row.first_child().and_downcast::<gtk::Image>().unwrap();
+        let image = tile_image(bx).unwrap();
+        let protocol = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
         let emblems = icon_row.last_child().unwrap();
         let emblem = emblems.first_child().and_downcast::<gtk::Image>().unwrap();
         let link = emblems.last_child().and_downcast::<gtk::Image>().unwrap();
@@ -156,6 +172,7 @@ impl BrowserView {
         let label = labels.first_child().and_downcast::<gtk::Label>().unwrap();
         let captions = labels.last_child().and_downcast::<gtk::Label>().unwrap();
         self.bind_icon(&image, &emblem, &link, info, at);
+        set_protocol(&protocol, info);
         set_cut(bx, info);
         label.set_text(&info.display_name());
         bind_tags(bx, Some(&label), info);
@@ -207,6 +224,7 @@ impl BrowserView {
                 .build();
             name_tooltip(&label);
             bx.append(&label);
+            bx.append(&protocol_label());
             bx.append(&link_image());
             bx.append(&emblem_image());
             // Folders unfold in place when the tree preference is on.
@@ -230,7 +248,9 @@ impl BrowserView {
             let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
             let link = emblem.prev_sibling().and_downcast::<gtk::Image>().unwrap();
+            let protocol = label.next_sibling().and_downcast::<gtk::Label>().unwrap();
             view.bind_icon(&image, &emblem, &link, &info, item.position());
+            set_protocol(&protocol, &info);
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             bind_tags(&bx, None, &info);

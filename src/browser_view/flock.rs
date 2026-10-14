@@ -210,24 +210,19 @@ impl Flock {
     ) -> Option<Self> {
         let shot = |tile: &gtk::Widget| {
             let from = tile.compute_bounds(root)?.offset_r(-x as f32, -y as f32);
-            // The icon as drawn: a square of its size in the middle of the image, which
-            // stretches across the tile.
-            let icon = tile
-                .first_child()
-                .and_then(|row| row.first_child())
-                .and_downcast::<gtk::Image>()
-                .and_then(|image| {
-                    let bounds = image.compute_bounds(tile)?;
-                    let size = image.pixel_size() as f32;
-                    let rect = Rect::new(
-                        bounds.x() + (bounds.width() - size) / 2.0,
-                        bounds.y() + (bounds.height() - size) / 2.0,
-                        size,
-                        size,
-                    );
-                    let paintable = gtk::WidgetPaintable::new(Some(&image)).current_image();
-                    Some((paintable, rect, bounds))
-                });
+            // The icon as drawn: a square of its size in the middle of the image.
+            let icon = tile_image(tile).and_then(|image| {
+                let bounds = image.compute_bounds(tile)?;
+                let size = image.pixel_size() as f32;
+                let rect = Rect::new(
+                    bounds.x() + (bounds.width() - size) / 2.0,
+                    bounds.y() + (bounds.height() - size) / 2.0,
+                    size,
+                    size,
+                );
+                let paintable = gtk::WidgetPaintable::new(Some(&image)).current_image();
+                Some((paintable, rect, bounds))
+            });
             let image = gtk::WidgetPaintable::new(Some(tile)).current_image();
             Some((image, icon, from))
         };

@@ -193,6 +193,17 @@
 .view .hidden-file {
   opacity: 0.55;
 }
+/* The protocol of a server on the Network page, after its name in a row and over its icon
+   in a tile. Neutral, as the selection is, and inverted against the view so it reads on
+   any icon. */
+.spiral-protocol {
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: smaller;
+  font-weight: bold;
+  background-color: color-mix(in srgb, var(--view-fg-color) 80%, transparent);
+  color: var(--view-bg-color);
+}
 rubberband {
   border-radius: 6px;
 }

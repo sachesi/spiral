@@ -94,6 +94,31 @@ fn set_link(link: &gtk::Image, is_link: bool) {
     link.set_visible(is_link);
 }
 
+/// The protocol a server on the Network page is reached by, a tag after its name in a
+/// row and over the corner of its icon in a tile. It takes no room where it is empty.
+pub(crate) fn protocol_label() -> gtk::Label {
+    gtk::Label::builder()
+        .valign(gtk::Align::Center)
+        .visible(false)
+        .css_classes(["spiral-protocol"])
+        .build()
+}
+
+pub(crate) fn set_protocol(label: &gtk::Label, info: &gio::FileInfo) {
+    let tag = crate::network::protocol_tag(info);
+    label.set_label(tag.unwrap_or_default());
+    label.set_visible(tag.is_some());
+}
+
+/// The icon of a tile made by `grid_cell`, under the protocol tag laid over it.
+pub(crate) fn tile_image(tile: &gtk::Widget) -> Option<gtk::Image> {
+    tile.first_child()?
+        .first_child()
+        .and_downcast::<gtk::Overlay>()?
+        .child()
+        .and_downcast()
+}
+
 /// A tag's colour as a dot; CSS paints it.
 pub(crate) fn tag_dot(color: &str) -> gtk::Image {
     gtk::Image::builder()

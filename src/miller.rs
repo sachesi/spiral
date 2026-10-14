@@ -14,7 +14,8 @@ use crate::adw::prelude::*;
 use crate::adw::subclass::prelude::*;
 use crate::browser_view::{
     BrowserView, bind_tags, emblem_image, keeps_own_view, link_image, preferred_action,
-    remember_list_item, remembered, remembered_sort, set_cut, unbind_icon,
+    protocol_label, remember_list_item, remembered, remembered_sort, set_cut, set_protocol,
+    unbind_icon,
 };
 use crate::enums::ViewMode;
 use crate::file_utils;
@@ -568,6 +569,7 @@ impl BrowserView {
                 .build();
             crate::browser_view::name_tooltip(&label);
             bx.append(&label);
+            bx.append(&protocol_label());
             bx.append(&link_image());
             bx.append(&emblem_image());
             item.set_child(Some(&bx));
@@ -588,7 +590,9 @@ impl BrowserView {
             let label = image.next_sibling().and_downcast::<gtk::Label>().unwrap();
             let emblem = bx.last_child().and_downcast::<gtk::Image>().unwrap();
             let link = emblem.prev_sibling().and_downcast::<gtk::Image>().unwrap();
+            let protocol = label.next_sibling().and_downcast::<gtk::Label>().unwrap();
             view.bind_icon(&image, &emblem, &link, &info, item.position());
+            set_protocol(&protocol, &info);
             set_cut(&bx, &info);
             label.set_text(&info.display_name());
             item.set_accessible_label(&info.display_name());
