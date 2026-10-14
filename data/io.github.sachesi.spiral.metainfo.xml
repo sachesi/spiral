@@ -44,6 +44,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.18.2" date="2026-10-14">
+      <description>
+        <p>An AppImage shows the icon it carries, read out of its image by unsquashfs in the thumbnail sandbox, never by running it; without squashfs-tools it keeps the icon of its type. A picture set as a folder's icon is drawn sharp at every size, an icon theme's SVG included, where it was drawn at the few dozen pixels the file names and blurred up to fill a large tile.</p>
+      </description>
+    </release>
     <release version="0.18.1" date="2026-10-14">
       <description>
         <p>Each server on the Network page carries a tag naming the protocol it is reached by, SMB, NFS, SFTP, FTP, DAV, DAVS or AFP, so a machine's Samba server and its NFS exports are told apart. An NFS export opened from there is shown once it is connected, where it used to go on connecting to it over and over, and a folder on a share opens at the top of the grid rather than partway down while its listing comes in.</p>
