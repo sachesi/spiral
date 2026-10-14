@@ -64,15 +64,24 @@ impl BrowserView {
         ));
     }
 
-    /// Files landing above the top of the list, as a copy into the folder brings them,
-    /// leave the list where it was: at the top. GTK's column view instead follows the row
-    /// that was at the top down the list, and in a window opened after the first one it
-    /// gets lost doing so, showing no rows at all until it is scrolled. Once per burst.
+    /// Files landing above the top of the list or the grid, as a copy into the folder or
+    /// the next batch of a share's listing brings them, leave the view where it was: at
+    /// the top. GTK instead follows the item that was at the top down the view, and the
+    /// column view, in a window opened after the first one, gets lost doing so, showing no
+    /// rows at all until it is scrolled. Once per burst. Whether the view was at the top
+    /// is read now, before GTK has moved it.
     pub(super) fn queue_keep_top(&self) {
         let imp = self.imp();
-        if imp.column_view.model().is_none() || imp.top_pending.replace(true) {
+        if (imp.column_view.model().is_none() && imp.grid_view.model().is_none())
+            || imp.top_pending.replace(true)
+        {
             return;
         }
+        let list_at_top = imp.list_scroll.vadjustment().value() == 0.0;
+        let grid_at_top = imp
+            .grid_view
+            .vadjustment()
+            .is_some_and(|adj| adj.value() == 0.0);
         glib::idle_add_local_once(glib::clone!(
             #[weak(rename_to = view)]
             self,
@@ -82,9 +91,13 @@ impl BrowserView {
                 // The column view's own model, which can still be empty while the folder's
                 // is not: GTK asserts on a row it does not have.
                 let rows = imp.column_view.model().map_or(0, |m| m.n_items());
-                if rows > 0 && imp.list_scroll.vadjustment().value() == 0.0 {
+                if rows > 0 && list_at_top {
                     imp.column_view
                         .scroll_to(0, None, gtk::ListScrollFlags::NONE, None);
+                }
+                let cells = imp.grid_view.model().map_or(0, |m| m.n_items());
+                if cells > 0 && grid_at_top {
+                    imp.grid_view.scroll_to(0, gtk::ListScrollFlags::NONE, None);
                 }
             }
         ));
