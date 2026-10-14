@@ -55,11 +55,37 @@ pub(crate) fn load_file_fitted(path: &Path, max_pixels: i64, side: u32) -> Optio
         .ok()
 }
 
+/// As [`load_file`], no larger than `side` either way. Glycin draws a drawing, as an SVG
+/// is, at that size rather than at the one it names, which for an icon theme's is a few
+/// dozen pixels; the helper standing in for it draws one at its own and cuts it down.
+pub(crate) fn load_file_within(path: &Path, max_pixels: i64, side: u32) -> Option<gdk::Texture> {
+    match crate::glycin::get() {
+        Some(_) => load_file_fitted(path, max_pixels, side),
+        None => shrunk(
+            &sandboxed(path, orientation_of(path), max_pixels)?,
+            side as i32,
+        ),
+    }
+}
+
 /// As [`load_file`], for a picture that is not in a file of its own.
 pub(crate) fn load_bytes(bytes: &glib::Bytes, max_pixels: i64) -> Option<gdk::Texture> {
+    decode_bytes(bytes, max_pixels, None)
+}
+
+/// As [`load_file_within`], for a picture that is not in a file of its own.
+pub(crate) fn load_bytes_within(
+    bytes: &glib::Bytes,
+    max_pixels: i64,
+    side: u32,
+) -> Option<gdk::Texture> {
+    decode_bytes(bytes, max_pixels, Some(side))
+}
+
+fn decode_bytes(bytes: &glib::Bytes, max_pixels: i64, fit: Option<u32>) -> Option<gdk::Texture> {
     if let Some(glycin) = crate::glycin::get() {
         return glycin
-            .load_bytes(bytes, max_pixels, None)
+            .load_bytes(bytes, max_pixels, fit)
             .inspect_err(|e| glib::g_debug!("spiral", "glycin: {e:?}"))
             .ok();
     }
@@ -71,7 +97,10 @@ pub(crate) fn load_bytes(bytes: &glib::Bytes, max_pixels: i64) -> Option<gdk::Te
         sandboxed(&copy, exif_orientation(head), max_pixels)
     });
     let _ = std::fs::remove_dir_all(&dir);
-    texture
+    match fit {
+        Some(side) => shrunk(&texture?, side as i32),
+        None => texture,
+    }
 }
 
 /// The picture at `path` decoded by the helper in Spiral's sandbox, and turned there.

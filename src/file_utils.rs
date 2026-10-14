@@ -114,22 +114,24 @@ pub async fn custom_icon(file: &gio::File) -> Option<gdk::Texture> {
 }
 
 async fn decode_icon(file: gio::File) -> Option<gdk::Texture> {
+    let side = ICON_SIDE as u32;
     match file.path() {
-        Some(path) => gio::spawn_blocking(move || crate::picture::load_file(&path, ICON_PIXELS))
+        Some(path) => {
+            gio::spawn_blocking(move || crate::picture::load_file_within(&path, ICON_PIXELS, side))
+                .await
+                .ok()
+                .flatten()
+        }
+        None => match file.load_bytes_future().await {
+            Ok((bytes, _)) => gio::spawn_blocking(move || {
+                crate::picture::load_bytes_within(&bytes, ICON_PIXELS, side)
+            })
             .await
             .ok()
             .flatten(),
-        None => match file.load_bytes_future().await {
-            Ok((bytes, _)) => {
-                gio::spawn_blocking(move || crate::picture::load_bytes(&bytes, ICON_PIXELS))
-                    .await
-                    .ok()
-                    .flatten()
-            }
             Err(_) => None,
         },
     }
-    .and_then(|texture| crate::picture::shrunk(&texture, ICON_SIDE))
 }
 
 /// Show the icon of `info` in `image`: [`icon_of`] now, and the picture set as its icon
@@ -715,6 +717,35 @@ mod tests {
                 assert_ne!(a, c, "decoded again once modified");
             })
             .unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// An icon theme's SVG names a size of a few dozen pixels; set as the icon of a large
+    /// tile, it is drawn at the size icons are kept at, not at that one and blown up.
+    #[test]
+    fn a_drawing_set_as_an_icon_is_drawn_at_full_size() {
+        use gdk::prelude::TextureExt;
+        if crate::glycin::get().is_none() {
+            eprintln!("glycin is missing; nothing to test");
+            return;
+        }
+        let dir = std::env::temp_dir().join(format!("spiral-svg-icon-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("folder.svg");
+        std::fs::write(
+            &path,
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="32"><rect width="64" height="32" fill="#5294e2"/></svg>"##,
+        )
+        .unwrap();
+        let context = glib::MainContext::new();
+        let texture = context
+            .with_thread_default(|| context.block_on(custom_icon(&gio::File::for_path(&path))))
+            .unwrap()
+            .expect("decoded");
+        assert_eq!(
+            (texture.width(), texture.height()),
+            (ICON_SIDE, ICON_SIDE / 2)
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
