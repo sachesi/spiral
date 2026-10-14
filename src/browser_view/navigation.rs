@@ -64,6 +64,16 @@ impl BrowserView {
         self.set_location_internal(file, None);
     }
 
+    /// Show `file` as the step of the history the view is at, in place of the location,
+    /// which stood for it.
+    pub(super) fn replace_location(&self, file: &gio::File) {
+        let imp = self.imp();
+        if let Some(visit) = imp.history.borrow_mut().get_mut(imp.history_pos.get()) {
+            visit.file = file.clone();
+        }
+        self.set_location_internal(file, None);
+    }
+
     /// Keep the search on screen and the selection with the step of the history being
     /// left.
     pub(super) fn remember_state(&self) {

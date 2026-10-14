@@ -145,6 +145,52 @@ pub async fn mount(
     }
 }
 
+/// Where `file`, just mounted, is found. A backend may register its mount under an address
+/// of its own: gvfs's NFS backend keeps no port, while `network:///` lists every export with
+/// one, so the export is never found by the address it was asked for, and mounting it again
+/// only answers that it already is. The address without the port is then where it is. An
+/// error is the location still not mounted.
+pub async fn mounted_at(file: &gio::File) -> Result<gio::File, glib::Error> {
+    let Some(error) = not_mounted(file).await else {
+        return Ok(file.clone());
+    };
+    match without_port(file) {
+        Some(bare) if not_mounted(&bare).await.is_none() => Ok(bare),
+        _ => Err(error),
+    }
+}
+
+async fn not_mounted(file: &gio::File) -> Option<glib::Error> {
+    file.query_info_future(
+        "standard::type",
+        gio::FileQueryInfoFlags::NONE,
+        glib::Priority::DEFAULT,
+    )
+    .await
+    .err()
+    .filter(|e| e.matches(gio::IOErrorEnum::NotMounted))
+}
+
+/// `file` with the port left out of its address, or None where it names none.
+fn without_port(file: &gio::File) -> Option<gio::File> {
+    let flags = glib::UriFlags::ENCODED;
+    let parsed = glib::Uri::parse(&file.uri(), flags).ok()?;
+    if parsed.port() == -1 {
+        return None;
+    }
+    let bare = glib::Uri::build(
+        flags,
+        &parsed.scheme(),
+        parsed.userinfo().as_deref(),
+        parsed.host().as_deref(),
+        -1,
+        &parsed.path(),
+        parsed.query().as_deref(),
+        parsed.fragment().as_deref(),
+    );
+    Some(gio::File::for_uri(&bare.to_str()))
+}
+
 /// The server a location is on, as far as its address tells: the scheme, the user, the host
 /// and the port.
 fn server_of(file: &gio::File) -> String {
@@ -258,6 +304,20 @@ mod tests {
         assert_ne!(server("sftp://host/"), server("sftp://host:2222/"));
         assert_ne!(server("sftp://host/"), server("sftp://me@host/"));
         assert_ne!(server("sftp://host/"), server("ftp://host/"));
+    }
+
+    #[test]
+    fn an_address_without_its_port_keeps_the_rest() {
+        let bare = |uri: &str| without_port(&gio::File::for_uri(uri)).map(|f| f.uri().to_string());
+        assert_eq!(
+            bare("nfs://thinkcentre.local:2049/srv/nfs/my%20camera").as_deref(),
+            Some("nfs://thinkcentre.local/srv/nfs/my%20camera")
+        );
+        assert_eq!(
+            bare("nfs://me@[fd8b::1]:2049/srv/nfs").as_deref(),
+            Some("nfs://me@[fd8b::1]/srv/nfs")
+        );
+        assert_eq!(bare("nfs://thinkcentre.local/srv/nfs/camera"), None);
     }
 
     #[test]

@@ -144,15 +144,20 @@ impl BrowserView {
             }
         };
         glib::spawn_future_local(async move {
-            let result =
+            let mounted =
                 crate::network::mount(&file, &parent, &gio::Cancellable::new(), showing).await;
+            let result = match mounted {
+                Ok(()) => crate::network::mounted_at(&file).await,
+                Err(e) => Err(e),
+            };
             // The answer is about the location asked for; the view may have moved on.
             let Some(view) = weak.upgrade() else { return };
             if view.location().is_none_or(|now| !now.equal(&file)) {
                 return;
             }
             match result {
-                Ok(()) => {
+                Ok(mounted) if !mounted.equal(&file) => view.replace_location(&mounted),
+                Ok(_) => {
                     // Mounted: the address is worth trying again if it is ever lost,
                     // and the location has a mount to be named after now.
                     view.imp().mounting.replace(Mounting::Idle);
