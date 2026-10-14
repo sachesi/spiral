@@ -44,6 +44,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.18.1" date="2026-10-14">
+      <description>
+        <p>Each server on the Network page carries a tag naming the protocol it is reached by, SMB, NFS, SFTP, FTP, DAV, DAVS or AFP, so a machine's Samba server and its NFS exports are told apart. An NFS export opened from there is shown once it is connected, where it used to go on connecting to it over and over, and a folder on a share opens at the top of the grid rather than partway down while its listing comes in.</p>
+      </description>
+    </release>
     <release version="0.18.0" date="2026-10-11">
       <description>
         <p>The desktop folder can now show as icons on the wallpaper, through spiral-desktop, with the home folder, the trash and mounted drives beside them, on a Wayland compositor with layer shell. It is the file manager's own grid spread over the screen, so selecting, renaming, dragging, the menus, undo and the keys work as they do in a window. The icons stand on a grid, in the sort order or wherever they are left, keep their places for each display as panels come and go, and gather into a pile under the pointer while they are dragged. Where the compositor draws glass, as Meridian does, the desktop's menus, prompts and tooltips are set into it, tinted with the accent where its settings ask, and a tagged file's name stands on its tag's colour.</p>
