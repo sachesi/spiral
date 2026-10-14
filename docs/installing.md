@@ -27,7 +27,8 @@ Arch `gst-plugins-base gst-plugin-gtk4`. The plugins for the formats themselves 
 icon instead. Network locations need gvfs and a backend for the protocol wanted: on Fedora
 `gvfs` plus `gvfs-smb` or `gvfs-nfs`, on Debian `gvfs-backends`. Without gvfs Spiral opens
 local files only, and says as much where it would otherwise offer a server. Everything else
-is optional and picked up from `PATH` when present: archive tools, a terminal emulator.
+is optional and picked up from `PATH` when present: archive tools, a terminal emulator,
+`unsquashfs` from squashfs-tools for the icons of AppImages.
 `spiral-desktop` links gtk4-layer-shell 1.3 and needs a compositor with `wlr-layer-shell`;
 see [desktop.md](desktop.md).
 

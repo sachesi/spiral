@@ -83,8 +83,9 @@ pub fn portal() {
 /// The helper run inside the thumbnail sandbox: renders one image into a PNG with
 /// gdk-pixbuf, so image decoders never run in the file manager process. With `--probe`, it
 /// prints what a photo, a recording, a video or a document says about itself instead, for
-/// the details panel. With `--decode`, it decodes a picture whole for the preview, and with
-/// `--play` it decodes a video or a recording for the preview's player.
+/// the details panel. With `--decode`, it decodes a picture whole for the preview, with
+/// `--play` it decodes a video or a recording for the preview's player, and with
+/// `--appimage` it draws the icon an AppImage carries.
 pub fn thumbnailer() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();
     if let [_, flag, kind, input] = args.as_slice()
@@ -101,6 +102,18 @@ pub fn thumbnailer() -> ExitCode {
     {
         let fd = |s: &String| s.parse().unwrap_or(-1);
         return match crate::media::serve(source, fd(control), fd(video), fd(audio), formats) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("spiral-thumbnailer: {e}");
+                ExitCode::FAILURE
+            }
+        };
+    }
+    if let [_, flag, input, output, size] = args.as_slice()
+        && flag == "--appimage"
+    {
+        let size = size.parse().unwrap_or(256);
+        return match crate::appimage::thumbnail(input.as_ref(), output.as_ref(), size) {
             Ok(()) => ExitCode::SUCCESS,
             Err(e) => {
                 eprintln!("spiral-thumbnailer: {e}");

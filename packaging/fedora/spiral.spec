@@ -66,6 +66,8 @@ Recommends:     gvfs
 # time; without it Spiral decodes them in its own sandbox instead.
 Recommends:     glycin-libs%{?_isa}
 Recommends:     glycin-loaders%{?_isa}
+# The icon an AppImage carries is read out of it by unsquashfs.
+Recommends:     squashfs-tools
 Suggests:       7zip
 Suggests:       xdg-terminal-exec
 

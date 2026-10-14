@@ -38,7 +38,8 @@ Recommends: gstreamer1.0-plugins-good,
             gstreamer1.0-plugins-bad,
             gvfs,
             libglycin-2-0,
-            glycin-loaders
+            glycin-loaders,
+            squashfs-tools
 Suggests: 7zip,
           xdg-terminal-exec
 Description: File manager for Wayland with a file chooser portal backend

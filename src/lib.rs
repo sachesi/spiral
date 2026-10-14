@@ -1,3 +1,4 @@
+pub(crate) mod appimage;
 pub(crate) mod application;
 pub(crate) mod bookmarks;
 pub(crate) mod config;

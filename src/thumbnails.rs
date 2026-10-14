@@ -143,8 +143,9 @@ pub async fn load(info: &gio::FileInfo, at: u32) -> Option<gdk::Texture> {
     let source = Source {
         path: file.path(),
         content_type: content_type.clone(),
-        // Images with no thumbnailer of their own go to the bundled helper.
-        own: content_type.starts_with("image/"),
+        // Images with no thumbnailer of their own go to the bundled helper, and so do
+        // AppImages, for the icon they carry.
+        own: content_type.starts_with("image/") || crate::appimage::readable(&content_type),
         // Only pictures are weighed: a video thumbnailer reads a frame, not the file, so
         // the size of the file says nothing about what it will cost. One already in the
         // cache is shown whatever the size, which is why this only stops generation.
@@ -597,15 +598,22 @@ fn generate(
         }
         let _ = std::fs::remove_file(&tmp);
     }
-    // The bundled helper stands in for images no system thumbnailer claims. There is no
-    // third way: decoding in this process would put an untrusted file in front of a loader
-    // with the whole session behind it.
+    // The bundled helper stands in for images and AppImages no system thumbnailer claims.
+    // There is no third way: decoding in this process would put an untrusted file in front
+    // of a loader with the whole session behind it.
     let execs: Vec<String> = if thumbnailers.is_empty() && glycin.is_none() {
         match own_thumbnailer() {
-            Some(bin) => vec![format!(
-                "{} %i %o %s",
-                glib::shell_quote(bin).to_string_lossy()
-            )],
+            Some(bin) => {
+                let mode = if crate::appimage::readable(content_type) {
+                    "--appimage "
+                } else {
+                    ""
+                };
+                vec![format!(
+                    "{} {mode}%i %o %s",
+                    glib::shell_quote(bin).to_string_lossy()
+                )]
+            }
             None => {
                 glib::g_debug!("spiral", "thumbnail {uri}: no thumbnailer for it");
                 return Err(Failure::OfTheMoment);

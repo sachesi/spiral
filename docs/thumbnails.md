@@ -99,6 +99,15 @@ temporary name and is renamed into place.
 `spiral-odf.thumbnailer`, installed with the rest, is an ordinary thumbnailer entry that
 pulls the preview OpenDocument files embed, using `unzip`.
 
+An AppImage shows the icon it carries. It is never run to ask for it, since that would run
+a program that was only downloaded. The bundled helper finds where the SquashFS image
+starts from the ELF header of the runtime in front of it, has `unsquashfs` stream
+`.DirIcon` out of the image, and draws that; both run in the sandbox below, and an icon
+over 16 MB is refused. Only the SquashFS kind of AppImage is read, not the old ISO 9660
+one. Without `unsquashfs` AppImages keep the icon of their type, and no note is left, so
+installing it brings their icons. This is not a thumbnailer entry for other programs to
+use: not all of them run thumbnailers in a sandbox.
+
 ## Sandbox
 
 Every thumbnailer runs inside bubblewrap with `/usr` read-only, fontconfig directories
