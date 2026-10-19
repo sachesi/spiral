@@ -537,3 +537,8 @@ spiral-desktop .spiral-desktop-band {
 .navigation-sidebar > row.spiral-hidden-place > box {
   opacity: 0.5;
 }
+
+/* A finger needs more room than a pointer. */
+window.touch .spiral-tag-picker > button {
+  padding: 10px;
+}
