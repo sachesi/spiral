@@ -134,6 +134,15 @@ impl BrowserView {
                         &gtk::gdk::FileList::from_array(&files).to_value(),
                     ));
                 }
+                // A finger drags only what it has held first; dragged straight away, it
+                // scrolls. The long press holding it claims the press for this source too.
+                if crate::touch::is_touchscreen(source.device().as_ref())
+                    && source.current_sequence().is_none_or(|sequence| {
+                        source.sequence_state(&sequence) != gtk::EventSequenceState::Claimed
+                    })
+                {
+                    return None;
+                }
                 let cell = cell_at(&stack, x, y)?;
                 let pos = cell_position(&cell)?;
                 let sel = view.model().selection();
@@ -183,7 +192,37 @@ impl BrowserView {
                 }
             }
         ));
-        self.imp().stack.add_controller(source);
+        self.imp().stack.add_controller(source.clone());
+        // A long press is the right click of a finger: it selects the file held and opens
+        // its menu once lifted, or hands the file to a drag if the finger moves on. The
+        // desktop has its own.
+        let long = crate::touch::long_press(
+            &self.imp().stack.get(),
+            glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                #[upgrade_or]
+                false,
+                move |x, y| {
+                    if view.desktop_mode() || view.in_side_column(x, y) {
+                        return false;
+                    }
+                    let selection = view.model().selection();
+                    if let Some(pos) = view.item_at(x, y)
+                        && !selection.is_selected(pos)
+                    {
+                        selection.select_item(pos, true);
+                    }
+                    true
+                }
+            ),
+            glib::clone!(
+                #[weak(rename_to = view)]
+                self,
+                move |x, y| view.popup_menu_on(view.item_at(x, y), x, y)
+            ),
+        );
+        long.group_with(&source);
         // The list's rubberband gesture outruns any drag source, so it is switched off
         // for presses that land on a row and back on for presses on empty space.
         let click = gtk::GestureClick::new();

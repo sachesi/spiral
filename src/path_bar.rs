@@ -257,6 +257,18 @@ mod imp {
                     }
                 ));
                 button.add_controller(click);
+                let target = f.clone();
+                crate::touch::long_press(
+                    &button,
+                    |_, _| true,
+                    glib::clone!(
+                        #[weak]
+                        obj,
+                        #[weak]
+                        button,
+                        move |_, _| obj.popup_crumb_menu(&button, &target)
+                    ),
+                );
                 let container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
                 let label = gtk::Label::builder().single_line_mode(true).build();
                 if i == 0 {

@@ -284,6 +284,19 @@ mod imp {
                 }
             ));
             self.list.add_controller(click);
+            // A finger held on a row does what a right click does, once lifted.
+            crate::touch::long_press(
+                &self.list.get(),
+                |_, _| true,
+                glib::clone!(
+                    #[weak]
+                    obj,
+                    move |x, y| match obj.imp().list.row_at_y(y as i32) {
+                        Some(row) => obj.popup_row_menu(&row, x, y),
+                        None => obj.popup_background_menu(x, y),
+                    }
+                ),
+            );
             obj.setup_actions();
 
             // Empty space below the rows: drop a bookmark to move it last, or folders to

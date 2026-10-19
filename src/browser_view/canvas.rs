@@ -1395,6 +1395,43 @@ impl IconCanvas {
             }
         ));
         self.add_controller(secondary);
+        // A finger held on an icon selects it and opens its menu once lifted; held on the
+        // empty desktop, the desktop's.
+        crate::touch::long_press(
+            self,
+            glib::clone!(
+                #[weak(rename_to = canvas)]
+                self,
+                #[upgrade_or]
+                false,
+                move |x, y| {
+                    if let Some(hit) = canvas.hit(x, y)
+                        && !canvas.is_selected(&hit)
+                    {
+                        canvas.select_only(&hit);
+                    }
+                    true
+                }
+            ),
+            glib::clone!(
+                #[weak(rename_to = canvas)]
+                self,
+                move |x, y| {
+                    canvas.grab_focus();
+                    if let Some(hit) = canvas.hit(x, y) {
+                        canvas.popup_menu_on(&hit, x, y);
+                        return;
+                    }
+                    let view = canvas.view();
+                    let stack = view.imp().stack.get();
+                    if let Some(p) =
+                        canvas.compute_point(&stack, &gtk::graphene::Point::new(x as f32, y as f32))
+                    {
+                        view.popup_menu_on(None, p.x().into(), p.y().into());
+                    }
+                }
+            ),
+        );
 
         let drag = gtk::GestureDrag::builder()
             .button(gdk::BUTTON_PRIMARY)
