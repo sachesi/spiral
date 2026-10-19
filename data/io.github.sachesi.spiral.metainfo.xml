@@ -44,6 +44,12 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.19.0" date="2026-10-19">
+      <description>
+        <p>Spiral can be used with nothing but a touchscreen. A tap opens a file or a folder, a finger dragged over the files scrolls them, and a finger held on a file, a sidebar entry, a breadcrumb or a desktop icon opens its menu once lifted, or picks the files up to drag them if it moves on instead. “Select” in that menu starts selection mode, where a tap adds a file or takes it out and a bar under the view acts on what is selected. Two fingers zoom the icons, as a pinch on a touchpad now does too, and zoom a picture in the preview, where a double tap goes to full size and back. In a narrow window the folded sidebar is swiped in from the edge and away again, and the tag colours in the menu spread out for a finger.</p>
+        <p>Any entry of the sidebar can be hidden, and so can a whole section of it: the places, the bookmarks, the devices, the network or the tags, as in Dolphin. A disk is hidden by its UUID, so it stays hidden each time it is plugged in. “Show Hidden Places” shows what is hidden, dimmed, to bring it back, until the window closes, and file dialogs leave out the same places.</p>
+      </description>
+    </release>
     <release version="0.18.2" date="2026-10-14">
       <description>
         <p>An AppImage shows the icon it carries, read out of its image by unsquashfs in the thumbnail sandbox, never by running it; without squashfs-tools it keeps the icon of its type. A picture set as a folder's icon is drawn sharp at every size, an icon theme's SVG included, where it was drawn at the few dozen pixels the file names and blurred up to fill a large tile.</p>
