@@ -486,6 +486,54 @@ impl PreviewDialog {
             move |_, _, _| scroll.set_cursor_from_name(pan_cursor(level.get()))
         ));
         scroll.add_controller(drag);
+        // Two fingers pinch or spread the picture around the point between them, on the
+        // screen or on a touchpad.
+        let pinch = gtk::GestureZoom::new();
+        pinch.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let last = Rc::new(Cell::new(1.0f64));
+        pinch.connect_begin(glib::clone!(
+            #[strong]
+            last,
+            move |gesture, _| {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                last.set(1.0);
+            }
+        ));
+        pinch.connect_scale_changed(glib::clone!(
+            #[strong]
+            zoom,
+            move |gesture, scale| {
+                zoom(scale / last.get(), gesture.bounding_box_center());
+                last.set(scale);
+            }
+        ));
+        scroll.add_controller(pinch);
+        // A double tap of a finger goes from the fit to full size there, at least twice
+        // the fit, and back.
+        let taps = gtk::GestureClick::new();
+        taps.connect_pressed(glib::clone!(
+            #[strong]
+            zoom,
+            #[strong]
+            level,
+            #[weak]
+            picture,
+            #[weak]
+            scroll,
+            move |gesture, n, x, y| {
+                if n != 2 || !crate::touch::is_touchscreen(gesture.device().as_ref()) {
+                    return;
+                }
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                if level.get() > 0.0 {
+                    zoom(0.0, None);
+                } else {
+                    let fit = fit_scale(&picture, &scroll);
+                    zoom((1.0 / fit).max(2.0), Some((x, y)));
+                }
+            }
+        ));
+        scroll.add_controller(taps);
         self.imp().zoom.replace(Some(Box::new(move |delta| {
             let step = match delta {
                 1 => ZOOM_STEP,

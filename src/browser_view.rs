@@ -612,6 +612,31 @@ mod imp {
                 }
             ));
             obj.add_controller(scroll);
+            // Two fingers pinched or spread, on the screen or on a touchpad, step through
+            // the same sizes, a step for each quarter further apart or closer together.
+            let pinch = gtk::GestureZoom::new();
+            pinch.set_propagation_phase(gtk::PropagationPhase::Capture);
+            let stepped = Rc::new(Cell::new(1.0f64));
+            pinch.connect_begin(glib::clone!(
+                #[strong]
+                stepped,
+                move |gesture, _| {
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
+                    stepped.set(1.0);
+                }
+            ));
+            pinch.connect_scale_changed(glib::clone!(
+                #[weak]
+                obj,
+                move |_, scale| {
+                    let steps = ((scale / stepped.get()).ln() / PINCH_STEP.ln()).trunc() as i32;
+                    for _ in 0..steps.abs() {
+                        obj.zoom(steps.signum());
+                    }
+                    stepped.set(stepped.get() * PINCH_STEP.powi(steps));
+                }
+            ));
+            obj.add_controller(pinch);
             // Read as a folder is opened too, like the view.
             obj.apply_global_sort();
             self.settings
@@ -790,6 +815,9 @@ glib::wrapper! {
         @extends gtk::Box, gtk::Widget,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget, gtk::Orientable;
 }
+
+/// How much further apart or closer together two fingers go for a step of zoom.
+const PINCH_STEP: f64 = 1.25;
 
 fn global_view_mode(settings: &gio::Settings, key: &str) -> ViewMode {
     match settings.enum_(key) {
