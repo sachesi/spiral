@@ -14,7 +14,8 @@ bookmarks and network shares, background file operations with progress, conflict
 and undo, archives through whatever tools are installed, thumbnails, a Space preview for
 images, video, sound, text and PDFs, a details panel, drag and drop, "Open in Terminal",
 servers reached through gvfs, the `org.freedesktop.FileManager1` service for "Show in
-folder" and the portal backend. Pictures are decoded by glycin in its own sandbox where it
+folder" and the portal backend. It works with a touchscreen alone: a tap opens, a long
+press opens a menu, pinching zooms, and several files are picked out in selection mode. Pictures are decoded by glycin in its own sandbox where it
 is installed. Thumbnailers, the reader of file details for the details panel, archive
 tools, the PDF previewer, the preview's decoders of video and sound, and of pictures where
 glycin is missing, run under bubblewrap, which is required: they read files from anywhere,
