@@ -136,3 +136,39 @@ pub(super) fn row_tag(row: &gtk::ListBoxRow) -> Option<String> {
 pub(super) fn row_section(row: &gtk::ListBoxRow) -> u8 {
     SECTION.get(row).unwrap_or(0)
 }
+
+/// What a row is hidden as: a disk by what names it wherever it is plugged in, set as the
+/// row is made, anything else by its location.
+pub(super) fn row_hide_key(row: &gtk::ListBoxRow) -> Option<String> {
+    HIDE_KEY
+        .get(row)
+        .or_else(|| row_file(row).map(|f| f.uri().to_string()))
+}
+
+/// What a whole section is hidden as.
+pub(super) fn section_key(section: u8) -> String {
+    let name = match section {
+        SECTION_PLACES => "places",
+        SECTION_BOOKMARKS => "bookmarks",
+        SECTION_DEVICES => "devices",
+        SECTION_NETWORK => "network",
+        _ => "tags",
+    };
+    format!("section:{name}")
+}
+
+pub(super) fn section_name(section: u8) -> String {
+    match section {
+        SECTION_PLACES => gettext("Places"),
+        SECTION_BOOKMARKS => gettext("Bookmarks"),
+        SECTION_DEVICES => gettext("Devices"),
+        SECTION_NETWORK => gettext("Network"),
+        _ => gettext("Tags"),
+    }
+}
+
+/// Whether `row` is left out by `hidden`, the keys of the hidden places.
+pub(super) fn is_hidden(row: &gtk::ListBoxRow, hidden: &[String]) -> bool {
+    let has = |key: &str| hidden.iter().any(|k| k == key);
+    has(&section_key(row_section(row))) || row_hide_key(row).is_some_and(|k| has(&k))
+}

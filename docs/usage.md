@@ -30,6 +30,14 @@ device met in a folder of its own — under `/run/media`, say — offers "Unmoun
 where the drive takes its medium back, in the context menu, and asks about its trash the
 same way.
 
+Any entry can be hidden from its menu, and so can the whole group it is in: the places at
+the top, the bookmarks, the devices, the network or the tags. A disk is hidden by its UUID,
+so a USB stick stays hidden each time it comes back. "Show Hidden Places", in the same menu
+or in the menu of the empty space below the entries, shows what is hidden, dimmed, with
+"Show" in its menu to bring it back; it lasts until the window closes. Hiding a bookmark
+leaves it in the bookmarks file for other programs, and what is hidden is hidden in file
+dialogs too.
+
 Below roughly 680 px the sidebar folds away behind a button and the navigation controls
 move to a bar at the bottom.
 

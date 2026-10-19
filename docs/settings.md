@@ -17,6 +17,7 @@ Changes apply immediately to open windows.
 | `use-column-view` | bool | false | Column View |
 | `show-root` | bool | true | Root (sidebar) |
 | `show-favorites` | bool | true | Favorites (sidebar) |
+| `hidden-places` | list of location URIs, `uuid:`, `device:` and `section:` entries | empty | edited from the sidebar |
 | `use-tags` | bool | false | Colour Tags |
 | `tags` | list of (name, colour) | empty | edited from the sidebar and the Tags… dialog |
 | `recursive-search` | `local`, `always`, `never` | `local` | Search in Subfolders |

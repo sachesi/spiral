@@ -66,6 +66,13 @@ impl EjectTarget {
 impl PlacesSidebar {
     pub(super) fn volume_row(&self, volume: &gio::Volume) -> gtk::ListBoxRow {
         let (row, content) = make_row(&volume.symbolic_icon(), &volume.name(), SECTION_DEVICES);
+        if let Some(key) = volume.uuid().map(|u| format!("uuid:{u}")).or_else(|| {
+            volume
+                .identifier("unix-device")
+                .map(|d| format!("device:{d}"))
+        }) {
+            HIDE_KEY.set(&row, key);
+        }
         if let Some(mount) = volume.get_mount() {
             ROW_FILE.set(&row, mount.default_location());
             add_drop_target(&row, &mount.default_location());
@@ -83,6 +90,9 @@ impl PlacesSidebar {
 
     pub(super) fn mount_row(&self, mount: &gio::Mount, section: u8) -> gtk::ListBoxRow {
         let (row, content) = make_row(&mount.symbolic_icon(), &mount.name(), section);
+        if let Some(uuid) = mount.uuid() {
+            HIDE_KEY.set(&row, format!("uuid:{uuid}"));
+        }
         ROW_FILE.set(&row, mount.default_location());
         add_drop_target(&row, &mount.default_location());
         if mount.can_unmount() || mount.can_eject() {

@@ -41,6 +41,8 @@ menu row_menu {
       hidden-when: "action-disabled";
     }
   }
+  // Hide, Hide Section and Show Hidden Places, made in code for the row and its section.
+  section row_visibility {}
 }
 
 menu tag_menu {
@@ -75,6 +77,17 @@ menu tag_menu {
     item {
       label: _("New _Tag…");
       action: "sidebar.new-tag";
+      hidden-when: "action-disabled";
+    }
+  }
+  section tag_visibility {}
+}
+
+menu background_menu {
+  section {
+    item {
+      label: _("Show _Hidden Places");
+      action: "sidebar.show-hidden";
       hidden-when: "action-disabled";
     }
   }

@@ -140,6 +140,28 @@ pub fn show_favorites() -> bool {
     SETTINGS.with(|s| s.boolean("show-favorites"))
 }
 
+/// What the sidebar leaves out: places by location, disks by UUID, and whole sections.
+pub fn hidden_places() -> Vec<String> {
+    SETTINGS.with(|s| {
+        s.strv("hidden-places")
+            .iter()
+            .map(|k| k.to_string())
+            .collect()
+    })
+}
+
+pub fn set_place_hidden(key: &str, hidden: bool) {
+    let mut keys = hidden_places();
+    keys.retain(|k| k != key);
+    if hidden {
+        keys.push(key.to_string());
+    }
+    let keys: Vec<&str> = keys.iter().map(String::as_str).collect();
+    if let Err(e) = SETTINGS.with(|s| s.set_strv("hidden-places", keys.as_slice())) {
+        glib::g_warning!("spiral", "cannot keep the hidden places: {e}");
+    }
+}
+
 /// Colour tags are off until asked for: they add a row of dots to the context menu, a
 /// list to the sidebar and a mark to every tagged file, for those who label their files.
 pub fn use_tags() -> bool {
