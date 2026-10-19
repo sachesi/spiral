@@ -1,5 +1,6 @@
-//! What a finger does where a mouse would use another button: a long press stands for a
-//! right click.
+//! What a finger does where a mouse would do it another way: a long press stands for a
+//! right click, a swipe from the edge brings the folded sidebar out, and a window used by
+//! touch gives small targets more room.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -44,8 +45,8 @@ pub(crate) fn follow_input(window: &impl IsA<gtk::Widget>) {
 pub(crate) fn sidebar_swipe(split: &adw::OverlaySplitView) {
     /// How near the edge a swipe that brings the sidebar in starts.
     const EDGE: f64 = 24.0;
-    /// How far a finger goes before its way is told: before the views would take it to
-    /// scroll, at GTK's drag threshold.
+    /// How far a finger goes before its way is told. The views take it to scroll at GTK's
+    /// drag threshold, 8 pixels, so it has to be told before that.
     const DECIDED: f64 = 6.0;
     /// How far it goes before it counts.
     const FAR: f64 = 48.0;
