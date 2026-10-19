@@ -100,6 +100,7 @@ impl BrowserView {
                 app.open_window(std::slice::from_ref(&f));
             }
         });
+        add("select-mode", |v| v.set_selection_mode(true));
         add("select-all", |v| {
             v.model().selection().select_all();
             if let Some(canvas) = v.desktop_canvas() {
@@ -476,6 +477,11 @@ impl BrowserView {
         self.set_enabled("paste", can_write && !in_trash && has_clip);
         self.set_enabled("paste-into", dir_writable && !in_trash && has_clip);
         self.set_enabled("rename", n > 0 && !in_trash && can_rename);
+        let imp = self.imp();
+        self.set_enabled(
+            "select-mode",
+            imp.touch_menu.get() && n > 0 && !imp.selection_mode.get() && !self.desktop_mode(),
+        );
         // Not `access::can-trash`: where there is no trash, the job offers to delete instead.
         self.set_enabled("trash", n > 0 && !in_trash && can_delete);
         self.set_enabled("delete", n > 0 && can_delete);

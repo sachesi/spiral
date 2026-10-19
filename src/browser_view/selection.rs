@@ -12,6 +12,85 @@ pub(super) fn items_selected(n: usize) -> String {
 }
 
 impl BrowserView {
+    /// Selection mode on or off. While it is on a tap picks a file out or leaves it, and
+    /// the bar under the view says how many are picked and acts on them.
+    pub(crate) fn set_selection_mode(&self, on: bool) {
+        let imp = self.imp();
+        imp.selection_mode.set(on);
+        // A chooser picks files and does nothing else with them.
+        let acts = !self.chooser_mode();
+        for button in [
+            &imp.selection_more,
+            &imp.selection_trash,
+            &imp.selection_copy,
+            &imp.selection_cut,
+        ] {
+            button.set_visible(acts);
+        }
+        self.update_floating_bar();
+        imp.selection_bar.set_reveal_child(on);
+        self.update_action_state();
+    }
+
+    /// A tap of a finger opens what it lands on, whatever the mouse takes to open it, and
+    /// in selection mode picks it out or leaves it instead. It is taken as the finger
+    /// lifts: a finger that scrolls or is held is no tap.
+    pub(super) fn setup_taps(&self) {
+        let tap = gtk::GestureClick::builder()
+            .button(gdk::BUTTON_PRIMARY)
+            .propagation_phase(gtk::PropagationPhase::Capture)
+            .build();
+        let taps_here = glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            #[upgrade_or]
+            None,
+            move |gesture: &gtk::GestureClick, x: f64, y: f64| {
+                if !crate::touch::is_touchscreen(gesture.device().as_ref())
+                    || view.desktop_mode()
+                    || view.in_side_column(x, y)
+                {
+                    return None;
+                }
+                view.item_at(x, y)
+            }
+        );
+        // The second tap of a double tap would open again what the first opened.
+        tap.connect_pressed(glib::clone!(
+            #[strong]
+            taps_here,
+            move |gesture, n, x, y| {
+                if n > 1 && taps_here(gesture, x, y).is_some() {
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
+                }
+            }
+        ));
+        tap.connect_released(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            move |gesture, n, x, y| {
+                let Some(pos) = taps_here(gesture, x, y).filter(|_| n == 1) else {
+                    return;
+                };
+                let selection = view.model().selection();
+                if view.imp().selection_mode.get() {
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
+                    if selection.is_selected(pos) {
+                        selection.unselect_item(pos);
+                    } else {
+                        selection.select_item(pos, false);
+                    }
+                } else if view.view_mode() != ViewMode::Columns {
+                    // The column view opens on one click anyway.
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
+                    selection.select_item(pos, true);
+                    view.activate_position(pos);
+                }
+            }
+        ));
+        self.imp().stack.add_controller(tap);
+    }
+
     /// While searching, keep the first result selected until another one is picked, so
     /// Enter in the search box opens it. The first result changes as results arrive in
     /// order, and the selection follows it. Not while the results are changing: the views
@@ -185,12 +264,20 @@ impl BrowserView {
                     .replace("%n", &others)
             }
         };
-        imp.floating_primary.set_text(&primary);
-        imp.floating_details.set_text(&if files > 0 {
+        let details = if files > 0 {
             format!("({})", crate::prefs::size(size))
         } else {
             String::new()
-        });
+        };
+        // In selection mode its own bar says it.
+        if imp.selection_mode.get() {
+            imp.selection_count
+                .set_label(format!("{primary} {details}").trim_end());
+            imp.floating_bar.set_visible(false);
+            return;
+        }
+        imp.floating_primary.set_text(&primary);
+        imp.floating_details.set_text(&details);
         imp.floating_bar.set_visible(true);
     }
 

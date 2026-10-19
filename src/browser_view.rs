@@ -93,6 +93,23 @@ mod imp {
         #[template_child]
         pub floating_details: TemplateChild<gtk::Label>,
         #[template_child]
+        pub selection_bar: TemplateChild<gtk::Revealer>,
+        #[template_child]
+        pub selection_count: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub selection_more: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub selection_trash: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub selection_copy: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub selection_cut: TemplateChild<gtk::Button>,
+        /// Selection mode: a tap of a finger picks a file out or leaves it.
+        pub selection_mode: Cell<bool>,
+        /// Whether the menu on its way up was opened by a finger, the menu that offers
+        /// selection mode.
+        pub touch_menu: Cell<bool>,
+        #[template_child]
         pub item_menu: TemplateChild<gio::MenuModel>,
         #[template_child]
         pub open_section: TemplateChild<gio::Menu>,
@@ -218,6 +235,7 @@ mod imp {
 
         fn class_init(klass: &mut Self::Class) {
             klass.bind_template();
+            klass.bind_template_callbacks();
             use gtk::gdk::{Key, ModifierType as M};
             klass.add_binding_action(Key::KP_Delete, M::empty(), "view.trash");
             klass.add_binding_action(Key::Delete, M::empty(), "view.trash");
@@ -299,6 +317,14 @@ mod imp {
                 floating_spinner: Default::default(),
                 floating_primary: Default::default(),
                 floating_details: Default::default(),
+                selection_bar: Default::default(),
+                selection_count: Default::default(),
+                selection_more: Default::default(),
+                selection_trash: Default::default(),
+                selection_copy: Default::default(),
+                selection_cut: Default::default(),
+                selection_mode: Default::default(),
+                touch_menu: Default::default(),
                 item_menu: Default::default(),
                 open_section: Default::default(),
                 open_items: Default::default(),
@@ -383,6 +409,7 @@ mod imp {
             obj.setup_actions();
             obj.setup_drag_source();
             obj.setup_background_click();
+            obj.setup_taps();
 
             // Dropping on empty space copies/moves into the folder being viewed.
             if !obj.chooser_mode() {
@@ -695,6 +722,9 @@ mod imp {
                             imp.first_picked.set(false);
                         }
                         imp.had_selection.set(!sel.selection().is_empty());
+                        if imp.selection_mode.get() && sel.selection().is_empty() {
+                            obj.set_selection_mode(false);
+                        }
                         obj.queue_selection_update();
                     }
                 ));
@@ -709,6 +739,32 @@ mod imp {
 
     impl WidgetImpl for BrowserView {}
     impl BoxImpl for BrowserView {}
+
+    #[gtk::template_callbacks]
+    impl BrowserView {
+        /// Leaving selection mode drops what it picked out, which ends it.
+        #[template_callback]
+        fn on_selection_cancel(&self, _button: &gtk::Button) {
+            self.model.selection().unselect_all();
+        }
+
+        /// The menu of what is selected, over the button.
+        #[template_callback]
+        fn on_selection_more(&self, button: &gtk::Button) {
+            let selection = self.model.selection().selection();
+            if selection.is_empty() {
+                return;
+            }
+            let centre = gtk::graphene::Point::new(
+                button.width() as f32 / 2.0,
+                button.height() as f32 / 2.0,
+            );
+            if let Some(p) = button.compute_point(&*self.stack, &centre) {
+                self.obj()
+                    .popup_menu_on(Some(selection.minimum()), p.x().into(), p.y().into());
+            }
+        }
+    }
 
     impl BrowserView {
         fn set_view_mode(&self, mode: ViewMode) {
