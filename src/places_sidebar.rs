@@ -150,6 +150,8 @@ mod imp {
                         .as_ref(),
                 );
             });
+            // The actions first: building the rows says whether hidden ones can be shown.
+            obj.setup_actions();
             obj.rebuild();
 
             let rebuild = glib::clone!(
@@ -302,7 +304,6 @@ mod imp {
                     move |x, y| obj.popup_background_menu(x, y)
                 ),
             );
-            obj.setup_actions();
 
             // Empty space below the rows: drop a bookmark to move it last, or folders to
             // bookmark them.
@@ -559,24 +560,16 @@ impl PlacesSidebar {
     }
 
     /// Leave out the rows hidden, alone or with their section, or dim them while the
-    /// hidden places are shown.
+    /// hidden places are shown. Showing them is offered while there is one: a disk hidden
+    /// stays in the setting while it is away, to be hidden again when it is back.
     fn apply_hidden(&self) {
         let imp = self.imp();
         let hidden = crate::prefs::hidden_places();
-        if hidden.is_empty() && imp.show_hidden.get() {
-            imp.show_hidden.set(false);
-        }
-        if let Some(action) = imp
-            .actions
-            .lookup_action("show-hidden")
-            .and_downcast::<gio::SimpleAction>()
-        {
-            action.set_enabled(!hidden.is_empty());
-            action.set_state(&imp.show_hidden.get().to_variant());
-        }
+        let mut found = false;
         let mut i = 0;
         while let Some(row) = imp.list.row_at_index(i) {
             if is_hidden(&row, &hidden) {
+                found = true;
                 if !imp.show_hidden.get() {
                     imp.list.remove(&row);
                     continue;
@@ -584,6 +577,17 @@ impl PlacesSidebar {
                 row.add_css_class("spiral-hidden-place");
             }
             i += 1;
+        }
+        if !found {
+            imp.show_hidden.set(false);
+        }
+        if let Some(action) = imp
+            .actions
+            .lookup_action("show-hidden")
+            .and_downcast::<gio::SimpleAction>()
+        {
+            action.set_enabled(found);
+            action.set_state(&imp.show_hidden.get().to_variant());
         }
     }
 
@@ -643,7 +647,6 @@ impl PlacesSidebar {
             crate::prefs::set_place_hidden(&section_key(row_section(row)), false);
         });
         let show = gio::SimpleAction::new_stateful("show-hidden", None, &false.to_variant());
-        show.set_enabled(!crate::prefs::hidden_places().is_empty());
         show.connect_change_state(glib::clone!(
             #[weak(rename_to = sidebar)]
             self,

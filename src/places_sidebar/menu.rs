@@ -49,7 +49,12 @@ impl PlacesSidebar {
 
     /// The menu of the space below the rows, at a point of the list.
     pub(super) fn popup_background_menu(&self, x: f64, y: f64) {
-        if crate::prefs::hidden_places().is_empty() {
+        if !self
+            .imp()
+            .actions
+            .lookup_action("show-hidden")
+            .is_some_and(|a| a.is_enabled())
+        {
             return;
         }
         let popover = self.menu_popover(&self.imp().background_menu);
