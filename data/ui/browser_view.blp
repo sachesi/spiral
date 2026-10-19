@@ -140,6 +140,54 @@ template $SpiralBrowserView : Box {
       }
     }
   }
+
+  // Selection mode, for fingers: what is selected, what can be done with it, and the way
+  // out. It ends by itself when nothing is selected any more.
+  Revealer selection_bar {
+    transition-type: slide_up;
+
+    child: ActionBar {
+      [start]
+      Button {
+        label: _("_Cancel");
+        use-underline: true;
+        clicked => $on_selection_cancel() swapped;
+      }
+
+      [center]
+      Label selection_count {
+        ellipsize: end;
+      }
+
+      [end]
+      Button selection_more {
+        icon-name: "view-more-symbolic";
+        tooltip-text: _("More");
+        clicked => $on_selection_more() swapped;
+      }
+
+      [end]
+      Button selection_trash {
+        icon-name: "user-trash-symbolic";
+        tooltip-text: _("Move to Trash");
+        action-name: "view.trash";
+      }
+
+      [end]
+      Button selection_copy {
+        icon-name: "edit-copy-symbolic";
+        tooltip-text: _("Copy");
+        action-name: "view.copy";
+      }
+
+      [end]
+      Button selection_cut {
+        icon-name: "edit-cut-symbolic";
+        tooltip-text: _("Cut");
+        action-name: "view.cut";
+      }
+    };
+  }
 }
 
 menu item_menu {
@@ -173,6 +221,14 @@ menu item_menu {
     item {
       label: _("_Run as a Program");
       action: "view.run";
+      hidden-when: "action-disabled";
+    }
+  }
+  // Selection mode, offered in a menu a finger opened.
+  section {
+    item {
+      label: _("_Select");
+      action: "view.select-mode";
       hidden-when: "action-disabled";
     }
   }

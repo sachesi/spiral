@@ -219,7 +219,10 @@ impl BrowserView {
             glib::clone!(
                 #[weak(rename_to = view)]
                 self,
-                move |x, y| view.popup_menu_on(view.item_at(x, y), x, y)
+                move |x, y| {
+                    view.imp().touch_menu.set(true);
+                    view.popup_menu_on(view.item_at(x, y), x, y);
+                }
             ),
         );
         long.group_with(&source);

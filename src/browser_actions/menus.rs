@@ -187,6 +187,7 @@ impl BrowserView {
                     #[weak(rename_to = view)]
                     self,
                     move |_| {
+                        view.imp().touch_menu.set(false);
                         // The menu took the focus and hands it back to nothing in
                         // particular, which would leave the view keys dead.
                         view.grab_view_focus();
