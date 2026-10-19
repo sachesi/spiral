@@ -25,6 +25,7 @@ static EJECT: Key<EjectTarget> = Key::new("eject");
 static VOLUME: Key<gio::Volume> = Key::new("volume");
 static SECTION: Key<u8> = Key::new("section");
 static ROW_TAG: Key<String> = Key::new("tag");
+static HIDE_KEY: Key<String> = Key::new("hide-key");
 
 mod imp {
     use super::*;
@@ -38,6 +39,12 @@ mod imp {
         pub row_menu: TemplateChild<gio::MenuModel>,
         #[template_child]
         pub tag_menu: TemplateChild<gio::MenuModel>,
+        #[template_child]
+        pub row_visibility: TemplateChild<gio::Menu>,
+        #[template_child]
+        pub tag_visibility: TemplateChild<gio::Menu>,
+        #[template_child]
+        pub background_menu: TemplateChild<gio::MenuModel>,
         pub monitor: gio::VolumeMonitor,
         /// Handlers on the monitor, which is shared by every window and outlives them.
         pub monitor_handlers: RefCell<Vec<glib::SignalHandlerId>>,
@@ -60,6 +67,9 @@ mod imp {
         pub hide_tags: Cell<bool>,
         /// In a dialog: no tabs to open a place in, and no operations to empty the trash.
         pub in_dialog: Cell<bool>,
+        /// Whether the hidden places are shown, dimmed, to be brought back. Kept with the
+        /// window and never saved, so they do not come back by accident.
+        pub show_hidden: Cell<bool>,
     }
 
     impl Default for PlacesSidebar {
@@ -68,6 +78,9 @@ mod imp {
                 list: Default::default(),
                 row_menu: Default::default(),
                 tag_menu: Default::default(),
+                row_visibility: Default::default(),
+                tag_visibility: Default::default(),
+                background_menu: Default::default(),
                 monitor: gio::VolumeMonitor::get(),
                 monitor_handlers: Default::default(),
                 settings_handlers: Default::default(),
@@ -81,6 +94,7 @@ mod imp {
                 color_picker: Default::default(),
                 hide_tags: Default::default(),
                 in_dialog: Default::default(),
+                show_hidden: Default::default(),
             }
         }
     }
@@ -194,6 +208,7 @@ mod imp {
                 "use-network",
                 "use-tags",
                 "tags",
+                "hidden-places",
             ] {
                 let id = crate::prefs::settings().connect_changed(
                     Some(key),
@@ -254,15 +269,17 @@ mod imp {
             ));
             self.list.add_controller(click);
 
-            // Right click: row menu.
+            // Right click: the row's menu, or below the rows the one that brings hidden
+            // places back.
             let click = gtk::GestureClick::builder().button(3).build();
             click.connect_pressed(glib::clone!(
                 #[weak]
                 obj,
                 move |g, _, x, y| {
-                    if let Some(row) = obj.imp().list.row_at_y(y as i32) {
-                        g.set_state(gtk::EventSequenceState::Claimed);
-                        obj.popup_row_menu(&row, x, y);
+                    g.set_state(gtk::EventSequenceState::Claimed);
+                    match obj.imp().list.row_at_y(y as i32) {
+                        Some(row) => obj.popup_row_menu(&row, x, y),
+                        None => obj.popup_background_menu(x, y),
                     }
                 }
             ));
@@ -518,8 +535,38 @@ impl PlacesSidebar {
             }
         }
 
+        self.apply_hidden();
         let current = imp.current.borrow().clone();
         self.set_selected_location(current.as_ref());
+    }
+
+    /// Leave out the rows hidden, alone or with their section, or dim them while the
+    /// hidden places are shown.
+    fn apply_hidden(&self) {
+        let imp = self.imp();
+        let hidden = crate::prefs::hidden_places();
+        if hidden.is_empty() && imp.show_hidden.get() {
+            imp.show_hidden.set(false);
+        }
+        if let Some(action) = imp
+            .actions
+            .lookup_action("show-hidden")
+            .and_downcast::<gio::SimpleAction>()
+        {
+            action.set_enabled(!hidden.is_empty());
+            action.set_state(&imp.show_hidden.get().to_variant());
+        }
+        let mut i = 0;
+        while let Some(row) = imp.list.row_at_index(i) {
+            if is_hidden(&row, &hidden) {
+                if !imp.show_hidden.get() {
+                    imp.list.remove(&row);
+                    continue;
+                }
+                row.add_css_class("spiral-hidden-place");
+            }
+            i += 1;
+        }
     }
 
     fn setup_actions(&self) {
@@ -561,6 +608,34 @@ impl PlacesSidebar {
                 s.remove_tag(tag);
             }
         });
+        add("hide", |_, row| {
+            if let Some(key) = row_hide_key(row) {
+                crate::prefs::set_place_hidden(&key, true);
+            }
+        });
+        add("unhide", |_, row| {
+            if let Some(key) = row_hide_key(row) {
+                crate::prefs::set_place_hidden(&key, false);
+            }
+        });
+        add("hide-section", |_, row| {
+            crate::prefs::set_place_hidden(&section_key(row_section(row)), true);
+        });
+        add("unhide-section", |_, row| {
+            crate::prefs::set_place_hidden(&section_key(row_section(row)), false);
+        });
+        let show = gio::SimpleAction::new_stateful("show-hidden", None, &false.to_variant());
+        show.set_enabled(!crate::prefs::hidden_places().is_empty());
+        show.connect_change_state(glib::clone!(
+            #[weak(rename_to = sidebar)]
+            self,
+            move |_, value| {
+                let on = value.and_then(glib::Variant::get::<bool>).unwrap_or(false);
+                sidebar.imp().show_hidden.set(on);
+                sidebar.rebuild();
+            }
+        ));
+        group.add_action(&show);
         add("tag-custom-color", |s, row| {
             let Some(tag) = row_tag(row) else { return };
             let start = crate::tags::color_of(&tag)

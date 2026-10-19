@@ -34,6 +34,31 @@ impl PlacesSidebar {
                 && !imp.trash_empty.get()
                 && row_file(row).is_some_and(|f| f.uri().starts_with("trash:")),
         );
+        let (model, visibility): (&gio::MenuModel, _) = if tag.is_some() {
+            (&imp.tag_menu, &imp.tag_visibility)
+        } else {
+            (&imp.row_menu, &imp.row_visibility)
+        };
+        fill_visibility(visibility, row);
+        let popover = self.menu_popover(model);
+        if let Some(tag) = &tag {
+            self.attach_color_picker(&popover, tag);
+        }
+        self.popup_at(&popover, x, y);
+    }
+
+    /// The menu of the space below the rows, at a point of the list.
+    pub(super) fn popup_background_menu(&self, x: f64, y: f64) {
+        if crate::prefs::hidden_places().is_empty() {
+            return;
+        }
+        let popover = self.menu_popover(&self.imp().background_menu);
+        self.popup_at(&popover, x, y);
+    }
+
+    /// The sidebar's one menu popover, showing `model`.
+    fn menu_popover(&self, model: &gio::MenuModel) -> gtk::PopoverMenu {
+        let imp = self.imp();
         let existing = imp.popover.borrow().clone();
         let popover = existing.unwrap_or_else(|| {
             let p = gtk::PopoverMenu::from_model(gio::MenuModel::NONE);
@@ -43,23 +68,54 @@ impl PlacesSidebar {
             imp.popover.replace(Some(p.clone()));
             p
         });
-        let model: &gio::MenuModel = if tag.is_some() {
-            &imp.tag_menu
-        } else {
-            &imp.row_menu
-        };
         popover.set_menu_model(Some(model));
-        if let Some(tag) = &tag {
-            self.attach_color_picker(&popover, tag);
-        }
-        let p = imp
+        popover
+    }
+
+    fn popup_at(&self, popover: &gtk::PopoverMenu, x: f64, y: f64) {
+        let p = self
+            .imp()
             .list
             .compute_point(self, &gtk::graphene::Point::new(x as f32, y as f32))
             .unwrap_or_else(|| gtk::graphene::Point::new(x as f32, y as f32));
         popover.set_pointing_to(Some(&gdk::Rectangle::new(p.x() as i32, p.y() as i32, 1, 1)));
         popover.popup();
     }
+}
 
+/// Hide or Show for the row and for its section, and the switch that shows what is hidden.
+fn fill_visibility(menu: &gio::Menu, row: &gtk::ListBoxRow) {
+    menu.remove_all();
+    let hidden = crate::prefs::hidden_places();
+    if let Some(key) = row_hide_key(row) {
+        if hidden.contains(&key) {
+            menu.append(Some(&gettext("_Show")), Some("sidebar.unhide"));
+        } else {
+            menu.append(Some(&gettext("_Hide")), Some("sidebar.hide"));
+        }
+    }
+    let section = row_section(row);
+    let name = section_name(section);
+    if hidden.contains(&section_key(section)) {
+        menu.append(
+            Some(&gettext("Show Section “%s”").replace("%s", &name)),
+            Some("sidebar.unhide-section"),
+        );
+    } else {
+        menu.append(
+            Some(&gettext("Hide Section “%s”").replace("%s", &name)),
+            Some("sidebar.hide-section"),
+        );
+    }
+    let all = gio::MenuItem::new(
+        Some(&gettext("Show _Hidden Places")),
+        Some("sidebar.show-hidden"),
+    );
+    all.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
+    menu.append_item(&all);
+}
+
+impl PlacesSidebar {
     /// The colours a tag can have, as a row of dots with the one it carries marked, and
     /// a dot of its own for a colour from the colour dialog. The popover holds on to the
     /// row it was given once, so the dots are made again for the tag whose menu is on the

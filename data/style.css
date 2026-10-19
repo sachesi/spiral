@@ -532,3 +532,8 @@ spiral-desktop .spiral-desktop-band {
   border: 1px solid var(--accent-bg-color);
   border-radius: 4px;
 }
+
+/* A sidebar place that is hidden, shown while the hidden places are. */
+.navigation-sidebar > row.spiral-hidden-place > box {
+  opacity: 0.5;
+}
