@@ -81,10 +81,18 @@ impl BrowserView {
                         selection.select_item(pos, false);
                     }
                 } else if view.view_mode() != ViewMode::Columns {
-                    // The column view opens on one click anyway.
+                    // The column view opens on one click anyway. A chooser takes a file
+                    // when it is opened, and a tap only picks it out there: the button
+                    // takes it, so saving over a file is never one touch away.
                     gesture.set_state(gtk::EventSequenceState::Claimed);
                     selection.select_item(pos, true);
-                    view.activate_position(pos);
+                    let file = !view
+                        .model()
+                        .info_at(pos)
+                        .is_some_and(|i| file_utils::is_dir(&i));
+                    if !(view.chooser_mode() && file) {
+                        view.activate_position(pos);
+                    }
                 }
             }
         ));

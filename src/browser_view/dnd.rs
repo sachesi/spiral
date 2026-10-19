@@ -207,11 +207,12 @@ impl BrowserView {
                     if view.desktop_mode() || view.in_side_column(x, y) {
                         return false;
                     }
+                    // In selection mode the file held joins what is picked out.
                     let selection = view.model().selection();
                     if let Some(pos) = view.item_at(x, y)
                         && !selection.is_selected(pos)
                     {
-                        selection.select_item(pos, true);
+                        selection.select_item(pos, !view.imp().selection_mode.get());
                     }
                     true
                 }
