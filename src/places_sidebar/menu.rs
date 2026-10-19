@@ -108,7 +108,7 @@ fn fill_visibility(menu: &gio::Menu, row: &gtk::ListBoxRow) {
         );
     }
     let all = gio::MenuItem::new(
-        Some(&gettext("Show _Hidden Places")),
+        Some(&gettext("Show Hidden _Places")),
         Some("sidebar.show-hidden"),
     );
     all.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
