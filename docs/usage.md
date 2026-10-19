@@ -140,8 +140,9 @@ Grid or list, picked from the dropdown in the header or with Ctrl+1 and Ctrl+2; 
 beside it steps through them. "Column View" in Preferences adds the columns as a third,
 on Ctrl+3. The dropdown also has zoom, sort
 order, hidden files and the sidebar toggle. Zoom steps are 48, 64, 96, 168 and 256 px in
-the grid and 16 to 64 in the list and the columns; Ctrl+wheel works too, and Ctrl+0 puts
-the view back to the size the preference starts at.
+the grid and 16 to 64 in the list and the columns; Ctrl+wheel works too, and so does a
+pinch on a touchscreen or a touchpad, a step for each quarter the fingers move further
+apart or closer together. Ctrl+0 puts the view back to the size the preference starts at.
 
 Which view a folder opens in: the one it was last switched to, if "Remember View per Folder"
 is on (stored in the folder's `metadata::spiral-view` attribute, invisible to other
@@ -279,6 +280,25 @@ Executable files get "Run as a Program": scripts run in the terminal so their ou
 be read, binaries start on their own. In Favorites, "Open Item Location" jumps to the
 folder holding the item and selects it there.
 
+## Touch
+
+On a touchscreen a tap opens a file or a folder, whatever Preferences says a mouse takes,
+and a finger dragged over the files scrolls them. Holding a finger on something stands
+in for the right click: the file, sidebar entry, breadcrumb or desktop icon held is
+selected and its menu opens once the finger is lifted. Moving the finger on instead of
+lifting it picks the files up to drag them, which a finger dragged straight away never
+does.
+
+The menu of a file opened that way has "Select", which starts selection mode with that file
+selected. A tap then adds a file to the selection or takes it out again, and a bar under
+the view says what is selected, with Cut, Copy, Move to Trash and the rest of the menu
+behind the last button. Cancel, or taking out the last file, ends it.
+
+When the window is narrow enough for the sidebar to fold away, a finger swiped in from
+the edge brings it out and a swipe back puts it away; a touchpad is left out of this, so
+scrolling sideways never pulls the sidebar out. While the window is being used with a
+finger, the colour dots of the tag menu are spread further apart.
+
 ## Preview
 
 Space shows the selected file without opening an application, and closes the preview
@@ -306,8 +326,10 @@ the sound player is no larger than its controls. Walking to the next file shows 
 thumbnail, where there is one already, until the file itself has loaded. Ctrl with + and -,
 Ctrl and the wheel, which zooms around the pointer, or the buttons in the bar over the
 picture zoom a picture or a page; Ctrl+0 fits it back into the window, zooming out stops
-there rather than counting below it, and a zoomed picture is moved by dragging it. Nothing
-in the preview shows scrollbars.
+there rather than counting below it, and a zoomed picture is moved by dragging it. Two
+fingers pinch a picture smaller or spread it larger around the point between them, and a
+double tap takes it from the fit to its full size, or twice the fit for a small one, and
+back. Nothing in the preview shows scrollbars.
 
 A sound file is shown with the cover it carries, cut square and drawn at the size of the
 icon it stands in for, and with that icon until there is one. Anything else falls back to
