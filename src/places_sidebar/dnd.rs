@@ -38,11 +38,24 @@ pub(super) fn add_reorder_dnd<T: glib::value::ValueType>(
     payload: T,
     move_to: impl Fn(&T, bool) + 'static,
 ) {
+    // In the capture phase with the row's long press: a finger's moves stop there once the
+    // press has taken them.
     let source = gtk::DragSource::builder()
         .actions(gdk::DragAction::MOVE)
+        .propagation_phase(gtk::PropagationPhase::Capture)
         .build();
-    source
-        .connect_prepare(move |_, _, _| Some(gdk::ContentProvider::for_value(&payload.to_value())));
+    source.connect_prepare(move |source, _, _| {
+        // A finger moves a row only once it has held it; the long press holding it claims
+        // the press for this source too.
+        if crate::touch::is_touchscreen(source.device().as_ref())
+            && source.current_sequence().is_none_or(|sequence| {
+                source.sequence_state(&sequence) != gtk::EventSequenceState::Claimed
+            })
+        {
+            return None;
+        }
+        Some(gdk::ContentProvider::for_value(&payload.to_value()))
+    });
     source.connect_drag_begin(glib::clone!(
         #[weak]
         row,
@@ -51,7 +64,11 @@ pub(super) fn add_reorder_dnd<T: glib::value::ValueType>(
             src.set_icon(Some(&paintable), 0, row.height() / 2);
         }
     ));
-    row.add_controller(source);
+    row.add_controller(source.clone());
+    // Gestures group only once they are on the same widget.
+    if let Some(press) = ROW_PRESS.get(row) {
+        press.group_with(&source);
+    }
 
     let target = gtk::DropTarget::new(T::Type::static_type(), gdk::DragAction::MOVE);
     target.connect_drop(glib::clone!(

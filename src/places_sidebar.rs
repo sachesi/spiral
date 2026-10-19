@@ -26,6 +26,7 @@ static VOLUME: Key<gio::Volume> = Key::new("volume");
 static SECTION: Key<u8> = Key::new("section");
 static ROW_TAG: Key<String> = Key::new("tag");
 static HIDE_KEY: Key<String> = Key::new("hide-key");
+static ROW_PRESS: Key<gtk::GestureLongPress> = Key::new("long-press");
 
 mod imp {
     use super::*;
@@ -284,17 +285,21 @@ mod imp {
                 }
             ));
             self.list.add_controller(click);
-            // A finger held on a row does what a right click does, once lifted.
+            // A finger held below the rows does what a right click does there, once
+            // lifted; each row has its own.
             crate::touch::long_press(
                 &self.list.get(),
-                |_, _| true,
                 glib::clone!(
                     #[weak]
                     obj,
-                    move |x, y| match obj.imp().list.row_at_y(y as i32) {
-                        Some(row) => obj.popup_row_menu(&row, x, y),
-                        None => obj.popup_background_menu(x, y),
-                    }
+                    #[upgrade_or]
+                    false,
+                    move |_, y| obj.imp().list.row_at_y(y as i32).is_none()
+                ),
+                glib::clone!(
+                    #[weak]
+                    obj,
+                    move |x, y| obj.popup_background_menu(x, y)
                 ),
             );
             obj.setup_actions();

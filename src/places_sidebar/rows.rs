@@ -58,6 +58,31 @@ pub(super) fn row_with(
         .focus_on_click(false)
         .build();
     SECTION.set(&row, section);
+    // A finger held on the row opens its menu once lifted, or drags the row where rows
+    // can be dragged.
+    let press = crate::touch::long_press(
+        &row,
+        |_, _| true,
+        glib::clone!(
+            #[weak]
+            row,
+            move |x, y| {
+                let Some(sidebar) = row
+                    .ancestor(PlacesSidebar::static_type())
+                    .and_downcast::<PlacesSidebar>()
+                else {
+                    return;
+                };
+                let list = sidebar.imp().list.get();
+                if let Some(p) =
+                    row.compute_point(&list, &gtk::graphene::Point::new(x as f32, y as f32))
+                {
+                    sidebar.popup_row_menu(&row, p.x().into(), p.y().into());
+                }
+            }
+        ),
+    );
+    ROW_PRESS.set(&row, press);
     (row, content)
 }
 
