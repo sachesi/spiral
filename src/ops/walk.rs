@@ -353,6 +353,7 @@ async fn rename_all(job: &Job, mgr: &JobManager, renames: Vec<(gio::File, String
                     crate::tags::relocate(&file, &new_file);
                     crate::starred::relocate(&file, &new_file);
                     crate::bookmarks::relocate(&file, &new_file);
+                    crate::prefs::relocate_hidden_places(&file, &new_file);
                     crate::folder_model::moved(&file, &new_file);
                     job.imp().outcome.borrow_mut().renamed.push((new_file, old));
                     break;
@@ -674,6 +675,7 @@ async fn transfer_one(
                     crate::tags::relocate(src, &dest);
                     crate::starred::relocate(src, &dest);
                     crate::bookmarks::relocate(src, &dest);
+                    crate::prefs::relocate_hidden_places(src, &dest);
                     crate::folder_model::moved(src, &dest);
                     return Ok(Some(dest));
                 }
@@ -773,6 +775,7 @@ async fn transfer_one(
                 crate::tags::relocate(src, &dest);
                 crate::starred::relocate(src, &dest);
                 crate::bookmarks::relocate(src, &dest);
+                crate::prefs::relocate_hidden_places(src, &dest);
                 crate::folder_model::moved(src, &dest);
             }
             return Ok(Some(dest));
@@ -801,6 +804,7 @@ async fn transfer_one(
                     crate::tags::relocate(src, &dest);
                     crate::starred::relocate(src, &dest);
                     crate::bookmarks::relocate(src, &dest);
+                    crate::prefs::relocate_hidden_places(src, &dest);
                     crate::folder_model::moved(src, &dest);
                 }
                 return Ok(Some(dest));

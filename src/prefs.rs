@@ -150,15 +150,67 @@ pub fn hidden_places() -> Vec<String> {
     })
 }
 
+fn save_hidden_places(keys: &[String]) {
+    let keys: Vec<&str> = keys.iter().map(String::as_str).collect();
+    if let Err(e) = SETTINGS.with(|s| s.set_strv("hidden-places", keys.as_slice())) {
+        glib::g_warning!("spiral", "cannot keep the hidden places: {e}");
+    }
+}
+
 pub fn set_place_hidden(key: &str, hidden: bool) {
     let mut keys = hidden_places();
     keys.retain(|k| k != key);
     if hidden {
         keys.push(key.to_string());
     }
-    let keys: Vec<&str> = keys.iter().map(String::as_str).collect();
-    if let Err(e) = SETTINGS.with(|s| s.set_strv("hidden-places", keys.as_slice())) {
-        glib::g_warning!("spiral", "cannot keep the hidden places: {e}");
+    save_hidden_places(&keys);
+}
+
+/// A hidden place at `from` is hidden at `to` instead, or forgotten for `None`: a tag
+/// renamed, or removed.
+pub fn move_hidden_place(from: &str, to: Option<&str>) {
+    let mut keys = hidden_places();
+    let Some(at) = keys.iter().position(|k| k == from) else {
+        return;
+    };
+    match to {
+        Some(to) => keys[at] = to.to_string(),
+        None => {
+            keys.remove(at);
+        }
+    }
+    save_hidden_places(&keys);
+}
+
+/// `from` was moved or renamed to `to`, and so was everything below it: the places hidden
+/// there stay hidden where they went.
+pub fn relocate_hidden_places(from: &gio::File, to: &gio::File) {
+    let mut moved = false;
+    let keys: Vec<String> = hidden_places()
+        .into_iter()
+        .map(|key| {
+            // Disks and sections are no locations.
+            if !key.contains("://") {
+                return key;
+            }
+            let place = gio::File::for_uri(&key);
+            let new = if place.equal(from) {
+                Some(to.clone())
+            } else {
+                from.relative_path(&place)
+                    .map(|rest| to.resolve_relative_path(rest))
+            };
+            match new {
+                Some(new) => {
+                    moved = true;
+                    new.uri().to_string()
+                }
+                None => key,
+            }
+        })
+        .collect();
+    if moved {
+        save_hidden_places(&keys);
     }
 }
 
@@ -263,6 +315,30 @@ pub fn recursive_search_for(file: &gio::File) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_hidden_place_follows_its_folder_and_its_tag() {
+        set_place_hidden("file:///home/u/Old", true);
+        set_place_hidden("file:///home/u/Old/Inner", true);
+        set_place_hidden("tag:///Red", true);
+        set_place_hidden("uuid:1234", true);
+        relocate_hidden_places(
+            &gio::File::for_uri("file:///home/u/Old"),
+            &gio::File::for_uri("file:///home/u/New"),
+        );
+        move_hidden_place("tag:///Red", Some("tag:///Work"));
+        assert_eq!(
+            hidden_places(),
+            [
+                "file:///home/u/New",
+                "file:///home/u/New/Inner",
+                "tag:///Work",
+                "uuid:1234"
+            ]
+        );
+        move_hidden_place("tag:///Work", None);
+        assert!(!hidden_places().iter().any(|k| k.starts_with("tag:")));
+    }
 
     #[test]
     fn a_list_view_follows_its_tag() {
