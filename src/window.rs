@@ -378,6 +378,8 @@ mod imp {
                 }
             ));
             obj.add_controller(buttons);
+            crate::touch::follow_input(&*obj);
+            crate::touch::sidebar_swipe(&self.split_view);
 
             let (w, h) = self.settings.get::<(i32, i32)>("window-size");
             obj.set_default_size(w, h);
