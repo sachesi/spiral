@@ -91,3 +91,4 @@ pub(crate) mod tags;
 pub(crate) mod templates;
 pub(crate) mod terminal;
 pub(crate) mod thumbnails;
+pub(crate) mod touch;
