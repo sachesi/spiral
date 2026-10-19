@@ -288,8 +288,8 @@ picks it out, and the dialog's own button takes it, so saving over a file is nev
 single touch. Holding a finger on something stands
 in for the right click: the file, sidebar entry, breadcrumb or desktop icon held is
 selected and its menu opens once the finger is lifted. Moving the finger on instead of
-lifting it picks the files up to drag them, which a finger dragged straight away never
-does.
+lifting it picks the files up to drag them, or a bookmark or tag to move it up or down the
+sidebar, which a finger dragged straight away never does.
 
 The menu of a file opened that way has "Select", which starts selection mode with that file
 selected. A tap then adds a file to the selection or takes it out again, and a bar under
