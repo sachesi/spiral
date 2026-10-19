@@ -723,6 +723,11 @@ mod imp {
                     obj.queue_selection_update();
                     obj.queue_pick_first_result();
                     let selected = !sel.selection().is_empty();
+                    // What was picked out can go with the files, which the selection
+                    // does not tell of.
+                    if obj.imp().selection_mode.get() && !selected {
+                        obj.set_selection_mode(false);
+                    }
                     if obj.imp().had_selection.replace(selected)
                         && !selected
                         && removed > 0
