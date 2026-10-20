@@ -84,7 +84,7 @@ impl PlacesSidebar {
             .compute_point(self, &gtk::graphene::Point::new(x as f32, y as f32))
             .unwrap_or_else(|| gtk::graphene::Point::new(x as f32, y as f32));
         popover.set_pointing_to(Some(&gdk::Rectangle::new(p.x() as i32, p.y() as i32, 1, 1)));
-        popover.popup();
+        crate::touch::popup(popover);
     }
 }
 

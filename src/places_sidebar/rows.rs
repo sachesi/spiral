@@ -58,8 +58,8 @@ pub(super) fn row_with(
         .focus_on_click(false)
         .build();
     SECTION.set(&row, section);
-    // A finger held on the row opens its menu once lifted, or drags the row where rows
-    // can be dragged.
+    // A finger held on the row opens its menu, which closes again if the finger moves on
+    // to drag the row where rows can be dragged.
     let press = crate::touch::long_press(
         &row,
         |_, _| true,

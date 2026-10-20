@@ -205,7 +205,7 @@ impl BrowserView {
             crate::desktop::glass::dress_menu(popover.upcast_ref());
         }
         popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
-        popover.popup();
+        crate::touch::popup(&popover);
         if imp.canvas.get().is_some() {
             // GTK lets a menu flip above the point or shrink, never slide, so one that fits
             // on neither side would scroll its last entries out of sight. The desktop has

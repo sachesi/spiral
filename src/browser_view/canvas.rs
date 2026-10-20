@@ -1395,8 +1395,8 @@ impl IconCanvas {
             }
         ));
         self.add_controller(secondary);
-        // A finger held on an icon selects it and opens its menu once lifted; held on the
-        // empty desktop, the desktop's.
+        // A finger held on an icon selects it and opens its menu; held on the empty
+        // desktop, the desktop's.
         crate::touch::long_press(
             self,
             glib::clone!(
