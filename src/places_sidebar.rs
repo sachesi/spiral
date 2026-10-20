@@ -287,8 +287,8 @@ mod imp {
                 }
             ));
             self.list.add_controller(click);
-            // A finger held below the rows does what a right click does there, once
-            // lifted; each row has its own.
+            // A finger held below the rows does what a right click does there; each row
+            // has its own.
             crate::touch::long_press(
                 &self.list.get(),
                 glib::clone!(

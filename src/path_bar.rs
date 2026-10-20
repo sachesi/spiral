@@ -542,6 +542,6 @@ impl PathBar {
             })
             .unwrap_or_else(|| gtk::gdk::Rectangle::new(0, 0, 1, 1));
         popover.set_pointing_to(Some(&rect));
-        popover.popup();
+        crate::touch::popup(&popover);
     }
 }

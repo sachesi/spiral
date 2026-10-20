@@ -2,7 +2,7 @@
 //! right click, a swipe from the edge brings the folded sidebar out, and a window used by
 //! touch gives small targets more room.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use crate::{adw, gdk, glib, gtk};
@@ -123,48 +123,65 @@ pub(crate) fn sidebar_swipe(split: &adw::OverlaySplitView) {
     split.add_controller(swipe);
 }
 
+thread_local! {
+    /// Whether a menu about to open is opened by a finger still on the screen.
+    static HOLDING: Cell<bool> = const { Cell::new(false) };
+    /// The menu opened by the finger held now, until it is lifted.
+    static HELD: RefCell<Option<gtk::Popover>> = const { RefCell::new(None) };
+}
+
 /// A finger held on `widget` long enough. `held` is told where as soon as it is, and says
 /// whether the press is taken: a press taken is no tap any more and does not scroll.
-/// `lifted` is told the same point once the finger leaves the screen there, which is when
-/// a menu opens; a finger that moves on instead leaves the press to a drag, and `lifted`
-/// is not told.
+/// `menu` is told the same point right after, to open the menu there; the finger lifted
+/// leaves it open, and one that moves on to drag instead closes it.
 pub(crate) fn long_press(
     widget: &impl IsA<gtk::Widget>,
     held: impl Fn(f64, f64) -> bool + 'static,
-    lifted: impl Fn(f64, f64) + 'static,
+    menu: impl Fn(f64, f64) + 'static,
 ) -> gtk::GestureLongPress {
     let gesture = gtk::GestureLongPress::builder()
         .touch_only(true)
         .propagation_phase(gtk::PropagationPhase::Capture)
         .build();
-    let at = Rc::new(Cell::new(None::<(f64, f64)>));
-    gesture.connect_pressed({
-        let at = at.clone();
-        move |gesture, x, y| {
-            if held(x, y) {
-                gesture.set_state(gtk::EventSequenceState::Claimed);
-                at.set(Some((x, y)));
-            }
+    gesture.connect_pressed(move |gesture, x, y| {
+        if held(x, y) {
+            gesture.set_state(gtk::EventSequenceState::Claimed);
+            HOLDING.set(true);
+            menu(x, y);
+            HOLDING.set(false);
         }
     });
-    // A drag that starts resets the widget's gestures, and the press is no menu then.
-    gesture.connect_cancel({
-        let at = at.clone();
-        move |_, _| at.set(None)
-    });
-    // The press ends as the finger is lifted, with that as its last event, or as it moves
-    // too far, with the move as its last.
-    gesture.connect_end(move |gesture, sequence| {
-        let Some((x, y)) = at.take() else {
+    // A drag that starts resets the widget's gestures, which ends the press without the
+    // finger lifted.
+    gesture.connect_end(|gesture, sequence| {
+        let Some(popover) = HELD.take() else {
             return;
         };
         if gesture
             .last_event(sequence)
             .is_some_and(|e| e.event_type() == gdk::EventType::TouchEnd)
         {
-            lifted(x, y);
+            popover.set_autohide(true);
+            if popover.is_visible() {
+                WidgetExt::realize(&popover);
+                popover.map();
+                popover.child_focus(gtk::DirectionType::TabForward);
+            }
+        } else {
+            popover.popdown();
         }
     });
     widget.add_controller(gesture.clone());
     gesture
+}
+
+/// Show a menu. One opened by a long press does not take the input while the finger is
+/// still down, which would end the press and leave nothing to drag; it does once lifted.
+pub(crate) fn popup(popover: &impl IsA<gtk::Popover>) {
+    let holding = HOLDING.get();
+    popover.set_autohide(!holding);
+    if holding {
+        HELD.replace(Some(popover.clone().upcast()));
+    }
+    popover.popup();
 }

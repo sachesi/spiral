@@ -194,8 +194,8 @@ impl BrowserView {
         ));
         self.imp().stack.add_controller(source.clone());
         // A long press is the right click of a finger: it selects the file held and opens
-        // its menu once lifted, or hands the file to a drag if the finger moves on. The
-        // desktop has its own.
+        // its menu, which closes again if the finger moves on to drag the file. The desktop
+        // has its own.
         let long = crate::touch::long_press(
             &self.imp().stack.get(),
             glib::clone!(
