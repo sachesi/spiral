@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-10-19 14:56+0300\n"
+"POT-Creation-Date: 2026-10-20 14:38+0300\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -483,6 +483,15 @@ msgstr "Поиск во вложенных папках с указанием, �
 
 #: data/io.github.sachesi.spiral.metainfo.xml:49
 msgid ""
+"A finger held on a file, a sidebar entry, a breadcrumb or a desktop icon "
+"opens its menu as soon as it has been held long enough, while it is still on "
+"the screen, instead of once it is lifted. Lifting it leaves the menu open, "
+"and moving on closes the menu and picks the files up to drag them, or a "
+"bookmark or tag to move it up or down the sidebar."
+msgstr ""
+
+#: data/io.github.sachesi.spiral.metainfo.xml:54
+msgid ""
 "Spiral can be used with nothing but a touchscreen. A tap opens a file or a "
 "folder, a finger dragged over the files scrolls them, and a finger held on a "
 "file, a sidebar entry, a breadcrumb or a desktop icon opens its menu once "
@@ -495,7 +504,7 @@ msgid ""
 "colours in the menu spread out for a finger."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:50
+#: data/io.github.sachesi.spiral.metainfo.xml:55
 msgid ""
 "Any entry of the sidebar can be hidden, and so can a whole section of it: "
 "the places, the bookmarks, the devices, the network or the tags, as in "
@@ -504,7 +513,7 @@ msgid ""
 "back, until the window closes, and file dialogs leave out the same places."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:55
+#: data/io.github.sachesi.spiral.metainfo.xml:60
 msgid ""
 "An AppImage shows the icon it carries, read out of its image by unsquashfs "
 "in the thumbnail sandbox, never by running it; without squashfs-tools it "
@@ -513,7 +522,7 @@ msgid ""
 "dozen pixels the file names and blurred up to fill a large tile."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:60
+#: data/io.github.sachesi.spiral.metainfo.xml:65
 msgid ""
 "Each server on the Network page carries a tag naming the protocol it is "
 "reached by, SMB, NFS, SFTP, FTP, DAV, DAVS or AFP, so a machine's Samba "
@@ -523,7 +532,7 @@ msgid ""
 "partway down while its listing comes in."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:65
+#: data/io.github.sachesi.spiral.metainfo.xml:70
 msgid ""
 "The desktop folder can now show as icons on the wallpaper, through spiral-"
 "desktop, with the home folder, the trash and mounted drives beside them, on "
@@ -537,7 +546,7 @@ msgid ""
 "its settings ask, and a tagged file's name stands on its tag's colour."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:66
+#: data/io.github.sachesi.spiral.metainfo.xml:71
 msgid ""
 "Other programs can add entries to the menu of files, with desktop entries in "
 "spiral/item-menu/ offered for the file types they name. The file chooser "
@@ -547,7 +556,7 @@ msgid ""
 "installed."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:67
+#: data/io.github.sachesi.spiral.metainfo.xml:72
 msgid ""
 "A batch rename can swap two names or shift a numbered run along, and passes "
 "over the files whose names it leaves as they are instead of saying they "
@@ -560,7 +569,7 @@ msgid ""
 "switched away from silent."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:72
+#: data/io.github.sachesi.spiral.metainfo.xml:77
 msgid ""
 "The window no longer waits for a server where it did: naming a location on a "
 "share, filling the location entry (Ctrl+L on the network froze it for "
@@ -572,7 +581,7 @@ msgid ""
 "wait up."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:73
+#: data/io.github.sachesi.spiral.metainfo.xml:78
 msgid ""
 "A server's password is asked for only while someone still waits for it: "
 "leaving the location or closing the tab while it connects no longer brings "
@@ -584,7 +593,7 @@ msgid ""
 "entry decides over the system's whether an application needs a terminal."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:74
+#: data/io.github.sachesi.spiral.metainfo.xml:79
 msgid ""
 "The file chooser changes the size of its icons, with Ctrl++, Ctrl+- and "
 "Ctrl+0, Ctrl and the wheel or the buttons at the top of its view menu, and "
@@ -598,7 +607,7 @@ msgid ""
 "window's behind it."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:79
+#: data/io.github.sachesi.spiral.metainfo.xml:84
 msgid ""
 "A copy was the only operation whose bar moved by what it had done. A move, a "
 "delete, an extraction and an archive being packed now each go by what they "
@@ -612,14 +621,14 @@ msgid ""
 "no longer leaves hours left to go."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:80
+#: data/io.github.sachesi.spiral.metainfo.xml:85
 msgid ""
 "The file chooser shows hidden files, on Ctrl+H or from the item under the "
 "sort button. They are the file manager's own setting, so turning them on in "
 "a dialog turns them on in its windows too."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:85
+#: data/io.github.sachesi.spiral.metainfo.xml:90
 msgid ""
 "Folders follow their changes again after a file is saved by being written "
 "under another name and renamed over, as editors and a replace on paste do; "
@@ -630,7 +639,7 @@ msgid ""
 "along with it."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:86
+#: data/io.github.sachesi.spiral.metainfo.xml:91
 msgid ""
 "The file chooser hands applications files they can use: a file on a server "
 "goes as its path under GVfs, and the trash or a place with no path is "
@@ -641,7 +650,7 @@ msgid ""
 "off until there is something to accept."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:87
+#: data/io.github.sachesi.spiral.metainfo.xml:92
 msgid ""
 "Paste and New Folder work at the top of an SMB share, the keyboard goes back "
 "to the files after a rename, a templates folder made while Spiral runs is "
@@ -649,7 +658,7 @@ msgid ""
 "of part of it behind."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:92
+#: data/io.github.sachesi.spiral.metainfo.xml:97
 msgid ""
 "Video and sound in the preview are decoded inside the sandbox, as thumbnails "
 "are, and only the pictures and the sound reach Spiral. Video is still "
@@ -659,7 +668,7 @@ msgid ""
 "with only sound or only pictures goes on playing after one."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:93
+#: data/io.github.sachesi.spiral.metainfo.xml:98
 msgid ""
 "Pictures are decoded by glycin in its own sandbox where it is installed, and "
 "in Spiral's otherwise: the preview's pictures and covers, the pages of a "
@@ -668,7 +677,7 @@ msgid ""
 "so a folder of them no longer fills the memory."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:94
+#: data/io.github.sachesi.spiral.metainfo.xml:99
 msgid ""
 "What a sandboxed helper leaves behind is no longer taken at its word: a link "
 "or a pipe in place of a thumbnail is refused. Another application asking "
@@ -677,7 +686,7 @@ msgid ""
 "command line, and the save dialog refuses a name of “.” or “..”."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:99
+#: data/io.github.sachesi.spiral.metainfo.xml:104
 msgid ""
 "Every window keeps to itself. A view, an order or a zoom changed in one pane "
 "stays in that pane; the sidebar, the details panel and the split view belong "
@@ -688,7 +697,7 @@ msgid ""
 "hear of it."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:100
+#: data/io.github.sachesi.spiral.metainfo.xml:105
 msgid ""
 "Bookmarks and stars follow the files. Renaming or moving a folder carries "
 "its bookmark with it, Ctrl+D bookmarks a folder whose bookmark has gone "
@@ -698,19 +707,19 @@ msgid ""
 "window lets go of the volume monitor and its settings when it closes."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:105
+#: data/io.github.sachesi.spiral.metainfo.xml:110
 msgid ""
 "Opening the network, or a server on it, no longer freezes the window while "
 "it is reached: the folder shows at once and fills in when the servers answer."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:106
+#: data/io.github.sachesi.spiral.metainfo.xml:111
 msgid ""
 "Favorites and each tag keep the order and view they were last given, as a "
 "folder does, instead of losing them on the next visit."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:111
+#: data/io.github.sachesi.spiral.metainfo.xml:116
 msgid ""
 "A details panel beside the panes, on F8: what a file is, how big it is, when "
 "it was made and changed, and what it says about itself. Photos give their "
@@ -721,7 +730,7 @@ msgid ""
 "the folder it describes as the folder changes."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:112
+#: data/io.github.sachesi.spiral.metainfo.xml:117
 msgid ""
 "The preview opens a video or a small picture at a size worth looking at and "
 "enlarges a picture smaller than that, and it steps through a folder without "
@@ -730,7 +739,7 @@ msgid ""
 "items in the trash are previewed and described from the file they are."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:113
+#: data/io.github.sachesi.spiral.metainfo.xml:118
 msgid ""
 "The Menu key opens the menu of the file the keyboard is on. Favorites and "
 "tag lists redraw a file whose mode, owner or tags change, and keep it "
@@ -739,7 +748,7 @@ msgid ""
 "helper that reads files runs with its seccomp filter or not at all."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:118
+#: data/io.github.sachesi.spiral.metainfo.xml:123
 msgid ""
 "The file chooser makes the folder New Folder asks for, its type filters "
 "match the suffixes GTK applications send, and its sidebar leaves the tags "
@@ -749,7 +758,7 @@ msgid ""
 "login."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:119
+#: data/io.github.sachesi.spiral.metainfo.xml:124
 msgid ""
 "The selection follows the files. When selected items are trashed, deleted or "
 "moved away, the item that takes their place is selected and has the "
@@ -758,7 +767,7 @@ msgid ""
 "selected; and \"Extract Here\" selects what the archive left."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:120
+#: data/io.github.sachesi.spiral.metainfo.xml:125
 msgid ""
 "A file carries one tag at a time, and picking another replaces it. A tag "
 "lists a folder once, whatever paths it was seen under, and rows washed with "
@@ -767,13 +776,13 @@ msgid ""
 "turns the columns into a grid."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:121
+#: data/io.github.sachesi.spiral.metainfo.xml:126
 msgid ""
 "Properties tells hard disks from SSDs and names the kind of drive in a word: "
 "NVMe, SSD, HDD or USB drive."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:126
+#: data/io.github.sachesi.spiral.metainfo.xml:131
 msgid ""
 "Enter in the search box opens the first result, which stays selected until "
 "another is picked, and Down takes the keyboard to the results. Escape or "
@@ -783,7 +792,7 @@ msgid ""
 "the side buttons of a mouse go back and forward."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:127
+#: data/io.github.sachesi.spiral.metainfo.xml:132
 msgid ""
 "Ctrl+O opens, Ctrl+Return and Shift+Return open folders in a new tab or a "
 "new window, Ctrl+I shows the properties, Ctrl+M makes links, Ctrl+Alt+O "
@@ -792,7 +801,7 @@ msgid ""
 "offers the entries they stand for."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:128
+#: data/io.github.sachesi.spiral.metainfo.xml:133
 msgid ""
 "Trash lists where each item was trashed from and when, and sorts by that "
 "date. A copy, move, extraction or archive that lands in another folder ends "
@@ -805,7 +814,7 @@ msgid ""
 "filesystem takes is refused while it is typed."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:129
+#: data/io.github.sachesi.spiral.metainfo.xml:134
 msgid ""
 "Properties is laid out as the preferences are. It tells when a file was "
 "created, where a link points and where a trashed item came from, each with a "
@@ -815,7 +824,7 @@ msgid ""
 "The permissions of everything inside a folder can be changed at once."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:134
+#: data/io.github.sachesi.spiral.metainfo.xml:139
 msgid ""
 "Colour tags, off until \"Colour Tags\" in Preferences turns them on. A tag "
 "is a name and a colour; seven come by default, and the ones you make take a "
@@ -831,7 +840,7 @@ msgid ""
 "them."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:135
+#: data/io.github.sachesi.spiral.metainfo.xml:140
 msgid ""
 "\"Copy to…\", \"Move to…\" and \"Extract To…\" ask in a dialog attached to "
 "the window instead of a file chooser window of its own: folders and nothing "
@@ -846,7 +855,7 @@ msgid ""
 "the drag arrived as a move or a copy."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:136
+#: data/io.github.sachesi.spiral.metainfo.xml:141
 msgid ""
 "A video preview goes on playing when the arrows step to the next file, and a "
 "sound file whose length is only known once the pipeline has read into it "
@@ -856,7 +865,7 @@ msgid ""
 "question over an empty trash."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:137
+#: data/io.github.sachesi.spiral.metainfo.xml:142
 msgid ""
 "Opening in a new tab, a new window or a terminal are items of the menu again "
 "rather than a submenu, and the colours of a tag are a row of dots in its "
@@ -868,7 +877,7 @@ msgid ""
 "and a middle click still opens a folder in a new tab whatever the menu shows."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:138
+#: data/io.github.sachesi.spiral.metainfo.xml:143
 msgid ""
 "Servers, wherever gvfs has a backend for one. \"Connect to Server…\" in the "
 "main menu takes an address, names the schemes the system can actually use, "
@@ -883,7 +892,7 @@ msgid ""
 "server to reach."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:143
+#: data/io.github.sachesi.spiral.metainfo.xml:148
 msgid ""
 "Renaming takes a whole selection: F2 on several files opens a dialog that "
 "gives them all a shared name with numbers after it, or replaces some text of "
@@ -895,7 +904,7 @@ msgid ""
 "with everything but the extension selected."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:144
+#: data/io.github.sachesi.spiral.metainfo.xml:149
 msgid ""
 "A drag held for a moment over a folder, a breadcrumb or a sidebar entry "
 "opens it, so files can be carried somewhere that is not on screen when the "
@@ -910,7 +919,7 @@ msgid ""
 "item instead of moving the menu out from under the pointer."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:145
+#: data/io.github.sachesi.spiral.metainfo.xml:150
 msgid ""
 "The file chooser searches the folder it is showing, and only that one, and "
 "sorts from its header; it keeps the view and the order it was left in apart "
@@ -921,7 +930,7 @@ msgid ""
 "off the thread drawing the window."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:150
+#: data/io.github.sachesi.spiral.metainfo.xml:155
 msgid ""
 "Big folders open in a fraction of the time and scroll without stutter. A "
 "folder that does not fit in one batch of its listing is shown once, complete "
@@ -934,7 +943,7 @@ msgid ""
 "takes a fifth of the processor time it took on the thread drawing the window."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:151
+#: data/io.github.sachesi.spiral.metainfo.xml:156
 msgid ""
 "Thumbnails are asked for only once their cell is on screen and the folder is "
 "in order, and a screenful is made from the top down rather than in the order "
@@ -947,7 +956,7 @@ msgid ""
 "it draws into, and the debug log accounts for every request."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:152
+#: data/io.github.sachesi.spiral.metainfo.xml:157
 msgid ""
 "Text in the preview has line numbers, on the colour of the page. A video "
 "opens in its own proportions, read from the header of its container when the "
@@ -956,7 +965,7 @@ msgid ""
 "Preferences, so a terminal editor works as a default."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:157
+#: data/io.github.sachesi.spiral.metainfo.xml:162
 msgid ""
 "Bubblewrap is now required. Thumbnailers, the PDF previewer and the archive "
 "tools are decoders fed files nobody here wrote, and all three used to run "
@@ -968,7 +977,7 @@ msgid ""
 "seconds instead of holding a slot for the rest of the session."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:158
+#: data/io.github.sachesi.spiral.metainfo.xml:163
 msgid ""
 "Big folders open in about half the processor time they took. A folder is put "
 "in order once, when its listing ends, instead of after each batch of files "
@@ -982,7 +991,7 @@ msgid ""
 "and generation uses the cores there are."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:163
+#: data/io.github.sachesi.spiral.metainfo.xml:168
 msgid ""
 "The sidebar gained Root, the top of the filesystem, and a switch in "
 "Preferences for it and for Favorites. The order folders open in can be "
@@ -995,7 +1004,7 @@ msgid ""
 "empty under any icon theme."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:168
+#: data/io.github.sachesi.spiral.metainfo.xml:173
 msgid ""
 "The column view is now optional and starts turned off: with it off the view "
 "button and the view menu offer the grid and the list alone. Pasted files, "
@@ -1008,7 +1017,7 @@ msgid ""
 "longer takes the focus away from a half-typed path."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:173
+#: data/io.github.sachesi.spiral.metainfo.xml:178
 msgid ""
 "Column view no longer decides the view of every folder after it: a folder "
 "that remembers a view of its own gets it back, while columns still survive a "
@@ -1019,7 +1028,7 @@ msgid ""
 "is half the size it was."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:178
+#: data/io.github.sachesi.spiral.metainfo.xml:183
 msgid ""
 "A quick preview on the Space key: images, PDFs a page at a time, video, "
 "sound and text with source code among it, drawn by Spiral itself in a window "
@@ -1035,7 +1044,7 @@ msgid ""
 "Windows, tabs and dialogs let go of everything they held when they close."
 msgstr ""
 
-#: data/io.github.sachesi.spiral.metainfo.xml:183
+#: data/io.github.sachesi.spiral.metainfo.xml:188
 msgid ""
 "A column view, the third way to look at a folder: the path drawn as a strip "
 "of lists, one folder per column, with the folder you are in at the right and "
@@ -1055,7 +1064,7 @@ msgstr ""
 "записывают после создания, например вставленный из буфера снимок экрана, "
 "получает миниатюру без перезапуска."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:188
+#: data/io.github.sachesi.spiral.metainfo.xml:193
 msgid ""
 "A click on empty space in a folder takes the keyboard and clears the "
 "selection, so Ctrl+A and the other file keys no longer wait for a file to be "
@@ -1071,7 +1080,7 @@ msgstr ""
 "открытое им меню действует на папку. У кнопки фильтров поиска снова есть "
 "значок."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:193
+#: data/io.github.sachesi.spiral.metainfo.xml:198
 msgid ""
 "Two folder panes side by side, off by default and turned on with F3: F6 "
 "moves between them, the pane in charge is outlined, and everything outside "
@@ -1088,7 +1097,7 @@ msgstr ""
 "папке» из браузера больше не ждёт двадцать пять секунд из-за взаимной "
 "блокировки портала и открывает отдельное окно с выделенным файлом."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:198
+#: data/io.github.sachesi.spiral.metainfo.xml:203
 msgid ""
 "A new application icon. Files cut to the clipboard are faded until they are "
 "pasted, and an image on the clipboard, a screenshot say, pastes into the "
@@ -1105,7 +1114,7 @@ msgstr ""
 "столбцы списка с изменяемой шириной, тип показан как расширение файла, "
 "переключатель звёздочки следует за избранным."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:203
+#: data/io.github.sachesi.spiral.metainfo.xml:208
 msgid ""
 "Search walks subfolders, filters by type and date and can match file "
 "contents. Visible columns and captions dialogs, expandable folders in the "
@@ -1123,7 +1132,7 @@ msgstr ""
 "паролем. Эмблемы замка и недоступные действия для файлов только для чтения, "
 "папки следят за изменениями извне, а буфер обмена вставляет пути в терминалы."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:208
+#: data/io.github.sachesi.spiral.metainfo.xml:213
 msgid ""
 "Russian and Ukrainian translations. Sort order remembered per folder. A "
 "command line that opens new windows in the running instance on every call: "
@@ -1134,7 +1143,7 @@ msgstr ""
 "запущенном экземпляре: -w, -s, -q. Обращения к файловой системе больше не "
 "блокируют интерфейс на медленных точках монтирования."
 
-#: data/io.github.sachesi.spiral.metainfo.xml:212
+#: data/io.github.sachesi.spiral.metainfo.xml:217
 msgid "First release."
 msgstr "Первый выпуск."
 
