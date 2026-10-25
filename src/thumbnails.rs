@@ -788,6 +788,12 @@ fn run_thumbnailer(exec: &str, input: &Path, output: &Path) -> Result<(), Failur
         "/var/cache/fontconfig",
     ]);
     cmd.arg("--ro-bind-try").arg(&font_cache).arg(&font_cache);
+    // Icons installed for the user alone, as Steam installs those of its games, for the
+    // thumbnailers of launchers that name them; bound where an icon lookup looks with
+    // `HOME=/tmp`.
+    cmd.arg("--ro-bind-try")
+        .arg(glib::user_data_dir().join("icons"))
+        .arg("/tmp/.local/share/icons");
     cmd.arg("--ro-bind").arg(input).arg(&in_path);
     cmd.arg("--bind").arg(&work).arg("/tmp/out");
     cmd.arg("--");

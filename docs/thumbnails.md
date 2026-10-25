@@ -118,6 +118,12 @@ kexec, io_uring and similar system calls fail with EPERM, `clone` with `CLONE_NE
 refused, and `clone3` returns ENOSYS so libc falls back to `clone`. The exact list is in
 `src/sandbox.rs`.
 
+`~/.local/share/icons` is visible read-only as well, at `/tmp/.local/share/icons` where
+the home the thumbnailer is given points, so a launcher whose icon is installed for the
+user alone, as Steam installs those of its games, gets its icon as a thumbnail. A
+thumbnailer taken over by its file could list which icons are there, with no way to send
+the list anywhere.
+
 A thumbnailer that crashes or misbehaves is confined to that sandbox. What it leaves in
 the output directory is not trusted either: the PNG is read back only if it is a regular
 file, not a link or a pipe, under 32 MB and starting like a PNG, and it is copied into a
