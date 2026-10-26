@@ -3,7 +3,8 @@
 //! the menu of files, under the data directories, the user's first. A file there hides any
 //! of the same name further down the list, as the XDG base directories have it.
 
-use std::collections::HashSet;
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use crate::gio::prelude::*;
@@ -13,6 +14,40 @@ use crate::{gio, glib};
 pub const DESKTOP_MENU: &str = "desktop-menu";
 /// The menu of files, in a folder or on the desktop.
 pub const ITEM_MENU: &str = "item-menu";
+
+type Loaded = (Vec<gio_unix::DesktopAppInfo>, Vec<gio::FileMonitor>);
+
+thread_local! {
+    /// The entries of each menu, and the watch on its folders that forgets them once
+    /// something there changes.
+    static LOADED: RefCell<HashMap<&'static str, Loaded>> = RefCell::default();
+}
+
+/// The entries of `menu`: read from [`dirs`] the first time and kept until one of those
+/// folders changes, rather than read again every time the menu opens.
+pub fn menu_entries(menu: &'static str) -> Vec<gio_unix::DesktopAppInfo> {
+    if let Some(apps) = LOADED.with_borrow(|loaded| loaded.get(menu).map(|(apps, _)| apps.clone()))
+    {
+        return apps;
+    }
+    let dirs = dirs(menu);
+    let apps = load(&dirs, None);
+    // A folder not made yet is watched too, so entries put there later are found.
+    let monitors = dirs
+        .iter()
+        .filter_map(|dir| {
+            let monitor = gio::File::for_path(dir)
+                .monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
+                .ok()?;
+            monitor.connect_changed(move |_, _, _, _| {
+                LOADED.with_borrow_mut(|loaded| loaded.remove(menu));
+            });
+            Some(monitor)
+        })
+        .collect();
+    LOADED.with_borrow_mut(|loaded| loaded.insert(menu, (apps.clone(), monitors)));
+    apps
+}
 
 /// Where the entries of `menu` are looked for, in the order they win.
 pub fn dirs(menu: &str) -> Vec<PathBuf> {
