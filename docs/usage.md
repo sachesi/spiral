@@ -24,8 +24,9 @@ every volume and mount the system knows about, then the network (see
 reordered by dragging; drop a folder on the empty area below the list to bookmark it, and
 files on Trash to trash them. The Trash entry's own menu empties it. Root is
 the top of the filesystem; it and Favorites can each be turned off in Preferences, under
-Sidebar. Unmounted volumes mount when activated. Mounted ones get an eject button, and if a
-removable drive has files in its trash you are asked whether to empty it first. A mounted
+Sidebar. Unmounted volumes mount when activated. Mounted ones the user can unmount get an
+eject button, and if a removable drive has files in its trash you are asked whether to
+empty it first. A mounted
 device met in a folder of its own — under `/run/media`, say — offers "Unmount", or "Eject"
 where the drive takes its medium back, in the context menu, and asks about its trash the
 same way.

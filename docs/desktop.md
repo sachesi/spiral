@@ -40,8 +40,9 @@ Select All, Arrange Icons, Sort By, Open in Terminal when a terminal is found, a
 Settings…, which opens the Desktop page of Spiral's Preferences. Unless the icons are
 lined up in the sort order already, Sort Now lines them up once, and they stay where that
 puts them. Home, the trash and the drives have menus of their own: Open, Empty Trash, and
-Unmount or Eject. They are not files of the folder, so nothing done to the files reaches
-them.
+Unmount or Eject for a drive the user can take out, which asks about the files in its
+trash first, as the sidebar does. A drive the system mounted is only opened from there.
+They are not files of the folder, so nothing done to the files reaches them.
 
 The desktop asks for the name of a new folder or document on a card in a window of its
 own, with Cancel beside Create. Its menus, and the tooltips that show a shortened name in
