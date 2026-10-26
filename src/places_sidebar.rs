@@ -475,18 +475,21 @@ impl PlacesSidebar {
 
         // Devices: every volume (mounted or not), then mounts without a volume. What is
         // mounted from another machine is not a device, and waits for the section below.
+        let mounts = crate::network::MountTable::read();
         for volume in imp.monitor.volumes() {
-            list.append(&self.volume_row(&volume));
+            list.append(&self.volume_row(&volume, &mounts));
         }
         let mut servers = Vec::new();
         for mount in imp.monitor.mounts() {
             if mount.is_shadowed() || mount.volume().is_some() {
                 continue;
             }
-            if crate::prefs::use_network() && crate::network::is_network(&mount.root()) {
+            if crate::prefs::use_network()
+                && crate::network::is_network_mount(&mount.root(), &mounts)
+            {
                 servers.push(mount);
             } else {
-                list.append(&self.mount_row(&mount, SECTION_DEVICES));
+                list.append(&self.mount_row(&mount, SECTION_DEVICES, &mounts));
             }
         }
 
@@ -500,7 +503,7 @@ impl PlacesSidebar {
             ));
         }
         for mount in servers {
-            list.append(&self.mount_row(&mount, SECTION_NETWORK));
+            list.append(&self.mount_row(&mount, SECTION_NETWORK, &mounts));
         }
 
         if crate::tags::enabled() && !imp.hide_tags.get() {

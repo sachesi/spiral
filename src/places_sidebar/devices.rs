@@ -1,6 +1,7 @@
 //! Volumes, mounts and servers: mounting them, ejecting them, and the trash they keep.
 
 use super::*;
+use crate::network::MountTable;
 
 /// The current user's trash directory on `root`, if it holds anything.
 pub(super) async fn mount_trash(root: &gio::File) -> Option<gio::File> {
@@ -127,16 +128,16 @@ pub(super) enum EjectTarget {
 
 impl EjectTarget {
     /// Whether it stands for a server rather than for something plugged in.
-    pub(super) fn is_network(&self) -> bool {
+    pub(super) fn is_network(&self, mounts: &MountTable) -> bool {
         match self {
-            EjectTarget::Mount(m) => crate::network::is_network(&m.root()),
+            EjectTarget::Mount(m) => crate::network::is_network_mount(&m.root(), mounts),
             EjectTarget::Volume(_) => false,
         }
     }
 }
 
 impl PlacesSidebar {
-    pub(super) fn volume_row(&self, volume: &gio::Volume) -> gtk::ListBoxRow {
+    pub(super) fn volume_row(&self, volume: &gio::Volume, mounts: &MountTable) -> gtk::ListBoxRow {
         let (row, content) = make_row(&volume.symbolic_icon(), &volume.name(), SECTION_DEVICES);
         if let Some(key) = volume.uuid().map(|u| format!("uuid:{u}")).or_else(|| {
             volume
@@ -149,18 +150,27 @@ impl PlacesSidebar {
             ROW_FILE.set(&row, mount.default_location());
             add_drop_target(&row, &mount.default_location());
             if mount.can_unmount() || mount.can_eject() {
-                content.append(&self.eject_button(&row, EjectTarget::Mount(mount)));
+                content.append(&self.eject_button(&row, EjectTarget::Mount(mount), mounts));
             }
         } else {
             VOLUME.set(&row, volume.clone());
             if volume.can_eject() {
-                content.append(&self.eject_button(&row, EjectTarget::Volume(volume.clone())));
+                content.append(&self.eject_button(
+                    &row,
+                    EjectTarget::Volume(volume.clone()),
+                    mounts,
+                ));
             }
         }
         row
     }
 
-    pub(super) fn mount_row(&self, mount: &gio::Mount, section: u8) -> gtk::ListBoxRow {
+    pub(super) fn mount_row(
+        &self,
+        mount: &gio::Mount,
+        section: u8,
+        mounts: &MountTable,
+    ) -> gtk::ListBoxRow {
         let (row, content) = make_row(&mount.symbolic_icon(), &mount.name(), section);
         if let Some(uuid) = mount.uuid() {
             HIDE_KEY.set(&row, format!("uuid:{uuid}"));
@@ -168,19 +178,24 @@ impl PlacesSidebar {
         ROW_FILE.set(&row, mount.default_location());
         add_drop_target(&row, &mount.default_location());
         if mount.can_unmount() || mount.can_eject() {
-            content.append(&self.eject_button(&row, EjectTarget::Mount(mount.clone())));
+            content.append(&self.eject_button(&row, EjectTarget::Mount(mount.clone()), mounts));
         }
         row
     }
 
-    pub(super) fn eject_button(&self, row: &gtk::ListBoxRow, target: EjectTarget) -> gtk::Button {
+    pub(super) fn eject_button(
+        &self,
+        row: &gtk::ListBoxRow,
+        target: EjectTarget,
+        mounts: &MountTable,
+    ) -> gtk::Button {
         EJECT.set(row, target.clone());
         let button = gtk::Button::builder()
             .icon_name("media-eject-symbolic")
             .valign(gtk::Align::Center)
             .halign(gtk::Align::Center)
             .margin_start(4)
-            .tooltip_text(if target.is_network() {
+            .tooltip_text(if target.is_network(mounts) {
                 gettext("Disconnect")
             } else {
                 gettext("Eject")
@@ -247,7 +262,7 @@ impl PlacesSidebar {
                 // Not for a share: gvfs trashes nothing onto one, so a trash folder there is
                 // the server's own, and emptying it would delete what someone trashed there.
                 if let EjectTarget::Mount(m) = &target
-                    && !target.is_network()
+                    && !target.is_network(&MountTable::read())
                     && let Some(trash) = mount_trash(&m.root()).await
                     && !sidebar.offer_empty_trash(trash).await
                 {
