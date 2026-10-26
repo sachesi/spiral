@@ -18,11 +18,11 @@ The parts where a mistake matters most:
   bubblewrap with a seccomp filter (see [docs/thumbnails.md](docs/thumbnails.md)); a way
   out of it, a way to reach files it does not bind, a way for what a helper hands back or
   leaves behind to make Spiral read or write elsewhere, or a helper that runs without it
-  is a vulnerability. - The file chooser portal backend and the
-  `org.freedesktop.FileManager1` service, which act on requests from other applications
-  (see [docs/integration.md](docs/integration.md)). - File operations that could be led to
-  write, delete or change permissions somewhere other than where the user pointed, through
-  links, races or names.
+  is a vulnerability.
+- The file chooser portal backend and the `org.freedesktop.FileManager1` service, which
+  act on requests from other applications (see [docs/integration.md](docs/integration.md)).
+- File operations that could be led to write, delete or change permissions somewhere other
+  than where the user pointed, through links, races or names.
 
 The media decoder alone is given the GPU's render nodes, and NVIDIA's device files, to
 decode video on the GPU (not for a file whose name says it holds sound alone), with
