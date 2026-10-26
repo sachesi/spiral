@@ -276,6 +276,7 @@ impl DetailsPanel {
             &info.display_name(),
             &file_utils::type_string(info),
             &[&about, &group],
+            true,
         )
         .0
     }
@@ -284,6 +285,15 @@ impl DetailsPanel {
     /// pane goes on showing the same, and follows it in place: its count as the listing
     /// grows, and what the folder's record and its disk say once it has been read again.
     fn folder_page(&self, view: &BrowserView) -> gtk::Widget {
+        // The Computer page lists no files, and what gvfs answers for computer:/// is a
+        // folder of its own, not this page: its name is all there is to say.
+        if view.shows_computer() {
+            let icon = gtk::Image::builder()
+                .icon_name("computer")
+                .pixel_size(ICON_SIZE)
+                .build();
+            return page(&icon, &view.location_title(), "", &[], false).0;
+        }
         let model = view.model();
         let icon = gtk::Image::builder()
             .icon_name("folder")
@@ -305,7 +315,13 @@ impl DetailsPanel {
             Some(_) => titles.iter().map(|t| hidden_row(&group, t)).collect(),
             None => Vec::new(),
         };
-        let (page, count) = page(&icon, &view.location_title(), &items_of(view), &[&group]);
+        let (page, count) = page(
+            &icon,
+            &view.location_title(),
+            &items_of(view),
+            &[&group],
+            true,
+        );
         // Kept in its place with nothing to say, so the rows do not move when it has.
         count.set_visible(true);
         let panel = self.downgrade();
@@ -432,7 +448,7 @@ fn many_page(infos: &[gio::FileInfo]) -> gtk::Widget {
         };
         group.add(&row(&gettext("Size"), &size));
     }
-    page(&icon, &title, &subtitle, &[&group]).0
+    page(&icon, &title, &subtitle, &[&group], true).0
 }
 
 /// How many items the pane lists; nothing for a folder that could not be opened, or that is
@@ -463,12 +479,14 @@ fn hidden_row(group: &adw::PreferencesGroup, title: &str) -> adw::ActionRow {
 }
 
 /// The panel's column: a picture, a name and what it is, the facts, and the way into
-/// Properties for the same files. The label saying what it is comes back with it.
+/// Properties for the same files where there are any. The label saying what it is comes
+/// back with it.
 fn page(
     icon: &gtk::Image,
     title: &str,
     subtitle: &str,
     groups: &[&adw::PreferencesGroup],
+    properties: bool,
 ) -> (gtk::Widget, gtk::Label) {
     let page = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -502,13 +520,15 @@ fn page(
     for group in groups {
         page.append(*group);
     }
-    let actions = adw::PreferencesGroup::new();
-    actions.add(
-        &adw::ButtonRow::builder()
-            .title(gettext("Properties"))
-            .action_name("view.properties")
-            .build(),
-    );
-    page.append(&actions);
+    if properties {
+        let actions = adw::PreferencesGroup::new();
+        actions.add(
+            &adw::ButtonRow::builder()
+                .title(gettext("Properties"))
+                .action_name("view.properties")
+                .build(),
+        );
+        page.append(&actions);
+    }
     (page.upcast(), what)
 }

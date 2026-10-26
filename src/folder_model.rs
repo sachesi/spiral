@@ -396,7 +396,11 @@ mod imp {
 
         pub(super) fn set_location(&self, file: Option<gio::File>) {
             let list = file.as_ref().is_some_and(is_list_location);
-            self.start_listing(file.as_ref().filter(|_| !list));
+            // The Computer page is drawn by a page of its own; there is nothing to list.
+            let listed = file
+                .as_ref()
+                .filter(|f| !list && !crate::computer::is_computer_location(f));
+            self.start_listing(listed);
             self.location.replace(file);
             if list {
                 self.filtered.set_model(Some(&self.list_store));
@@ -1056,6 +1060,12 @@ impl FolderModel {
         }
         if imp.is_list() {
             self.load_list();
+            return;
+        }
+        if self
+            .location()
+            .is_some_and(|l| crate::computer::is_computer_location(&l))
+        {
             return;
         }
         imp.start_listing(self.location().as_ref());

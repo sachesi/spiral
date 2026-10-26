@@ -338,8 +338,9 @@ impl BrowserView {
             move |g, _, x, y| {
                 g.set_state(gtk::EventSequenceState::Claimed);
                 // The menus act on the folder being viewed, which the columns beside it
-                // are not; a click there picks that folder first.
-                if !view.in_side_column(x, y) {
+                // are not; a click there picks that folder first. The Computer page is no
+                // folder, and its tiles have menus of their own.
+                if !view.in_side_column(x, y) && !view.shows_computer() {
                     view.popup_menu_at(x, y);
                 }
             }
@@ -437,7 +438,10 @@ impl BrowserView {
         let is_list = |l: &gio::File| {
             crate::starred::is_starred_location(l) || crate::tags::is_tag_location(l)
         };
-        let virtual_dir = in_trash || self.location().is_some_and(|l| is_list(&l));
+        let virtual_dir = in_trash
+            || self
+                .location()
+                .is_some_and(|l| is_list(&l) || crate::computer::is_computer_location(&l));
         let can_write = !virtual_dir && self.imp().can_write.get();
         let all = |attr: &str| infos.iter().all(|i| file_utils::allows(i, attr));
         let (can_delete, can_rename) = (all("access::can-delete"), all("access::can-rename"));
@@ -535,8 +539,10 @@ impl BrowserView {
         self.set_enabled("new-file", can_write && !in_trash);
         self.set_enabled("new-from-template", can_write && !in_trash);
         self.set_enabled("empty-trash", in_trash && self.model().n_items() > 0);
-        self.set_enabled("properties", n > 0 || self.location().is_some());
-        self.set_enabled("folder-properties", self.location().is_some());
+        // gvfs has a computer:/// of its own, which says nothing of the Computer page.
+        let has_properties = self.location().is_some() && !self.shows_computer();
+        self.set_enabled("properties", n > 0 || has_properties);
+        self.set_enabled("folder-properties", has_properties);
         let local = infos.iter().all(|i| file_utils::file_of(i).is_native());
         let local_dir = self.location().is_some_and(|l| l.is_native());
         let can_link = n > 0 && local && local_dir && can_write;

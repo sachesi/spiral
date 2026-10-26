@@ -76,34 +76,49 @@ pub fn is_network(file: &gio::File) -> bool {
 
 /// Filesystems the kernel mounts from another machine, or that a FUSE program fills from
 /// one: a share mounted from fstab, or a cloud drive mounted by rclone, rather than through
-/// gvfs.
-const NETWORK_FILESYSTEMS: [&str; 11] = [
-    "nfs",
-    "nfs4",
-    "cifs",
-    "smb3",
-    "smbfs",
-    "ceph",
-    "glusterfs",
-    "davfs",
-    "fuse.sshfs",
-    "fuse.rclone",
-    "fuse.s3fs",
+/// gvfs. Each with the protocol it is tagged with, named as gvfs's are; rclone reaches many
+/// services and is named for itself.
+const NETWORK_FILESYSTEMS: [(&str, &str); 11] = [
+    ("nfs", "NFS"),
+    ("nfs4", "NFS"),
+    ("cifs", "SMB"),
+    ("smb3", "SMB"),
+    ("smbfs", "SMB"),
+    ("ceph", "Ceph"),
+    ("glusterfs", "GlusterFS"),
+    ("davfs", "DAV"),
+    ("fuse.sshfs", "SFTP"),
+    ("fuse.rclone", "rclone"),
+    ("fuse.s3fs", "S3"),
 ];
+
+/// The protocol a local path the kernel mounted a share or a cloud drive at is tagged with.
+fn kernel_tag(root: &gio::File, mounts: &MountTable) -> Option<&'static str> {
+    if !root.is_native() {
+        return None;
+    }
+    let fstype = mounts.at(&root.path()?)?.fstype;
+    NETWORK_FILESYSTEMS
+        .iter()
+        .find(|(name, _)| *name == fstype)
+        .map(|(_, tag)| *tag)
+}
 
 /// Whether the mount at `root` is on another machine: an address gvfs mounted, or a local
 /// path the kernel mounted a share or a cloud drive at.
 pub fn is_network_mount(root: &gio::File, mounts: &MountTable) -> bool {
-    is_network(root)
-        || (root.is_native()
-            && root
-                .path()
-                .and_then(|path| mounts.at(&path))
-                .is_some_and(|m| NETWORK_FILESYSTEMS.contains(&m.fstype.as_str())))
+    is_network(root) || kernel_tag(root, mounts).is_some()
+}
+
+/// The protocol of the mount at `root`, by its address or by the filesystem the kernel
+/// mounted at it.
+pub fn mount_protocol(root: &gio::File, mounts: &MountTable) -> Option<&'static str> {
+    protocol_of(root).or_else(|| kernel_tag(root, mounts))
 }
 
 pub struct KernelMount {
     pub fstype: String,
+    pub source: String,
     /// The filesystem's own options, as the kernel lists them.
     pub options: String,
 }
@@ -133,11 +148,11 @@ fn mount_in(table: &str, at: &str) -> Option<KernelMount> {
             .replace("\\012", "\n")
             .replace("\\134", "\\");
         let mut rest = rest.split(' ');
-        let fstype = rest.next()?;
-        // Past the source.
-        let options = rest.nth(1).unwrap_or_default();
+        let (fstype, source) = (rest.next()?, rest.next()?);
+        let options = rest.next().unwrap_or_default();
         (point == at).then(|| KernelMount {
             fstype: fstype.to_string(),
+            source: source.to_string(),
             options: options.to_string(),
         })
     })
@@ -222,6 +237,11 @@ pub fn protocol_tag(info: &gio::FileInfo) -> Option<&'static str> {
         return None;
     }
     scheme_tag(&crate::file_utils::target_of(info)?.uri_scheme()?)
+}
+
+/// The protocol `file` is reached by, named as the Network page names it.
+pub fn protocol_of(file: &gio::File) -> Option<&'static str> {
+    scheme_tag(&file.uri_scheme()?)
 }
 
 /// The secure variant of a protocol is named apart, so an encrypted server shows as one.
@@ -455,8 +475,26 @@ mod tests {
 ";
         let drive = mount_in(table, "/home/u/Google Drive").unwrap();
         assert_eq!(drive.fstype, "fuse.rclone");
+        assert_eq!(drive.source, "gdrive:");
         assert_eq!(drive.options, "rw");
-        assert_eq!(mount_in(table, "/").unwrap().fstype, "btrfs");
+        assert_eq!(mount_in(table, "/").unwrap().source, "/dev/mapper/root");
         assert!(mount_in(table, "/home/u").is_none());
+    }
+
+    #[test]
+    fn a_share_the_kernel_mounted_is_tagged_by_its_filesystem() {
+        let mounts = MountTable(
+            "\
+29 1 0:26 / / rw - btrfs /dev/mapper/root rw
+81 29 0:51 / /home/u/Drive rw,nosuid - fuse.rclone gdrive: rw
+82 29 0:52 / /mnt/nas rw - nfs4 nas:/media rw
+"
+            .to_string(),
+        );
+        let tag = |path| mount_protocol(&gio::File::for_path(path), &mounts);
+        assert_eq!(tag("/home/u/Drive"), Some("rclone"));
+        assert_eq!(tag("/mnt/nas"), Some("NFS"));
+        assert_eq!(tag("/"), None);
+        assert!(!is_network_mount(&gio::File::for_path("/"), &mounts));
     }
 }

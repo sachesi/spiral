@@ -17,7 +17,11 @@ Changes apply immediately to open windows.
 | `use-column-view` | bool | false | Column View |
 | `show-root` | bool | true | Root (sidebar) |
 | `show-favorites` | bool | true | Favorites (sidebar) |
+| `show-computer` | bool | false | Computer (sidebar) |
+| `start-location` | `home`, `computer` | `home` | Open New Windows At, under Computer |
+| `show-computer-summary` | bool | true | Summary, under Computer |
 | `hidden-places` | list of location URIs, `uuid:`, `device:` and `section:` entries | empty | edited from the sidebar |
+| `computer-hidden-places` | list of location URIs, `uuid:` and `device:` entries | empty | edited from the Computer page |
 | `use-tags` | bool | false | Colour Tags |
 | `tags` | list of (name, colour) | empty | edited from the sidebar and the Tags… dialog |
 | `recursive-search` | `local`, `always`, `never` | `local` | Search in Subfolders |
@@ -81,6 +85,9 @@ columns from when it was on opens in the list instead.
 `sort-key` and `sort-reversed` are what a folder without an order of its own opens with;
 "Sort Order" in Preferences offers the same six the view menu does. With `remember-view` off,
 sorting from the menu writes these two keys.
+
+`start-location` only counts while `show-computer` is on; with the page off, windows start
+at Home whatever it says.
 
 `compression-format` is whatever Create Archive was last confirmed with; the dialog starts
 there next time, provided the tools for it are still installed.

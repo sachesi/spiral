@@ -173,7 +173,8 @@ impl BrowserView {
         let dir = other.location()?;
         let virtual_dir = dir.uri().starts_with("trash:")
             || crate::starred::is_starred_location(&dir)
-            || crate::tags::is_tag_location(&dir);
+            || crate::tags::is_tag_location(&dir)
+            || crate::computer::is_computer_location(&dir);
         let takes_files = other.imp().can_write.get() && other.model().error_message().is_none();
         (!virtual_dir && takes_files).then_some((other, dir))
     }

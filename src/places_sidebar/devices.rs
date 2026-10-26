@@ -155,15 +155,32 @@ pub(crate) fn mount_of(file: &gio::File) -> Option<gio::Mount> {
         .find(|m| m.root().equal(file) || m.default_location().equal(file))
 }
 
+/// What a volume is hidden as: what names the disk wherever it is plugged in.
+pub(crate) fn volume_hide_key(volume: &gio::Volume) -> Option<String> {
+    volume.uuid().map(|u| format!("uuid:{u}")).or_else(|| {
+        volume
+            .identifier("unix-device")
+            .map(|d| format!("device:{d}"))
+    })
+}
+
+/// What a mount without a volume is hidden as: its UUID, or else its location.
+pub(crate) fn mount_hide_key(mount: &gio::Mount) -> String {
+    mount
+        .uuid()
+        .map(|u| format!("uuid:{u}"))
+        .unwrap_or_else(|| mount.default_location().uri().to_string())
+}
+
 #[derive(Clone)]
-pub(super) enum EjectTarget {
+pub(crate) enum EjectTarget {
     Mount(gio::Mount),
     Volume(gio::Volume),
 }
 
 impl EjectTarget {
     /// Whether it stands for a server rather than for something plugged in.
-    pub(super) fn is_network(&self, mounts: &MountTable) -> bool {
+    pub(crate) fn is_network(&self, mounts: &MountTable) -> bool {
         match self {
             EjectTarget::Mount(m) => crate::network::is_network_mount(&m.root(), mounts),
             EjectTarget::Volume(_) => false,
@@ -174,11 +191,7 @@ impl EjectTarget {
 impl PlacesSidebar {
     pub(super) fn volume_row(&self, volume: &gio::Volume, mounts: &MountTable) -> gtk::ListBoxRow {
         let (row, content) = make_row(&volume.symbolic_icon(), &volume.name(), SECTION_DEVICES);
-        if let Some(key) = volume.uuid().map(|u| format!("uuid:{u}")).or_else(|| {
-            volume
-                .identifier("unix-device")
-                .map(|d| format!("device:{d}"))
-        }) {
+        if let Some(key) = volume_hide_key(volume) {
             HIDE_KEY.set(&row, key);
         }
         if let Some(mount) = volume.get_mount() {
@@ -207,9 +220,7 @@ impl PlacesSidebar {
         mounts: &MountTable,
     ) -> gtk::ListBoxRow {
         let (row, content) = make_row(&mount.symbolic_icon(), &mount.name(), section);
-        if let Some(uuid) = mount.uuid() {
-            HIDE_KEY.set(&row, format!("uuid:{uuid}"));
-        }
+        HIDE_KEY.set(&row, mount_hide_key(mount));
         ROW_FILE.set(&row, mount.default_location());
         add_drop_target(&row, &mount.default_location());
         if may_unmount(mount, mounts) {
@@ -286,65 +297,64 @@ impl PlacesSidebar {
         true
     }
 
-    pub(super) fn eject(&self, target: EjectTarget) {
-        let op = self.mount_operation();
+    pub(crate) fn eject(&self, target: EjectTarget) {
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = sidebar)]
             self,
-            async move {
-                let flags = gio::MountUnmountFlags::NONE;
-                // A volume's own trash is lost once it is unplugged; offer to empty it first.
-                // Not for a share: gvfs trashes nothing onto one, so a trash folder there is
-                // the server's own, and emptying it would delete what someone trashed there.
-                if let EjectTarget::Mount(m) = &target
-                    && !target.is_network(&MountTable::read())
-                    && let Some(trash) = mount_trash(&m.root()).await
-                    && !sidebar.offer_empty_trash(trash).await
-                {
-                    return;
-                }
-                // Removable media: warn while cached writes flush, then say when it is safe.
-                let (name, drive) = match &target {
-                    EjectTarget::Mount(m) => (m.name(), m.drive()),
-                    EjectTarget::Volume(v) => (v.name(), v.drive()),
-                };
-                let removable = drive.is_some_and(|d| d.is_removable() || d.is_media_removable());
-                let app = gio::Application::default();
-                if removable && let Some(app) = &app {
+            async move { sidebar.unmount(target).await }
+        ));
+    }
+
+    /// Eject or unmount `target`, and return once it is out or could not be taken out.
+    pub(crate) async fn unmount(&self, target: EjectTarget) {
+        let op = self.mount_operation();
+        let flags = gio::MountUnmountFlags::NONE;
+        // A volume's own trash is lost once it is unplugged; offer to empty it first.
+        // Not for a share: gvfs trashes nothing onto one, so a trash folder there is
+        // the server's own, and emptying it would delete what someone trashed there.
+        if let EjectTarget::Mount(m) = &target
+            && !target.is_network(&MountTable::read())
+            && let Some(trash) = mount_trash(&m.root()).await
+            && !self.offer_empty_trash(trash).await
+        {
+            return;
+        }
+        // Removable media: warn while cached writes flush, then say when it is safe.
+        let (name, drive) = match &target {
+            EjectTarget::Mount(m) => (m.name(), m.drive()),
+            EjectTarget::Volume(v) => (v.name(), v.drive()),
+        };
+        let removable = drive.is_some_and(|d| d.is_removable() || d.is_media_removable());
+        let app = gio::Application::default();
+        if removable && let Some(app) = &app {
+            let n = gio::Notification::new(&gettext("Writing data to “%s”").replace("%s", &name));
+            n.set_body(Some(&gettext("Don’t unplug until finished")));
+            app.send_notification(Some("unmount"), &n);
+        }
+        let result = match target {
+            EjectTarget::Mount(m) if m.can_eject() => {
+                m.eject_with_operation_future(flags, Some(&op)).await
+            }
+            EjectTarget::Mount(m) => m.unmount_with_operation_future(flags, Some(&op)).await,
+            EjectTarget::Volume(v) => v.eject_with_operation_future(flags, Some(&op)).await,
+        };
+        if removable && let Some(app) = &app {
+            app.withdraw_notification("unmount");
+        }
+        match result {
+            Ok(()) if removable => {
+                if let Some(app) = &app {
                     let n = gio::Notification::new(
-                        &gettext("Writing data to “%s”").replace("%s", &name),
+                        &gettext("You can now unplug “%s”").replace("%s", &name),
                     );
-                    n.set_body(Some(&gettext("Don’t unplug until finished")));
-                    app.send_notification(Some("unmount"), &n);
-                }
-                let result = match target {
-                    EjectTarget::Mount(m) if m.can_eject() => {
-                        m.eject_with_operation_future(flags, Some(&op)).await
-                    }
-                    EjectTarget::Mount(m) => {
-                        m.unmount_with_operation_future(flags, Some(&op)).await
-                    }
-                    EjectTarget::Volume(v) => v.eject_with_operation_future(flags, Some(&op)).await,
-                };
-                if removable && let Some(app) = &app {
-                    app.withdraw_notification("unmount");
-                }
-                match result {
-                    Ok(()) if removable => {
-                        if let Some(app) = &app {
-                            let n = gio::Notification::new(
-                                &gettext("You can now unplug “%s”").replace("%s", &name),
-                            );
-                            app.send_notification(Some("unmount-done"), &n);
-                        }
-                    }
-                    Err(e) if !e.matches(gio::IOErrorEnum::FailedHandled) => {
-                        sidebar.show_error(&gettext("Could Not Eject"), &e);
-                    }
-                    _ => {}
+                    app.send_notification(Some("unmount-done"), &n);
                 }
             }
-        ));
+            Err(e) if !e.matches(gio::IOErrorEnum::FailedHandled) => {
+                self.show_error(&gettext("Could Not Eject"), &e);
+            }
+            _ => {}
+        }
     }
 
     /// Asks about the trash on a volume about to be unmounted. Returns false to abort.

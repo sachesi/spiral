@@ -68,11 +68,15 @@ impl SpiralWindow {
     /// The split button shows the view you switch *to*.
     pub(super) fn sync_view_button(&self) {
         let imp = self.imp();
-        let mode = self
-            .current_view()
-            .map(|v| v.view_mode())
+        let view = self.current_view();
+        let mode = view
+            .as_ref()
+            .map(|v| v.shown_view_mode())
             .unwrap_or_default();
-        let next = mode.next();
+        let next = view
+            .as_ref()
+            .map_or_else(|| mode.next(), |v| v.next_view_mode());
+        let files = !view.as_ref().is_some_and(|v| v.shows_computer());
         for button in [&imp.view_split_button, &imp.view_split_button_bottom] {
             button.set_icon_name(next.icon());
             button.set_tooltip_text(Some(&next.label()));
@@ -80,8 +84,8 @@ impl SpiralWindow {
         imp.view_mode_action.set_state(&mode.nick().to_variant());
         // Each view has its own dialog: captions under the grid icons, columns of the
         // list. The Miller columns show names only.
-        self.action_set_enabled("win.captions", mode == ViewMode::Grid);
-        self.action_set_enabled("win.visible-columns", mode == ViewMode::List);
+        self.action_set_enabled("win.captions", files && mode == ViewMode::Grid);
+        self.action_set_enabled("win.visible-columns", files && mode == ViewMode::List);
     }
 
     /// Refresh header widgets from the selected tab.
@@ -100,6 +104,15 @@ impl SpiralWindow {
         self.action_set_enabled("win.close-search", model.searching());
         self.action_set_enabled("win.stop", view.model().loading());
         self.action_set_enabled("win.forward", view.can_go_forward());
+        // The Computer page is no folder: nothing to search, typing there starts no search,
+        // and there is no order to choose. Its view is its own, a grid or a list.
+        let files = !view.shows_computer();
+        self.action_set_enabled("win.search", files);
+        imp.search_button.set_sensitive(files);
+        imp.search_entry
+            .set_key_capture_widget(files.then_some(self.upcast_ref::<gtk::Widget>()));
+        imp.sort_action.set_enabled(files);
+        self.sync_view_button();
         self.set_title(Some(&view.location_title()));
         let search = model.search_text();
         if imp.search_entry.text().as_str() != search {
