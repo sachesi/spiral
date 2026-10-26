@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.19.2\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-10-26 18:28+0200\n"
+"POT-Creation-Date: 2026-10-26 19:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1194,7 +1194,7 @@ msgstr ""
 msgid "New _Document"
 msgstr ""
 
-#: src/browser_actions/menus.rs:47 src/computer.rs:1378 ui/path_bar.ui:32
+#: src/browser_actions/menus.rs:47 src/computer.rs:1558 ui/path_bar.ui:32
 #: ui/path_bar.ui:63 ui/places_sidebar.ui:16 ui/places_sidebar.ui:59
 #, no-c-format
 msgid "Open in New _Tab"
@@ -1346,7 +1346,7 @@ msgid "Folder is Empty"
 msgstr ""
 
 #: src/browser_view/canvas.rs:792 src/browser_view/canvas.rs:855
-#: src/computer.rs:1375 src/dialogs/open_with.rs:72
+#: src/computer.rs:1555 src/dialogs/open_with.rs:72
 #: src/portal/chooser_window.rs:395 ui/browser_view.ui:234
 #: ui/places_sidebar.ui:12 ui/places_sidebar.ui:55
 #, no-c-format
@@ -1359,7 +1359,7 @@ msgstr ""
 msgid "_Empty Trash"
 msgstr ""
 
-#: src/browser_view/canvas.rs:869 src/computer.rs:1389 ui/browser_view.ui:383
+#: src/browser_view/canvas.rs:869 src/computer.rs:1569 ui/browser_view.ui:383
 #: ui/places_sidebar.ui:35
 #, no-c-format
 msgid "_Eject"
@@ -1513,10 +1513,10 @@ msgstr ""
 msgid "The password dialog was dismissed."
 msgstr ""
 
-#: src/browser_view/opening.rs:315 src/computer.rs:1268
+#: src/browser_view/opening.rs:315 src/computer.rs:1448
 #: src/dialogs/open_with.rs:216 src/dialogs/properties.rs:170
 #: src/dialogs/properties/permissions.rs:92 src/ops/walk.rs:54
-#: src/places_sidebar/devices.rs:401 src/portal/chooser_window.rs:1255
+#: src/places_sidebar/devices.rs:422 src/portal/chooser_window.rs:1255
 #, no-c-format
 msgid "_OK"
 msgstr ""
@@ -1581,97 +1581,97 @@ msgstr[1] ""
 msgid "%f, %n"
 msgstr ""
 
-#: src/computer.rs:411
+#: src/computer.rs:565
 #, no-c-format
 msgid "This Computer"
 msgstr ""
 
-#: src/computer.rs:412
+#: src/computer.rs:566
 #, no-c-format
 msgid "Removable"
 msgstr ""
 
-#: src/computer.rs:414
+#: src/computer.rs:568
 #, no-c-format
 msgid "Connect to Server…"
 msgstr ""
 
-#: src/computer.rs:419 src/dialogs/preferences.rs:62 src/file_utils.rs:579
+#: src/computer.rs:573 src/dialogs/preferences.rs:62 src/file_utils.rs:579
 #: src/places_sidebar.rs:512 src/places_sidebar/rows.rs:190
 #, no-c-format
 msgid "Network"
 msgstr ""
 
-#: src/computer.rs:849 src/computer.rs:873 src/file_utils.rs:596
+#: src/computer.rs:1009 src/computer.rs:1034 src/file_utils.rs:596
 #: src/path_bar.rs:403
 #, no-c-format
 msgid "System"
 msgstr ""
 
-#: src/computer.rs:903
+#: src/computer.rs:1064
 #, no-c-format
 msgid "Not Mounted"
 msgstr ""
 
-#: src/computer.rs:904
+#: src/computer.rs:1065
 #, no-c-format
 msgid "Not Connected"
 msgstr ""
 
-#: src/computer.rs:958 src/places_sidebar/devices.rs:245
+#: src/computer.rs:1138 src/places_sidebar/devices.rs:245
 #, no-c-format
 msgid "Disconnect"
 msgstr ""
 
-#: src/computer.rs:960 src/places_sidebar/devices.rs:247
+#: src/computer.rs:1140 src/places_sidebar/devices.rs:247
 #, no-c-format
 msgid "Eject"
 msgstr ""
 
-#: src/computer.rs:1265 src/places_sidebar/devices.rs:284
+#: src/computer.rs:1445 src/places_sidebar/devices.rs:284
 #, no-c-format
 msgid "Could Not Mount"
 msgstr ""
 
-#: src/computer.rs:1387 ui/places_sidebar.ui:40
+#: src/computer.rs:1567 ui/places_sidebar.ui:40
 #, no-c-format
 msgid "_Disconnect"
 msgstr ""
 
-#: src/computer.rs:1393
+#: src/computer.rs:1573
 #, no-c-format
 msgid "_Forget Server"
 msgstr ""
 
-#: src/computer.rs:1401 src/places_sidebar/menu.rs:94
+#: src/computer.rs:1581 src/places_sidebar/menu.rs:94
 #, no-c-format
 msgid "_Show"
 msgstr ""
 
-#: src/computer.rs:1403 src/places_sidebar/menu.rs:96
+#: src/computer.rs:1583 src/places_sidebar/menu.rs:96
 #, no-c-format
 msgid "_Hide"
 msgstr ""
 
-#: src/computer.rs:1415 src/places_sidebar/menu.rs:113 ui/places_sidebar.ui:90
+#: src/computer.rs:1595 src/places_sidebar/menu.rs:113 ui/places_sidebar.ui:90
 #, no-c-format
 msgid "Show Hidden _Places"
 msgstr ""
 
-#: src/computer.rs:1424 ui/browser_view.ui:390 ui/browser_view.ui:455
+#: src/computer.rs:1604 ui/browser_view.ui:390 ui/browser_view.ui:455
 #: ui/path_bar.ui:55 ui/path_bar.ui:83
 #, no-c-format
 msgid "P_roperties"
 msgstr ""
 
 #. Translators: a share or a user on a server: "media on nas", "pi on 192.168.1.40".
-#: src/computer.rs:1522
+#: src/computer.rs:1702
 #, no-c-format
 msgid "%s on %s"
 msgstr ""
 
 #. Translators: free space of a disk, then its size: "36.0 GB free of 2.0 TB".
-#: src/computer.rs:1564
+#: src/computer.rs:1744
 #, no-c-format
 msgid "%s free of %s"
 msgstr ""
@@ -3834,6 +3834,21 @@ msgstr ""
 #: src/places_sidebar/devices.rs:373
 #, no-c-format
 msgid "Do _Not Empty"
+msgstr ""
+
+#: src/places_sidebar/devices.rs:389
+#, no-c-format
+msgid "Could Not Empty Trash"
+msgstr ""
+
+#: src/places_sidebar/devices.rs:409
+#, no-c-format
+msgid "The trash at %s is not on this computer."
+msgstr ""
+
+#: src/places_sidebar/devices.rs:413
+#, no-c-format
+msgid "Emptying the trash stopped halfway."
 msgstr ""
 
 #: src/places_sidebar/menu.rs:103
