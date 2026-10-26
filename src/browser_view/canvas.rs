@@ -184,6 +184,16 @@ mod imp {
         fn size_allocate(&self, width: i32, height: i32, _baseline: i32) {
             self.obj().lay_out(width, height);
         }
+
+        // With no icon on it the desktop draws nothing, and a surface never drawn is never
+        // shown: nothing could be dropped on it, nor its menu opened. A clear colour over
+        // all of it is something to draw.
+        fn snapshot(&self, snapshot: &gtk::Snapshot) {
+            let obj = self.obj();
+            let all = gtk::graphene::Rect::new(0.0, 0.0, obj.width() as f32, obj.height() as f32);
+            snapshot.append_color(&gdk::RGBA::TRANSPARENT, &all);
+            self.parent_snapshot(snapshot);
+        }
     }
 }
 
