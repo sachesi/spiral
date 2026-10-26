@@ -11,7 +11,7 @@ use crate::browser_view::BrowserView;
 use crate::enums::ViewMode;
 use crate::network::MountTable;
 use crate::object_data::Key;
-use crate::places_sidebar::{DeviceWatch, EjectTarget, PlacesSidebar};
+use crate::places_sidebar::{DeviceWatch, EjectTarget};
 use crate::{adw, gdk, gio, glib, gtk};
 
 pub const URI: &str = "computer:///";
@@ -566,10 +566,23 @@ impl ComputerPage {
         let removable = self.group(&gettext("Removable"), None);
         let connect = gtk::Button::builder()
             .label(gettext("Connect to Server…"))
-            .action_name("win.connect-server")
             .valign(gtk::Align::Center)
             .css_classes(["flat"])
             .build();
+        // The page's own and not the window's, which a picker does not have.
+        connect.connect_clicked(glib::clone!(
+            #[weak(rename_to = page)]
+            self,
+            move |_| {
+                glib::spawn_future_local(async move {
+                    if let Some(file) = crate::dialogs::connect_server_dialog(&page).await
+                        && let Some(view) = page.imp().view.upgrade()
+                    {
+                        view.go_to(&file);
+                    }
+                });
+            }
+        ));
         let network = self.group(&gettext("Network"), Some(connect.upcast_ref()));
         for group in [&computer, &removable, &network] {
             content.append(&group.root);
@@ -842,10 +855,11 @@ impl ComputerPage {
         }
     }
 
-    fn sidebar(&self) -> Option<PlacesSidebar> {
+    /// Whether the page is in a window of the file manager, which has tabs, rather than
+    /// in a picker.
+    fn in_window(&self) -> bool {
         self.root()
-            .and_downcast::<crate::window::SpiralWindow>()
-            .map(|w| w.sidebar())
+            .is_some_and(|r| r.is::<crate::window::SpiralWindow>())
     }
 
     /// Read the disks again whenever the window comes back to the front, for what other
@@ -937,7 +951,6 @@ impl ComputerPage {
             group.tiles.remove_all();
         }
         let hidden = crate::prefs::hidden_on_computer();
-        let sidebar = self.sidebar();
         let mounts = MountTable::read();
         let places = Self::places(&mounts);
         let is_hidden = |place: &Place| place.hide_key().is_some_and(|k| hidden.contains(&k));
@@ -954,7 +967,7 @@ impl ComputerPage {
             if is_hidden && !imp.shows_hidden.get() {
                 continue;
             }
-            let (tile, usage) = self.tile(&place, sidebar.as_ref(), &mounts);
+            let (tile, usage) = self.tile(&place, &mounts);
             if is_hidden {
                 tile.add_css_class("spiral-hidden-place");
             }
@@ -995,12 +1008,7 @@ impl ComputerPage {
         }
     }
 
-    fn tile(
-        &self,
-        place: &Place,
-        sidebar: Option<&PlacesSidebar>,
-        mounts: &MountTable,
-    ) -> (gtk::FlowBoxChild, Option<Usage>) {
+    fn tile(&self, place: &Place, mounts: &MountTable) -> (gtk::FlowBoxChild, Option<Usage>) {
         let (icon, name): (gio::Icon, String) = match place {
             Place::System => (
                 gio::ThemedIcon::new("drive-harddisk").upcast(),
@@ -1126,31 +1134,28 @@ impl ComputerPage {
             content.append(&text);
         }
         let busy = self.imp().busy.borrow().contains(&place.id());
-        let button = place
-            .eject_target(mounts)
-            .filter(|_| sidebar.is_some())
-            .map(|target| {
-                let button = gtk::Button::builder()
-                    .icon_name("media-eject-symbolic")
-                    .valign(gtk::Align::Center)
-                    .visible(!busy)
-                    .tooltip_text(if target.is_network(mounts) {
-                        gettext("Disconnect")
-                    } else {
-                        gettext("Eject")
-                    })
-                    .css_classes(["flat", "circular"])
-                    .build();
-                button.connect_clicked(glib::clone!(
-                    #[weak(rename_to = page)]
-                    self,
-                    #[strong]
-                    place,
-                    move |_| page.leave(&place)
-                ));
-                content.append(&button);
-                button
-            });
+        let button = place.eject_target(mounts).map(|target| {
+            let button = gtk::Button::builder()
+                .icon_name("media-eject-symbolic")
+                .valign(gtk::Align::Center)
+                .visible(!busy)
+                .tooltip_text(if target.is_network(mounts) {
+                    gettext("Disconnect")
+                } else {
+                    gettext("Eject")
+                })
+                .css_classes(["flat", "circular"])
+                .build();
+            button.connect_clicked(glib::clone!(
+                #[weak(rename_to = page)]
+                self,
+                #[strong]
+                place,
+                move |_| page.leave(&place)
+            ));
+            content.append(&button);
+            button
+        });
         // As wide as the button, for the tile not to change its shape.
         let spinner = adw::Spinner::builder()
             .width_request(34)
@@ -1225,8 +1230,11 @@ impl ComputerPage {
                 move |x, y| page.popup_menu(&tile, x, y)
             ),
         );
-        // Files dropped on a disk go to its top, as they do onto its row in the sidebar.
-        if matches!(place, Place::Server(_)) {
+        // Files dropped on a disk go to its top, as they do onto its row in the sidebar. A
+        // picker takes no drops.
+        if matches!(place, Place::Server(_))
+            || self.imp().view.upgrade().is_some_and(|v| v.chooser_mode())
+        {
             return;
         }
         let Some(dest) = place.file() else { return };
@@ -1405,6 +1413,7 @@ impl ComputerPage {
         let Some(view) = self.imp().view.upgrade() else {
             return;
         };
+        let new_tab = new_tab && self.in_window();
         let go = move |file: &gio::File| {
             if new_tab {
                 view.emit_by_name::<()>("open-in-new-tab", &[file]);
@@ -1548,8 +1557,7 @@ impl ComputerPage {
         let Some(place) = PLACE.get(tile) else { return };
         let imp = self.imp();
         imp.menu_tile.replace(Some(tile.clone()));
-        let sidebar = self.sidebar();
-        let in_window = sidebar.is_some();
+        let in_window = self.in_window();
         let menu = gio::Menu::new();
         let open = gio::Menu::new();
         open.append(Some(&gettext("_Open")), Some("computer.open"));
@@ -1562,7 +1570,7 @@ impl ComputerPage {
         menu.append_section(None, &open);
         let leave = gio::Menu::new();
         let mounts = MountTable::read();
-        if in_window && let Some(target) = place.eject_target(&mounts) {
+        if let Some(target) = place.eject_target(&mounts) {
             if target.is_network(&mounts) {
                 leave.append(Some(&gettext("_Disconnect")), Some("computer.disconnect"));
             } else {

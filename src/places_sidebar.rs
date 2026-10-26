@@ -393,9 +393,7 @@ impl PlacesSidebar {
         while let Some(child) = list.first_child() {
             list.remove(&child);
         }
-        // In the file manager only: a chooser opens at its own last folder, and a page of
-        // disks is a detour on the way to a file.
-        if crate::prefs::show_computer() && !imp.in_dialog.get() {
+        if crate::prefs::show_computer() {
             list.append(&place_row(
                 "computer-symbolic",
                 &gettext("Computer"),

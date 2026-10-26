@@ -15,7 +15,9 @@ folders, the name entry gets a line of its own and the back and forward buttons 
 beside the filters. Trash, delete, cut and paste, rename
 and drag and drop are off, and so are Open With, new tabs and emptying the trash. New
 Folder is there in save mode and when a folder is being asked for. The sidebar has the
-tags only when opening: a tag lists files from anywhere, and is nowhere to save one.
+tags only when opening: a tag lists files from anywhere, and is nowhere to save one. With
+the Computer page turned on, it is in the sidebar too; the accept button waits until a
+disk on it is opened.
 Opening a file accepts; pressing Open with a folder selected enters it; Esc cancels. Where
 one file is asked for, only one can be selected. A file typed into the location bar is
 opened, or in save mode proposed as the name in its folder. A name in save mode that is a

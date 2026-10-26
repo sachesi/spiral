@@ -220,13 +220,15 @@ async fn run(
             #[weak]
             view_button,
             move |v: &BrowserView| {
-                let next = v.view_mode().next();
+                let next = v.next_view_mode();
                 view_button.set_icon_name(next.icon());
                 view_button.set_tooltip_text(Some(&next.label()));
             }
         );
         sync(&view);
-        view.connect_view_mode_notify(sync);
+        view.connect_view_mode_notify(sync.clone());
+        // The Computer page has a layout of its own, the cards or the list.
+        view.connect_location_notify(sync);
         view_button.connect_clicked(glib::clone!(
             #[weak]
             view,
@@ -595,8 +597,27 @@ async fn run(
     chooser_actions.add_action(&settings.create_action("show-hidden"));
     window.insert_action_group("chooser", Some(&chooser_actions));
     // Typing in the view starts a search, as it does in the file manager; the search bar
-    // leaves the keys alone while they are going into the name entry.
-    search_bar.set_key_capture_widget(Some(&window));
+    // leaves the keys alone while they are going into the name entry. The Computer page is
+    // no folder: nothing to search, typing there starts no search, and there is no order to
+    // choose.
+    let sync_files = glib::clone!(
+        #[weak]
+        window,
+        #[weak]
+        search_button,
+        #[weak]
+        search_bar,
+        #[weak]
+        sort_action,
+        move |v: &BrowserView| {
+            let files = !v.shows_computer();
+            search_button.set_sensitive(files);
+            search_bar.set_key_capture_widget(files.then_some(&window));
+            sort_action.set_enabled(files);
+        }
+    );
+    sync_files(&view);
+    view.connect_location_notify(sync_files);
     split
         .bind_property("show-sidebar", &show_sidebar, "active")
         .bidirectional()
@@ -899,41 +920,49 @@ async fn run(
         )),
         _ => {}
     }
-    // Nothing to accept yet: no name to save under, or nothing picked to open.
-    match &*mode {
-        Mode::Save => {
-            let sync = |e: &gtk::Entry, accept: &gtk::Button| {
-                accept.set_sensitive(!e.text().trim().is_empty());
-            };
-            sync(&name_entry, &accept);
-            name_entry.connect_changed(glib::clone!(
-                #[weak]
-                accept,
-                move |e| sync(e, &accept)
-            ));
+    // Nothing to accept yet: no name to save under, nothing picked to open, or the
+    // Computer page, which is no folder to save in or pick, a disk being picked from
+    // inside it.
+    let sync_accept = Rc::new(glib::clone!(
+        #[weak]
+        view,
+        #[weak]
+        name_entry,
+        #[weak]
+        accept,
+        #[strong]
+        mode,
+        move || {
+            let ready = !view.shows_computer()
+                && match &*mode {
+                    Mode::Save => !name_entry.text().trim().is_empty(),
+                    Mode::Open {
+                        directory: false, ..
+                    } => !view.model().selection().selection().is_empty(),
+                    _ => true,
+                };
+            accept.set_sensitive(ready);
         }
-        Mode::Open {
-            directory: false, ..
-        } => {
-            let sync = |sel: &gtk::MultiSelection, accept: &gtk::Button| {
-                accept.set_sensitive(!sel.selection().is_empty());
-            };
-            sync(&model.selection(), &accept);
-            model.selection().connect_selection_changed(glib::clone!(
-                #[weak]
-                accept,
-                move |sel, _, _| sync(sel, &accept)
-            ));
-            // Leaving a folder takes what was selected in it with the items, and says so
-            // only as a change of items.
-            model.selection().connect_items_changed(glib::clone!(
-                #[weak]
-                accept,
-                move |sel, _, _, _| sync(sel, &accept)
-            ));
-        }
-        _ => {}
-    }
+    ));
+    sync_accept();
+    name_entry.connect_changed(glib::clone!(
+        #[strong]
+        sync_accept,
+        move |_| sync_accept()
+    ));
+    model.selection().connect_selection_changed(glib::clone!(
+        #[strong]
+        sync_accept,
+        move |_, _, _| sync_accept()
+    ));
+    // Leaving a folder takes what was selected in it with the items, and says so only as
+    // a change of items.
+    model.selection().connect_items_changed(glib::clone!(
+        #[strong]
+        sync_accept,
+        move |_, _, _, _| sync_accept()
+    ));
+    view.connect_location_notify(move |_| sync_accept());
     name_entry.connect_changed(|e| e.remove_css_class("error"));
     window.connect_close_request(glib::clone!(
         #[strong]
