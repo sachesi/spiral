@@ -104,6 +104,8 @@ pub fn is_network_mount(root: &gio::File, mounts: &MountTable) -> bool {
 
 pub struct KernelMount {
     pub fstype: String,
+    /// The filesystem's own options, as the kernel lists them.
+    pub options: String,
 }
 
 /// The kernel's table of mounts, read once for all the mounts looked up at a time.
@@ -132,8 +134,11 @@ fn mount_in(table: &str, at: &str) -> Option<KernelMount> {
             .replace("\\134", "\\");
         let mut rest = rest.split(' ');
         let fstype = rest.next()?;
+        // Past the source.
+        let options = rest.nth(1).unwrap_or_default();
         (point == at).then(|| KernelMount {
             fstype: fstype.to_string(),
+            options: options.to_string(),
         })
     })
 }
@@ -450,6 +455,7 @@ mod tests {
 ";
         let drive = mount_in(table, "/home/u/Google Drive").unwrap();
         assert_eq!(drive.fstype, "fuse.rclone");
+        assert_eq!(drive.options, "rw");
         assert_eq!(mount_in(table, "/").unwrap().fstype, "btrfs");
         assert!(mount_in(table, "/home/u").is_none());
     }
