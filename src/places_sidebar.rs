@@ -47,8 +47,7 @@ mod imp {
         #[template_child]
         pub background_menu: TemplateChild<gio::MenuModel>,
         pub monitor: gio::VolumeMonitor,
-        /// Handlers on the monitor, which is shared by every window and outlives them.
-        pub monitor_handlers: RefCell<Vec<glib::SignalHandlerId>>,
+        pub(crate) devices: RefCell<Option<DeviceWatch>>,
         /// Handlers on the application's settings, which outlive the window as well.
         pub settings_handlers: RefCell<Vec<glib::SignalHandlerId>>,
         pub bookmarks_monitor: RefCell<Option<gio::FileMonitor>>,
@@ -83,7 +82,7 @@ mod imp {
                 tag_visibility: Default::default(),
                 background_menu: Default::default(),
                 monitor: gio::VolumeMonitor::get(),
-                monitor_handlers: Default::default(),
+                devices: Default::default(),
                 settings_handlers: Default::default(),
                 bookmarks_monitor: Default::default(),
                 trash_monitor: Default::default(),
@@ -118,9 +117,7 @@ mod imp {
 
     impl ObjectImpl for PlacesSidebar {
         fn dispose(&self) {
-            for id in self.monitor_handlers.take() {
-                self.monitor.disconnect(id);
-            }
+            self.devices.take();
             let settings = crate::prefs::settings();
             for id in self.settings_handlers.take() {
                 settings.disconnect(id);
@@ -159,50 +156,8 @@ mod imp {
                 obj,
                 move || obj.rebuild()
             );
-            let m = &self.monitor;
-            let handlers = [
-                m.connect_mount_added(glib::clone!(
-                    #[strong]
-                    rebuild,
-                    move |_, _| rebuild()
-                )),
-                m.connect_mount_removed(glib::clone!(
-                    #[strong]
-                    rebuild,
-                    move |_, _| rebuild()
-                )),
-                m.connect_mount_changed(glib::clone!(
-                    #[strong]
-                    rebuild,
-                    move |_, _| rebuild()
-                )),
-                m.connect_volume_added(glib::clone!(
-                    #[strong]
-                    rebuild,
-                    move |_, _| rebuild()
-                )),
-                m.connect_volume_removed(glib::clone!(
-                    #[strong]
-                    rebuild,
-                    move |_, _| rebuild()
-                )),
-                m.connect_volume_changed(glib::clone!(
-                    #[strong]
-                    rebuild,
-                    move |_, _| rebuild()
-                )),
-                m.connect_drive_connected(glib::clone!(
-                    #[strong]
-                    rebuild,
-                    move |_, _| rebuild()
-                )),
-                m.connect_drive_disconnected(glib::clone!(
-                    #[strong]
-                    rebuild,
-                    move |_, _| rebuild()
-                )),
-            ];
-            self.monitor_handlers.replace(handlers.into());
+            self.devices
+                .replace(Some(DeviceWatch::new(rebuild.clone())));
 
             // Both places are the user's to keep or drop, and so are the tags.
             for key in [

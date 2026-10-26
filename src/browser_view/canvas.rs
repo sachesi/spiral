@@ -123,7 +123,7 @@ mod imp {
         /// Names of files dropped on the desktop from elsewhere, and where they were dropped.
         pub(super) expected: RefCell<Vec<(String, Point, Instant)>>,
         pub(super) trash_monitor: RefCell<Option<gio::FileMonitor>>,
-        pub(super) volumes: RefCell<Option<gio::VolumeMonitor>>,
+        pub(super) devices: RefCell<Option<crate::places_sidebar::DeviceWatch>>,
         pub(super) actions: RefCell<Option<gio::SimpleActionGroup>>,
     }
 
@@ -425,16 +425,12 @@ impl IconCanvas {
 
     fn watch_places(&self) {
         let imp = self.imp();
-        let monitor = gio::VolumeMonitor::get();
-        let rebuild = glib::clone!(
-            #[weak(rename_to = canvas)]
-            self,
-            move |_: &gio::VolumeMonitor, _: &gio::Mount| canvas.rebuild_specials()
-        );
-        monitor.connect_mount_added(rebuild.clone());
-        monitor.connect_mount_removed(rebuild.clone());
-        monitor.connect_mount_changed(rebuild);
-        imp.volumes.replace(Some(monitor));
+        imp.devices
+            .replace(Some(crate::places_sidebar::DeviceWatch::new(glib::clone!(
+                #[weak(rename_to = canvas)]
+                self,
+                move || canvas.rebuild_specials()
+            ))));
         if let Ok(trash) = gio::File::for_uri(specials::TRASH_URI)
             .monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
         {
