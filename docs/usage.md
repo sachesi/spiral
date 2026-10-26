@@ -79,8 +79,13 @@ Preferences.
 Under the same switch, "Open New Windows At" makes Computer the place a window opened
 without a location starts: Spiral started without a folder, or Ctrl+N. Folders opened from
 other programs still open where they are, and new tabs at the current location. Turned
-off, windows start at Home again. The page belongs to the file manager; file dialogs do
-not list it.
+off, windows start at Home again. File dialogs start where the program asks, or at Home,
+whatever the setting.
+
+The page is in the sidebar of file dialogs too, the ones other programs open and Copy to,
+Move to and Extract to. There a tile opens its disk, and the dialog's button waits until
+a folder is open: a disk's top folder is chosen by opening the disk. The tiles offer what
+they do in a window, but for new tabs and files dropped on them.
 
 ## Two panes
 

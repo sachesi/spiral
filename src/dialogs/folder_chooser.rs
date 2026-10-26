@@ -168,10 +168,17 @@ pub async fn folder_chooser_dialog(
         }
     ));
     sidebar.set_selected_location(Some(start));
+    // The Computer page is no folder to pick: a disk is picked from inside it.
+    accept.set_sensitive(!view.shows_computer());
     view.connect_location_notify(glib::clone!(
         #[weak]
         sidebar,
-        move |v| sidebar.set_selected_location(v.location().as_ref())
+        #[weak]
+        accept,
+        move |v| {
+            sidebar.set_selected_location(v.location().as_ref());
+            accept.set_sensitive(!v.shows_computer());
+        }
     ));
 
     let (tx, rx) = oneshot::channel::<Option<gio::File>>();
