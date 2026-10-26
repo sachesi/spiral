@@ -3,12 +3,12 @@
 ## What you need
 
 To build: Rust 1.92 or newer, `blueprint-compiler`, `just`, and the development packages
-of GTK 4.22, libadwaita 1.9, GtkSourceView 5, libseccomp, GStreamer, gtk4-layer-shell 1.3
-and libwayland-client. On Fedora that is `gtk4-devel libadwaita-devel gtksourceview5-devel
-libseccomp-devel gstreamer1-devel gstreamer1-plugins-base-devel gtk4-layer-shell-devel
-wayland-devel blueprint-compiler just`; on Debian `libgtk-4-dev libadwaita-1-dev
-libgtksourceview-5-dev libseccomp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-libgtk4-layer-shell-dev libwayland-dev blueprint-compiler just`. `just check` also wants
+of GTK 4.22, libadwaita 1.9, GtkSourceView 5, libseccomp, GStreamer and gtk4-layer-shell 1.3.
+On Fedora that is `gtk4-devel libadwaita-devel gtksourceview5-devel libseccomp-devel
+gstreamer1-devel gstreamer1-plugins-base-devel gtk4-layer-shell-devel blueprint-compiler
+just`; on Debian `libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libseccomp-dev
+libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgtk4-layer-shell-dev
+blueprint-compiler just`. `just check` also wants
 `desktop-file-validate` and `appstreamcli`.
 
 To run: GTK 4.22, libadwaita 1.9, GtkSourceView 5, `bwrap` from bubblewrap, a session bus,

@@ -201,9 +201,6 @@ impl BrowserView {
             }
         };
         popover.set_menu_model(Some(model));
-        if imp.canvas.get().is_some() {
-            crate::desktop::glass::dress_menu(popover.upcast_ref());
-        }
         popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
         crate::touch::popup(&popover);
         if imp.canvas.get().is_some() {
