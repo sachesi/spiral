@@ -44,6 +44,12 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.19.2" date="2026-10-26">
+      <description>
+        <p>Opening an AppImage, a program or a desktop entry starts it, on the desktop as in a window, where an AppImage used to say no application could open it and a desktop entry opened as text. One that is not marked executable, as nothing downloaded is, asks first, shows the command a desktop entry runs, and marks it on the way. Scripts and Windows programs still open in what opens their type, and “Run as a Program” on a desktop entry starts its application.</p>
+        <p>A launcher whose icon is installed for the user alone, as Steam installs those of its games, gets that icon as its thumbnail. The desktop's menus, tooltips and the card that asks for a new folder's name no longer take Meridian's glass and look as they do in a Spiral window, with libadwaita's own corners.</p>
+      </description>
+    </release>
     <release version="0.19.1" date="2026-10-20">
       <description>
         <p>A finger held on a file, a sidebar entry, a breadcrumb or a desktop icon opens its menu as soon as it has been held long enough, while it is still on the screen, instead of once it is lifted. Lifting it leaves the menu open, and moving on closes the menu and picks the files up to drag them, or a bookmark or tag to move it up or down the sidebar.</p>
