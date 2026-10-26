@@ -921,57 +921,78 @@ impl IconCanvas {
             #[weak(rename_to = canvas)]
             self,
             move || {
-                let imp = canvas.imp();
-                imp.save_queued.set(false);
+                canvas.imp().save_queued.set(false);
                 if canvas.view().model().loading() {
                     return;
                 }
-                let size = canvas.display_size();
-                // What has no tile keeps its place for when it has one: a drive taken out,
-                // a place not shown for now, a file the view has yet to hand over, which it
-                // may do after saying the folder is read. A file gone from the folder is gone,
-                // unless the folder went with it and the desktop waits for it to be back.
-                let folder = canvas.view().location();
-                if folder
-                    .as_ref()
-                    .is_none_or(|f| !f.query_exists(gio::Cancellable::NONE))
-                {
+                let Some(folder) = canvas.view().location() else {
                     return;
-                }
-                let mut kept: HashMap<Place, Point> = imp
+                };
+                let names: Vec<String> = canvas
+                    .imp()
                     .kept
                     .borrow()
-                    .iter()
-                    .filter(|(place, _)| match place {
-                        Place::Special(_) => true,
-                        Place::File(name) => folder
-                            .as_ref()
-                            .is_some_and(|f| f.child(name).query_exists(gio::Cancellable::NONE)),
+                    .keys()
+                    .filter_map(|place| match place {
+                        Place::File(name) => Some(name.clone()),
+                        Place::Special(_) => None,
                     })
-                    .map(|(place, at)| (place.clone(), *at))
                     .collect();
-                // The sort decides every place; otherwise a tile only takes its place for
-                // keeps where it had none, since the others are where the area the panels
-                // leave just now fitted them.
-                let sorted = canvas.arrangement() == Arrangement::Auto;
-                let placed = in_cells(&canvas.grid(), &imp.placed.borrow());
-                for (place, at) in placed {
-                    if sorted || !kept.contains_key(&place) {
-                        kept.insert(place, at);
+                // Asked off the main loop: a desktop folder on a share answers slowly.
+                glib::spawn_future_local(async move {
+                    let answer = gio::spawn_blocking(move || {
+                        if !folder.query_exists(gio::Cancellable::NONE) {
+                            return None;
+                        }
+                        let gone: HashSet<String> = names
+                            .into_iter()
+                            .filter(|name| !folder.child(name).query_exists(gio::Cancellable::NONE))
+                            .collect();
+                        Some(gone)
+                    })
+                    .await;
+                    if let Ok(Some(gone)) = answer {
+                        canvas.save_places(&gone);
                     }
-                }
-                if let Some(positions) = imp.positions.borrow_mut().as_mut() {
-                    positions.keep(size, &kept);
-                    if let Err(e) = positions.save() {
-                        glib::g_warning!(
-                            "spiral",
-                            "Could not keep the places of the desktop icons: {e}"
-                        );
-                    }
-                }
-                imp.kept.replace(kept);
+                });
             }
         ));
+    }
+
+    /// What has no tile keeps its place for when it has one: a drive taken out, a place not
+    /// shown for now, a file the view has yet to hand over, which it may do after saying the
+    /// folder is read. The files of `gone` are gone from the folder, and their places with
+    /// them; while the folder itself is gone nothing is saved, as the desktop waits for it.
+    fn save_places(&self, gone: &HashSet<String>) {
+        let imp = self.imp();
+        let size = self.display_size();
+        let mut kept: HashMap<Place, Point> = imp
+            .kept
+            .borrow()
+            .iter()
+            .filter(|(place, _)| !matches!(place, Place::File(name) if gone.contains(name)))
+            .map(|(place, at)| (place.clone(), *at))
+            .collect();
+        // The sort decides every place; otherwise a tile only takes its place for keeps
+        // where it had none, since the others are where the area the panels leave just now
+        // fitted them.
+        let sorted = self.arrangement() == Arrangement::Auto;
+        let placed = in_cells(&self.grid(), &imp.placed.borrow());
+        for (place, at) in placed {
+            if sorted || !kept.contains_key(&place) {
+                kept.insert(place, at);
+            }
+        }
+        if let Some(positions) = imp.positions.borrow_mut().as_mut() {
+            positions.keep(size, &kept);
+            if let Err(e) = positions.save() {
+                glib::g_warning!(
+                    "spiral",
+                    "Could not keep the places of the desktop icons: {e}"
+                );
+            }
+        }
+        imp.kept.replace(kept);
     }
 
     /// The icons go over to the other side, each as far from it as it was from this one, as
