@@ -289,7 +289,9 @@ impl DetailsPanel {
             .icon_name("folder")
             .pixel_size(ICON_SIZE)
             .build();
-        let group = adw::PreferencesGroup::new();
+        // Shown with its first row: with every row hidden it still draws an empty box, for a
+        // folder that has no record to read, such as Favorites.
+        let group = adw::PreferencesGroup::builder().visible(false).build();
         // A search is about what it found, not the folder it looks in.
         let folder = view.location().filter(|_| !model.searching());
         let titles = [
@@ -319,6 +321,7 @@ impl DetailsPanel {
             let dir = folder.clone();
             let head = icon.clone();
             let facts = rows.clone();
+            let facts_group = group.clone();
             panel.when(
                 async move {
                     dir.query_info_future(
@@ -341,10 +344,14 @@ impl DetailsPanel {
                     for (row, value) in facts.iter().zip(values) {
                         show_value(row, &value);
                     }
+                    if facts.iter().any(|row| row.is_visible()) {
+                        facts_group.set_visible(true);
+                    }
                 },
             );
             // A share that is slow to answer goes without, as in Properties.
             let free = rows[4].clone();
+            let free_group = group.clone();
             panel.when(
                 async move {
                     glib::future_with_timeout(
@@ -361,6 +368,7 @@ impl DetailsPanel {
                 move |fs| {
                     if let Some(fs) = fs.filter(|fs| fs.attribute_uint64("filesystem::size") > 0) {
                         show_value(&free, &prefs::size(fs.attribute_uint64("filesystem::free")));
+                        free_group.set_visible(true);
                     }
                 },
             );
