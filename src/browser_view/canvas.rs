@@ -715,7 +715,11 @@ impl IconCanvas {
             section.append(Some(&gettext("_Empty Trash")), Some("desktop.empty-trash"));
             menu.append_section(None, &section);
         }
-        if let Some(mount) = special.mount() {
+        // A drive the system mounted is opened from here, not taken out: asking ends in
+        // "must be superuser".
+        if let Some(mount) = special.mount()
+            && crate::places_sidebar::may_unmount(mount, &crate::network::MountTable::read())
+        {
             let section = gio::Menu::new();
             let label = if mount.can_eject() {
                 gettext("_Eject")
