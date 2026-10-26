@@ -1492,14 +1492,14 @@ dependencies = [
 
 [[package]]
 name = "spiral"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "spiral-core",
 ]
 
 [[package]]
 name = "spiral-core"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ashpd",
  "async-channel",
@@ -1528,7 +1528,7 @@ dependencies = [
 
 [[package]]
 name = "spiral-desktop"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "gettext-rs",
  "gtk4-layer-shell",
