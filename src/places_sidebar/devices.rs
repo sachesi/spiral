@@ -380,7 +380,16 @@ async fn offer_empty_trash(parent: &gtk::Widget, trash: gio::File) -> bool {
             let Some(app) =
                 gio::Application::default().and_downcast::<crate::application::SpiralApplication>()
             else {
-                return true;
+                // The file dialog other programs open runs apart from the file manager,
+                // with no operations to hand the trash to: it is emptied here, with nothing
+                // to show for it but the wait.
+                return match remove_trash(&trash).await {
+                    Ok(()) => true,
+                    Err(e) => {
+                        show_error(parent, &gettext("Could Not Empty Trash"), &e);
+                        false
+                    }
+                };
             };
             let job = app
                 .job_manager()
@@ -393,6 +402,18 @@ async fn offer_empty_trash(parent: &gtk::Widget, trash: gio::File) -> bool {
     }
 }
 
+/// Delete `trash`, off the main loop.
+async fn remove_trash(trash: &gio::File) -> Result<(), glib::Error> {
+    let failed = |message: String| glib::Error::new(gio::IOErrorEnum::Failed, &message);
+    let path = trash.path().ok_or_else(|| {
+        failed(gettext("The trash at %s is not on this computer.").replace("%s", &trash.uri()))
+    })?;
+    gio::spawn_blocking(move || std::fs::remove_dir_all(path))
+        .await
+        .map_err(|_| failed(gettext("Emptying the trash stopped halfway.")))?
+        .map_err(|e| failed(e.to_string()))
+}
+
 fn show_error(parent: &gtk::Widget, heading: &str, error: &glib::Error) {
     let dialog = adw::AlertDialog::builder()
         .heading(heading)
@@ -400,4 +421,36 @@ fn show_error(parent: &gtk::Widget, heading: &str, error: &glib::Error) {
         .build();
     dialog.add_response("ok", &gettext("_OK"));
     dialog.present(Some(parent));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// What a link in the trash points to stays where it is.
+    #[test]
+    fn a_volume_trash_is_emptied_without_following_its_links() {
+        let root = std::env::temp_dir().join(format!("spiral-volume-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let uid = unsafe { libc::getuid() };
+        let files = root.join(format!(".Trash-{uid}/files"));
+        std::fs::create_dir_all(files.join("old/inner")).unwrap();
+        std::fs::write(files.join("old/inner/note.txt"), "words").unwrap();
+        std::fs::create_dir(root.join("kept")).unwrap();
+        std::fs::write(root.join("kept/photo.png"), "pixels").unwrap();
+        std::os::unix::fs::symlink(root.join("kept"), files.join("link")).unwrap();
+        let context = glib::MainContext::new();
+        context
+            .with_thread_default(|| {
+                context.block_on(async {
+                    let trash = mount_trash(&gio::File::for_path(&root)).await.unwrap();
+                    remove_trash(&trash).await.unwrap();
+                    assert!(mount_trash(&gio::File::for_path(&root)).await.is_none());
+                })
+            })
+            .unwrap();
+        assert!(!root.join(format!(".Trash-{uid}")).exists());
+        assert!(root.join("kept/photo.png").exists());
+        let _ = std::fs::remove_dir_all(&root);
+    }
 }
