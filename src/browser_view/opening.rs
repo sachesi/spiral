@@ -26,6 +26,48 @@ pub(super) async fn default_app(file: &gio::File) -> Option<gio::AppInfo> {
     gio::AppInfo::default_for_type(&file_utils::content_type_of(&info)?, !file.is_native())
 }
 
+/// What runs a file as a program: the application a desktop entry names, a script in a
+/// terminal, or the file itself.
+pub(crate) enum Program {
+    Launcher(gio_unix::DesktopAppInfo),
+    Script(std::path::PathBuf),
+    Binary(std::path::PathBuf),
+}
+
+impl Program {
+    /// Of a local file; none for a desktop entry that is a link or does not parse.
+    pub(crate) fn of(info: &gio::FileInfo) -> Option<Self> {
+        let path = file_utils::file_of(info).path()?;
+        if file_utils::is_launcher(info) {
+            return gio_unix::DesktopAppInfo::from_filename(&path).map(Self::Launcher);
+        }
+        let script = file_utils::content_type_of(info)
+            .is_some_and(|ct| gio::content_type_is_a(&ct, "text/plain"));
+        Some(if script {
+            Self::Script(path)
+        } else {
+            Self::Binary(path)
+        })
+    }
+
+    fn path(&self) -> std::path::PathBuf {
+        match self {
+            Self::Launcher(app) => app.filename().unwrap_or_default(),
+            Self::Script(path) | Self::Binary(path) => path.clone(),
+        }
+    }
+}
+
+/// Executable for every class that can read it, as the switch in Properties sets it.
+fn mark_executable(path: std::path::PathBuf) -> std::io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let mode = std::fs::metadata(&path)?.permissions().mode();
+    std::fs::set_permissions(
+        &path,
+        std::fs::Permissions::from_mode(mode | ((mode & 0o444) >> 2)),
+    )
+}
+
 impl BrowserView {
     /// Open the item at `pos`: descend into folders, launch files.
     pub(crate) fn activate_position(&self, pos: u32) {
@@ -40,7 +82,95 @@ impl BrowserView {
         } else if self.chooser_mode() {
             self.emit_by_name::<()>("file-activated", &[&file]);
         } else {
-            self.launch(&file);
+            self.open_file(&info);
+        }
+    }
+
+    /// Start the program or launcher `info` stands for, or open the file in its application.
+    pub(crate) fn open_file(&self, info: &gio::FileInfo) {
+        if !file_utils::starts_on_click(info) {
+            self.launch(&file_utils::file_of(info));
+            return;
+        }
+        let Some(program) = Program::of(info) else {
+            // A link, or an entry that does not parse: its text is what there is to open.
+            self.launch(&file_utils::file_of(info));
+            return;
+        };
+        if file_utils::allows(info, "access::can-execute") {
+            self.run_program(&program);
+            return;
+        }
+        // Nothing downloaded or sent comes marked executable, so the mark is what lets a
+        // click start a file without asking.
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = view)]
+            self,
+            async move {
+                if !view.confirm_run(&program).await {
+                    return;
+                }
+                if let Err(e) = mark_executable(program.path()) {
+                    view.show_error(&gettext("Could Not Mark as Executable"), &e.to_string());
+                    return;
+                }
+                view.run_program(&program);
+            }
+        ));
+    }
+
+    async fn confirm_run(&self, program: &Program) -> bool {
+        let name = program
+            .path()
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let mut body = gettext(
+            "It is not marked as executable, as files that were downloaded or sent are not. Only run programs from sources you trust.",
+        );
+        if let Program::Launcher(app) = program
+            && let Some(line) = app.commandline()
+        {
+            body.push_str("\n\n");
+            body.push_str(&gettext("It runs: %s").replace("%s", &line.to_string_lossy()));
+        }
+        let dialog = adw::AlertDialog::builder()
+            .heading(gettext("Run “%s”?").replace("%s", &name))
+            .body(body)
+            .close_response("cancel")
+            .default_response("cancel")
+            .build();
+        dialog.add_responses(&[
+            ("cancel", &gettext("_Cancel")),
+            ("run", &gettext("_Mark as Executable and Run")),
+        ]);
+        dialog.set_response_appearance("run", adw::ResponseAppearance::Suggested);
+        dialog.choose_future(Some(self)).await == "run"
+    }
+
+    /// Scripts run in the terminal so their output can be seen; binaries and the
+    /// applications of desktop entries start directly.
+    pub(crate) fn run_program(&self, program: &Program) {
+        let context = self.display().app_launch_context();
+        let result = match program {
+            Program::Launcher(app) => crate::terminal::launch_if_wanted(app.upcast_ref(), &[])
+                .unwrap_or_else(|| app.launch(&[], Some(&context))),
+            Program::Script(path) => {
+                let dir = path
+                    .parent()
+                    .map(std::path::Path::to_path_buf)
+                    .unwrap_or_default();
+                crate::terminal::run(&dir, path)
+            }
+            Program::Binary(path) => gio::AppInfo::create_from_commandline(
+                glib::shell_quote(path).to_string_lossy().as_ref(),
+                None,
+                gio::AppInfoCreateFlags::NONE,
+            )
+            .and_then(|app| app.launch(&[], Some(&context))),
+        };
+        if let Err(e) = result {
+            self.show_error(&gettext("Could Not Open"), e.message());
         }
     }
 

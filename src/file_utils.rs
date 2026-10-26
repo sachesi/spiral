@@ -197,6 +197,37 @@ pub fn is_program(info: &gio::FileInfo) -> bool {
         && content_type_of(info).is_some_and(|ct| gio::content_type_can_be_executable(&ct))
 }
 
+/// A desktop entry: what it starts is the program it names.
+pub fn is_launcher(info: &gio::FileInfo) -> bool {
+    content_type_of(info).is_some_and(|ct| gio::content_type_is_a(&ct, "application/x-desktop"))
+}
+
+/// Programs this machine runs itself. GIO counts Windows executables among its
+/// executables too, and those belong to whatever opens them, Wine as a rule.
+const NATIVE_PROGRAMS: [&str; 4] = [
+    "application/x-executable",
+    "application/x-pie-executable",
+    "application/vnd.appimage",
+    "application/x-iso9660-appimage",
+];
+
+/// A program or launcher on this machine, which a click starts rather than opens. A program
+/// whose type has an application of its own, as AppImageLauncher makes itself for
+/// AppImages, goes to it instead. Scripts open in their editor all the same; they run only
+/// when asked to.
+pub fn starts_on_click(info: &gio::FileInfo) -> bool {
+    if is_dir(info) || !file_of(info).is_native() {
+        return false;
+    }
+    is_launcher(info)
+        || content_type_of(info).is_some_and(|ct| {
+            NATIVE_PROGRAMS
+                .iter()
+                .any(|program| gio::content_type_equals(&ct, program))
+                && gio::AppInfo::default_for_type(&ct, false).is_none()
+        })
+}
+
 pub fn is_dir(info: &gio::FileInfo) -> bool {
     info.file_type() == gio::FileType::Directory
 }
@@ -865,5 +896,46 @@ mod tests {
                 "extension of {name}"
             );
         }
+    }
+
+    /// A click starts programs and desktop entries of this machine, and leaves scripts and
+    /// Windows programs to the applications that open them.
+    #[test]
+    fn a_click_starts_programs_and_launchers_only() {
+        let dir = std::env::temp_dir().join(format!("spiral-starts-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        // The head of a program is what its type is told by.
+        let mut appimage = std::fs::read("/proc/self/exe").unwrap();
+        appimage.truncate(4096);
+        appimage[8..11].copy_from_slice(b"AI\x02");
+        std::fs::write(dir.join("Tool.AppImage"), appimage).unwrap();
+        std::fs::write(
+            dir.join("tool.desktop"),
+            "[Desktop Entry]\nType=Application\nName=Tool\nExec=true\n",
+        )
+        .unwrap();
+        std::fs::write(dir.join("tool.sh"), "#!/bin/sh\ntrue\n").unwrap();
+        std::fs::write(dir.join("tool.exe"), b"MZ\x90\x00\x03\x00\x00\x00").unwrap();
+        let starts = |name: &str| {
+            let file = gio::File::for_path(dir.join(name));
+            let info = file
+                .query_info(
+                    ATTRIBUTES,
+                    gio::FileQueryInfoFlags::NONE,
+                    gio::Cancellable::NONE,
+                )
+                .unwrap();
+            info.set_attribute_object("standard::file", &file);
+            starts_on_click(&info)
+        };
+        // Unless an application has taken AppImages for itself.
+        let appimages_taken =
+            gio::AppInfo::default_for_type("application/vnd.appimage", false).is_some();
+        assert_eq!(starts("Tool.AppImage"), !appimages_taken);
+        assert!(starts("tool.desktop"));
+        assert!(!starts("tool.sh"));
+        assert!(!starts("tool.exe"));
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
