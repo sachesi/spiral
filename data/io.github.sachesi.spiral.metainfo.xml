@@ -44,6 +44,13 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.20.0" date="2026-10-26">
+      <description>
+        <p>Computer, turned on in Preferences, is a page of every disk of this computer, the drives plugged into it and the servers it reaches, each with a bar of how full it is and the room left on it, as cards or as a list. A tile opens its disk, mounting it first, and ejects it where the user may; servers connected before stay listed, with Connect to Server… beside them. The page can be where new windows open, and it is in the sidebar of file dialogs too.</p>
+        <p>The desktop is on every display, each with icons of its own. New files go to the main display, chosen in Preferences, then to the next with room; icons dragged from one display to another move there; and the icons of an unplugged display wait on the main one until it is back.</p>
+        <p>Eject is offered only for the disks and drives the user can unmount, in the sidebar and on the desktop, and shares that the system mounts over NFS, SMB or rclone count as shares. Plugging in a drive redraws the sidebar and the desktop once, after it settles. An empty desktop opens its menu and takes drops, and screen readers say what the desktop's icons are captioned with.</p>
+      </description>
+    </release>
     <release version="0.19.2" date="2026-10-26">
       <description>
         <p>Opening an AppImage, a program or a desktop entry starts it, on the desktop as in a window, where an AppImage used to say no application could open it and a desktop entry opened as text. One that is not marked executable, as nothing downloaded is, asks first, shows the command a desktop entry runs, and marks it on the way. Scripts and Windows programs still open in what opens their type, and “Run as a Program” on a desktop entry starts its application.</p>
