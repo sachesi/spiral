@@ -441,13 +441,6 @@ async fn name_dialog(
         .build();
     if crate::desktop::on_desktop(parent) {
         dialog.set_child(Some(&prompt(&dialog, title, &entry, &revealer, &create)));
-        // The desktop's own window is none of libadwaita's, so the dialog gets a window of
-        // its own, rounded like the card.
-        dialog.connect_map(|dialog| {
-            if let Some(window) = dialog.parent().filter(|parent| parent.is::<gtk::Window>()) {
-                window.add_css_class("spiral-prompt-window");
-            }
-        });
     } else {
         create.set_margin_top(6);
         create.set_halign(gtk::Align::Center);
