@@ -85,8 +85,7 @@ impl BrowserView {
             .map(|info| file_utils::content_type_of(info).map(|t| t.to_string()))
             .collect::<Option<_>>()
             .unwrap_or_default();
-        let entries =
-            crate::drop_ins::load(&crate::drop_ins::dirs(crate::drop_ins::ITEM_MENU), None);
+        let entries = crate::drop_ins::menu_entries(crate::drop_ins::ITEM_MENU);
         for app in entries
             .iter()
             .filter(|app| crate::drop_ins::takes(app, &types))

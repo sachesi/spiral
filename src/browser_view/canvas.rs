@@ -1931,7 +1931,7 @@ impl IconCanvas {
         );
         menu.append_section(None, &settings);
 
-        let entries = drop_ins::load(&drop_ins::dirs(drop_ins::DESKTOP_MENU), None);
+        let entries = drop_ins::menu_entries(drop_ins::DESKTOP_MENU);
         if !entries.is_empty() {
             let section = gio::Menu::new();
             for app in &entries {
