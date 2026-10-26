@@ -22,12 +22,9 @@ impl PlacesSidebar {
         enable("rename", bookmark || tag.is_some());
         enable("remove", bookmark || tag.is_some());
         enable("new-tag", crate::tags::all().len() < crate::tags::MAX);
-        let leaving = row_eject(row);
-        enable("eject", leaving.as_ref().is_some_and(|t| !t.is_network()));
-        enable(
-            "disconnect",
-            leaving.as_ref().is_some_and(EjectTarget::is_network),
-        );
+        let leaving = row_eject(row).map(|t| t.is_network(&crate::network::MountTable::read()));
+        enable("eject", leaving == Some(false));
+        enable("disconnect", leaving == Some(true));
         enable(
             "empty-trash",
             window

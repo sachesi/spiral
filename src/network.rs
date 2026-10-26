@@ -74,6 +74,70 @@ pub fn is_network(file: &gio::File) -> bool {
     })
 }
 
+/// Filesystems the kernel mounts from another machine, or that a FUSE program fills from
+/// one: a share mounted from fstab, or a cloud drive mounted by rclone, rather than through
+/// gvfs.
+const NETWORK_FILESYSTEMS: [&str; 11] = [
+    "nfs",
+    "nfs4",
+    "cifs",
+    "smb3",
+    "smbfs",
+    "ceph",
+    "glusterfs",
+    "davfs",
+    "fuse.sshfs",
+    "fuse.rclone",
+    "fuse.s3fs",
+];
+
+/// Whether the mount at `root` is on another machine: an address gvfs mounted, or a local
+/// path the kernel mounted a share or a cloud drive at.
+pub fn is_network_mount(root: &gio::File, mounts: &MountTable) -> bool {
+    is_network(root)
+        || (root.is_native()
+            && root
+                .path()
+                .and_then(|path| mounts.at(&path))
+                .is_some_and(|m| NETWORK_FILESYSTEMS.contains(&m.fstype.as_str())))
+}
+
+pub struct KernelMount {
+    pub fstype: String,
+}
+
+/// The kernel's table of mounts, read once for all the mounts looked up at a time.
+pub struct MountTable(String);
+
+impl MountTable {
+    pub fn read() -> Self {
+        Self(std::fs::read_to_string("/proc/self/mountinfo").unwrap_or_default())
+    }
+
+    /// What is mounted at `path`: the last one mounted there, which hides those before it.
+    pub fn at(&self, path: &std::path::Path) -> Option<KernelMount> {
+        mount_in(&self.0, path.to_str()?)
+    }
+}
+
+fn mount_in(table: &str, at: &str) -> Option<KernelMount> {
+    table.lines().rev().find_map(|line| {
+        let (fields, rest) = line.split_once(" - ")?;
+        let point = fields
+            .split(' ')
+            .nth(4)?
+            .replace("\\040", " ")
+            .replace("\\011", "\t")
+            .replace("\\012", "\n")
+            .replace("\\134", "\\");
+        let mut rest = rest.split(' ');
+        let fstype = rest.next()?;
+        (point == at).then(|| KernelMount {
+            fstype: fstype.to_string(),
+        })
+    })
+}
+
 /// The location a typed address stands for, or None while what is typed is not one: an
 /// address has the shape of an address, and a scheme this system can mount.
 pub fn address(text: &str) -> Option<gio::File> {
@@ -375,5 +439,18 @@ mod tests {
             split_address("sftp://host"),
             Some(("sftp".to_string(), "host"))
         );
+    }
+
+    #[test]
+    fn a_mount_is_read_from_the_last_line_for_its_point() {
+        let table = "\
+29 1 0:26 / / rw - btrfs /dev/mapper/root rw
+80 29 0:50 / /home/u/Google\\040Drive rw - tmpfs tmpfs rw
+81 80 0:51 / /home/u/Google\\040Drive rw,nosuid - fuse.rclone gdrive: rw
+";
+        let drive = mount_in(table, "/home/u/Google Drive").unwrap();
+        assert_eq!(drive.fstype, "fuse.rclone");
+        assert_eq!(mount_in(table, "/").unwrap().fstype, "btrfs");
+        assert!(mount_in(table, "/home/u").is_none());
     }
 }
