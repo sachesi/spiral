@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-10-26 16:25+0200\n"
+"POT-Creation-Date: 2026-10-26 17:08+0200\n"
 "PO-Revision-Date: 2026-09-06 15:32+0300\n"
 "Last-Translator: sachesi\n"
 "Language-Team: Russian\n"
@@ -1266,7 +1266,7 @@ msgstr "Безымянный документ"
 msgid "New _Document"
 msgstr "Создать _документ"
 
-#: src/browser_actions/menus.rs:47 src/computer.rs:1380 ui/path_bar.ui:32
+#: src/browser_actions/menus.rs:47 src/computer.rs:1378 ui/path_bar.ui:32
 #: ui/path_bar.ui:63 ui/places_sidebar.ui:16 ui/places_sidebar.ui:59
 #, no-c-format
 msgid "Open in New _Tab"
@@ -1277,13 +1277,13 @@ msgstr "Открыть в новой _вкладке"
 msgid "Open in New _Window"
 msgstr "Открыть в новом ок_не"
 
-#: src/browser_actions/menus.rs:56 src/browser_view/canvas.rs:1892
+#: src/browser_actions/menus.rs:56 src/browser_view/canvas.rs:1944
 #: ui/browser_view.ui:436
 #, no-c-format
 msgid "Open in _Terminal"
 msgstr "Открыть в _терминале"
 
-#: src/browser_actions/open.rs:186 src/browser_view/canvas.rs:1998
+#: src/browser_actions/open.rs:186 src/browser_view/canvas.rs:2049
 #: src/browser_view/opening.rs:173 src/browser_view/opening.rs:227
 #: src/browser_view/opening.rs:234 src/dialogs/open_with.rs:213
 #, no-c-format
@@ -1357,7 +1357,7 @@ msgstr "Безвозвратно удалённые объекты нельзя 
 #: src/dialogs/properties/permissions.rs:285 src/dialogs/select_pattern.rs:44
 #: src/dialogs/tags.rs:39 src/naming.rs:391 src/ops/archive.rs:412
 #: src/ops/conflict.rs:64 src/ops/conflict.rs:315 src/ops/mod.rs:30
-#: src/ops/walk.rs:431 src/places_sidebar/devices.rs:368
+#: src/ops/walk.rs:431 src/places_sidebar/devices.rs:372
 #: src/places_sidebar/menu.rs:249 src/portal/chooser_window.rs:1212
 #: ui/browser_view.ui:188
 #, no-c-format
@@ -1419,110 +1419,105 @@ msgstr "Серверы не найдены"
 msgid "Folder is Empty"
 msgstr "Папка пуста"
 
-#: src/browser_view/canvas.rs:648 src/browser_view/canvas.rs:731
-#: src/computer.rs:1377 src/dialogs/open_with.rs:72
+#: src/browser_view/canvas.rs:694 src/browser_view/canvas.rs:757
+#: src/computer.rs:1375 src/dialogs/open_with.rs:72
 #: src/portal/chooser_window.rs:395 ui/browser_view.ui:234
 #: ui/places_sidebar.ui:12 ui/places_sidebar.ui:55
 #, no-c-format
 msgid "_Open"
 msgstr "_Открыть"
 
-#: src/browser_view/canvas.rs:701
-#, no-c-format
-msgid "Could Not Remove the Drive"
-msgstr "Не удалось извлечь диск"
-
-#: src/browser_view/canvas.rs:735 src/ops/mod.rs:31
-#: src/places_sidebar/devices.rs:370 ui/browser_view.ui:450
+#: src/browser_view/canvas.rs:761 src/ops/mod.rs:31
+#: src/places_sidebar/devices.rs:374 ui/browser_view.ui:450
 #, no-c-format
 msgid "_Empty Trash"
 msgstr "_Очистить корзину"
 
-#: src/browser_view/canvas.rs:741 src/computer.rs:1391 ui/browser_view.ui:383
+#: src/browser_view/canvas.rs:771 src/computer.rs:1389 ui/browser_view.ui:383
 #: ui/places_sidebar.ui:35
 #, no-c-format
 msgid "_Eject"
 msgstr "_Извлечь"
 
-#: src/browser_view/canvas.rs:743 ui/browser_view.ui:378
+#: src/browser_view/canvas.rs:773 ui/browser_view.ui:378
 #, no-c-format
 msgid "_Unmount"
 msgstr "_Отсоединить"
 
 #. Translators: the room left on a drive, under its name on the desktop.
-#: src/browser_view/canvas.rs:1085
+#: src/browser_view/canvas.rs:1137
 #, no-c-format
 msgid "%s free"
 msgstr "свободно %s"
 
-#: src/browser_view/canvas.rs:1836 ui/browser_view.ui:421 ui/path_bar.ui:22
+#: src/browser_view/canvas.rs:1888 ui/browser_view.ui:421 ui/path_bar.ui:22
 #, no-c-format
 msgid "_Paste"
 msgstr "Вст_авить"
 
-#: src/browser_view/canvas.rs:1837 ui/browser_view.ui:430 ui/path_bar.ui:26
+#: src/browser_view/canvas.rs:1889 ui/browser_view.ui:430 ui/path_bar.ui:26
 #, no-c-format
 msgid "Select _All"
 msgstr "Выделить _всё"
 
-#: src/browser_view/canvas.rs:1842
+#: src/browser_view/canvas.rs:1894
 #, no-c-format
 msgid "In a _Grid"
 msgstr "По _сетке"
 
-#: src/browser_view/canvas.rs:1843
+#: src/browser_view/canvas.rs:1895
 #, no-c-format
 msgid "By _Sort Order"
 msgstr "По _порядку сортировки"
 
-#: src/browser_view/canvas.rs:1844
+#: src/browser_view/canvas.rs:1896
 #, no-c-format
 msgid "_Anywhere"
 msgstr "_Где угодно"
 
-#: src/browser_view/canvas.rs:1856 src/dialogs/batch_rename.rs:46
+#: src/browser_view/canvas.rs:1908 src/dialogs/batch_rename.rs:46
 #, no-c-format
 msgid "_Name"
 msgstr "_Имя"
 
-#: src/browser_view/canvas.rs:1857 src/portal/chooser_window.rs:262
+#: src/browser_view/canvas.rs:1909 src/portal/chooser_window.rs:262
 #: ui/window.ui:111
 #, no-c-format
 msgid "_Size"
 msgstr "По _размеру"
 
-#: src/browser_view/canvas.rs:1858 src/portal/chooser_window.rs:263
+#: src/browser_view/canvas.rs:1910 src/portal/chooser_window.rs:263
 #: ui/window.ui:116
 #, no-c-format
 msgid "_Type"
 msgstr "По _типу"
 
-#: src/browser_view/canvas.rs:1859
+#: src/browser_view/canvas.rs:1911
 #, no-c-format
 msgid "_Modified"
 msgstr "По _дате изменения"
 
-#: src/browser_view/canvas.rs:1871
+#: src/browser_view/canvas.rs:1923
 #, no-c-format
 msgid "_Reversed Order"
 msgstr "_Обратный порядок"
 
-#: src/browser_view/canvas.rs:1876
+#: src/browser_view/canvas.rs:1928
 #, no-c-format
 msgid "A_rrange Icons"
 msgstr "_Расставить значки"
 
-#: src/browser_view/canvas.rs:1877
+#: src/browser_view/canvas.rs:1929
 #, no-c-format
 msgid "S_ort By"
 msgstr "_Сортировать"
 
-#: src/browser_view/canvas.rs:1879
+#: src/browser_view/canvas.rs:1931
 #, no-c-format
 msgid "Sort _Now"
 msgstr "Упорядочить _сейчас"
 
-#: src/browser_view/canvas.rs:1900
+#: src/browser_view/canvas.rs:1952
 #, no-c-format
 msgid "Desktop _Settings…"
 msgstr "_Параметры рабочего стола…"
@@ -1598,7 +1593,7 @@ msgstr "Диалог пароля был закрыт."
 #: src/browser_view/opening.rs:315 src/computer.rs:1268
 #: src/dialogs/open_with.rs:216 src/dialogs/properties.rs:170
 #: src/dialogs/properties/permissions.rs:92 src/ops/walk.rs:54
-#: src/places_sidebar/devices.rs:397 src/portal/chooser_window.rs:1255
+#: src/places_sidebar/devices.rs:401 src/portal/chooser_window.rs:1255
 #, no-c-format
 msgid "_OK"
 msgstr "_ОК"
@@ -1724,45 +1719,45 @@ msgstr "Извлечь"
 msgid "Could Not Mount"
 msgstr "Не удалось подключить"
 
-#: src/computer.rs:1389 ui/places_sidebar.ui:40
+#: src/computer.rs:1387 ui/places_sidebar.ui:40
 #, no-c-format
 msgid "_Disconnect"
 msgstr "Отк_лючить"
 
-#: src/computer.rs:1395
+#: src/computer.rs:1393
 #, no-c-format
 msgid "_Forget Server"
 msgstr "_Забыть сервер"
 
-#: src/computer.rs:1403 src/places_sidebar/menu.rs:94
+#: src/computer.rs:1401 src/places_sidebar/menu.rs:94
 #, no-c-format
 msgid "_Show"
 msgstr "_Показать"
 
-#: src/computer.rs:1405 src/places_sidebar/menu.rs:96
+#: src/computer.rs:1403 src/places_sidebar/menu.rs:96
 #, no-c-format
 msgid "_Hide"
 msgstr "_Скрыть"
 
-#: src/computer.rs:1417 src/places_sidebar/menu.rs:113 ui/places_sidebar.ui:90
+#: src/computer.rs:1415 src/places_sidebar/menu.rs:113 ui/places_sidebar.ui:90
 #, no-c-format
 msgid "Show Hidden _Places"
 msgstr "Показать с_крытые места"
 
-#: src/computer.rs:1426 ui/browser_view.ui:390 ui/browser_view.ui:455
+#: src/computer.rs:1424 ui/browser_view.ui:390 ui/browser_view.ui:455
 #: ui/path_bar.ui:55 ui/path_bar.ui:83
 #, no-c-format
 msgid "P_roperties"
 msgstr "С_войства"
 
 #. Translators: a share or a user on a server: "media on nas", "pi on 192.168.1.40".
-#: src/computer.rs:1524
+#: src/computer.rs:1522
 #, no-c-format
 msgid "%s on %s"
 msgstr "%s на %s"
 
 #. Translators: free space of a disk, then its size: "36.0 GB free of 2.0 TB".
-#: src/computer.rs:1566
+#: src/computer.rs:1564
 #, no-c-format
 msgid "%s free of %s"
 msgstr "%s свободно из %s"
@@ -1785,7 +1780,7 @@ msgstr "Корзина"
 msgid "MIME Type"
 msgstr "Тип MIME"
 
-#: src/details_panel.rs:188 src/details_panel.rs:207 src/details_panel.rs:441
+#: src/details_panel.rs:188 src/details_panel.rs:207 src/details_panel.rs:449
 #: src/dialogs/preferences.rs:306 src/dialogs/preferences.rs:441
 #: src/dialogs/properties/disk.rs:106 src/dialogs/properties/general.rs:237
 #: src/file_utils.rs:392 src/file_utils.rs:407
@@ -1803,7 +1798,7 @@ msgstr "Цель ссылки"
 msgid "Original Folder"
 msgstr "Исходная папка"
 
-#: src/details_panel.rs:225 src/details_panel.rs:306
+#: src/details_panel.rs:225 src/details_panel.rs:308
 #: src/dialogs/preferences.rs:308 src/dialogs/properties/general.rs:287
 #: src/file_utils.rs:394 ui/window.ui:425
 #, no-c-format
@@ -1822,7 +1817,7 @@ msgstr "Последний доступ"
 msgid "Created"
 msgstr "Создан"
 
-#: src/details_panel.rs:229 src/details_panel.rs:307
+#: src/details_panel.rs:229 src/details_panel.rs:309
 #: src/dialogs/properties/permissions.rs:102
 #: src/dialogs/properties/permissions.rs:258 src/file_utils.rs:397
 #: src/file_utils.rs:412
@@ -1830,7 +1825,7 @@ msgstr "Создан"
 msgid "Owner"
 msgstr "Владелец"
 
-#: src/details_panel.rs:233 src/details_panel.rs:308
+#: src/details_panel.rs:233 src/details_panel.rs:310
 #: src/dialogs/properties/permissions.rs:103
 #: src/dialogs/properties/permissions.rs:258 src/file_utils.rs:398
 #: src/file_utils.rs:413
@@ -1838,18 +1833,18 @@ msgstr "Владелец"
 msgid "Group"
 msgstr "Группа"
 
-#: src/details_panel.rs:237 src/details_panel.rs:309
+#: src/details_panel.rs:237 src/details_panel.rs:311
 #: src/dialogs/properties.rs:146 src/file_utils.rs:399 src/file_utils.rs:411
 #, no-c-format
 msgid "Permissions"
 msgstr "Права"
 
-#: src/details_panel.rs:310 src/dialogs/properties/disk.rs:21
+#: src/details_panel.rs:312 src/dialogs/properties/disk.rs:21
 #, no-c-format
 msgid "Free"
 msgstr "Свободно"
 
-#: src/details_panel.rs:424 src/dialogs/properties/general.rs:218
+#: src/details_panel.rs:432 src/dialogs/properties/general.rs:218
 #, no-c-format
 msgid "%d Item"
 msgid_plural "%d Items"
@@ -1857,12 +1852,12 @@ msgstr[0] "%d объект"
 msgstr[1] "%d объекта"
 msgstr[2] "%d объектов"
 
-#: src/details_panel.rs:439
+#: src/details_panel.rs:447
 #, no-c-format
 msgid "%s, folders not counted"
 msgstr "%s, без учёта папок"
 
-#: src/details_panel.rs:519 src/dialogs/properties.rs:128
+#: src/details_panel.rs:527 src/dialogs/properties.rs:128
 #: ui/shortcuts_dialog.ui:325
 #, no-c-format
 msgid "Properties"
@@ -3923,32 +3918,32 @@ msgstr "копия"
 msgid "Edit Location"
 msgstr "Изменить адрес"
 
-#: src/places_sidebar/devices.rs:330
+#: src/places_sidebar/devices.rs:334
 #, no-c-format
 msgid "Writing data to “%s”"
 msgstr "Запись данных на «%s»"
 
-#: src/places_sidebar/devices.rs:331
+#: src/places_sidebar/devices.rs:335
 #, no-c-format
 msgid "Don’t unplug until finished"
 msgstr "Не отключайте до завершения"
 
-#: src/places_sidebar/devices.rs:348
+#: src/places_sidebar/devices.rs:352
 #, no-c-format
 msgid "You can now unplug “%s”"
 msgstr "Теперь «%s» можно отключить"
 
-#: src/places_sidebar/devices.rs:354
+#: src/places_sidebar/devices.rs:358
 #, no-c-format
 msgid "Could Not Eject"
 msgstr "Не удалось извлечь"
 
-#: src/places_sidebar/devices.rs:363
+#: src/places_sidebar/devices.rs:367
 #, no-c-format
 msgid "Empty Trash Before Unmounting?"
 msgstr "Очистить корзину перед отключением?"
 
-#: src/places_sidebar/devices.rs:365
+#: src/places_sidebar/devices.rs:369
 #, no-c-format
 msgid ""
 "To regain the free space on this volume the trash must be emptied. All "
@@ -3957,7 +3952,7 @@ msgstr ""
 "Чтобы освободить место на этом томе, нужно очистить корзину. Все удалённые в "
 "корзину объекты на этом томе будут безвозвратно потеряны."
 
-#: src/places_sidebar/devices.rs:369
+#: src/places_sidebar/devices.rs:373
 #, no-c-format
 msgid "Do _Not Empty"
 msgstr "_Не очищать"
@@ -4655,6 +4650,10 @@ msgstr "Содержимое и имя файла"
 #: ui/window.ui:449
 msgid "Only Contents"
 msgstr "Только содержимое"
+
+#, no-c-format
+#~ msgid "Could Not Remove the Drive"
+#~ msgstr "Не удалось извлечь диск"
 
 #~ msgid ""
 #~ "“shadow” draws them straight on the background with a soft shadow, “pill” "
