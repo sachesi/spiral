@@ -469,18 +469,9 @@ window.spiral-desktop-window stack:drop(active) {
   padding: 1px 7px;
   font-weight: bold;
 }
-/* The window a name is asked for in over the desktop. */
-window.spiral-prompt-window,
-window.spiral-prompt-window dialog {
-  border-radius: 28px;
-}
 .spiral-prompt {
   padding: 24px;
   min-width: 332px;
-}
-.spiral-prompt button {
-  min-height: 36px;
-  border-radius: 99px;
 }
 spiral-desktop .spiral-desktop-band {
   background-color: alpha(var(--accent-bg-color), 0.2);
