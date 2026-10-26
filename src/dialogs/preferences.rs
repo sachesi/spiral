@@ -361,7 +361,57 @@ fn desktop_page(settings: &gio::Settings) -> adw::PreferencesPage {
         shown.add(&row);
     }
     page.add(&shown);
+
+    let map = crate::desktop::map::DisplayMap::get();
+    let names = map.names();
+    if names.len() > 1 {
+        page.add(&displays_group(settings, &map, &names));
+    }
     page
+}
+
+/// Which display new icons go to, and whether the others have icons too.
+fn displays_group(
+    settings: &gio::Settings,
+    map: &crate::desktop::map::DisplayMap,
+    names: &[(String, String)],
+) -> adw::PreferencesGroup {
+    let group = adw::PreferencesGroup::builder()
+        .title(gettext("Displays"))
+        .build();
+    let list = gtk::StringList::new(&names.iter().map(|(_, n)| n.as_str()).collect::<Vec<_>>());
+    let main = adw::ComboRow::builder()
+        .title(gettext("Main Display"))
+        .subtitle(gettext("Where new files and drives appear"))
+        .model(&list)
+        .build();
+    let main_key = map.main();
+    if let Some(at) = names
+        .iter()
+        .position(|(key, _)| Some(key) == main_key.as_ref())
+    {
+        main.set_selected(at as u32);
+    }
+    let keys: Vec<String> = names.iter().map(|(key, _)| key.clone()).collect();
+    main.connect_selected_notify(glib::clone!(
+        #[strong]
+        settings,
+        move |row| {
+            if let Some(key) = keys.get(row.selected() as usize) {
+                let _ = settings.set_string("desktop-main-display", key);
+            }
+        }
+    ));
+    group.add(&main);
+    let every = adw::SwitchRow::builder()
+        .title(gettext("Icons on Every Display"))
+        .subtitle(gettext("Off, all of them are on the main display"))
+        .build();
+    settings
+        .bind("desktop-every-display", &every, "active")
+        .build();
+    group.add(&every);
+    group
 }
 
 /// A number setting on a slider over its range, set in steps of `step`, with a mark at each

@@ -11,9 +11,8 @@ menus and the keys all work as they do in a Spiral window.
 The session starts `spiral-desktop` and keeps it running; it opens no window of its own
 and exits only when the session ends. Only one runs at a time: a second start leaves the
 first in place. It needs a Wayland compositor with `wlr-layer-shell`, on which it takes
-the bottom layer of the display the compositor gives it, under the windows and inside
-the room panels and docks keep for themselves. When that display goes away it comes back
-on the one the compositor picks next.
+the bottom layer of each display, under the windows and inside the room panels and docks
+keep for themselves.
 
 ## Using it
 
@@ -23,7 +22,7 @@ window moves or copies them into the desktop folder, as dropping onto a folder d
 drag over the empty desktop selects the icons it touches. Ctrl or Shift and a click add an
 icon to the selection or take it out; the icons stand where they were put, in no order a
 range could follow. Home, the trash and the drives are selected, dragged and opened with
-the files, and Select All takes them too; they only ever move within the desktop. A right
+the files, and Select All takes them too; they move only between desktops. A right
 click on something selected keeps the selection: with files in it the menu is theirs,
 and its Open opens the places as well; a place alone has its own menu. The arrow keys move
 between icons by where they stand on the screen, Shift with them adds to the selection,
@@ -74,16 +73,40 @@ above the windows, in their layout while over the desktop; dropped there, the ic
 from where the drag showed them into their cells. Carried over a window the images gather
 into a pile under the pointer, as in the grid, with how many files there are on it, and
 spread out again on the way back. The places, which go nowhere else, leave the drag and the
-selection there. Files moved into a window leave the desktop once they have gone. With
+selection there, unless another display has a desktop they may be going to. Files moved into a window leave the desktop once they have gone. With
 reduced motion the images and icons are put where they go at once.
 
 Where the icons were left is kept in `$XDG_STATE_HOME/spiral/desktop-positions`
 (`~/.local/state/spiral/desktop-positions`), in cells from the corner they start at, so
-they keep their cells as the icons change size, for each size of display on its own. Panels and docks coming and going over a display, as they do
+they keep their cells as the icons change size, for each display and each of its sizes on
+its own. The layout kept before each display had its own belongs to the main display.
+Panels and docks coming and going over a display, as they do
 while a session starts, move the icons with the desktop but leave their layout as it was. A
 display of a size not seen before starts from the layout of the nearest size kept, scaled to
 fit.
 Removing the file puts every icon back in order.
+
+## Several displays
+
+Each display has a desktop of its own, and each file of the desktop folder is on one of
+them. A new file goes to the main display, chosen with `desktop-main-display` (Main
+Display in Preferences, shown while more than one display is connected); until one is
+chosen, the main display is the one at the top left of the layout. When the main display
+has no free cell left, a new file goes to the next display with room, from left to right,
+then top to bottom. Home, the trash and the drives start on the main display too. Icons
+dragged from one display's desktop to another's, files and places alike, move there, to
+where they were dropped, one under the other.
+
+A display is known again by its make and model, so its icons follow it into another port;
+two of the same model are told apart by their ports. While a display is unplugged, its
+icons are shown on the main display, in free cells, and go back to their own display and
+places once it is plugged in again. One moved on the main display meanwhile stays where
+it was put. With `desktop-every-display` off (Icons on Every Display), only the main
+display has a desktop, and the icons of the others are shown there in the same way.
+
+Which display each icon is on, and the displays seen so far, are kept in
+`$XDG_STATE_HOME/spiral/desktop-displays`. Selecting, the keyboard, Select All and Sort
+Now act on the desktop of one display; the settings are the same for all of them.
 
 ## Menu entries of other programs
 
