@@ -354,6 +354,29 @@ impl IconCanvas {
             .css_classes(["spiral-desktop-tile"])
             .accessible_role(gtk::AccessibleRole::GridCell)
             .build();
+        // Screen readers read a tile by its name; what its captions say, the size or the
+        // room left on a drive, goes with it as its description.
+        if let Some(captions) = cell
+            .last_child()
+            .and_then(|labels| labels.last_child())
+            .and_downcast::<gtk::Label>()
+        {
+            let describe = glib::clone!(
+                #[weak]
+                frame,
+                move |captions: &gtk::Label| {
+                    let text = if captions.is_visible() {
+                        captions.label()
+                    } else {
+                        "".into()
+                    };
+                    frame.update_property(&[gtk::accessible::Property::Description(&text)]);
+                }
+            );
+            describe(&captions);
+            captions.connect_label_notify(describe.clone());
+            captions.connect_visible_notify(describe);
+        }
         frame.append(cell);
         frame.insert_before(self, self.imp().band.borrow().as_ref());
         frame
