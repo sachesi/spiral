@@ -469,55 +469,10 @@ window.spiral-desktop-window stack:drop(active) {
   padding: 1px 7px;
   font-weight: bold;
 }
-/* The desktop's menus, prompts and tooltips as the shell has its own, where the compositor
-   draws glass behind a shell's surfaces: the colours are its stylesheet's, plain cards in
-   the style there is, and glass while its glass setting is on. */
-popover.spiral-shell-menu > contents {
-  margin: 16px 12px 8px;
-  padding: 0;
-  background: none;
-  border: none;
-  border-radius: 36px;
-  box-shadow: 0 2px 6px alpha(black, 0.25);
-}
-popover.spiral-shell-menu.menu > contents > scrolledwindow > viewport > stack > box {
-  padding: 0;
-}
-.spiral-shell-card {
-  padding: 12px;
-  border-radius: 36px;
-  background-color: var(--card-background);
-  color: var(--card-foreground);
-  box-shadow: inset 0 0 0 1px var(--card-rim);
-}
-.spiral-shell-card modelbutton {
-  padding: 6px 12px;
-  border-radius: 99px;
-}
-/* A menu selects its first item as it takes the keyboard, which shows only once the
-   keyboard is in use. */
-.spiral-shell-card modelbutton:selected {
-  background-color: transparent;
-}
-.spiral-shell-card modelbutton:hover,
-.spiral-shell-card modelbutton:selected:focus-visible {
-  background-color: var(--control-fill);
-}
-.spiral-shell-card separator {
-  margin: 4px 6px;
-  background-color: alpha(currentColor, 0.12);
-}
-tooltip.spiral-shell-tooltip {
-  border: none;
-  border-radius: 99px;
-  box-shadow: inset 0 0 0 1px alpha(white, 0.1);
-}
+/* The window a name is asked for in over the desktop. */
 window.spiral-prompt-window,
 window.spiral-prompt-window dialog {
   border-radius: 28px;
-}
-window.spiral-prompt-window.glass dialog {
-  background: none;
 }
 .spiral-prompt {
   padding: 24px;

@@ -5,7 +5,6 @@
 //! it in and the view of the icons. Putting the view on a surface under the windows is left
 //! to them.
 
-pub(crate) mod glass;
 pub(crate) mod placement;
 pub(crate) mod positions;
 pub(crate) mod specials;
@@ -15,6 +14,13 @@ use crate::application::SpiralApplication;
 use crate::browser_view::BrowserView;
 use crate::gtk::prelude::*;
 use crate::{gio, gtk};
+
+/// Whether `widget` is on the desktop, rather than in a window of the file manager.
+pub(crate) fn on_desktop(widget: &impl IsA<gtk::Widget>) -> bool {
+    widget
+        .root()
+        .is_some_and(|root| root.has_css_class("spiral-desktop-window"))
+}
 
 /// The application a desktop runs in, `io.github.sachesi.spiral.Desktop`. Only one runs
 /// at a time, it opens no window when activated, and file operations started from the

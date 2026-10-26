@@ -60,9 +60,9 @@ The same packages are attached to each [release](https://github.com/sachesi/spir
     just setup-portal        # file dialogs of other apps use Spiral
 
 Build needs Rust 1.92, `blueprint-compiler`, `just` and the development packages for GTK,
-libadwaita, GtkSourceView 5, libseccomp, GStreamer, gtk4-layer-shell and libwayland-client;
-running needs the GStreamer base plugins and the GTK 4 sink (`gstreamer1-plugin-gtk4` on
-Fedora) for the media preview. Details, other prefixes and removal are in [docs/installing.md](docs/installing.md).
+libadwaita, GtkSourceView 5, libseccomp, GStreamer and gtk4-layer-shell; running needs the
+GStreamer base plugins and the GTK 4 sink (`gstreamer1-plugin-gtk4` on Fedora) for the media
+preview. Details, other prefixes and removal are in [docs/installing.md](docs/installing.md).
 
 After an update, quit the old processes:
 `pkill -x spiral; pkill -x spiral-desktop; pkill -f xdg-desktop-portal-spiral`. The session

@@ -78,11 +78,7 @@ impl BrowserView {
             .justify(gtk::Justification::Center)
             .css_classes(["spiral-grid-name"])
             .build();
-        if desktop {
-            crate::desktop::glass::name_tooltip(&label);
-        } else {
-            name_tooltip(&label);
-        }
+        name_tooltip(&label);
         self.size_name(&label, desktop);
         let captions = gtk::Label::builder()
             .wrap(true)

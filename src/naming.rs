@@ -220,9 +220,6 @@ pub async fn rename_popover(
         .pointing_to(anchor)
         .build();
     popover.set_parent(parent);
-    if crate::desktop::glass::on_desktop(parent) {
-        crate::desktop::glass::dress_menu(&popover);
-    }
     bind_validation(
         &entry,
         &feedback,
@@ -355,9 +352,8 @@ pub async fn new_file_dialog(
     .await
 }
 
-/// Ask for a name for something about to be made in `dir`, and check it as it is typed.
-/// The card a name is asked for on over the desktop, as the shell asks for things: `title`
-/// over `entry` and `feedback`, with `create` beside a button that closes `dialog`.
+/// The card a name is asked for on over the desktop, in a window of its own: `title` over
+/// `entry` and `feedback`, with `create` beside a button that closes `dialog`.
 fn prompt(
     dialog: &adw::Dialog,
     title: &str,
@@ -411,6 +407,7 @@ fn prompt(
     card
 }
 
+/// Ask for a name for something about to be made in `dir`, and check it as it is typed.
 async fn name_dialog(
     parent: &impl IsA<gtk::Widget>,
     dir: &gio::File,
@@ -442,9 +439,15 @@ async fn name_dialog(
         .title(title)
         .focus_widget(&entry)
         .build();
-    if crate::desktop::glass::on_desktop(parent) {
+    if crate::desktop::on_desktop(parent) {
         dialog.set_child(Some(&prompt(&dialog, title, &entry, &revealer, &create)));
-        crate::desktop::glass::dress_prompt(&dialog);
+        // The desktop's own window is none of libadwaita's, so the dialog gets a window of
+        // its own, rounded like the card.
+        dialog.connect_map(|dialog| {
+            if let Some(window) = dialog.parent().filter(|parent| parent.is::<gtk::Window>()) {
+                window.add_css_class("spiral-prompt-window");
+            }
+        });
     } else {
         create.set_margin_top(6);
         create.set_halign(gtk::Align::Center);
