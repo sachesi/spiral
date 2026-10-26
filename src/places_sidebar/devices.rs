@@ -39,6 +39,78 @@ pub(super) async fn wait_finished(job: &crate::ops::Job) {
     job.disconnect(id);
 }
 
+/// Calls back once the drives, volumes and mounts have settled. A disk plugged in is told
+/// of as its drive, then each volume on it, then their mounts, with changes between, each a
+/// signal of its own; laying the places out again for every one of them makes them flash.
+pub(crate) struct DeviceWatch {
+    monitor: gio::VolumeMonitor,
+    handlers: Vec<glib::SignalHandlerId>,
+    pending: std::rc::Rc<Cell<Option<glib::SourceId>>>,
+}
+
+impl DeviceWatch {
+    const SETTLE: std::time::Duration = std::time::Duration::from_millis(150);
+
+    pub(crate) fn new(changed: impl Fn() + 'static) -> Self {
+        let monitor = gio::VolumeMonitor::get();
+        let pending = std::rc::Rc::new(Cell::new(None::<glib::SourceId>));
+        let changed = std::rc::Rc::new(changed);
+        let settle = glib::clone!(
+            #[strong]
+            pending,
+            move || {
+                if let Some(id) = pending.take() {
+                    id.remove();
+                }
+                let fired = pending.clone();
+                let changed = changed.clone();
+                pending.set(Some(glib::timeout_add_local_once(
+                    Self::SETTLE,
+                    move || {
+                        fired.take();
+                        changed();
+                    },
+                )));
+            }
+        );
+        macro_rules! on {
+            ($connect:ident) => {
+                monitor.$connect(glib::clone!(
+                    #[strong]
+                    settle,
+                    move |_, _| settle()
+                ))
+            };
+        }
+        let handlers = vec![
+            on!(connect_mount_added),
+            on!(connect_mount_removed),
+            on!(connect_mount_changed),
+            on!(connect_volume_added),
+            on!(connect_volume_removed),
+            on!(connect_volume_changed),
+            on!(connect_drive_connected),
+            on!(connect_drive_disconnected),
+        ];
+        Self {
+            monitor,
+            handlers,
+            pending,
+        }
+    }
+}
+
+impl Drop for DeviceWatch {
+    fn drop(&mut self) {
+        for id in self.handlers.drain(..) {
+            self.monitor.disconnect(id);
+        }
+        if let Some(id) = self.pending.take() {
+            id.remove();
+        }
+    }
+}
+
 /// The mount `file` is the root of: a device, not a folder that merely lives on one.
 pub(crate) fn mount_of(file: &gio::File) -> Option<gio::Mount> {
     gio::VolumeMonitor::get()
