@@ -112,6 +112,41 @@ impl Drop for DeviceWatch {
     }
 }
 
+/// Whether the user can take `mount` out, and so whether it gets a button for it. A disk
+/// udisks mounted for the user, a share and a FUSE filesystem of the user's own are theirs
+/// to unmount. One the system mounted is not, unless fstab lets users unmount it: asking
+/// ends in "must be superuser", or in a password prompt for the administrator.
+pub(crate) fn may_unmount(mount: &gio::Mount, mounts: &MountTable) -> bool {
+    if !(mount.can_unmount() || mount.can_eject()) {
+        return false;
+    }
+    let root = mount.root();
+    if !root.is_native() {
+        return true;
+    }
+    let Some(path) = root.path() else {
+        return true;
+    };
+    if path.starts_with("/run/media") || path.starts_with("/media") {
+        return true;
+    }
+    let Some(kernel) = mounts.at(&path) else {
+        return true;
+    };
+    let uid = unsafe { libc::getuid() };
+    if kernel.fstype.starts_with("fuse")
+        && kernel
+            .options
+            .split(',')
+            .any(|o| o == format!("user_id={uid}"))
+    {
+        return true;
+    }
+    gio_unix::MountPoint::at(&path)
+        .0
+        .is_some_and(|point| point.is_user_mountable())
+}
+
 /// The mount `file` is the root of: a device, not a folder that merely lives on one.
 pub(crate) fn mount_of(file: &gio::File) -> Option<gio::Mount> {
     gio::VolumeMonitor::get()
@@ -149,7 +184,7 @@ impl PlacesSidebar {
         if let Some(mount) = volume.get_mount() {
             ROW_FILE.set(&row, mount.default_location());
             add_drop_target(&row, &mount.default_location());
-            if mount.can_unmount() || mount.can_eject() {
+            if may_unmount(&mount, mounts) {
                 content.append(&self.eject_button(&row, EjectTarget::Mount(mount), mounts));
             }
         } else {
@@ -177,7 +212,7 @@ impl PlacesSidebar {
         }
         ROW_FILE.set(&row, mount.default_location());
         add_drop_target(&row, &mount.default_location());
-        if mount.can_unmount() || mount.can_eject() {
+        if may_unmount(mount, mounts) {
             content.append(&self.eject_button(&row, EjectTarget::Mount(mount.clone()), mounts));
         }
         row
