@@ -28,6 +28,7 @@ pub(crate) use cells::*;
 use columns::unbind_grid_cell;
 pub(crate) use dnd::*;
 use navigation::*;
+pub(crate) use opening::Program;
 use opening::*;
 
 static COUNT_ABORT: Key<futures_util::future::AbortHandle> = Key::new("count-abort");

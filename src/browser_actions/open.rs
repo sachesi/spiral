@@ -176,7 +176,6 @@ impl BrowserView {
         }
     }
 
-    /// Scripts run in the terminal so their output can be seen; binaries start directly.
     /// Runs the entry of another program at `path` with the selection.
     pub(super) fn run_drop_in(&self, path: &str) {
         let Some(app) = gio_unix::DesktopAppInfo::from_filename(path) else {
@@ -191,26 +190,8 @@ impl BrowserView {
     pub(super) fn run_selected(&self) {
         let infos = self.model().selected_infos();
         let [info] = infos.as_slice() else { return };
-        let file = file_utils::file_of(info);
-        let Some(path) = file.path() else { return };
-        let is_script = file_utils::content_type_of(info)
-            .is_some_and(|ct| gio::content_type_is_a(&ct, "text/plain"));
-        let result = if is_script {
-            let dir = path
-                .parent()
-                .map(std::path::Path::to_path_buf)
-                .unwrap_or_default();
-            crate::terminal::run(&dir, &path)
-        } else {
-            gio::AppInfo::create_from_commandline(
-                glib::shell_quote(&path).to_string_lossy().as_ref(),
-                None,
-                gio::AppInfoCreateFlags::NONE,
-            )
-            .and_then(|app| app.launch(&[], Some(&self.display().app_launch_context())))
-        };
-        if let Err(e) = result {
-            self.show_error(&gettext("Could Not Open"), e.message());
+        if let Some(program) = crate::browser_view::Program::of(info) {
+            self.run_program(&program);
         }
     }
 

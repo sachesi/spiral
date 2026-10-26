@@ -169,7 +169,12 @@ pub fn chosen() -> Option<&'static Terminal> {
 /// because the `gio` bindings do not carry `GDesktopAppInfo`, which is where GIO keeps it.
 /// The first entry found is the one GIO launches: a user's own copy hides the system's.
 fn wants_terminal(app: &gio::AppInfo) -> bool {
-    let Some(id) = app.id() else { return false };
+    let Some(id) = app.id() else {
+        // An entry read from a file of its own, outside the applications folders.
+        return app
+            .downcast_ref::<gio_unix::DesktopAppInfo>()
+            .is_some_and(|entry| entry.boolean("Terminal"));
+    };
     let mut dirs = vec![glib::user_data_dir()];
     dirs.extend(glib::system_data_dirs());
     dirs.into_iter()

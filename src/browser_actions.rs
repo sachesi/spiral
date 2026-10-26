@@ -77,7 +77,7 @@ impl BrowserView {
                     v.emit_by_name::<()>("file-activated", &[&file]);
                     break;
                 } else {
-                    v.launch(&file);
+                    v.open_file(&info);
                 }
             }
         });

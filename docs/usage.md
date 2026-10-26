@@ -277,7 +277,13 @@ offers "Restore From Trash" and "Delete From Trash". Everything else about opera
 conflicts and undo is in [file-operations.md](file-operations.md).
 
 Executable files get "Run as a Program": scripts run in the terminal so their output can
-be read, binaries start on their own. In Favorites, "Open Item Location" jumps to the
+be read, binaries start on their own, and a desktop entry starts the application it names.
+Opening an AppImage, a program or a desktop entry of type Application on this machine starts
+it, unless an application has been chosen for AppImages, as AppImageLauncher does; scripts
+and Windows programs open in what opens their type. One that is not marked executable, as
+nothing downloaded or sent is, asks first, with the command a desktop entry runs, and
+"Mark as Executable and Run" marks it for every class that can read it. Nothing on a share
+or a server starts this way. In Favorites, "Open Item Location" jumps to the
 folder holding the item and selects it there.
 
 ## Touch

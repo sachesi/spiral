@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spiral 0.19.1\n"
 "Report-Msgid-Bugs-To: https://github.com/sachesi/spiral/issues\n"
-"POT-Creation-Date: 2026-10-20 14:38+0300\n"
+"POT-Creation-Date: 2026-10-26 10:49+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1131,9 +1131,9 @@ msgstr ""
 msgid "Open in _Terminal"
 msgstr ""
 
-#: src/browser_actions/open.rs:187 src/browser_actions/open.rs:213
-#: src/browser_view/canvas.rs:2002 src/browser_view/opening.rs:97
-#: src/browser_view/opening.rs:104 src/dialogs/open_with.rs:213
+#: src/browser_actions/open.rs:186 src/browser_view/canvas.rs:2002
+#: src/browser_view/opening.rs:173 src/browser_view/opening.rs:227
+#: src/browser_view/opening.rs:234 src/dialogs/open_with.rs:213
 #, no-c-format
 msgid "Could Not Open"
 msgstr ""
@@ -1197,12 +1197,13 @@ msgstr[1] ""
 msgid "Permanently deleted items cannot be restored."
 msgstr ""
 
-#: src/browser_actions/transfer.rs:261 src/dialogs/batch_rename.rs:110
-#: src/dialogs/compress.rs:70 src/dialogs/connect_server.rs:66
-#: src/dialogs/open_with.rs:62 src/dialogs/properties/permissions.rs:285
-#: src/dialogs/select_pattern.rs:44 src/dialogs/tags.rs:39 src/naming.rs:395
-#: src/ops/archive.rs:412 src/ops/conflict.rs:64 src/ops/conflict.rs:315
-#: src/ops/mod.rs:30 src/ops/walk.rs:431 src/places_sidebar/devices.rs:236
+#: src/browser_actions/transfer.rs:261 src/browser_view/opening.rs:144
+#: src/dialogs/batch_rename.rs:110 src/dialogs/compress.rs:70
+#: src/dialogs/connect_server.rs:66 src/dialogs/open_with.rs:62
+#: src/dialogs/properties/permissions.rs:285 src/dialogs/select_pattern.rs:44
+#: src/dialogs/tags.rs:39 src/naming.rs:391 src/ops/archive.rs:412
+#: src/ops/conflict.rs:64 src/ops/conflict.rs:315 src/ops/mod.rs:30
+#: src/ops/walk.rs:431 src/places_sidebar/devices.rs:236
 #: src/places_sidebar/menu.rs:252 src/portal/chooser_window.rs:1212
 #: ui/browser_view.ui:188
 #, no-c-format
@@ -1229,37 +1230,37 @@ msgstr ""
 msgid "Archive"
 msgstr ""
 
-#: src/browser_view.rs:1274
+#: src/browser_view.rs:1275
 #, no-c-format
 msgid "Connecting to %s…"
 msgstr ""
 
-#: src/browser_view.rs:1279
+#: src/browser_view.rs:1280
 #, no-c-format
 msgid "Could Not Connect"
 msgstr ""
 
-#: src/browser_view.rs:1282
+#: src/browser_view.rs:1283
 #, no-c-format
 msgid "Reloading the folder tries again."
 msgstr ""
 
-#: src/browser_view.rs:1287 ui/browser_view.ui:124
+#: src/browser_view.rs:1288 ui/browser_view.ui:124
 #, no-c-format
 msgid "Could Not Open Folder"
 msgstr ""
 
-#: src/browser_view.rs:1306
+#: src/browser_view.rs:1307
 #, no-c-format
 msgid "No Results Found"
 msgstr ""
 
-#: src/browser_view.rs:1310
+#: src/browser_view.rs:1311
 #, no-c-format
 msgid "No Servers Found"
 msgstr ""
 
-#: src/browser_view.rs:1314 ui/browser_view.ui:107
+#: src/browser_view.rs:1315 ui/browser_view.ui:107
 #, no-c-format
 msgid "Folder is Empty"
 msgstr ""
@@ -1381,35 +1382,62 @@ msgstr ""
 msgid "Add to Starred"
 msgstr ""
 
-#: src/browser_view/columns.rs:272 src/dialogs/preferences.rs:277
+#: src/browser_view/columns.rs:268 src/dialogs/preferences.rs:277
 #: src/dialogs/tags.rs:21
 #, no-c-format
 msgid "Name"
 msgstr ""
 
-#: src/browser_view/columns.rs:369 src/details_panel.rs:215
+#: src/browser_view/columns.rs:365 src/details_panel.rs:215
 #: src/dialogs/properties/general.rs:242 src/dialogs/properties/general.rs:304
 #, no-c-format
 msgid "Location"
 msgstr ""
 
-#: src/browser_view/columns.rs:379 src/details_panel.rs:224
+#: src/browser_view/columns.rs:375 src/details_panel.rs:224
 #: src/dialogs/properties/general.rs:282
 #, no-c-format
 msgid "Trashed On"
 msgstr ""
 
-#: src/browser_view/columns.rs:386
+#: src/browser_view/columns.rs:382
 #, no-c-format
 msgid "Original Location"
 msgstr ""
 
-#: src/browser_view/opening.rs:169
+#: src/browser_view/opening.rs:114
+#, no-c-format
+msgid "Could Not Mark as Executable"
+msgstr ""
+
+#: src/browser_view/opening.rs:129
+#, no-c-format
+msgid ""
+"It is not marked as executable, as files that were downloaded or sent are "
+"not. Only run programs from sources you trust."
+msgstr ""
+
+#: src/browser_view/opening.rs:135
+#, no-c-format
+msgid "It runs: %s"
+msgstr ""
+
+#: src/browser_view/opening.rs:138
+#, no-c-format
+msgid "Run “%s”?"
+msgstr ""
+
+#: src/browser_view/opening.rs:145
+#, no-c-format
+msgid "_Mark as Executable and Run"
+msgstr ""
+
+#: src/browser_view/opening.rs:299
 #, no-c-format
 msgid "The password dialog was dismissed."
 msgstr ""
 
-#: src/browser_view/opening.rs:185 src/dialogs/open_with.rs:216
+#: src/browser_view/opening.rs:315 src/dialogs/open_with.rs:216
 #: src/dialogs/properties.rs:170 src/dialogs/properties/permissions.rs:92
 #: src/ops/walk.rs:54 src/places_sidebar/devices.rs:265
 #: src/portal/chooser_window.rs:1255
@@ -1417,14 +1445,14 @@ msgstr ""
 msgid "_OK"
 msgstr ""
 
-#: src/browser_view/opening.rs:202
+#: src/browser_view/opening.rs:332
 #, no-c-format
 msgid ""
 "Machines that announce themselves on the network appear here. Others are "
 "reached with “Connect to Server…”."
 msgstr ""
 
-#: src/browser_view/opening.rs:211
+#: src/browser_view/opening.rs:341
 #, no-c-format
 msgid ""
 "One server was found but left out: no gvfs backend for %s addresses is "
@@ -1435,7 +1463,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/browser_view/opening.rs:231
+#: src/browser_view/opening.rs:361
 #, no-c-format
 msgid "No gvfs backend for %s addresses is installed."
 msgstr ""
@@ -1477,20 +1505,20 @@ msgstr[1] ""
 msgid "%f, %n"
 msgstr ""
 
-#: src/desktop/specials.rs:51 src/file_utils.rs:542 src/path_bar.rs:384
+#: src/desktop/specials.rs:51 src/file_utils.rs:573 src/path_bar.rs:384
 #: src/places_sidebar.rs:442
 #, no-c-format
 msgid "Home"
 msgstr ""
 
 #: src/desktop/specials.rs:60 src/dialogs/preferences.rs:328
-#: src/file_utils.rs:545 src/path_bar.rs:387 src/places_sidebar.rs:475
+#: src/file_utils.rs:576 src/path_bar.rs:387 src/places_sidebar.rs:475
 #, no-c-format
 msgid "Trash"
 msgstr ""
 
 #: src/details_panel.rs:183 src/dialogs/properties/general.rs:233
-#: src/file_utils.rs:379
+#: src/file_utils.rs:410
 #, no-c-format
 msgid "MIME Type"
 msgstr ""
@@ -1498,7 +1526,7 @@ msgstr ""
 #: src/details_panel.rs:188 src/details_panel.rs:207 src/details_panel.rs:425
 #: src/dialogs/preferences.rs:278 src/dialogs/preferences.rs:413
 #: src/dialogs/properties/disk.rs:119 src/dialogs/properties/general.rs:237
-#: src/file_utils.rs:361 src/file_utils.rs:376
+#: src/file_utils.rs:392 src/file_utils.rs:407
 #, no-c-format
 msgid "Size"
 msgstr ""
@@ -1515,41 +1543,41 @@ msgstr ""
 
 #: src/details_panel.rs:225 src/details_panel.rs:296
 #: src/dialogs/preferences.rs:280 src/dialogs/properties/general.rs:287
-#: src/file_utils.rs:363 ui/window.ui:425
+#: src/file_utils.rs:394 ui/window.ui:425
 #, no-c-format
 msgid "Modified"
 msgstr ""
 
 #: src/details_panel.rs:226 src/dialogs/properties/general.rs:291
-#: src/file_utils.rs:364
+#: src/file_utils.rs:395
 #, no-c-format
 msgid "Accessed"
 msgstr ""
 
 #: src/details_panel.rs:227 src/dialogs/properties/general.rs:295
-#: src/file_utils.rs:365
+#: src/file_utils.rs:396
 #, no-c-format
 msgid "Created"
 msgstr ""
 
 #: src/details_panel.rs:229 src/details_panel.rs:297
 #: src/dialogs/properties/permissions.rs:102
-#: src/dialogs/properties/permissions.rs:258 src/file_utils.rs:366
-#: src/file_utils.rs:381
+#: src/dialogs/properties/permissions.rs:258 src/file_utils.rs:397
+#: src/file_utils.rs:412
 #, no-c-format
 msgid "Owner"
 msgstr ""
 
 #: src/details_panel.rs:233 src/details_panel.rs:298
 #: src/dialogs/properties/permissions.rs:103
-#: src/dialogs/properties/permissions.rs:258 src/file_utils.rs:367
-#: src/file_utils.rs:382
+#: src/dialogs/properties/permissions.rs:258 src/file_utils.rs:398
+#: src/file_utils.rs:413
 #, no-c-format
 msgid "Group"
 msgstr ""
 
 #: src/details_panel.rs:237 src/details_panel.rs:299
-#: src/dialogs/properties.rs:146 src/file_utils.rs:368 src/file_utils.rs:380
+#: src/dialogs/properties.rs:146 src/file_utils.rs:399 src/file_utils.rs:411
 #, no-c-format
 msgid "Permissions"
 msgstr ""
@@ -1773,7 +1801,7 @@ msgstr ""
 msgid "Show Sidebar"
 msgstr ""
 
-#: src/dialogs/folder_chooser.rs:70 src/naming.rs:290
+#: src/dialogs/folder_chooser.rs:70 src/naming.rs:287
 #: src/portal/chooser_window.rs:356 ui/shortcuts_dialog.ui:271
 #, no-c-format
 msgid "New Folder"
@@ -1875,7 +1903,7 @@ msgstr ""
 msgid "Off, Ctrl copies and dragging inside Spiral moves without asking"
 msgstr ""
 
-#: src/dialogs/preferences.rs:62 src/file_utils.rs:548
+#: src/dialogs/preferences.rs:62 src/file_utils.rs:579
 #: src/places_sidebar.rs:542 src/places_sidebar/rows.rs:190
 #, no-c-format
 msgid "Network"
@@ -1954,7 +1982,7 @@ msgstr ""
 msgid "The top of the filesystem, above the bookmarks"
 msgstr ""
 
-#: src/dialogs/preferences.rs:139 src/file_utils.rs:551 src/path_bar.rs:390
+#: src/dialogs/preferences.rs:139 src/file_utils.rs:582 src/path_bar.rs:390
 #: src/places_sidebar.rs:468
 #, no-c-format
 msgid "Favorites"
@@ -1965,7 +1993,7 @@ msgstr ""
 msgid "The starred files and folders"
 msgstr ""
 
-#: src/dialogs/preferences.rs:149 src/file_utils.rs:554
+#: src/dialogs/preferences.rs:149 src/file_utils.rs:585
 #: src/places_sidebar/rows.rs:191
 #, no-c-format
 msgid "Tags"
@@ -2119,7 +2147,7 @@ msgstr ""
 
 #: src/dialogs/preferences.rs:279 src/dialogs/preferences.rs:414
 #: src/dialogs/properties/disk.rs:117 src/dialogs/properties/general.rs:229
-#: src/file_utils.rs:362 src/file_utils.rs:378 ui/window.ui:404
+#: src/file_utils.rs:393 src/file_utils.rs:409 ui/window.ui:404
 #, no-c-format
 msgid "Type"
 msgstr ""
@@ -2444,7 +2472,7 @@ msgstr ""
 #: src/dialogs/properties/permissions.rs:46
 #: src/dialogs/properties/permissions.rs:53
 #: src/dialogs/properties/permissions.rs:247
-#: src/dialogs/properties/permissions.rs:253 src/file_utils.rs:375
+#: src/dialogs/properties/permissions.rs:253 src/file_utils.rs:406
 #: src/tags.rs:39
 #, no-c-format
 msgid "None"
@@ -2628,82 +2656,82 @@ msgstr ""
 msgid "List View"
 msgstr ""
 
-#: src/file_utils.rs:297 src/file_utils.rs:309
+#: src/file_utils.rs:328 src/file_utils.rs:340
 #, no-c-format
 msgid "Folder"
 msgstr ""
 
-#: src/file_utils.rs:377
+#: src/file_utils.rs:408
 #, no-c-format
 msgid "Date Modified"
 msgstr ""
 
-#: src/file_utils.rs:406
+#: src/file_utils.rs:437
 #, no-c-format
 msgid "Today, %s"
 msgstr ""
 
-#: src/file_utils.rs:407
+#: src/file_utils.rs:438
 #, no-c-format
 msgid "Yesterday, %s"
 msgstr ""
 
-#: src/file_utils.rs:408
+#: src/file_utils.rs:439
 #, no-c-format
 msgid "%d day ago"
 msgid_plural "%d days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:409
+#: src/file_utils.rs:440
 #, no-c-format
 msgid "Last week"
 msgstr ""
 
-#: src/file_utils.rs:411
+#: src/file_utils.rs:442
 #, no-c-format
 msgid "%d week ago"
 msgid_plural "%d weeks ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:413
+#: src/file_utils.rs:444
 #, no-c-format
 msgid "Last month"
 msgstr ""
 
-#: src/file_utils.rs:416
+#: src/file_utils.rs:447
 #, no-c-format
 msgid "%d month ago"
 msgid_plural "%d months ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:418
+#: src/file_utils.rs:449
 #, no-c-format
 msgid "Last year"
 msgstr ""
 
-#: src/file_utils.rs:421
+#: src/file_utils.rs:452
 #, no-c-format
 msgid "%d year ago"
 msgid_plural "%d years ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:490
+#: src/file_utils.rs:521
 #, no-c-format
 msgid "Empty"
 msgstr ""
 
-#: src/file_utils.rs:491
+#: src/file_utils.rs:522
 #, no-c-format
 msgid "%d item"
 msgid_plural "%d items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/file_utils.rs:562 src/path_bar.rs:400
+#: src/file_utils.rs:593 src/path_bar.rs:400
 #, no-c-format
 msgid "System"
 msgstr ""
@@ -2925,22 +2953,22 @@ msgstr ""
 msgid "New Filename"
 msgstr ""
 
-#: src/naming.rs:291
+#: src/naming.rs:288
 #, no-c-format
 msgid "_Folder Name"
 msgstr ""
 
-#: src/naming.rs:350
+#: src/naming.rs:347
 #, no-c-format
 msgid "New Document"
 msgstr ""
 
-#: src/naming.rs:351
+#: src/naming.rs:348
 #, no-c-format
 msgid "_File Name"
 msgstr ""
 
-#: src/naming.rs:437
+#: src/naming.rs:434
 #, no-c-format
 msgid "_Create"
 msgstr ""
@@ -3833,12 +3861,12 @@ msgstr ""
 msgid "Grey"
 msgstr ""
 
-#: src/terminal.rs:217
+#: src/terminal.rs:222
 #, no-c-format
 msgid "The command line of the application cannot be read"
 msgstr ""
 
-#: src/terminal.rs:262
+#: src/terminal.rs:267
 #, no-c-format
 msgid "No terminal emulator found"
 msgstr ""
