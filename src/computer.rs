@@ -16,6 +16,14 @@ use crate::{adw, gdk, gio, glib, gtk};
 
 pub const URI: &str = "computer:///";
 
+/// The width of a card, whatever the name on it: the least its name, tag and bar need,
+/// with the margins and the box's padding around them.
+const CARD_WIDTH: i32 = 304;
+/// Between cards.
+const SPACING: i32 = 12;
+/// Between the page's edges and its cards.
+const MARGIN: i32 = 12;
+
 pub fn is_computer_location(file: &gio::File) -> bool {
     file.uri().starts_with("computer:")
 }
@@ -267,6 +275,12 @@ mod imp {
         pub layout: Cell<ViewMode>,
         /// The places being mounted or ejected, by id.
         pub busy: RefCell<std::collections::HashSet<String>>,
+        /// Whether the page is too narrow for two cards side by side, where a row of the
+        /// list puts the free space under the name.
+        pub narrow: Cell<bool>,
+        /// The captions of the list's rows when the free space is under the name, as wide
+        /// as each other for the bars after them to line up. Made anew with the tiles.
+        pub captions: RefCell<Option<gtk::SizeGroup>>,
     }
 
     #[glib::object_subclass]
@@ -280,6 +294,7 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
             let obj = self.obj();
+            obj.set_layout_manager(None::<gtk::LayoutManager>);
             self.layout.set(remembered_layout());
             obj.build();
             obj.setup_actions();
@@ -302,7 +317,34 @@ mod imp {
         }
     }
 
-    impl WidgetImpl for ComputerPage {}
+    impl WidgetImpl for ComputerPage {
+        fn request_mode(&self) -> gtk::SizeRequestMode {
+            child_request_mode(&*self.obj())
+        }
+
+        fn measure(&self, orientation: gtk::Orientation, for_size: i32) -> (i32, i32, i32, i32) {
+            measure_child(&*self.obj(), orientation, for_size)
+        }
+
+        fn size_allocate(&self, width: i32, height: i32, baseline: i32) {
+            if let Some(child) = self.obj().child() {
+                child.allocate(width, height, baseline, None);
+            }
+            let narrow = width < 2 * CARD_WIDTH + SPACING + 2 * MARGIN;
+            if self.narrow.replace(narrow) != narrow && self.layout.get() == ViewMode::List {
+                // The rows are made for the width, and are made again once this layout is
+                // done with.
+                let page = self.obj().downgrade();
+                glib::idle_add_local_once(move || {
+                    if let Some(page) = page.upgrade()
+                        && page.is_mapped()
+                    {
+                        page.refresh();
+                    }
+                });
+            }
+        }
+    }
     impl BinImpl for ComputerPage {}
 }
 
@@ -319,19 +361,52 @@ mod frame {
         type ParentType = adw::Bin;
     }
 
-    impl ObjectImpl for TileFrame {}
+    impl ObjectImpl for TileFrame {
+        fn constructed(&self) {
+            self.parent_constructed();
+            self.obj().set_layout_manager(None::<gtk::LayoutManager>);
+        }
+    }
 
     impl WidgetImpl for TileFrame {
+        fn request_mode(&self) -> gtk::SizeRequestMode {
+            child_request_mode(&*self.obj())
+        }
+
         fn measure(&self, orientation: gtk::Orientation, for_size: i32) -> (i32, i32, i32, i32) {
-            let (min, nat, min_baseline, nat_baseline) = self.parent_measure(orientation, for_size);
+            let (min, nat, min_baseline, nat_baseline) =
+                measure_child(&*self.obj(), orientation, for_size);
             match orientation {
                 gtk::Orientation::Horizontal => (min, min, -1, -1),
                 _ => (min, nat, min_baseline, nat_baseline),
             }
         }
+
+        fn size_allocate(&self, width: i32, height: i32, baseline: i32) {
+            if let Some(child) = self.obj().child() {
+                child.allocate(width, height, baseline, None);
+            }
+        }
     }
 
     impl BinImpl for TileFrame {}
+}
+
+/// A bin sizes its child with a layout manager, and a widget with one never has its own
+/// measure or allocation called; the page and the tiles' frame and shelf drop it and size
+/// their child with these instead.
+fn child_request_mode(bin: &impl IsA<adw::Bin>) -> gtk::SizeRequestMode {
+    bin.child()
+        .map_or(gtk::SizeRequestMode::ConstantSize, |c| c.request_mode())
+}
+
+fn measure_child(
+    bin: &impl IsA<adw::Bin>,
+    orientation: gtk::Orientation,
+    for_size: i32,
+) -> (i32, i32, i32, i32) {
+    bin.child()
+        .map_or((0, 0, -1, -1), |c| c.measure(orientation, for_size))
 }
 
 glib::wrapper! {
@@ -342,6 +417,85 @@ glib::wrapper! {
     pub(crate) struct TileFrame(ObjectSubclass<frame::TileFrame>)
         @extends adw::Bin, gtk::Widget,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
+}
+
+mod shelf {
+    use super::*;
+
+    #[derive(Default)]
+    pub(crate) struct TileShelf;
+
+    #[glib::object_subclass]
+    impl ObjectSubclass for TileShelf {
+        const NAME: &'static str = "SpiralComputerTileShelf";
+        type Type = super::TileShelf;
+        type ParentType = adw::Bin;
+    }
+
+    impl ObjectImpl for TileShelf {
+        fn constructed(&self) {
+            self.parent_constructed();
+            self.obj().set_layout_manager(None::<gtk::LayoutManager>);
+        }
+    }
+
+    impl WidgetImpl for TileShelf {
+        fn request_mode(&self) -> gtk::SizeRequestMode {
+            child_request_mode(&*self.obj())
+        }
+
+        fn measure(&self, orientation: gtk::Orientation, for_size: i32) -> (i32, i32, i32, i32) {
+            let for_size = match orientation {
+                gtk::Orientation::Vertical => self.obj().width_for(for_size),
+                _ => for_size,
+            };
+            measure_child(&*self.obj(), orientation, for_size)
+        }
+
+        fn size_allocate(&self, width: i32, height: i32, baseline: i32) {
+            if let Some(child) = self.obj().child() {
+                child.allocate(self.obj().width_for(width), height, baseline, None);
+            }
+        }
+    }
+
+    impl BinImpl for TileShelf {}
+}
+
+glib::wrapper! {
+    /// The tiles of a group, as many whole cards to a line as there is room for, from the
+    /// start. The box alone would stretch them over the whole line, so cards would grow
+    /// and shrink with the window; a single card to a line still takes all of it.
+    pub(crate) struct TileShelf(ObjectSubclass<shelf::TileShelf>)
+        @extends adw::Bin, gtk::Widget,
+        @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
+}
+
+impl TileShelf {
+    fn new(tiles: &gtk::FlowBox) -> Self {
+        let shelf: Self = glib::Object::new();
+        shelf.set_child(Some(tiles));
+        shelf
+    }
+
+    /// How much of `width` the tiles take.
+    fn width_for(&self, width: i32) -> i32 {
+        let Some(tiles) = self.child().and_downcast::<gtk::FlowBox>() else {
+            return width;
+        };
+        let (card, ..) = tiles.measure(gtk::Orientation::Horizontal, -1);
+        if width < 0 || card <= 0 {
+            return width;
+        }
+        let spacing = tiles.column_spacing() as i32;
+        let cards =
+            ((width + spacing) / (card + spacing)).min(tiles.max_children_per_line() as i32);
+        if cards > 1 {
+            cards * card + (cards - 1) * spacing
+        } else {
+            width
+        }
+    }
 }
 
 glib::wrapper! {
@@ -420,13 +574,15 @@ impl ComputerPage {
         for group in [&computer, &removable, &network] {
             content.append(&group.root);
         }
+        // Room for four cards a line at most.
+        let widest = 4 * CARD_WIDTH + 3 * SPACING;
         let clamp = adw::Clamp::builder()
-            .maximum_size(1200)
-            .tightening_threshold(900)
+            .maximum_size(widest)
+            .tightening_threshold(widest)
             .margin_top(24)
             .margin_bottom(24)
-            .margin_start(12)
-            .margin_end(12)
+            .margin_start(MARGIN)
+            .margin_end(MARGIN)
             .child(&content)
             .build();
         self.set_child(Some(
@@ -520,8 +676,8 @@ impl ComputerPage {
             .homogeneous(true)
             .min_children_per_line(1)
             .max_children_per_line(4)
-            .row_spacing(12)
-            .column_spacing(12)
+            .row_spacing(SPACING as u32)
+            .column_spacing(SPACING as u32)
             .build();
         tiles.update_relation(&[gtk::accessible::Relation::LabelledBy(&[label.upcast_ref()])]);
         tiles.connect_child_activated(glib::clone!(
@@ -537,7 +693,7 @@ impl ComputerPage {
             move |tiles, _| page.cross_rows(tiles)
         ));
         root.append(&heading);
-        root.append(&tiles);
+        root.append(&TileShelf::new(&tiles));
         Group { root, tiles }
     }
 
@@ -680,7 +836,9 @@ impl ComputerPage {
             group
                 .tiles
                 .set_max_children_per_line(if list { 1 } else { 4 });
-            group.tiles.set_row_spacing(if list { 6 } else { 12 });
+            group
+                .tiles
+                .set_row_spacing(if list { 6 } else { SPACING as u32 });
         }
     }
 
@@ -787,6 +945,8 @@ impl ComputerPage {
         if !imp.has_hidden.get() {
             imp.shows_hidden.set(false);
         }
+        imp.captions
+            .replace(Some(gtk::SizeGroup::new(gtk::SizeGroupMode::Horizontal)));
         let mut refocus = None;
         let mut shown = std::collections::HashSet::new();
         for (group, place) in places {
@@ -856,6 +1016,7 @@ impl ComputerPage {
             ),
         };
         let list = self.layout() == ViewMode::List;
+        let narrow = list && self.imp().narrow.get();
         let image = gtk::Image::builder()
             .gicon(&icon)
             .pixel_size(if list { 32 } else { 48 })
@@ -890,7 +1051,7 @@ impl ComputerPage {
         }
         let bar = gtk::LevelBar::builder().visible(false).build();
         let caption = gtk::Label::builder()
-            .xalign(if list { 1.0 } else { 0.0 })
+            .xalign(if list && !narrow { 1.0 } else { 0.0 })
             .ellipsize(gtk::pango::EllipsizeMode::Middle)
             .css_classes(["caption", "dim-label", "numeric"])
             .build();
@@ -917,19 +1078,38 @@ impl ComputerPage {
         if list {
             content.set_margin_top(6);
             content.set_margin_bottom(6);
-            name_line.set_hexpand(true);
             caption.set_valign(gtk::Align::Center);
-            // The bars of all rows line up, whether or not a row has one to show.
+            // Side by side with the name, the bars of all rows line up, whether or not a row
+            // has one to show.
             let slot = gtk::Box::builder()
-                .width_request(140)
-                .hexpand(false)
+                .width_request(if narrow { 40 } else { 140 })
+                .hexpand(narrow)
                 .valign(gtk::Align::Center)
                 .build();
             bar.set_hexpand(true);
             slot.append(&bar);
-            content.append(&name_line);
-            content.append(&caption);
-            content.append(&slot);
+            if narrow {
+                if let Some(captions) = &*self.imp().captions.borrow() {
+                    captions.add_widget(&caption);
+                }
+                let usage_line = gtk::Box::builder().spacing(12).build();
+                usage_line.append(&caption);
+                usage_line.append(&slot);
+                let text = gtk::Box::builder()
+                    .orientation(gtk::Orientation::Vertical)
+                    .spacing(6)
+                    .hexpand(true)
+                    .valign(gtk::Align::Center)
+                    .build();
+                text.append(&name_line);
+                text.append(&usage_line);
+                content.append(&text);
+            } else {
+                name_line.set_hexpand(true);
+                content.append(&name_line);
+                content.append(&caption);
+                content.append(&slot);
+            }
         } else {
             content.set_margin_top(12);
             content.set_margin_bottom(12);
