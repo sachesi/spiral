@@ -1332,9 +1332,7 @@ impl ComputerPage {
 
     /// Eject a disk, or disconnect from a share, as its row in the sidebar does.
     fn leave(&self, place: &Place) {
-        let (Some(target), Some(sidebar)) =
-            (place.eject_target(&MountTable::read()), self.sidebar())
-        else {
+        let Some(target) = place.eject_target(&MountTable::read()) else {
             return;
         };
         let id = place.id();
@@ -1343,7 +1341,7 @@ impl ComputerPage {
             #[weak(rename_to = page)]
             self,
             async move {
-                sidebar.unmount(target).await;
+                crate::places_sidebar::unmount(page.upcast_ref(), target).await;
                 page.set_busy(&id, false);
             }
         ));

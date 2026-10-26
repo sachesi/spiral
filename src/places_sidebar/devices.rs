@@ -281,7 +281,7 @@ impl PlacesSidebar {
                     }
                     // The password or passphrase dialog was dismissed: nothing to report.
                     Err(e) if e.matches(gio::IOErrorEnum::FailedHandled) => {}
-                    Err(e) => sidebar.show_error(&gettext("Could Not Mount"), &e),
+                    Err(e) => show_error(sidebar.upcast_ref(), &gettext("Could Not Mount"), &e),
                 }
             }
         ));
@@ -301,100 +301,103 @@ impl PlacesSidebar {
         glib::spawn_future_local(glib::clone!(
             #[weak(rename_to = sidebar)]
             self,
-            async move { sidebar.unmount(target).await }
+            async move { unmount(sidebar.upcast_ref(), target).await }
         ));
     }
+}
 
-    /// Eject or unmount `target`, and return once it is out or could not be taken out.
-    pub(crate) async fn unmount(&self, target: EjectTarget) {
-        let op = self.mount_operation();
-        let flags = gio::MountUnmountFlags::NONE;
-        // A volume's own trash is lost once it is unplugged; offer to empty it first.
-        // Not for a share: gvfs trashes nothing onto one, so a trash folder there is
-        // the server's own, and emptying it would delete what someone trashed there.
-        if let EjectTarget::Mount(m) = &target
-            && !target.is_network(&MountTable::read())
-            && let Some(trash) = mount_trash(&m.root()).await
-            && !self.offer_empty_trash(trash).await
-        {
-            return;
-        }
-        // Removable media: warn while cached writes flush, then say when it is safe.
-        let (name, drive) = match &target {
-            EjectTarget::Mount(m) => (m.name(), m.drive()),
-            EjectTarget::Volume(v) => (v.name(), v.drive()),
-        };
-        let removable = drive.is_some_and(|d| d.is_removable() || d.is_media_removable());
-        let app = gio::Application::default();
-        if removable && let Some(app) = &app {
-            let n = gio::Notification::new(&gettext("Writing data to “%s”").replace("%s", &name));
-            n.set_body(Some(&gettext("Don’t unplug until finished")));
-            app.send_notification(Some("unmount"), &n);
-        }
-        let result = match target {
-            EjectTarget::Mount(m) if m.can_eject() => {
-                m.eject_with_operation_future(flags, Some(&op)).await
-            }
-            EjectTarget::Mount(m) => m.unmount_with_operation_future(flags, Some(&op)).await,
-            EjectTarget::Volume(v) => v.eject_with_operation_future(flags, Some(&op)).await,
-        };
-        if removable && let Some(app) = &app {
-            app.withdraw_notification("unmount");
-        }
-        match result {
-            Ok(()) if removable => {
-                if let Some(app) = &app {
-                    let n = gio::Notification::new(
-                        &gettext("You can now unplug “%s”").replace("%s", &name),
-                    );
-                    app.send_notification(Some("unmount-done"), &n);
-                }
-            }
-            Err(e) if !e.matches(gio::IOErrorEnum::FailedHandled) => {
-                self.show_error(&gettext("Could Not Eject"), &e);
-            }
-            _ => {}
-        }
+/// Eject or unmount `target`, asking and telling what goes wrong over `parent`, and return
+/// once it is out or could not be taken out. The sidebar, the Computer page and the desktop
+/// all take drives out this way.
+pub(crate) async fn unmount(parent: &gtk::Widget, target: EjectTarget) {
+    let window = parent.root().and_downcast::<gtk::Window>();
+    let op = gtk::MountOperation::new(window.as_ref());
+    let flags = gio::MountUnmountFlags::NONE;
+    // A volume's own trash is lost once it is unplugged; offer to empty it first.
+    // Not for a share: gvfs trashes nothing onto one, so a trash folder there is
+    // the server's own, and emptying it would delete what someone trashed there.
+    if let EjectTarget::Mount(m) = &target
+        && !target.is_network(&MountTable::read())
+        && let Some(trash) = mount_trash(&m.root()).await
+        && !offer_empty_trash(parent, trash).await
+    {
+        return;
     }
+    // Removable media: warn while cached writes flush, then say when it is safe.
+    let (name, drive) = match &target {
+        EjectTarget::Mount(m) => (m.name(), m.drive()),
+        EjectTarget::Volume(v) => (v.name(), v.drive()),
+    };
+    let removable = drive.is_some_and(|d| d.is_removable() || d.is_media_removable());
+    let app = gio::Application::default();
+    if removable && let Some(app) = &app {
+        let n = gio::Notification::new(&gettext("Writing data to “%s”").replace("%s", &name));
+        n.set_body(Some(&gettext("Don’t unplug until finished")));
+        app.send_notification(Some("unmount"), &n);
+    }
+    let result = match target {
+        EjectTarget::Mount(m) if m.can_eject() => {
+            m.eject_with_operation_future(flags, Some(&op)).await
+        }
+        EjectTarget::Mount(m) => m.unmount_with_operation_future(flags, Some(&op)).await,
+        EjectTarget::Volume(v) => v.eject_with_operation_future(flags, Some(&op)).await,
+    };
+    if removable && let Some(app) = &app {
+        app.withdraw_notification("unmount");
+    }
+    match result {
+        Ok(()) if removable => {
+            if let Some(app) = &app {
+                let n = gio::Notification::new(
+                    &gettext("You can now unplug “%s”").replace("%s", &name),
+                );
+                app.send_notification(Some("unmount-done"), &n);
+            }
+        }
+        Err(e) if !e.matches(gio::IOErrorEnum::FailedHandled) => {
+            show_error(parent, &gettext("Could Not Eject"), &e);
+        }
+        _ => {}
+    }
+}
 
-    /// Asks about the trash on a volume about to be unmounted. Returns false to abort.
-    pub(super) async fn offer_empty_trash(&self, trash: gio::File) -> bool {
-        let dialog = adw::AlertDialog::builder()
-            .heading(gettext("Empty Trash Before Unmounting?"))
-            .body(gettext(
-                "To regain the free space on this volume the trash must be emptied. All trashed items on the volume will be permanently lost.",
-            ))
-            .build();
-        dialog.add_response("cancel", &gettext("_Cancel"));
-        dialog.add_response("keep", &gettext("Do _Not Empty"));
-        dialog.add_response("empty", &gettext("_Empty Trash"));
-        dialog.set_response_appearance("empty", adw::ResponseAppearance::Destructive);
-        dialog.set_default_response(Some("keep"));
-        dialog.set_close_response("cancel");
-        match dialog.choose_future(Some(self)).await.as_str() {
-            "empty" => {
-                let Some(app) = gio::Application::default()
-                    .and_downcast::<crate::application::SpiralApplication>()
-                else {
-                    return true;
-                };
-                let job = app
-                    .job_manager()
-                    .submit(crate::ops::JobKind::Delete { files: vec![trash] });
-                wait_finished(&job).await;
-                true
-            }
-            "keep" => true,
-            _ => false,
+/// Asks about the trash on a volume about to be unmounted. Returns false to abort.
+async fn offer_empty_trash(parent: &gtk::Widget, trash: gio::File) -> bool {
+    let dialog = adw::AlertDialog::builder()
+        .heading(gettext("Empty Trash Before Unmounting?"))
+        .body(gettext(
+            "To regain the free space on this volume the trash must be emptied. All trashed items on the volume will be permanently lost.",
+        ))
+        .build();
+    dialog.add_response("cancel", &gettext("_Cancel"));
+    dialog.add_response("keep", &gettext("Do _Not Empty"));
+    dialog.add_response("empty", &gettext("_Empty Trash"));
+    dialog.set_response_appearance("empty", adw::ResponseAppearance::Destructive);
+    dialog.set_default_response(Some("keep"));
+    dialog.set_close_response("cancel");
+    match dialog.choose_future(Some(parent)).await.as_str() {
+        "empty" => {
+            let Some(app) =
+                gio::Application::default().and_downcast::<crate::application::SpiralApplication>()
+            else {
+                return true;
+            };
+            let job = app
+                .job_manager()
+                .submit(crate::ops::JobKind::Delete { files: vec![trash] });
+            wait_finished(&job).await;
+            true
         }
+        "keep" => true,
+        _ => false,
     }
+}
 
-    pub(super) fn show_error(&self, heading: &str, error: &glib::Error) {
-        let dialog = adw::AlertDialog::builder()
-            .heading(heading)
-            .body(error.message())
-            .build();
-        dialog.add_response("ok", &gettext("_OK"));
-        dialog.present(Some(self));
-    }
+fn show_error(parent: &gtk::Widget, heading: &str, error: &glib::Error) {
+    let dialog = adw::AlertDialog::builder()
+        .heading(heading)
+        .body(error.message())
+        .build();
+    dialog.add_response("ok", &gettext("_OK"));
+    dialog.present(Some(parent));
 }

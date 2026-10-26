@@ -684,39 +684,19 @@ impl IconCanvas {
         }
     }
 
-    fn leave_special(&self, key: &str, eject: bool) {
+    /// Ejects or unmounts the drive `key`, as the sidebar does.
+    fn leave_special(&self, key: &str) {
         let Some(mount) = self.special(key).and_then(|s| s.mount().cloned()) else {
             return;
         };
-        let operation = gtk::MountOperation::new(self.root().and_downcast_ref::<gtk::Window>());
-        let view = self.view();
-        let done = glib::clone!(
-            #[weak]
-            view,
-            move |result: Result<(), glib::Error>| {
-                if let Err(e) = result
-                    && !e.matches(gio::IOErrorEnum::Cancelled)
-                    && !e.matches(gio::IOErrorEnum::FailedHandled)
-                {
-                    view.show_error(&gettext("Could Not Remove the Drive"), e.message());
-                }
+        glib::spawn_future_local(glib::clone!(
+            #[weak(rename_to = canvas)]
+            self,
+            async move {
+                let target = crate::places_sidebar::EjectTarget::Mount(mount);
+                crate::places_sidebar::unmount(canvas.upcast_ref(), target).await;
             }
-        );
-        if eject {
-            mount.eject_with_operation(
-                gio::MountUnmountFlags::NONE,
-                Some(&operation),
-                gio::Cancellable::NONE,
-                done,
-            );
-        } else {
-            mount.unmount_with_operation(
-                gio::MountUnmountFlags::NONE,
-                Some(&operation),
-                gio::Cancellable::NONE,
-                done,
-            );
-        }
+        ));
     }
 
     fn special_menu(&self, special: &Special) -> gio::Menu {
@@ -737,11 +717,12 @@ impl IconCanvas {
         }
         if let Some(mount) = special.mount() {
             let section = gio::Menu::new();
-            if mount.can_eject() {
-                section.append_item(&item(gettext("_Eject"), "desktop.eject-special"));
+            let label = if mount.can_eject() {
+                gettext("_Eject")
             } else {
-                section.append_item(&item(gettext("_Unmount"), "desktop.unmount-special"));
-            }
+                gettext("_Unmount")
+            };
+            section.append_item(&item(label, "desktop.leave-special"));
             menu.append_section(None, &section);
         }
         menu
@@ -1953,8 +1934,7 @@ impl IconCanvas {
             move |_, _| canvas.open_selected_places()
         ));
         group.add_action(&open);
-        with_key("unmount-special", |c, key| c.leave_special(key, false));
-        with_key("eject-special", |c, key| c.leave_special(key, true));
+        with_key("leave-special", |c, key| c.leave_special(key));
         with_key("drop-in", |c, path| c.run_drop_in(path));
 
         let sort_now = gio::SimpleAction::new("sort-now", None);
