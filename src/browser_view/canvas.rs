@@ -38,6 +38,9 @@ pub(super) const NAME_EXTRA: i32 = 16;
 const TYPE_AHEAD_PAUSE: Duration = Duration::from_millis(1000);
 /// How long a place dropped files are put at waits for them to arrive.
 const EXPECTED_FOR: Duration = Duration::from_secs(30);
+/// How long the trash has to stay unchanged before its icon is asked again: it changes once
+/// for every file going in or out.
+const TRASH_SETTLE: Duration = Duration::from_millis(150);
 
 pub(crate) const ZOOM_SIZES: [i32; 5] = [32, 48, 64, 96, 128];
 
@@ -123,6 +126,7 @@ mod imp {
         /// Names of files dropped on the desktop from elsewhere, and where they were dropped.
         pub(super) expected: RefCell<Vec<(String, Point, Instant)>>,
         pub(super) trash_monitor: RefCell<Option<gio::FileMonitor>>,
+        pub(super) trash_pending: RefCell<Option<glib::SourceId>>,
         pub(super) devices: RefCell<Option<crate::places_sidebar::DeviceWatch>>,
         pub(super) actions: RefCell<Option<gio::SimpleActionGroup>>,
     }
@@ -437,10 +441,29 @@ impl IconCanvas {
             trash.connect_changed(glib::clone!(
                 #[weak(rename_to = canvas)]
                 self,
-                move |_, _, _, _| canvas.update_trash()
+                move |_, _, _, _| canvas.queue_trash_update()
             ));
             imp.trash_monitor.replace(Some(trash));
         }
+    }
+
+    fn queue_trash_update(&self) {
+        let imp = self.imp();
+        if let Some(id) = imp.trash_pending.take() {
+            id.remove();
+        }
+        let id = glib::timeout_add_local_once(
+            TRASH_SETTLE,
+            glib::clone!(
+                #[weak(rename_to = canvas)]
+                self,
+                move || {
+                    canvas.imp().trash_pending.take();
+                    canvas.update_trash();
+                }
+            ),
+        );
+        imp.trash_pending.replace(Some(id));
     }
 
     fn update_trash(&self) {
