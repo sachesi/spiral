@@ -581,6 +581,9 @@ pub fn location_name(file: &gio::File) -> String {
     if crate::starred::is_starred_location(file) {
         return gettext("Favorites");
     }
+    if crate::computer::is_computer_location(file) {
+        return gettext("Computer");
+    }
     if crate::tags::is_tag_location(file) {
         return crate::tags::tag_of_location(file).unwrap_or_else(|| gettext("Tags"));
     }

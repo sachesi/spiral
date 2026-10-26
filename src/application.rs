@@ -42,7 +42,7 @@ mod imp {
             app.setup_actions();
         }
 
-        /// D-Bus activation without arguments: a window at the home folder.
+        /// D-Bus activation without arguments: a window where windows start.
         fn activate(&self) {
             if !self.desktop.get() {
                 self.obj().open_window(&[]);
@@ -239,11 +239,11 @@ impl SpiralApplication {
         win
     }
 
-    /// A new window showing `files` as tabs, or the home folder when there are none.
+    /// A new window showing `files` as tabs, or where windows start when there are none.
     pub fn open_window(&self, files: &[gio::File]) -> SpiralWindow {
         let win = SpiralWindow::new(self);
         if files.is_empty() {
-            win.open_location(&gio::File::for_path(glib::home_dir()));
+            win.open_location(&crate::computer::start_location());
         }
         for f in files {
             win.open_location(f);

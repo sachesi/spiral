@@ -199,6 +199,8 @@ mod imp {
         #[property(get, set, construct_only)]
         pub desktop_mode: Cell<bool>,
         pub canvas: std::cell::OnceCell<IconCanvas>,
+        /// The Computer page, made the first time the view goes there.
+        pub computer: std::cell::OnceCell<crate::computer::ComputerPage>,
         /// Actions kept off whatever the selection, by `withhold_action`.
         pub withheld: RefCell<Vec<String>>,
 
@@ -343,6 +345,7 @@ mod imp {
                 chooser_mode: Default::default(),
                 desktop_mode: Default::default(),
                 canvas: Default::default(),
+                computer: Default::default(),
                 withheld: Default::default(),
                 actions: gio::SimpleActionGroup::new(),
                 popover: Default::default(),
@@ -426,7 +429,7 @@ mod imp {
                     #[upgrade_or]
                     gtk::gdk::DragAction::empty(),
                     move |t: &gtk::DropTarget, x: f64, y: f64| {
-                        if obj.in_side_column(x, y) {
+                        if obj.in_side_column(x, y) || obj.shows_computer() {
                             obj.end_hover();
                             gtk::gdk::DragAction::empty()
                         } else {
@@ -460,6 +463,7 @@ mod imp {
                             return true;
                         }
                         match obj.location() {
+                            Some(_) if obj.shows_computer() => false,
                             // The folder under the pointer takes the drop. Cells carry targets
                             // of their own, but only the grid's ever see a drag: in a column
                             // view the crossing never reaches them, so the view looks for itself.
@@ -669,6 +673,7 @@ mod imp {
             });
             obj.connect_list_icon_size_notify(|obj| obj.sync_zoom_actions());
             obj.connect_view_mode_notify(|obj| obj.sync_zoom_actions());
+            obj.connect_location_notify(|obj| obj.sync_zoom_actions());
             obj.sync_zoom_actions();
 
             self.grid_view.connect_activate(glib::clone!(
@@ -1165,14 +1170,39 @@ impl BrowserView {
         )));
     }
 
+    /// The view the view button shows: the Computer page's own layout there, which leaves
+    /// the view of the folders as it was, columns included.
+    pub(crate) fn shown_view_mode(&self) -> ViewMode {
+        match self.imp().computer.get() {
+            Some(page) if self.shows_computer() => page.layout(),
+            _ => self.view_mode(),
+        }
+    }
+
+    /// The view the view button switches to: on the Computer page, the grid or the list.
+    pub(crate) fn next_view_mode(&self) -> ViewMode {
+        match self.shown_view_mode() {
+            ViewMode::Grid if self.shows_computer() => ViewMode::List,
+            _ if self.shows_computer() => ViewMode::Grid,
+            mode => mode.next(),
+        }
+    }
+
     /// Step to the next view, in the order the view button shows.
     pub fn toggle_view_mode(&self) {
-        self.choose_view_mode(self.view_mode().next());
+        self.choose_view_mode(self.next_view_mode());
     }
 
     /// Switch view: for this folder only when views are remembered per folder, otherwise
     /// as the new global default.
     pub fn choose_view_mode(&self, next: ViewMode) {
+        if self.shows_computer() {
+            if let Some(page) = self.imp().computer.get() {
+                page.set_layout(next);
+                self.notify_view_mode();
+            }
+            return;
+        }
         if next == ViewMode::Columns && !crate::prefs::column_view() {
             return;
         }
@@ -1251,8 +1281,10 @@ impl BrowserView {
     fn sync_zoom_actions(&self) {
         let (_, sizes) = self.zoom_key();
         let now = self.zoom_size();
-        self.set_enabled("zoom-in", sizes.last().is_some_and(|&z| now < z));
-        self.set_enabled("zoom-out", sizes.first().is_some_and(|&z| now > z));
+        // The Computer page has no icons to zoom.
+        let files = !self.shows_computer();
+        self.set_enabled("zoom-in", files && sizes.last().is_some_and(|&z| now < z));
+        self.set_enabled("zoom-out", files && sizes.first().is_some_and(|&z| now > z));
     }
 
     fn update_stack(&self) {
@@ -1265,7 +1297,14 @@ impl BrowserView {
             return;
         }
         let empty = !imp.model.loading() && imp.model.n_items() == 0;
-        let name = if let Some(msg) = imp.model.error_message() {
+        let name = if self.shows_computer() {
+            imp.computer.get_or_init(|| {
+                let page = crate::computer::ComputerPage::new(self);
+                imp.stack.add_named(&page, Some("computer"));
+                page
+            });
+            "computer"
+        } else if let Some(msg) = imp.model.error_message() {
             match &*imp.mounting.borrow() {
                 // Not mounted yet is not a failure while the server is being reached.
                 Mounting::Underway => {
@@ -1347,6 +1386,12 @@ impl BrowserView {
         }
     }
 
+    /// Whether the view is at the Computer page rather than in a folder.
+    pub(crate) fn shows_computer(&self) -> bool {
+        self.location()
+            .is_some_and(|l| crate::computer::is_computer_location(&l))
+    }
+
     /// What the tab and the window are called after: the location's name, or the name a
     /// server was listed under where its address is all there is to go by.
     pub fn location_title(&self) -> String {
@@ -1381,8 +1426,10 @@ impl BrowserView {
             self,
             move |gesture, _, x, y| {
                 let stack = view.imp().stack.clone().upcast::<gtk::Widget>();
-                // The desktop's places are no cells, and the desktop sees to its own presses.
+                // The desktop's places are no cells, and the desktop sees to its own presses;
+                // so does the Computer page.
                 if view.desktop_mode()
+                    || view.shows_computer()
                     || cell_at(&stack, x, y).is_some()
                     || view.in_side_column(x, y)
                 {
@@ -1408,6 +1455,7 @@ impl BrowserView {
             Some("columns") => imp.miller_list.grab_focus(),
             Some("list") => imp.column_view.grab_focus(),
             Some("desktop") => imp.canvas.get().is_some_and(|c| c.grab_focus()),
+            Some("computer") => imp.computer.get().is_some_and(|c| c.take_focus()),
             // The empty and the error page have no view to hand the keyboard to, so the box
             // around each takes it. Handing it to a view that is not on screen leaves it on
             // a widget outside everything the window looks at, and the keys bound to the

@@ -92,7 +92,7 @@ pub(super) fn add_reorder_dnd<T: glib::value::ValueType>(
 
 /// Files dropped on a sidebar row are copied/moved into that location.
 pub(super) fn add_drop_target(row: &gtk::ListBoxRow, file: &gio::File) {
-    if crate::starred::is_starred_location(file) {
+    if crate::starred::is_starred_location(file) || crate::computer::is_computer_location(file) {
         return;
     }
     if file.uri().starts_with("trash:") {

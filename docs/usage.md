@@ -41,6 +41,44 @@ dialogs too.
 Below roughly 680 px the sidebar folds away behind a button and the navigation controls
 move to a bar at the bottom.
 
+### Computer
+
+Turned on in Preferences, under Sidebar, Computer is the first entry of the sidebar. Its
+page, `computer:///`, shows the machine's name, its device name when one is set, with the
+distribution's logo, its system, and how much room its disks have left, then one tile per
+disk in three groups: This Computer, with the system's own disk first; Removable; and
+Network, with the shares mounted, through gvfs or by the system as NFS, SMB or an rclone
+drive, the servers connected to before and "Connect to Server…" by its heading. A share
+is tagged with its protocol, such as SMB, NFS or SFTP, and a drive rclone mounted with
+rclone, which reaches too many services to name one. Each tile has a bar of how full the
+disk is, which turns to the warning colour past 90%, and the free space under it; a share
+that does not say how big it is shows the user and the server instead. Its tooltip says
+where the disk is mounted and with which filesystem. A disk the user can unmount has an
+eject button, and a spinner stands in for it while the disk is mounted or ejected; one the
+system mounted, from fstab without the `user` option, has none. Activating a tile opens it,
+mounting it first where it needs to be, and files dropped on one go to the top of that
+disk. A tile's menu offers what the disk's entry in the sidebar does, and a server not
+connected can be forgotten from it. The view button lays the page out as cards or as a
+list, a row for each disk, and the page keeps the choice apart from the view of the
+folders. The free space is read again whenever the page comes back on screen, when the
+window comes back to the front and when a copy or a move ends.
+
+The page hides disks apart from the sidebar: a disk hidden from the sidebar, to keep it
+short, is still on the page, and one hidden from the page stays in the sidebar. "Show
+Hidden Places" in a tile's menu shows the page's hidden disks dimmed, to bring them back.
+
+As in the sidebar, a disk that fstab mounts outside `/media`, `/run/media` and the home
+folder is left out unless its entry has the `x-gvfs-show` option.
+
+The summary at the top can be turned off with "Summary", under the same switch in
+Preferences.
+
+Under the same switch, "Open New Windows At" makes Computer the place a window opened
+without a location starts: Spiral started without a folder, or Ctrl+N. Folders opened from
+other programs still open where they are, and new tabs at the current location. Turned
+off, windows start at Home again. The page belongs to the file manager; file dialogs do
+not list it.
+
 ## Two panes
 
 F3, or "Split View" in the view menu, splits every tab down the middle: two folders side

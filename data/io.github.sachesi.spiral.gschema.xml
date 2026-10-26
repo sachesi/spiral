@@ -34,6 +34,10 @@
     <value nick="auto" value="1"/>
     <value nick="free" value="2"/>
   </enum>
+  <enum id="io.github.sachesi.spiral.StartLocation">
+    <value nick="home" value="0"/>
+    <value nick="computer" value="1"/>
+  </enum>
   <enum id="io.github.sachesi.spiral.Alignment">
     <value nick="left" value="0"/>
     <value nick="right" value="1"/>
@@ -100,6 +104,26 @@
     <key name="show-favorites" type="b">
       <default>true</default>
       <summary>Show Favorites in the sidebar</summary>
+    </key>
+    <key name="show-computer" type="b">
+      <default>false</default>
+      <summary>Show the Computer page</summary>
+      <description>The disks, drives and servers of this computer with their free space, at the top of the sidebar.</description>
+    </key>
+    <key name="show-computer-summary" type="b">
+      <default>true</default>
+      <summary>Show the summary on the Computer page</summary>
+      <description>The computer's name, its system and the free space of its disks, above the disks.</description>
+    </key>
+    <key name="computer-hidden-places" type="as">
+      <default>[]</default>
+      <summary>Disks left out of the Computer page</summary>
+      <description>Each entry is a disk as uuid:UUID or device:PATH, or a mount by its location URI. Apart from hidden-places, which the sidebar leaves out.</description>
+    </key>
+    <key name="start-location" enum="io.github.sachesi.spiral.StartLocation">
+      <default>'home'</default>
+      <summary>Where windows opened without a location start</summary>
+      <description>Computer only counts while show-computer is on; otherwise windows start at Home.</description>
     </key>
     <key name="hidden-places" type="as">
       <default>[]</default>

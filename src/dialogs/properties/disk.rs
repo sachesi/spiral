@@ -24,20 +24,7 @@ pub(super) fn disk_page(dir: &gio::File, fs: &gio::FileInfo) -> adw::Preferences
         .width_request(120)
         .valign(gtk::Align::Center)
         .build();
-    // The bar's own levels show a bar near its end as good news, which on a disk it is
-    // not; without them it is the one colour, and the warning colour when nearly full.
-    for offset in [
-        gtk::LEVEL_BAR_OFFSET_LOW,
-        gtk::LEVEL_BAR_OFFSET_HIGH,
-        gtk::LEVEL_BAR_OFFSET_FULL,
-    ] {
-        bar.remove_offset_value(Some(offset));
-    }
-    let fill = used as f64 / size as f64;
-    bar.set_value(fill);
-    if fill > 0.9 {
-        bar.add_css_class("spiral-nearly-full");
-    }
+    crate::computer::show_usage(&bar, used as f64 / size as f64);
     capacity.add_suffix(&bar);
     usage.add(&capacity);
     page.add(&usage);

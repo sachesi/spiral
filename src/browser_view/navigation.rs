@@ -148,6 +148,8 @@ impl BrowserView {
         self.notify_can_go_back();
         self.notify_can_go_forward();
         self.notify_location();
+        // The model may say nothing about a location it does not list, the Computer page.
+        self.update_stack();
         self.take_keyboard();
     }
 
@@ -318,6 +320,10 @@ impl BrowserView {
         // Asked for again by hand: a share whose password was turned down is worth another
         // try, and so is one that has since come back.
         imp.mounting.replace(Mounting::Idle);
+        if let Some(page) = imp.computer.get().filter(|_| self.shows_computer()) {
+            page.refresh();
+            return;
+        }
         let offset = self.view_adjustment().map_or(0.0, |adj| adj.value());
         let selected = imp.model.selected_files();
         let focused = self.view_has_focus();

@@ -140,30 +140,57 @@ pub fn show_favorites() -> bool {
     SETTINGS.with(|s| s.boolean("show-favorites"))
 }
 
+pub fn show_computer() -> bool {
+    SETTINGS.with(|s| s.boolean("show-computer"))
+}
+
+/// Whether windows opened without a location start at the Computer page. Only while the
+/// page is on, so turning it off never leaves them opening at a page that is gone.
+pub fn start_at_computer() -> bool {
+    show_computer() && choice("start-location") == 1
+}
+
 /// What the sidebar leaves out: places by location, disks by UUID, and whole sections.
 pub fn hidden_places() -> Vec<String> {
-    SETTINGS.with(|s| {
-        s.strv("hidden-places")
-            .iter()
-            .map(|k| k.to_string())
-            .collect()
-    })
+    hidden_in("hidden-places")
 }
 
 fn save_hidden_places(keys: &[String]) {
+    save_hidden_in("hidden-places", keys);
+}
+
+pub fn set_place_hidden(key: &str, hidden: bool) {
+    set_hidden_in("hidden-places", key, hidden);
+}
+
+/// What the Computer page leaves out, by the same keys as the sidebar but apart from it: a
+/// disk hidden there to keep the sidebar short is still one to see here.
+pub fn hidden_on_computer() -> Vec<String> {
+    hidden_in("computer-hidden-places")
+}
+
+pub fn set_hidden_on_computer(key: &str, hidden: bool) {
+    set_hidden_in("computer-hidden-places", key, hidden);
+}
+
+fn hidden_in(list: &str) -> Vec<String> {
+    SETTINGS.with(|s| s.strv(list).iter().map(|k| k.to_string()).collect())
+}
+
+fn save_hidden_in(list: &str, keys: &[String]) {
     let keys: Vec<&str> = keys.iter().map(String::as_str).collect();
-    if let Err(e) = SETTINGS.with(|s| s.set_strv("hidden-places", keys.as_slice())) {
+    if let Err(e) = SETTINGS.with(|s| s.set_strv(list, keys.as_slice())) {
         glib::g_warning!("spiral", "cannot keep the hidden places: {e}");
     }
 }
 
-pub fn set_place_hidden(key: &str, hidden: bool) {
-    let mut keys = hidden_places();
+fn set_hidden_in(list: &str, key: &str, hidden: bool) {
+    let mut keys = hidden_in(list);
     keys.retain(|k| k != key);
     if hidden {
         keys.push(key.to_string());
     }
-    save_hidden_places(&keys);
+    save_hidden_in(list, &keys);
 }
 
 /// A hidden place at `from` is hidden at `to` instead, or forgotten for `None`: a tag
@@ -317,6 +344,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn windows_start_at_the_computer_page_only_while_it_is_shown() {
+        let settings = settings();
+        assert!(!start_at_computer());
+        settings.set_enum("start-location", 1).unwrap();
+        assert!(!start_at_computer());
+        settings.set_boolean("show-computer", true).unwrap();
+        assert!(start_at_computer());
+        settings.set_enum("start-location", 0).unwrap();
+        assert!(!start_at_computer());
+    }
+
+    #[test]
     fn a_hidden_place_follows_its_folder_and_its_tag() {
         set_place_hidden("file:///home/u/Old", true);
         set_place_hidden("file:///home/u/Old/Inner", true);
@@ -338,6 +377,17 @@ mod tests {
         );
         move_hidden_place("tag:///Work", None);
         assert!(!hidden_places().iter().any(|k| k.starts_with("tag:")));
+    }
+
+    #[test]
+    fn a_disk_hidden_on_the_computer_page_stays_in_the_sidebar() {
+        set_hidden_on_computer("uuid:5678", true);
+        assert!(hidden_on_computer().contains(&"uuid:5678".to_string()));
+        assert!(!hidden_places().contains(&"uuid:5678".to_string()));
+        set_place_hidden("uuid:9abc", true);
+        assert!(!hidden_on_computer().contains(&"uuid:9abc".to_string()));
+        set_hidden_on_computer("uuid:5678", false);
+        assert!(!hidden_on_computer().contains(&"uuid:5678".to_string()));
     }
 
     #[test]

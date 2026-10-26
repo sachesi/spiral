@@ -165,6 +165,9 @@ impl SpiralWindow {
                         page.set_title(&v.location_title());
                     }
                     win.sync_header();
+                    // A location with no listing to wait for, such as the Computer page,
+                    // tells the details panel nothing else.
+                    win.imp().details.queue_update();
                 }
             ),
         );

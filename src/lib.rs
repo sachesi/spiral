@@ -56,6 +56,7 @@ pub(crate) fn init() {
 pub(crate) mod browser_actions;
 pub(crate) mod browser_view;
 pub(crate) mod clipboard;
+pub(crate) mod computer;
 pub(crate) mod dbus;
 pub mod desktop;
 pub(crate) mod details_panel;

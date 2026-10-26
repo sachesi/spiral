@@ -143,6 +143,34 @@ pub fn preferences_dialog() -> adw::PreferencesDialog {
         .bind("show-favorites", &favorites, "active")
         .build();
     sidebar.add(&favorites);
+    let computer = adw::ExpanderRow::builder()
+        .title(gettext("Computer"))
+        .subtitle(gettext(
+            "Disks, drives and servers with their free space, on one page",
+        ))
+        .show_enable_switch(true)
+        .build();
+    settings
+        .bind("show-computer", &computer, "enable-expansion")
+        .build();
+    computer.add_row(&choice_row(
+        &settings,
+        "start-location",
+        &gettext("Open New Windows At"),
+        None,
+        &[gettext("Home"), gettext("Computer")],
+    ));
+    let summary = adw::SwitchRow::builder()
+        .title(gettext("Summary"))
+        .subtitle(gettext(
+            "The computer’s name, system and free space, above the disks",
+        ))
+        .build();
+    settings
+        .bind("show-computer-summary", &summary, "active")
+        .build();
+    computer.add_row(&summary);
+    sidebar.add(&computer);
     page.add(&sidebar);
 
     let tags = adw::PreferencesGroup::builder()

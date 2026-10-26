@@ -389,6 +389,9 @@ fn root_icon_and_name(
     if crate::starred::is_starred_location(root) {
         return ("starred-symbolic", gettext("Favorites"));
     }
+    if crate::computer::is_computer_location(root) {
+        return ("computer-symbolic", gettext("Computer"));
+    }
     if crate::tags::is_tag_location(root) {
         return ("tag-symbolic", file_utils::location_name(root));
     }

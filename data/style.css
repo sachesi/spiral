@@ -411,7 +411,7 @@ modelbutton > popover.menu > contents {
   margin-right: 10px;
 }
 
-/* A disk nearly out of room, in Properties. */
+/* A disk nearly out of room, in Properties and on the Computer page. */
 levelbar.spiral-nearly-full > trough > block.filled {
   background-color: var(--warning-bg-color);
 }
@@ -482,6 +482,19 @@ spiral-desktop .spiral-desktop-band {
 /* A sidebar place that is hidden, shown while the hidden places are. */
 .navigation-sidebar > row.spiral-hidden-place > box {
   opacity: 0.5;
+}
+
+/* A tile of the Computer page. The tag after a name says what the disk is to the system,
+   quieter than the protocol tags beside it, which name what a server speaks. */
+.spiral-computer-tile.spiral-hidden-place > * {
+  opacity: 0.5;
+}
+.spiral-computer-tag {
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: smaller;
+  font-weight: bold;
+  background-color: color-mix(in srgb, currentColor 10%, transparent);
 }
 
 /* A finger needs more room than a pointer. */

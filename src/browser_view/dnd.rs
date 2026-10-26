@@ -204,7 +204,7 @@ impl BrowserView {
                 #[upgrade_or]
                 false,
                 move |x, y| {
-                    if view.desktop_mode() || view.in_side_column(x, y) {
+                    if view.desktop_mode() || view.shows_computer() || view.in_side_column(x, y) {
                         return false;
                     }
                     // In selection mode the file held joins what is picked out.

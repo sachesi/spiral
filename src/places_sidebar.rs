@@ -163,6 +163,7 @@ mod imp {
             for key in [
                 "show-root",
                 "show-favorites",
+                "show-computer",
                 "use-network",
                 "use-tags",
                 "tags",
@@ -383,6 +384,7 @@ impl PlacesSidebar {
 
     pub fn set_in_dialog(&self, in_dialog: bool) {
         self.imp().in_dialog.set(in_dialog);
+        self.rebuild();
     }
 
     pub fn rebuild(&self) {
@@ -390,6 +392,16 @@ impl PlacesSidebar {
         let list = &imp.list;
         while let Some(child) = list.first_child() {
             list.remove(&child);
+        }
+        // In the file manager only: a chooser opens at its own last folder, and a page of
+        // disks is a detour on the way to a file.
+        if crate::prefs::show_computer() && !imp.in_dialog.get() {
+            list.append(&place_row(
+                "computer-symbolic",
+                &gettext("Computer"),
+                &gio::File::for_uri(crate::computer::URI),
+                SECTION_PLACES,
+            ));
         }
         let home = gio::File::for_path(glib::home_dir());
         list.append(&place_row(
