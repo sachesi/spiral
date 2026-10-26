@@ -1632,6 +1632,24 @@ impl ComputerPage {
             1,
         )));
         crate::touch::popup(&popover);
+        // The lines between sections come in after the menu is shown, a frame or more
+        // later, and nothing makes the menu taller for them: its last row would be cut
+        // short, under a scrollbar.
+        let since = Cell::new(None);
+        popover.add_tick_callback(move |popover, clock| {
+            let now = clock.frame_time();
+            let start = since.get().unwrap_or(now);
+            since.set(Some(start));
+            if !popover.is_visible() || now - start > 500_000 {
+                return glib::ControlFlow::Break;
+            }
+            let (_, natural, _, _) = popover.measure(gtk::Orientation::Vertical, popover.width());
+            if natural > popover.height() {
+                popover.present();
+                return glib::ControlFlow::Break;
+            }
+            glib::ControlFlow::Continue
+        });
     }
 }
 
