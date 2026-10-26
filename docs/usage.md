@@ -61,7 +61,9 @@ mounting it first where it needs to be, and files dropped on one go to the top o
 disk. A tile's menu offers what the disk's entry in the sidebar does, and a server not
 connected can be forgotten from it. The view button lays the page out as cards or as a
 list, a row for each disk, and the page keeps the choice apart from the view of the
-folders. The free space is read again whenever the page comes back on screen, when the
+folders. Cards are all one width, as many to a line as there is room for and four at
+most; where only one fits, it takes the whole line, and the list puts the free space
+under each name. The free space is read again whenever the page comes back on screen, when the
 window comes back to the front and when a copy or a move ends.
 
 The page hides disks apart from the sidebar: a disk hidden from the sidebar, to keep it
