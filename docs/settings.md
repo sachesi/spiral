@@ -60,6 +60,8 @@ Changes apply immediately to open windows.
 | `desktop-icon-spacing` | 0 to 64 | 8 | Spacing (Desktop) |
 | `desktop-show-captions` | bool | false | Captions (Desktop) |
 | `desktop-show-home`, `desktop-show-trash`, `desktop-show-drives` | bool | true | Shown on the Desktop |
+| `desktop-main-display` | key of a display, or empty for the top left one | empty | Main Display (Desktop) |
+| `desktop-every-display` | bool | true | Icons on Every Display (Desktop) |
 
 Notes on a few of them:
 
@@ -111,5 +113,6 @@ folders when `item-counts` allows it.
 Outside GSettings, Spiral keeps bookmarks in `~/.config/gtk-3.0/bookmarks`, favorites in
 `~/.local/share/spiral/starred`, the index of tagged files in `~/.local/share/spiral/tags`,
 the tags themselves in the `user.xdg.tags` extended attribute of each file, where the
-desktop icons were left in `~/.local/state/spiral/desktop-positions`, and per-folder
+desktop icons were left in `~/.local/state/spiral/desktop-positions`, the display each is
+on in `~/.local/state/spiral/desktop-displays`, and per-folder
 view, sort order and custom icon in GIO file metadata.

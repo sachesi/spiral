@@ -56,9 +56,44 @@ impl Positions {
         }
     }
 
-    /// The places kept for a display `size` large, or else those kept for the size nearest
-    /// it, scaled to fit. Places kept in pixels are read on a grid of `cell` within `margin`.
-    pub fn kept(&self, size: Point, cell: Point, margin: f64) -> HashMap<Place, Point> {
+    /// The places kept for `display`, `size` large, or else those kept for its size nearest
+    /// it, scaled to fit. The main display, until it has a layout of its own, takes the one
+    /// kept when every display shared a layout.
+    pub fn kept(
+        &self,
+        display: &str,
+        main: bool,
+        size: Point,
+        cell: Point,
+        margin: f64,
+    ) -> HashMap<Place, Point> {
+        let groups = self.file.groups();
+        let sizes: Vec<Point> = groups
+            .iter()
+            .filter_map(|group| {
+                let (key, size) = group.strip_prefix(DISPLAY)?.rsplit_once(' ')?;
+                (key == display).then(|| parse_size(size)).flatten()
+            })
+            .collect();
+        if sizes.contains(&size) {
+            return self.read(&display_group(display, size));
+        }
+        if let Some(&from) = sizes
+            .iter()
+            .min_by(|a, b| distance(**a, size).total_cmp(&distance(**b, size)))
+        {
+            return rescale(&self.read(&display_group(display, from)), from, size);
+        }
+        if main {
+            self.kept_shared(size, cell, margin)
+        } else {
+            HashMap::new()
+        }
+    }
+
+    /// What was kept for a display `size` large while every display shared one layout.
+    /// Places kept in pixels are read on a grid of `cell` within `margin`.
+    fn kept_shared(&self, size: Point, cell: Point, margin: f64) -> HashMap<Place, Point> {
         let in_cells = |places: HashMap<Place, Point>| {
             places
                 .into_iter()
@@ -83,7 +118,7 @@ impl Positions {
             sizes(display).min_by(|a, b| distance(*a, size).total_cmp(&distance(*b, size)))
         };
         if sizes(true).any(|kept| kept == size) {
-            return self.read(&display_group(size));
+            return self.read(&shared_group(size));
         }
         // Of the areas kept for this display, the one with the least room was the one with
         // all of the panels on it, as it mostly is.
@@ -94,7 +129,7 @@ impl Positions {
             return in_cells(self.read(&group_name(area)));
         }
         if let Some(from) = nearest(true) {
-            return rescale(&self.read(&display_group(from)), from, size);
+            return rescale(&self.read(&shared_group(from)), from, size);
         }
         match nearest(false) {
             Some(from) => in_cells(rescale(&self.read(&group_name(from)), from, size)),
@@ -102,10 +137,10 @@ impl Positions {
         }
     }
 
-    /// Keeps `places`, in cells, as the layout of a display `size` large, in place of what was
-    /// kept for it.
-    pub fn keep(&mut self, size: Point, places: &HashMap<Place, Point>) {
-        let files = display_group(size);
+    /// Keeps `places`, in cells, as the layout of `display` while it is `size` large, in
+    /// place of what was kept for it.
+    pub fn keep(&mut self, display: &str, size: Point, places: &HashMap<Place, Point>) {
+        let files = display_group(display, size);
         let specials = format!("{files}{SPECIAL_GROUP}");
         for group in [&files, &specials] {
             let _ = self.file.remove_group(group);
@@ -164,7 +199,7 @@ impl Positions {
 }
 
 /// A name as a key: escaped, since a file may be called anything a key cannot hold.
-fn key_of(place: &Place) -> String {
+pub(super) fn key_of(place: &Place) -> String {
     let (Place::File(name) | Place::Special(name)) = place;
     glib::Uri::escape_string(name, None, true).to_string()
 }
@@ -179,7 +214,11 @@ fn number(value: f64) -> String {
     text.trim_end_matches('0').trim_end_matches('.').to_owned()
 }
 
-fn display_group(size: Point) -> String {
+fn display_group(display: &str, size: Point) -> String {
+    format!("{DISPLAY}{display} {}", group_name(size))
+}
+
+fn shared_group(size: Point) -> String {
     format!("{DISPLAY}{}", group_name(size))
 }
 
@@ -199,6 +238,7 @@ mod tests {
 
     const CELL: Point = Point::new(100.0, 100.0);
     const MARGIN: f64 = 4.0;
+    const MAIN: &str = "Dell U2720Q (DP-1)";
 
     fn scratch(name: &str) -> PathBuf {
         let dir =
@@ -219,9 +259,12 @@ mod tests {
         places.insert(file("notes.txt"), Point::new(12.0, 30.0));
         places.insert(Place::Special("trash".into()), Point::new(12.0, 150.0));
         let mut positions = Positions::open(&path);
-        positions.keep(size, &places);
+        positions.keep(MAIN, size, &places);
         positions.save().expect("saved");
-        assert_eq!(Positions::open(&path).kept(size, CELL, MARGIN), places);
+        assert_eq!(
+            Positions::open(&path).kept(MAIN, true, size, CELL, MARGIN),
+            places
+        );
     }
 
     #[test]
@@ -233,9 +276,12 @@ mod tests {
             places.insert(file(name), Point::new(1.0, 2.0));
         }
         let mut positions = Positions::open(&path);
-        positions.keep(size, &places);
+        positions.keep(MAIN, size, &places);
         positions.save().expect("saved");
-        assert_eq!(Positions::open(&path).kept(size, CELL, MARGIN), places);
+        assert_eq!(
+            Positions::open(&path).kept(MAIN, true, size, CELL, MARGIN),
+            places
+        );
     }
 
     #[test]
@@ -244,11 +290,11 @@ mod tests {
         let mut positions = Positions::open(&path);
         let mut small = HashMap::new();
         small.insert(file("a"), Point::new(100.0, 100.0));
-        positions.keep(Point::new(1000.0, 500.0), &small);
+        positions.keep(MAIN, Point::new(1000.0, 500.0), &small);
         let mut large = HashMap::new();
         large.insert(file("a"), Point::new(7.0, 7.0));
-        positions.keep(Point::new(4000.0, 2000.0), &large);
-        let a = positions.kept(Point::new(1100.0, 550.0), CELL, MARGIN)[&file("a")];
+        positions.keep(MAIN, Point::new(4000.0, 2000.0), &large);
+        let a = positions.kept(MAIN, true, Point::new(1100.0, 550.0), CELL, MARGIN)[&file("a")];
         assert!(
             (a.x - 110.0).abs() < 1e-9 && (a.y - 110.0).abs() < 1e-9,
             "{a:?}"
@@ -268,14 +314,17 @@ mod tests {
         let mut positions = Positions::open(&path);
         let display = Point::new(1280.0, 800.0);
         assert_eq!(
-            positions.kept(display, CELL, MARGIN)[&file("a")],
+            positions.kept(MAIN, true, display, CELL, MARGIN)[&file("a")],
             Point::new(5.96, 2.96)
         );
         let mut moved = HashMap::new();
         moved.insert(file("a"), Point::new(1.0, 2.5));
-        positions.keep(display, &moved);
+        positions.keep(MAIN, display, &moved);
         positions.save().expect("saved");
-        assert_eq!(Positions::open(&path).kept(display, CELL, MARGIN), moved);
+        assert_eq!(
+            Positions::open(&path).kept(MAIN, true, display, CELL, MARGIN),
+            moved
+        );
     }
 
     #[test]
@@ -285,11 +334,11 @@ mod tests {
         let mut positions = Positions::open(&path);
         let mut first = HashMap::new();
         first.insert(file("gone"), Point::new(1.0, 1.0));
-        positions.keep(size, &first);
+        positions.keep(MAIN, size, &first);
         let mut second = HashMap::new();
         second.insert(file("here"), Point::new(2.0, 2.0));
-        positions.keep(size, &second);
-        assert_eq!(positions.kept(size, CELL, MARGIN), second);
+        positions.keep(MAIN, size, &second);
+        assert_eq!(positions.kept(MAIN, true, size, CELL, MARGIN), second);
     }
 
     #[test]
@@ -297,15 +346,53 @@ mod tests {
         let path = scratch("broken");
         assert!(
             Positions::open(&path)
-                .kept(Point::new(10.0, 10.0), CELL, MARGIN)
+                .kept(MAIN, true, Point::new(10.0, 10.0), CELL, MARGIN)
                 .is_empty()
         );
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, b"\xff\xfe not a key file [[[").unwrap();
         assert!(
             Positions::open(&path)
-                .kept(Point::new(10.0, 10.0), CELL, MARGIN)
+                .kept(MAIN, true, Point::new(10.0, 10.0), CELL, MARGIN)
                 .is_empty()
         );
+    }
+
+    #[test]
+    fn each_display_keeps_a_layout_of_its_own() {
+        let path = scratch("displays");
+        let size = Point::new(1920.0, 1080.0);
+        let mut positions = Positions::open(&path);
+        let left = HashMap::from([(file("a"), Point::new(1.0, 1.0))]);
+        let right = HashMap::from([(file("b"), Point::new(3.0, 2.0))]);
+        positions.keep(MAIN, size, &left);
+        positions.keep("LG 27UK (DP-2)", size, &right);
+        positions.save().expect("saved");
+        let positions = Positions::open(&path);
+        assert_eq!(positions.kept(MAIN, true, size, CELL, MARGIN), left);
+        assert_eq!(
+            positions.kept("LG 27UK (DP-2)", false, size, CELL, MARGIN),
+            right
+        );
+    }
+
+    #[test]
+    fn the_layout_kept_before_displays_had_their_own_is_the_main_ones() {
+        let path = scratch("shared");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, "[display 1920x1080]\na=2;3\n").unwrap();
+        let size = Point::new(1920.0, 1080.0);
+        let mut positions = Positions::open(&path);
+        let shared = HashMap::from([(file("a"), Point::new(2.0, 3.0))]);
+        assert_eq!(positions.kept(MAIN, true, size, CELL, MARGIN), shared);
+        assert!(
+            positions
+                .kept("LG 27UK (DP-2)", false, size, CELL, MARGIN)
+                .is_empty()
+        );
+        // Once the main display keeps a layout, at any size, it reads that one.
+        let own = HashMap::from([(file("a"), Point::new(5.0, 5.0))]);
+        positions.keep(MAIN, Point::new(1280.0, 720.0), &own);
+        assert_ne!(positions.kept(MAIN, true, size, CELL, MARGIN), shared);
     }
 }

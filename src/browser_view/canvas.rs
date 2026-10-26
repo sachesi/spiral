@@ -6,8 +6,9 @@
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
+use crate::desktop::map::DisplayMap;
 use crate::desktop::placement::{self, Arrangement, Grid, Point};
-use crate::desktop::positions::{Place, Positions};
+use crate::desktop::positions::Place;
 use crate::desktop::specials::{self, Special};
 use crate::drop_ins;
 
@@ -18,7 +19,13 @@ use super::*;
 pub(crate) static SLOT: Key<Rc<Cell<u32>>> = Key::new("desktop-slot");
 /// The key of the place a tile stands for, on the tiles that are not files.
 static SPECIAL: Key<String> = Key::new("desktop-special");
+/// The name a file of the folder had when the desktop last looked: a file renamed keeps its
+/// item, and its display goes along with it.
+static SEEN_AS: Key<String> = Key::new("desktop-seen-as");
 
+/// What a drag of the desktop's places alone offers: they are no files, and only a desktop
+/// takes them.
+const PLACES_MIME: &str = "application/x-spiral-desktop-places";
 /// Kept clear round the edge of the desktop.
 const MARGIN: f64 = 4.0;
 /// A tile is the icon and this much more: across, the margins either side of it that the
@@ -95,7 +102,9 @@ mod imp {
         /// panels leave.
         pub(super) kept: RefCell<HashMap<Place, Point>>,
         pub(super) placed: RefCell<HashMap<Place, Point>>,
-        pub(super) positions: RefCell<Option<Positions>>,
+        /// The display the desktop is on, and what follows the icons going to other displays.
+        pub(super) monitor: RefCell<Option<gdk::Monitor>>,
+        pub(super) displays_changed: RefCell<Option<glib::SignalHandlerId>>,
         /// Where each tile was drawn last, and the place it was to rest at when not lifted.
         pub(super) shown: RefCell<HashMap<Place, Point>>,
         pub(super) resting: RefCell<HashMap<Place, Point>>,
@@ -103,8 +112,8 @@ mod imp {
         pub(super) glide_from: RefCell<HashMap<Place, Point>>,
         pub(super) glide: std::cell::OnceCell<adw::TimedAnimation>,
         pub(super) area: Cell<(i32, i32)>,
-        /// The size of the display the places are kept for.
-        pub(super) display_size: Cell<Option<Point>>,
+        /// The display the places are kept for, whether it is the main one, and its size.
+        pub(super) kept_for: RefCell<Option<(Option<String>, bool, Point)>>,
         pub(super) save_queued: Cell<bool>,
         /// The places selected, on their own or along with files.
         pub(super) special_selected: RefCell<HashSet<String>>,
@@ -123,8 +132,8 @@ mod imp {
         pub(super) carry: RefCell<Option<Carry>>,
         /// Whether the system took the press the band or a place's move started from.
         pub(super) band_cancelled: Cell<bool>,
-        /// Names of files dropped on the desktop from elsewhere, and where they were dropped.
-        pub(super) expected: RefCell<Vec<(String, Point, Instant)>>,
+        /// What was dropped on the desktop from elsewhere, files and places, and where.
+        pub(super) expected: RefCell<Vec<(Place, Point, Instant)>>,
         pub(super) trash_monitor: RefCell<Option<gio::FileMonitor>>,
         pub(super) trash_pending: RefCell<Option<glib::SourceId>>,
         pub(super) devices: RefCell<Option<crate::places_sidebar::DeviceWatch>>,
@@ -145,6 +154,9 @@ mod imp {
 
     impl ObjectImpl for IconCanvas {
         fn dispose(&self) {
+            if let Some(handler) = self.displays_changed.take() {
+                DisplayMap::get().disconnect(handler);
+            }
             while let Some(child) = self.obj().first_child() {
                 child.unparent();
             }
@@ -190,8 +202,6 @@ impl IconCanvas {
             .build();
         let imp = canvas.imp();
         imp.view.set(Some(view));
-        imp.positions
-            .replace(Some(Positions::open(&Positions::default_path())));
         let band = gtk::Box::builder()
             .css_classes(["spiral-desktop-band"])
             .can_target(false)
@@ -238,6 +248,64 @@ impl IconCanvas {
             move |_, position, n| canvas.show_selection(position, n)
         ));
         self.items_changed(model, 0, 0, model.n_items());
+    }
+
+    /// Shows the icons of `monitor`, the display the desktop is on: those kept there, and
+    /// on the main display those of the displays not shown.
+    pub(crate) fn set_monitor(&self, monitor: &gdk::Monitor) {
+        self.imp().monitor.replace(Some(monitor.clone()));
+        let map = DisplayMap::get();
+        let filter = gtk::CustomFilter::new(glib::clone!(
+            #[weak(rename_to = canvas)]
+            self,
+            #[upgrade_or]
+            false,
+            move |item| {
+                let Some(info) = crate::folder_model::info_of(item) else {
+                    return false;
+                };
+                let name = info.name().to_string_lossy().into_owned();
+                if let Some(was) = SEEN_AS.get(&info)
+                    && was != name
+                {
+                    DisplayMap::get().rename(&Place::File(was), Place::File(name.clone()));
+                }
+                SEEN_AS.set(&info, name.clone());
+                canvas.shows(&Place::File(name))
+            }
+        ));
+        self.view()
+            .model()
+            .set_extra_filter(Some(filter.clone().upcast::<gtk::Filter>()));
+        let handler = map.connect_changed(glib::clone!(
+            #[weak(rename_to = canvas)]
+            self,
+            #[weak]
+            filter,
+            move |_| {
+                filter.changed(gtk::FilterChange::Different);
+                canvas.follow_specials();
+                canvas.queue_allocate();
+            }
+        ));
+        self.imp().displays_changed.replace(Some(handler));
+        self.rebuild_specials();
+    }
+
+    /// The key of the display the desktop is on.
+    fn display_key(&self) -> Option<String> {
+        let monitor = self.imp().monitor.borrow().clone()?;
+        DisplayMap::get().key(&monitor)
+    }
+
+    /// Whether `place` is on this desktop's display. Until the desktop is on one, every
+    /// place is.
+    fn shows(&self, place: &Place) -> bool {
+        if self.imp().monitor.borrow().is_none() {
+            return true;
+        }
+        self.display_key()
+            .is_some_and(|key| DisplayMap::get().shows(&key, place))
     }
 
     fn arrangement(&self) -> Arrangement {
@@ -403,6 +471,7 @@ impl IconCanvas {
         }
         let tiles: Vec<SpecialTile> = specials::list(&self.settings())
             .into_iter()
+            .filter(|special| self.shows(&Place::Special(special.key.clone())))
             .map(|special| {
                 let cell = view.grid_cell(true);
                 let image = tile_image(cell.upcast_ref()).unwrap();
@@ -448,6 +517,25 @@ impl IconCanvas {
         self.show_cursor();
         self.update_trash();
         self.queue_allocate();
+    }
+
+    /// Puts up the places that came to this display and takes down those that left it.
+    fn follow_specials(&self) {
+        let wanted: Vec<String> = specials::list(&self.settings())
+            .into_iter()
+            .map(|special| special.key)
+            .filter(|key| self.shows(&Place::Special(key.clone())))
+            .collect();
+        let shown: Vec<String> = self
+            .imp()
+            .specials
+            .borrow()
+            .iter()
+            .map(|t| t.special.key.clone())
+            .collect();
+        if wanted != shown {
+            self.rebuild_specials();
+        }
     }
 
     fn watch_places(&self) {
@@ -808,11 +896,13 @@ impl IconCanvas {
     }
 
     /// The size of the display the desktop is on, or of the desktop itself before it is on one.
+    /// A surface just made is on no display yet, and GTK names another for it meanwhile.
     fn display_size(&self) -> Point {
-        let monitor = self
-            .native()
-            .and_then(|native| native.surface())
-            .and_then(|surface| self.display().monitor_at_surface(&surface));
+        let monitor = self.imp().monitor.borrow().clone().or_else(|| {
+            self.native()
+                .and_then(|native| native.surface())
+                .and_then(|surface| self.display().monitor_at_surface(&surface))
+        });
         let (w, h) = match monitor {
             Some(monitor) => (monitor.geometry().width(), monitor.geometry().height()),
             None => self.imp().area.get(),
@@ -824,14 +914,18 @@ impl IconCanvas {
         let imp = self.imp();
         let resized = imp.area.replace((width, height)) != (width, height);
         let display = self.display_size();
-        if imp.display_size.replace(Some(display)) != Some(display) {
+        let map = DisplayMap::get();
+        let key = self.display_key();
+        let main = key.is_some() && key == map.main();
+        let kept_for = Some((key.clone(), main, display));
+        if imp.kept_for.replace(kept_for.clone()) != kept_for {
             let grid = self.grid();
-            let kept = imp
-                .positions
-                .borrow()
-                .as_ref()
-                .map(|p| p.kept(display, grid.cell_size(), MARGIN))
-                .unwrap_or_default();
+            let kept = match (&key, map.positions().as_ref()) {
+                (Some(key), Some(positions)) => {
+                    positions.kept(key, main, display, grid.cell_size(), MARGIN)
+                }
+                _ => HashMap::new(),
+            };
             imp.kept.replace(kept);
             imp.placed.borrow_mut().clear();
         }
@@ -840,13 +934,14 @@ impl IconCanvas {
         // A place the area the panels leave moved a tile from is still where it goes.
         let mut known = imp.placed.borrow().clone();
         known.extend(at_cells(&grid, &imp.kept.borrow()));
+        let mut landed = Vec::new();
         {
             let mut expected = imp.expected.borrow_mut();
             expected.retain(|(_, _, when)| when.elapsed() < EXPECTED_FOR);
-            expected.retain(|(name, at, _)| {
-                let place = Place::File(name.clone());
-                if places.contains(&place) {
-                    known.insert(place, *at);
+            expected.retain(|(place, at, _)| {
+                if places.contains(place) {
+                    known.insert(place.clone(), *at);
+                    landed.push(place.clone());
                     false
                 } else {
                     true
@@ -854,6 +949,25 @@ impl IconCanvas {
             });
         }
         let placed = placement::arrange(&grid, self.arrangement(), &places, &known);
+        // Where an icon was dropped is its place now, over one kept from before it left.
+        imp.kept
+            .borrow_mut()
+            .extend(landed.into_iter().filter_map(|place| {
+                let at = grid.in_cells(*placed.get(&place)?);
+                Some((place, at))
+            }));
+        if let Some(key) = &key {
+            let cells = grid.columns() * grid.rows();
+            map.set_room(key, cells.saturating_sub(placed.len()));
+            let new: Vec<Place> = places
+                .iter()
+                .filter(|place| !map.has_home(place))
+                .cloned()
+                .collect();
+            if main && !new.is_empty() {
+                map.settle(&new, cells.saturating_sub(places.len() - new.len()));
+            }
+        }
         if *imp.placed.borrow() != placed {
             imp.placed.replace(placed);
             self.queue_save();
@@ -1011,6 +1125,9 @@ impl IconCanvas {
     /// them; while the folder itself is gone nothing is saved, as the desktop waits for it.
     fn save_places(&self, gone: &HashSet<String>) {
         let imp = self.imp();
+        let Some(key) = self.display_key() else {
+            return;
+        };
         let size = self.display_size();
         let mut kept: HashMap<Place, Point> = imp
             .kept
@@ -1029,8 +1146,8 @@ impl IconCanvas {
                 kept.insert(place, at);
             }
         }
-        if let Some(positions) = imp.positions.borrow_mut().as_mut() {
-            positions.keep(size, &kept);
+        if let Some(positions) = DisplayMap::get().positions().as_mut() {
+            positions.keep(&key, size, &kept);
             if let Err(e) = positions.save() {
                 glib::g_warning!(
                     "spiral",
@@ -1184,6 +1301,10 @@ impl IconCanvas {
         let imp = self.imp();
         let grid = self.grid();
         let placed = placement::move_by(&grid, self.arrangement(), &imp.placed.borrow(), moved, by);
+        // Moved while visiting from a display away, an icon stays where it was put.
+        if let Some(key) = self.display_key() {
+            DisplayMap::get().move_to(moved, &key);
+        }
         imp.kept
             .borrow_mut()
             .extend(in_cells(&self.grid(), &placed));
@@ -1194,57 +1315,65 @@ impl IconCanvas {
 
     /// What a drag from (`x`, `y`) carries away: the files selected, with the tile under the
     /// pointer selected first, and the icons that show them and the places selected with
-    /// them the whole way. None when only places are selected, which move within the
-    /// desktop alone.
+    /// them the whole way. With a desktop on one display only, the places move within it
+    /// and nothing is carried when they are all that is selected; with more, they go along
+    /// to the desktop of another display.
     pub(crate) fn prepare_drag(
         &self,
         x: f64,
         y: f64,
-    ) -> Option<(Vec<gio::File>, Option<flock::Flock>)> {
+    ) -> Option<(gdk::ContentProvider, Option<flock::Flock>)> {
         let hit = self.hit(x, y)?;
         if !self.is_selected(&hit) {
             self.select_only(&hit);
         }
         let view = self.view();
         let files = view.model().selected_files();
-        if files.is_empty() {
+        let imp = self.imp();
+        let crossing = DisplayMap::get().crossing();
+        let selected = imp.special_selected.borrow().clone();
+        if files.is_empty() && (!crossing || selected.is_empty()) {
             return None;
         }
-        let imp = self.imp();
         imp.drag_origin.set(Some((x, y)));
         let model = view.model().selection();
         let tiles = imp.tiles.borrow();
-        let going: Vec<&Tile> = tiles
+        let specials = imp.specials.borrow();
+        let mut going: Vec<(&gtk::Box, &gtk::Box)> = tiles
             .iter()
             .filter(|t| model.is_selected(t.slot.get()))
+            .map(|t| (&t.frame, &t.cell))
             .collect();
-        let distance = |tile: &&Tile| {
-            tile.frame.compute_bounds(self).map_or(f32::MAX, |b| {
+        let places: Vec<(&gtk::Box, &gtk::Box)> = specials
+            .iter()
+            .filter(|t| selected.contains(&t.special.key))
+            .map(|t| (&t.frame, &t.cell))
+            .collect();
+        let staying = if crossing {
+            going.extend(places);
+            Vec::new()
+        } else {
+            places
+        };
+        let distance = |(frame, _): &(&gtk::Box, &gtk::Box)| {
+            frame.compute_bounds(self).map_or(f32::MAX, |b| {
                 let (dx, dy) = (b.center().x() - x as f32, b.center().y() - y as f32);
                 dx * dx + dy * dy
             })
         };
         let leader = (0..going.len())
             .min_by(|&a, &b| distance(&going[a]).total_cmp(&distance(&going[b])))?;
-        let going: Vec<gtk::Widget> = going.iter().map(|t| t.cell.clone().upcast()).collect();
-        let selected = imp.special_selected.borrow();
-        let staying: Vec<gtk::Widget> = imp
-            .specials
-            .borrow()
-            .iter()
-            .filter(|t| selected.contains(&t.special.key))
-            .map(|t| t.cell.clone().upcast())
-            .collect();
-        let flock = flock::Flock::new(
-            self.upcast_ref(),
-            &going,
-            &staying,
-            leader,
-            x,
-            y,
-            files.len(),
-        );
-        Some((files, flock))
+        let cell = |(_, cell): (&gtk::Box, &gtk::Box)| cell.clone().upcast::<gtk::Widget>();
+        let count = going.len();
+        let going: Vec<gtk::Widget> = going.into_iter().map(cell).collect();
+        let staying: Vec<gtk::Widget> = staying.into_iter().map(cell).collect();
+        let flock = flock::Flock::new(self.upcast_ref(), &going, &staying, leader, x, y, count);
+        let content = if files.is_empty() {
+            gdk::ContentProvider::for_bytes(PLACES_MIME, &glib::Bytes::from_static(b""))
+        } else {
+            gdk::ContentProvider::for_value(&gdk::FileList::from_array(&files).to_value())
+        };
+        Some((content, flock))
     }
 
     /// The system has taken up the drag `prepare_drag` offered.
@@ -1260,6 +1389,7 @@ impl IconCanvas {
         }
         let places = self.selected_places();
         self.let_through(&places, true);
+        DisplayMap::get().set_carried(drag, places.clone());
         imp.carry.replace(Some(Carry {
             places,
             flock,
@@ -1289,6 +1419,13 @@ impl IconCanvas {
             return;
         };
         carry.away = true;
+        if let Some(flock) = &carry.flock {
+            flock.gather();
+        }
+        // On its way to the desktop of another display, maybe, the places stay in the drag.
+        if DisplayMap::get().crossing() {
+            return;
+        }
         let (files, places): (Vec<Place>, Vec<Place>) = carry
             .places
             .drain(..)
@@ -1296,9 +1433,6 @@ impl IconCanvas {
         carry.places = files;
         self.let_through(&places, false);
         self.select_special(None);
-        if let Some(flock) = &carry.flock {
-            flock.gather();
-        }
     }
 
     /// The drag is over without a drop on the desktop, which takes the carry itself.
@@ -1308,6 +1442,7 @@ impl IconCanvas {
         if let Some(carry) = imp.carry.take() {
             self.let_through(&carry.places, false);
         }
+        DisplayMap::get().end_carried();
     }
 
     fn frames_of(&self, places: &[Place]) -> Vec<gtk::Box> {
@@ -1337,7 +1472,13 @@ impl IconCanvas {
     /// Files dropped on the empty desktop at (`x`, `y`). Its own icons are moved there
     /// rather than copied onto themselves; the view copies or moves the rest into the
     /// folder, and they are put where they were dropped once they arrive.
-    pub(crate) fn take_drop(&self, files: &[gio::File], x: f64, y: f64) -> bool {
+    pub(crate) fn take_drop(
+        &self,
+        files: &[gio::File],
+        drag: Option<&gdk::Drag>,
+        x: f64,
+        y: f64,
+    ) -> bool {
         let view = self.view();
         let Some(folder) = view.location() else {
             return false;
@@ -1354,27 +1495,30 @@ impl IconCanvas {
         if !here {
             let cell = self.grid().cell_size();
             let at = Point::new(x - cell.x / 2.0, y - cell.y / 2.0);
-            imp.expected
-                .borrow_mut()
-                .extend(names.into_iter().map(|name| (name, at, Instant::now())));
+            imp.expected.borrow_mut().extend(
+                names
+                    .into_iter()
+                    .map(|name| (Place::File(name), at, Instant::now())),
+            );
             return false;
+        }
+        let shown = self.places();
+        if imp.carry.borrow().is_none()
+            && names
+                .iter()
+                .any(|name| !shown.contains(&Place::File(name.clone())))
+        {
+            let mut moved: Vec<Place> = names.into_iter().map(Place::File).collect();
+            for place in DisplayMap::get().carried(drag) {
+                if !moved.contains(&place) {
+                    moved.push(place);
+                }
+            }
+            return self.come_over(moved, x, y);
         }
         let carry = imp.carry.take();
         let (moved, by) = match carry {
-            // Dragged from the desktop itself: what the drag still carries, the places with
-            // the files, glides into place from where the drag showed it.
-            Some(carry) => {
-                let by = Point::new(x - carry.origin.0, y - carry.origin.1);
-                self.let_through(&carry.places, false);
-                let placed = imp.placed.borrow().clone();
-                imp.shown
-                    .borrow_mut()
-                    .extend(carry.places.iter().filter_map(|place| {
-                        let at = placed.get(place)?;
-                        Some((place.clone(), Point::new(at.x + by.x, at.y + by.y)))
-                    }));
-                (carry.places, by)
-            }
+            Some(carry) => self.land(carry, x, y),
             // Dragged from a window showing the desktop's folder: the first goes where it
             // was dropped, the rest keep their places beside it.
             None => {
@@ -1389,6 +1533,53 @@ impl IconCanvas {
             }
         };
         self.move_places(&moved, by);
+        true
+    }
+
+    /// Places dragged without files, from this desktop or that of another display, dropped
+    /// at (`x`, `y`).
+    fn take_places(&self, drag: Option<&gdk::Drag>, x: f64, y: f64) -> bool {
+        if let Some(carry) = self.imp().carry.take() {
+            let (moved, by) = self.land(carry, x, y);
+            self.move_places(&moved, by);
+            return true;
+        }
+        let places = DisplayMap::get().carried(drag);
+        !places.is_empty() && self.come_over(places, x, y)
+    }
+
+    /// Dragged from the desktop itself: what the drag still carries, the places with the
+    /// files, glides into place from where the drag showed it. What moves, and how far.
+    fn land(&self, carry: Carry, x: f64, y: f64) -> (Vec<Place>, Point) {
+        let imp = self.imp();
+        let by = Point::new(x - carry.origin.0, y - carry.origin.1);
+        self.let_through(&carry.places, false);
+        let placed = imp.placed.borrow().clone();
+        imp.shown
+            .borrow_mut()
+            .extend(carry.places.iter().filter_map(|place| {
+                let at = placed.get(place)?;
+                Some((place.clone(), Point::new(at.x + by.x, at.y + by.y)))
+            }));
+        (carry.places, by)
+    }
+
+    /// From the desktop of another display: `places` come over to where they were dropped,
+    /// one under the other, and stay on this one.
+    fn come_over(&self, places: Vec<Place>, x: f64, y: f64) -> bool {
+        let Some(key) = self.display_key() else {
+            return false;
+        };
+        let cell = self.grid().cell_size();
+        let now = Instant::now();
+        self.imp()
+            .expected
+            .borrow_mut()
+            .extend(places.iter().enumerate().map(|(i, place)| {
+                let at = Point::new(x - cell.x / 2.0, y - cell.y / 2.0 + i as f64 * cell.y);
+                (place.clone(), at, now)
+            }));
+        DisplayMap::get().move_to(&places, &key);
         true
     }
 
@@ -1554,6 +1745,30 @@ impl IconCanvas {
             move |_| canvas.go_away()
         ));
         self.add_controller(over);
+
+        // Places carried without files, which no window takes, land on a desktop only.
+        let places = gtk::DropTargetAsync::new(
+            Some(gdk::ContentFormats::new(&[PLACES_MIME])),
+            gdk::DragAction::MOVE,
+        );
+        places.connect_drag_enter(|_, _, _, _| gdk::DragAction::MOVE);
+        places.connect_drag_motion(|_, _, _, _| gdk::DragAction::MOVE);
+        places.connect_drop(glib::clone!(
+            #[weak(rename_to = canvas)]
+            self,
+            #[upgrade_or]
+            false,
+            move |_, drop, x, y| {
+                let taken = canvas.take_places(drop.drag().as_ref(), x, y);
+                drop.finish(if taken {
+                    gdk::DragAction::MOVE
+                } else {
+                    gdk::DragAction::empty()
+                });
+                taken
+            }
+        ));
+        self.add_controller(places);
 
         let keys = gtk::EventControllerKey::new();
         keys.connect_key_pressed(glib::clone!(

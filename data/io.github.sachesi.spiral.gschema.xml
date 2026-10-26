@@ -252,6 +252,16 @@
       <default>true</default>
       <summary>Show mounted drives on the desktop</summary>
     </key>
+    <key name="desktop-every-display" type="b">
+      <default>true</default>
+      <summary>Show icons on every display</summary>
+      <description>Off, only the main display has a desktop, and the icons kept on the others are shown there.</description>
+    </key>
+    <key name="desktop-main-display" type="s">
+      <default>''</default>
+      <summary>Display new desktop icons go to</summary>
+      <description>The key Spiral keeps the display by, its make and model and its port. Empty, the display at the top left of the layout.</description>
+    </key>
     <key name="compression-format" type="s">
       <default>'zip'</default>
       <summary>Format the Create Archive dialog starts with</summary>

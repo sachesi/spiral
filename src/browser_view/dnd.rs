@@ -127,12 +127,10 @@ impl BrowserView {
                 if let Some(canvas) = view.imp().canvas.get() {
                     let p = stack
                         .compute_point(canvas, &gtk::graphene::Point::new(x as f32, y as f32))?;
-                    let (files, flock) = canvas.prepare_drag(p.x().into(), p.y().into())?;
+                    let (content, flock) = canvas.prepare_drag(p.x().into(), p.y().into())?;
                     source.set_icon(None::<&gdk::Paintable>, 0, 0);
                     flocking.replace(flock);
-                    return Some(gtk::gdk::ContentProvider::for_value(
-                        &gtk::gdk::FileList::from_array(&files).to_value(),
-                    ));
+                    return Some(content);
                 }
                 // A finger drags only what it has held first; dragged straight away, it
                 // scrolls. The long press holding it claims the press for this source too.

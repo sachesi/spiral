@@ -458,7 +458,12 @@ mod imp {
                                 canvas,
                                 &gtk::graphene::Point::new(x as f32, y as f32),
                             )
-                            && canvas.take_drop(&list.files(), p.x().into(), p.y().into())
+                            && canvas.take_drop(
+                                &list.files(),
+                                t.current_drop().and_then(|d| d.drag()).as_ref(),
+                                p.x().into(),
+                                p.y().into(),
+                            )
                         {
                             return true;
                         }
